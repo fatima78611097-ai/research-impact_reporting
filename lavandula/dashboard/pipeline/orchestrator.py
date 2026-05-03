@@ -519,20 +519,29 @@ def get_eligible_jobs(host: str):
     """Get jobs that are ready to run on this host."""
     from django.db.models import Q
 
-    running_phases = set(
-        Job.objects.filter(status="running").values_list("phase", flat=True)
-    )
-    adhoc_phases = set(
+    globally_blocked = set(
+        Job.objects.filter(status="running")
+        .exclude(phase__in=_PER_STATE_PHASES)
+        .values_list("phase", flat=True)
+    ) | set(
         PipelineProcess.objects.filter(status="running").values_list("name", flat=True)
     )
-    blocked_phases = running_phases | adhoc_phases
+
+    running_per_state = set(
+        Job.objects.filter(status="running", phase__in=_PER_STATE_PHASES)
+        .values_list("phase", "state_code")
+    )
 
     qs = (
         Job.objects.filter(status="pending", host=host)
         .filter(Q(depends_on__isnull=True) | Q(depends_on__status="completed"))
         .order_by("created_at")
     )
-    if blocked_phases:
-        qs = qs.exclude(phase__in=blocked_phases)
+    if globally_blocked:
+        qs = qs.exclude(phase__in=globally_blocked)
+
+    if running_per_state:
+        for phase, state_code in running_per_state:
+            qs = qs.exclude(phase=phase, state_code=state_code)
 
     return qs
