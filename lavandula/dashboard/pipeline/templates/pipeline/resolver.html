@@ -38,6 +38,7 @@
           {{ field }}
         </div>
         {% endfor %}
+        {% include "pipeline/partials/_host_selector.html" %}
         <div class="flex gap-2">
           <button type="submit" class="flex-1 bg-green-600 text-white py-2 rounded text-sm hover:bg-green-700">Start Job</button>
         </div>
