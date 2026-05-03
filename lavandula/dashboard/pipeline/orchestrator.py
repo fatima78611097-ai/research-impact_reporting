@@ -189,13 +189,42 @@ def build_argv(phase: str, config_json: dict) -> list[str]:
     return argv
 
 
-def check_phase_conflict(phase: str) -> bool:
-    """Return True if a job or ad-hoc process is already running for this phase."""
-    if Job.objects.filter(phase=phase, status="running").exists():
+_PER_STATE_PHASES = {"resolve", "classify", "enrich-phone", "seed"}
+
+
+def check_phase_conflict(phase: str, state_code: str | None = None) -> bool:
+    """Return True if a conflicting job or ad-hoc process is already running.
+
+    For per-state phases, only conflicts with the same state block.
+    NULL state_code -> global conflict check.
+    """
+    qs = Job.objects.filter(phase=phase, status="running")
+    if state_code and phase in _PER_STATE_PHASES:
+        qs = qs.filter(state_code=state_code)
+    if qs.exists():
         return True
     if PipelineProcess.objects.filter(name=phase, status="running").exists():
         return True
     return False
+
+
+def _validate_host(host: str) -> str:
+    """Validate that host matches an active, non-offline/stale worker."""
+    from .models import Worker
+    try:
+        worker = Worker.objects.get(hostname=host, is_active=True)
+    except Worker.DoesNotExist:
+        raise InvalidParameterError(f"Unknown or inactive host: {host!r}")
+    if worker.status in ("offline", "stale"):
+        raise InvalidParameterError(f"Host {host!r} is {worker.status}")
+    return host
+
+
+def _maybe_validate_host(host: str) -> None:
+    """Validate host if any active workers are registered (skip on fresh install)."""
+    from .models import Worker
+    if Worker.objects.filter(is_active=True).exists():
+        _validate_host(host)
 
 
 def create_state_jobs(
@@ -208,6 +237,7 @@ def create_state_jobs(
 
     Allowed phase combos: ['seed'], ['resolve'], ['seed', 'resolve'].
     """
+    _maybe_validate_host(host)
     valid_combos = [["seed"], ["resolve"], ["seed", "resolve"]]
     if sorted(phases) not in [sorted(c) for c in valid_combos]:
         raise InvalidParameterError(f"Invalid phase combination: {phases}")
@@ -256,6 +286,7 @@ def create_state_jobs(
 
 def create_resolve_job(config_overrides: dict, host: str) -> Job:
     """Create a resolve job. Allows queuing multiple states; blocks duplicates per state."""
+    _maybe_validate_host(host)
     state = config_overrides.get("state")
     with transaction.atomic():
         qs = Job.objects.select_for_update().filter(
@@ -287,6 +318,7 @@ _DEFAULT_ARCHIVE = "s3://lavandula-nonprofit-collaterals"
 
 def create_crawl_job(config_overrides: dict, host: str) -> Job:
     """Create a global crawl job (state_code=NULL, no depends_on)."""
+    _maybe_validate_host(host)
     config_overrides.setdefault("archive", _DEFAULT_ARCHIVE)
     with transaction.atomic():
         existing = (
@@ -311,6 +343,7 @@ def create_crawl_job(config_overrides: dict, host: str) -> Job:
 
 def create_classify_job(config_overrides: dict, host: str) -> Job:
     """Create a classify job, scoped to a state if provided."""
+    _maybe_validate_host(host)
     state = config_overrides.get("state") or None
     with transaction.atomic():
         qs = Job.objects.select_for_update().filter(
@@ -350,6 +383,7 @@ def _990_advisory_lock():
 
 def create_990_index_job(config_overrides: dict, host: str) -> Job:
     """Create a 990-index job. Blocks if any 990-family job is active."""
+    _maybe_validate_host(host)
     state = config_overrides.get("state") or None
     ein = config_overrides.get("ein") or None
     with transaction.atomic():
@@ -377,6 +411,7 @@ def create_990_index_job(config_overrides: dict, host: str) -> Job:
 
 def create_990_parse_job(config_overrides: dict, host: str) -> Job:
     """Create a 990-parse job. Blocks if any 990-family job is active."""
+    _maybe_validate_host(host)
     state = config_overrides.get("state") or None
     ein = config_overrides.get("ein") or None
     with transaction.atomic():
@@ -404,6 +439,7 @@ def create_990_parse_job(config_overrides: dict, host: str) -> Job:
 
 def create_phone_enrich_job(config_overrides: dict, host: str) -> Job:
     """Create a phone enrichment job."""
+    _maybe_validate_host(host)
     state = config_overrides.get("state") or None
     with transaction.atomic():
         existing = (
