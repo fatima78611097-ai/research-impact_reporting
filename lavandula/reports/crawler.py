@@ -569,7 +569,7 @@ def _resolve_archive(parser: argparse.ArgumentParser, args) -> object:
 def fetch_seeds(engine: Engine, state: str | None = None) -> list[tuple[str, str]]:
     """Read (ein, website_url) pairs from `lava_corpus.nonprofits_seed`."""
     sql = (
-        "SELECT ein, website_url FROM lava_corpus.nonprofits "
+        "SELECT ein, website_url FROM lava_corpus.nonprofits_seed "
         " WHERE website_url IS NOT NULL AND website_url <> '' "
         "   AND (resolver_status IS NULL "
         "        OR resolver_status IN ('resolved', 'accepted'))"
