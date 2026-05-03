@@ -40,6 +40,10 @@ urlpatterns = [
     path("process/<str:phase>/start/", views.ProcessStartView.as_view(), name="process_start"),
     path("process/<str:phase>/stop/", views.ProcessStopView.as_view(), name="process_stop"),
 
+    # Workers
+    path("workers/", views.WorkerListView.as_view(), name="worker_list"),
+    path("workers/<int:pk>/edit/", views.WorkerEditView.as_view(), name="worker_edit"),
+
     # Org Browser
     path("orgs/", views.OrgListView.as_view(), name="org_list"),
     path("orgs/<str:pk>/", views.OrgDetailView.as_view(), name="org_detail"),

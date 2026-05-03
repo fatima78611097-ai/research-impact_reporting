@@ -985,6 +985,65 @@ class PhoneEnrichJobCreateView(LoginRequiredMixin, View):
 
 
 # ---------------------------------------------------------------------------
+# Worker Management
+# ---------------------------------------------------------------------------
+
+
+class WorkerListView(LoginRequiredMixin, TemplateView):
+    template_name = "pipeline/workers.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        workers = Worker.objects.all().order_by("-is_active", "hostname")
+        for w in workers:
+            w.active_jobs = Job.objects.filter(
+                host=w.hostname, status__in=["running", "pending"]
+            ).count()
+            w.recent_jobs = Job.objects.filter(
+                host=w.hostname
+            ).order_by("-created_at")[:10]
+            w.phases_display = (w.capabilities or {}).get("phases", [])
+            w.notes_display = (w.capabilities or {}).get("notes", "")
+        ctx["workers"] = workers
+        return ctx
+
+
+class WorkerEditView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        worker = get_object_or_404(Worker, pk=pk)
+        action = request.POST.get("action")
+        if action == "deactivate":
+            worker.is_active = False
+            worker.save(update_fields=["is_active"])
+            _log_audit(request, "worker_deactivate", worker.hostname)
+            messages.success(request, f"Worker {worker.hostname} deactivated")
+        elif action == "reactivate":
+            worker.is_active = True
+            worker.save(update_fields=["is_active"])
+            _log_audit(request, "worker_reactivate", worker.hostname)
+            messages.success(request, f"Worker {worker.hostname} reactivated")
+        elif action == "edit":
+            worker.display_name = request.POST.get("display_name", "").strip()[:100]
+            phases = request.POST.get("phases", "").strip()[:200]
+            caps = worker.capabilities or {}
+            if phases:
+                phase_tokens = [p.strip()[:30] for p in phases.split(",")[:20]]
+                caps["phases"] = phase_tokens
+            else:
+                caps.pop("phases", None)
+            notes = request.POST.get("notes", "").strip()[:500]
+            if notes:
+                caps["notes"] = notes
+            else:
+                caps.pop("notes", None)
+            worker.capabilities = caps
+            worker.save(update_fields=["display_name", "capabilities"])
+            _log_audit(request, "worker_edit", worker.hostname, {"display_name": worker.display_name})
+            messages.success(request, f"Worker {worker.hostname} updated")
+        return redirect("worker_list")
+
+
+# ---------------------------------------------------------------------------
 # Reports Browser
 # ---------------------------------------------------------------------------
 
