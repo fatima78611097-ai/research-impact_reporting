@@ -4,12 +4,14 @@
 
 ## Overview
 
-Implement the multi-host worker system in 5 steps:
+Implement the multi-host worker system in 7 steps:
 1. Worker model + migration
 2. Orchestrator heartbeat + stale detection
-3. Phase conflict relaxation
-4. Dashboard UI (worker panel, host dropdown, host column, remote log message)
-5. `setup_worker` CLI + worker management page
+3. Phase conflict relaxation + host validation
+4. Dashboard visibility (worker panel, host column in job tables)
+5. Host targeting (host dropdown on all queue forms, remote log message)
+6. Worker management page + `setup_worker` CLI
+7. Testing
 
 ## Step 1: Worker Model & Migration
 
@@ -117,11 +119,9 @@ def _signal_handler(self, signum, frame):
         pass
 ```
 
-### 2c. Stale detection (dashboard host only)
+### 2c. Stale detection
 
-Add a `_check_worker_health()` method called from the main loop. Only the dashboard host runs this — determined by checking if this host is the one serving the dashboard (i.e., has the `DASHBOARD_HOST` env var set, or simply: always run it — it's idempotent and cheap).
-
-Simplest approach: **every orchestrator runs stale detection**. It's just two UPDATE queries against the workers table. No harm if multiple hosts check simultaneously.
+Add a `_check_worker_health()` method called from the main loop. The spec says "dashboard-host orchestrator" runs this, but every orchestrator can safely run it — the two UPDATE queries are idempotent and cheap. Multiple hosts checking simultaneously just means the stale transition happens on whichever host's loop fires first. **This is an intentional deviation from the spec for simplicity** — no need for a `DASHBOARD_HOST` env var or per-host flag.
 
 ```python
 HEARTBEAT_STALE_THRESHOLD = 300    # 5 min → stale
@@ -181,6 +181,8 @@ def check_phase_conflict(phase: str, state_code: str | None = None) -> bool:
     return False
 ```
 
+**990 advisory lock**: The 990 conflict check uses `pg_advisory_xact_lock` inside `create_990_index_job` and `create_990_parse_job` (not in `check_phase_conflict`). This is unchanged — the advisory lock prevents duplicate 990 job creation, while `check_phase_conflict` prevents the orchestrator from starting two 990 jobs simultaneously. Both remain global.
+
 ### 3b. Update caller in `run_orchestrator.py`
 
 In `_start_eligible_jobs`:
@@ -224,7 +226,7 @@ This preserves backward compatibility — if the workers table is empty (no orch
 
 **ACs covered**: 25, 26, 27, 28, 29, 41, 42
 
-## Step 4: Dashboard UI Changes
+## Step 4: Dashboard Visibility (Worker Panel + Host Column)
 
 ### 4a. Worker panel in dashboard stats
 
@@ -290,7 +292,42 @@ In `dashboard_stats.html`, add before the "National Ingest Progress" heading:
 {% endif %}
 ```
 
-### 4b. Host dropdown on job queue forms
+### 4b. Host column in job tables
+
+**Files**: `_recent_jobs_table.html`, `views.py` (dashboard stats context, `JobListView`)
+
+In `_recent_jobs_table.html`, add a Host column controlled by `show_host`:
+
+```html
+<!-- In thead -->
+{% if show_host %}<th class="pb-2">Host</th>{% endif %}
+
+<!-- In tbody row -->
+{% if show_host %}
+<td class="py-2 text-gray-500 text-xs">
+  {% if job.host_display_name %}{{ job.host_display_name }}{% else %}{{ job.host|truncatechars:20 }}{% endif %}
+</td>
+{% endif %}
+```
+
+To resolve `host_display_name`, annotate recent_jobs in `_dashboard_stats()` and `JobListView`:
+
+```python
+# After fetching recent_jobs, annotate with worker display names
+worker_names = dict(Worker.objects.filter(is_active=True).values_list("hostname", "display_name"))
+for job in recent_jobs:
+    job.host_display_name = worker_names.get(job.host, "")
+```
+
+Dashboard stats context already has `show_phase: True`. Add `show_host: True` alongside it.
+Also add `show_host: True` to `JobListView.get_context_data`.
+Phase pages do NOT show the host column.
+
+**ACs covered**: 13, 14, 18, 40
+
+## Step 5: Host Targeting (Host Dropdown + Remote Log)
+
+### 5a. Host dropdown on job queue forms
 
 **Files**: `views.py` (all `*JobCreateView` classes + phase view `get_context_data`), all queue form templates
 
@@ -342,15 +379,24 @@ Each queue template adds (inside the existing `<form>`):
 {% endif %}
 ```
 
-Each `*JobCreateView.post()` method reads host:
+Each `*JobCreateView.post()` method reads host and catches validation errors:
 
 ```python
 host = request.POST.get("host", _get_hostname())
+try:
+    job = create_resolve_job(config, host)
+    _log_audit(request, "job_create", "resolve", {"job_id": job.pk, "host": host})
+except InvalidParameterError as exc:
+    messages.error(request, str(exc))
+    return redirect("resolver")
+except DuplicateJobError as exc:
+    messages.error(request, str(exc))
+    return redirect("resolver")
 ```
 
-Replace existing `_get_hostname()` calls with this pattern.
+The existing views already catch `DuplicateJobError` — extend the same pattern to also catch `InvalidParameterError` (which `_validate_host` raises). This ensures the user sees a form error message, not a 500.
 
-Add `host` to audit log entries:
+Add `host` to **all** audit log entries across all create views:
 
 ```python
 _log_audit(request, "job_create", "resolve", {"job_id": job.pk, "host": host})
@@ -365,27 +411,7 @@ _log_audit(request, "job_create", "resolve", {"job_id": job.pk, "host": host})
 - `990_index.html`
 - `990_parse.html`
 
-### 4c. Host column in job tables
-
-**Files**: `_recent_jobs_table.html`, `views.py` (dashboard stats context)
-
-In `_recent_jobs_table.html`, add a Host column controlled by `show_host`:
-
-```html
-<!-- In thead -->
-{% if show_host %}<th class="pb-2">Host</th>{% endif %}
-
-<!-- In tbody row -->
-{% if show_host %}<td class="py-2 text-gray-500 text-xs">{{ job.host|truncatechars:20 }}</td>{% endif %}
-```
-
-Dashboard stats context already has `show_phase: True`. Add `show_host: True` alongside it.
-
-Phase pages do NOT show the host column (they show single-host context).
-
-Also add `show_host: True` to the jobs list page (`JobListView.get_context_data`).
-
-### 4d. Remote log message
+### 5b. Remote log message
 
 **Files**: `views.py` (`JobLogPartial`)
 
@@ -410,11 +436,11 @@ def get(self, request, pk):
     )
 ```
 
-**ACs covered**: 13, 14, 15, 16, 17, 18, 19, 22, 23, 24, 30, 39, 40
+**ACs covered**: 15, 16, 17, 22, 23, 24, 30, 39
 
-## Step 5: Worker Management Page & Setup CLI
+## Step 6: Worker Management Page & Setup CLI
 
-### 5a. Worker management page
+### 6a. Worker management page
 
 **Files**: `views.py`, `urls.py`, `workers.html` (new), `base.html`
 
@@ -492,13 +518,14 @@ Create `workers.html` template showing:
 - Recent 10 jobs per worker (collapsible)
 - "Workers register themselves via `setup_worker` CLI" info text (no create form)
 
-### 5b. `setup_worker` management command
+### 6b. `setup_worker` management command
 
 **Files**: `management/commands/setup_worker.py` (new)
 
 ```python
 import getpass
 import socket
+from pathlib import Path
 
 from django.core.management.base import BaseCommand
 from django.db import connections
@@ -599,38 +626,36 @@ WantedBy=multi-user.target""")
 
 **ACs covered**: 2, 3, 19, 20, 21, 31, 32, 33, 34, 35, 36
 
-## Step 6: Testing
+## Step 7: Testing
 
 ### Unit tests
 
 Add to existing test suite or new `tests/test_workers.py`:
 
 ```python
-# check_phase_conflict per-state
+# --- Phase conflict tests ---
+
 def test_conflict_same_state():
-    # Running resolve for CA → conflict for CA
     Job.objects.create(phase="resolve", state_code="CA", status="running", host="h1")
     assert check_phase_conflict("resolve", "CA") is True
 
 def test_conflict_different_state():
-    # Running resolve for CA → no conflict for NY
     Job.objects.create(phase="resolve", state_code="CA", status="running", host="h1")
     assert check_phase_conflict("resolve", "NY") is False
 
 def test_conflict_null_state_global():
-    # Running resolve for CA → conflict for NULL (global)
     Job.objects.create(phase="resolve", state_code="CA", status="running", host="h1")
     assert check_phase_conflict("resolve", None) is True
 
 def test_conflict_crawl_global():
-    # Crawl is always global
     Job.objects.create(phase="crawl", state_code=None, status="running", host="h1")
     assert check_phase_conflict("crawl", None) is True
 
 def test_conflict_crawl_no_running():
     assert check_phase_conflict("crawl", None) is False
 
-# Worker model
+# --- Worker model tests ---
+
 def test_worker_update_or_create():
     Worker.objects.create(hostname="h1", status="offline")
     Worker.objects.update_or_create(hostname="h1", defaults={"status": "online"})
@@ -643,9 +668,57 @@ def test_worker_soft_delete():
     w.save()
     assert Worker.objects.filter(is_active=True).count() == 0
     assert Worker.objects.filter(hostname="h1").exists()
+
+# --- Worker health transition tests ---
+
+def test_stale_detection():
+    """Online worker with old heartbeat → stale"""
+    Worker.objects.create(hostname="h1", status="online", is_active=True,
+        last_heartbeat=timezone.now() - timedelta(seconds=400))
+    _check_worker_health()  # import from run_orchestrator
+    assert Worker.objects.get(hostname="h1").status == "stale"
+
+def test_offline_detection():
+    """Stale worker with very old heartbeat → offline"""
+    Worker.objects.create(hostname="h1", status="stale", is_active=True,
+        last_heartbeat=timezone.now() - timedelta(seconds=2000))
+    _check_worker_health()
+    assert Worker.objects.get(hostname="h1").status == "offline"
+
+def test_stale_recovery():
+    """Stale worker that heartbeats → online"""
+    Worker.objects.create(hostname="h1", status="stale", is_active=True,
+        last_heartbeat=timezone.now() - timedelta(seconds=400))
+    # Simulate heartbeat resuming
+    Worker.objects.filter(hostname="h1").update(
+        status="online", last_heartbeat=timezone.now())
+    assert Worker.objects.get(hostname="h1").status == "online"
+
+# --- Host validation tests ---
+
+def test_validate_host_unknown():
+    Worker.objects.create(hostname="h1", status="online", is_active=True)
+    with pytest.raises(InvalidParameterError):
+        _validate_host("unknown-host")
+
+def test_validate_host_offline():
+    Worker.objects.create(hostname="h1", status="offline", is_active=True)
+    with pytest.raises(InvalidParameterError):
+        _validate_host("h1")
+
+def test_validate_host_online():
+    Worker.objects.create(hostname="h1", status="online", is_active=True)
+    assert _validate_host("h1") == "h1"
+
+def test_validate_host_skipped_when_no_workers():
+    """When workers table is empty, validation is skipped (fresh install)"""
+    # create_resolve_job should not raise even with unknown host
+    # when no workers exist
+    assert Worker.objects.count() == 0
+    # This is tested at the create_*_job level, not _validate_host directly
 ```
 
-Note: These tests need a test DB. The Job model uses `default` (lava_dashboard) which works with Django's test runner. For the Worker model, same approach — it's a managed model on the default DB.
+Note: These tests need a test DB. The Job model uses `default` (lava_dashboard) which works with Django's test runner. For the Worker model, same approach — it's a managed model on the default DB. Extract `_check_worker_health` logic into a testable function (not buried in the Command class).
 
 **ACs covered**: 37, 38
 
@@ -690,4 +763,5 @@ After implementation, verify on the live system:
 
 ## Consultation Log
 
-(Pending — will be populated after expert review)
+- **Codex plan-review**: REQUEST_CHANGES → addressed (stale detection: documented intentional deviation from spec — all orchestrators run it; form validation: added explicit InvalidParameterError catch in views with messages.error; UI step split: separated into Step 4 visibility + Step 5 targeting; testing: expanded with health transitions, host validation, offline detection; host column display_name: annotate jobs with worker display names)
+- **Claude plan-review**: COMMENT → addressed (form error rendering: explicit try/except in views; 990 conflict: confirmed advisory lock lives in create_*_job, not check_phase_conflict — added note; Path import: fixed in setup_worker; audit log host: explicit "all create views" coverage; stale detection scope: documented as intentional deviation)
