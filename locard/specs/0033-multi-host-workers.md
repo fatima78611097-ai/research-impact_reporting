@@ -98,7 +98,8 @@ On startup: auto-register if no Worker row exists. If one exists (even if `is_ac
 
 The dashboard-host orchestrator checks worker health in its poll loop (no separate cron):
 
-- Workers with `status="online"` and `last_heartbeat` older than `HEARTBEAT_STALE_REMOTE` (300s) → mark `status="stale"`
+- Workers with `status="online"` and `last_heartbeat` older than 300s → mark `status="stale"` (transient blip — dashboard shows warning)
+- Workers with `status="stale"` and `last_heartbeat` older than 1800s (30 min) → mark `status="offline"` (definitely dead)
 - Workers with `status="stale"` that resume heartbeating → auto-recover to `online` (their own heartbeat write sets `status="online"`)
 - Only active workers (`is_active=True`) are checked
 
@@ -226,7 +227,7 @@ Next steps:
   sudo systemctl enable --now lavandula-orchestrator
 ```
 
-The `User` and `WorkingDirectory` are detected from the current process (`os.getlogin()`, `PROJECT_ROOT`), not hardcoded.
+The `User` and `WorkingDirectory` are detected from the current process (`getpass.getuser()`, `PROJECT_ROOT`), not hardcoded. Use `getpass.getuser()` instead of `os.getlogin()` because the latter is unreliable under systemd/cron contexts. If the detected user is `root`, refuse and print an error — running the orchestrator as root is a privilege escalation risk.
 
 ### 6. Phase Conflict Relaxation
 
@@ -247,6 +248,9 @@ def check_phase_conflict(phase: str, state_code: str | None = None) -> bool:
     # NULL state_code → check ALL running jobs for this phase (global conflict)
     if qs.exists():
         return True
+    # Ad-hoc PipelineProcess check remains global — ad-hoc processes don't have
+    # state_code and are being phased out in favor of jobs. A running ad-hoc
+    # process blocks all jobs for that phase regardless of state.
     if PipelineProcess.objects.filter(name=phase, status="running").exists():
         return True
     return False
@@ -301,10 +305,15 @@ No changes to the `jobs` table — `host` field already exists.
 
 ### Security
 
+**Trust model**: This is a single-operator system with 2-4 trusted EC2 instances in the same VPC and AWS account. The trust boundary is DB credentials — any process with RDS credentials can read/write all tables. This is the same trust model as the existing orchestrator; this spec does not expand it. All hosts share the same RDS credentials (via SSM or environment). There is no adversarial threat model between hosts.
+
 - **Worker registration**: Workers register themselves via `setup_worker` CLI, which requires DB credentials — same trust boundary as the orchestrator. The dashboard UI cannot create new workers; it can only edit display_name/capabilities and deactivate.
+- **Dashboard authz**: All dashboard pages (including worker management) are behind `LoginRequiredMixin` — existing Django auth. Single operator, single user account. No role-based access needed.
 - **No new network exposure**: Remote orchestrators connect outbound to RDS. No SSH, no new ports, no message broker. Communication is entirely through the shared database.
-- **Host field validation**: The `host` form field in job queue views must match an active, non-offline worker hostname. Reject with a form validation error for unknown or offline hosts.
-- **Hostname spoofing**: Any process with DB credentials could write a Worker row with any hostname. This is mitigated by the existing trust boundary — DB credentials are only on authorized hosts.
+- **Host field validation**: The `host` form field in job queue views must match an active, non-offline worker hostname. Reject with a form validation error. Additionally, `create_*_job` functions should validate the host parameter against the workers table (defense-in-depth for any future non-view callers).
+- **Hostname spoofing**: Any process with DB credentials could write a Worker row with any hostname. Accepted risk — DB credentials are the trust boundary, and all hosts are operator-controlled.
+- **Audit logging**: All job-targeting decisions are logged via the existing `PipelineAuditLog`. Add the `host` field to audit entries when a job is queued so the operator can see which host was targeted.
+- **Credential lifecycle**: DB credentials are shared across hosts. Decommissioning a host means terminating the instance — AWS security group rules prevent the dead IP from connecting. No per-host credential rotation is needed for this scale. If the number of hosts grows beyond ~5, revisit with per-host DB roles.
 
 ## Acceptance Criteria
 
@@ -409,3 +418,5 @@ No changes to the `jobs` table — `host` field already exists.
 
 - **Codex spec-review**: REQUEST_CHANGES → addressed (stale-job safety: don't auto-fail; worker deletion: soft-delete; host identity: EC2 hostname stability note; dashboard SPOF: documented; host selector edge cases: auto-register + fallback; UI registration: removed; pending duplicates: existing create functions handle this; remote log AC: added; setup command scope: clarified as post-clone verification)
 - **Claude spec-review**: COMMENT → addressed (stale detection failsafe: documented SPOF + acceptable for single-operator; worker deletion: soft-delete with is_active; NULL state conflicts: explicit semantics; _get_hostname sweep: views.py covers all creation paths; unit tests: added for conflict check; capabilities schema: reserved keys documented; setup_worker: print-don't-write + detect user/path; heartbeat shutdown: finally block with timeout; clock skew: noted + NTP; display_name in dropdown: added; host validation error behavior: form validation error)
+- **Codex red-team-spec**: REQUEST_CHANGES → addressed (worker authz: all pages behind LoginRequiredMixin, documented; stale host validation: disabled in dropdown + form validation; PipelineProcess global check: documented as intentional with ad-hoc phase-out note; setup_worker vs auto-registration: both valid paths, documented)
+- **Claude red-team-spec**: REQUEST_CHANGES (2 CRITICAL, 4 HIGH) → addressed. CRITICAL: (1) hostname spoofing — accepted risk, DB credentials are the trust boundary for this single-operator system, documented; (2) form-level validation — added defense-in-depth validation in create_*_job functions. HIGH: (3) dashboard authz — documented LoginRequiredMixin; (4) audit log — added host field to PipelineAuditLog entries; (5) DB credential lifecycle — documented, SG-based decommissioning; (6) PipelineProcess global block — documented as intentional. MEDIUM: os.getlogin() → getpass.getuser(); stale→offline second threshold (1800s) added; setup_worker refuse root user. LOW: accepted as-is (paste leak advisory, heartbeat rate already 10s, Job.host stays string, capabilities keys renamed to "conventional")
