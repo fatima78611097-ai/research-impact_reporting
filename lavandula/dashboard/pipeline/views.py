@@ -32,6 +32,7 @@ from .models import (
     PipelineAuditLog,
     PipelineProcess,
     Report,
+    Worker,
 )
 from .orchestrator import (
     DuplicateJobError,
@@ -129,6 +130,47 @@ def _annotate_recent_jobs(jobs):
     return list(jobs)
 
 
+def _annotate_host_display(jobs):
+    worker_names = dict(
+        Worker.objects.filter(is_active=True).values_list("hostname", "display_name")
+    )
+    for job in jobs:
+        job.host_display_name = worker_names.get(job.host, "")
+    return jobs
+
+
+def _elapsed_since(dt):
+    if not dt:
+        return "never"
+    delta = int((timezone.now() - dt).total_seconds())
+    if delta < 60:
+        return f"{delta}s ago"
+    if delta < 3600:
+        return f"{delta // 60}m ago"
+    return f"{delta // 3600}h ago"
+
+
+def _get_worker_choices():
+    workers = Worker.objects.filter(is_active=True).order_by("hostname")
+    current = _get_hostname()
+    choices = []
+    for w in workers:
+        label = w.display_name or w.hostname
+        if w.hostname == current:
+            label += " (this host)"
+        elif w.status == "online":
+            label += " (online)"
+        else:
+            label += f" ({w.status})"
+        choices.append({
+            "hostname": w.hostname,
+            "label": label,
+            "disabled": w.status in ("offline", "stale"),
+            "selected": w.hostname == current,
+        })
+    return choices
+
+
 # ---------------------------------------------------------------------------
 # Dashboard
 # ---------------------------------------------------------------------------
@@ -213,12 +255,26 @@ def _dashboard_stats():
         row["is_pending"] = row["state"] in pending_states
 
     recent_jobs = _annotate_recent_jobs(Job.objects.order_by("-created_at")[:10])
+    _annotate_host_display(recent_jobs)
+
+    workers_qs = list(
+        Worker.objects.filter(is_active=True)
+        .values("hostname", "display_name", "status", "last_heartbeat", "capabilities")
+    )
+    for w in workers_qs:
+        w["active_jobs"] = Job.objects.filter(
+            host=w["hostname"], status__in=["running", "pending"]
+        ).count()
+        w["phases"] = (w["capabilities"] or {}).get("phases", ["all"])
+        w["last_heartbeat_display"] = _elapsed_since(w["last_heartbeat"]) if w["last_heartbeat"] else "never"
 
     return {
         "state_rows": state_rows,
         "running_jobs": running_jobs,
         "recent_jobs": recent_jobs,
+        "workers": workers_qs,
         "show_phase": True,
+        "show_host": True,
     }
 
 
@@ -240,6 +296,9 @@ class SeederView(LoginRequiredMixin, TemplateView):
             .annotate(count=Count("ein"))
             .order_by("state")
         )
+        workers = _get_worker_choices()
+        ctx["worker_choices"] = workers
+        ctx["show_host_selector"] = len(workers) > 1
         return ctx
 
 
@@ -253,6 +312,7 @@ class JobListView(HtmxLoginRequiredMixin, TemplateView):
         ctx["history_jobs"] = Job.objects.filter(
             status__in=["completed", "failed", "cancelled"]
         ).order_by("-finished_at")[:50]
+        ctx["show_host"] = True
         return ctx
 
 
@@ -280,11 +340,12 @@ class JobCreateView(LoginRequiredMixin, View):
         phases = form.cleaned_data["phases"]
         config = {k: v for k, v in form.cleaned_data.items() if k not in ("state_codes", "phases") and v not in (None, "", False)}
         config = _expand_llm_preset(config)
+        host = request.POST.get("host", _get_hostname())
 
         try:
-            jobs = create_state_jobs(state_codes, phases, config, _get_hostname())
+            jobs = create_state_jobs(state_codes, phases, config, host)
             _log_audit(request, "job_create", "state_jobs", {
-                "states": state_codes, "phases": phases, "job_ids": [j.pk for j in jobs]
+                "states": state_codes, "phases": phases, "job_ids": [j.pk for j in jobs], "host": host,
             })
             messages.success(request, f"Created {len(jobs)} job(s)")
         except DuplicateJobError as e:
@@ -306,11 +367,12 @@ class CrawlJobCreateView(LoginRequiredMixin, View):
         config = {k: v for k, v in form.cleaned_data.items() if v not in (None, "", False)}
         if "async_mode" in config:
             config["async"] = config.pop("async_mode")
+        host = request.POST.get("host", _get_hostname())
         try:
-            job = create_crawl_job(config, _get_hostname())
-            _log_audit(request, "job_create", "crawl", {"job_id": job.pk})
+            job = create_crawl_job(config, host)
+            _log_audit(request, "job_create", "crawl", {"job_id": job.pk, "host": host})
             messages.success(request, f"Created crawl job #{job.pk}")
-        except DuplicateJobError as e:
+        except (DuplicateJobError, InvalidParameterError) as e:
             messages.error(request, str(e))
 
         return redirect("crawler")
@@ -326,14 +388,14 @@ class ResolveJobCreateView(LoginRequiredMixin, View):
 
         config = {k: v for k, v in form.cleaned_data.items() if v not in (None, "", False)}
         config = _expand_llm_preset(config)
-        # Map form search_engines value: "brave_google" → "brave,google"
         raw_engines = config.get("search_engines", "brave")
         config["search_engines"] = raw_engines.replace("_", ",")
+        host = request.POST.get("host", _get_hostname())
         try:
-            job = create_resolve_job(config, _get_hostname())
-            _log_audit(request, "job_create", "resolve", {"job_id": job.pk})
+            job = create_resolve_job(config, host)
+            _log_audit(request, "job_create", "resolve", {"job_id": job.pk, "host": host})
             messages.success(request, f"Created resolve job #{job.pk}")
-        except DuplicateJobError as e:
+        except (DuplicateJobError, InvalidParameterError) as e:
             messages.error(request, str(e))
 
         return redirect("resolver")
@@ -349,11 +411,12 @@ class ClassifyJobCreateView(LoginRequiredMixin, View):
 
         config = {k: v for k, v in form.cleaned_data.items() if v not in (None, "", False)}
         config = _expand_llm_preset(config)
+        host = request.POST.get("host", _get_hostname())
         try:
-            job = create_classify_job(config, _get_hostname())
-            _log_audit(request, "job_create", "classify", {"job_id": job.pk})
+            job = create_classify_job(config, host)
+            _log_audit(request, "job_create", "classify", {"job_id": job.pk, "host": host})
             messages.success(request, f"Created classify job #{job.pk}")
-        except DuplicateJobError as e:
+        except (DuplicateJobError, InvalidParameterError) as e:
             messages.error(request, str(e))
 
         return redirect("classifier")
@@ -394,9 +457,19 @@ class JobProgressPartial(HtmxLoginRequiredMixin, TemplateView):
 
 class JobLogPartial(HtmxLoginRequiredMixin, View):
     def get(self, request, pk):
+        from pathlib import Path
         job = get_object_or_404(Job, pk=pk)
+        current_host = _get_hostname()
+
+        if job.host and job.host != current_host:
+            if not job.log_file or not Path(job.log_file).exists():
+                return HttpResponse(
+                    f'<pre class="text-xs bg-gray-900 text-yellow-400 p-4 rounded">'
+                    f'Log file is on remote host: {_escape(job.host)}\n'
+                    f'Path: {_escape(job.log_file or "unknown")}</pre>'
+                )
+
         content = read_log_tail(job.log_file)
-        from django.http import HttpResponse
         return HttpResponse(
             f'<pre class="text-xs bg-gray-900 text-green-400 p-4 rounded overflow-auto max-h-96">{_escape(content)}</pre>'
         )
@@ -471,6 +544,9 @@ class ResolverView(LoginRequiredMixin, TemplateView):
         ctx["resolve_stats"] = resolve_stats
         from .forms import ResolverForm
         ctx["form"] = ResolverForm()
+        workers = _get_worker_choices()
+        ctx["worker_choices"] = workers
+        ctx["show_host_selector"] = len(workers) > 1
         return ctx
 
 
@@ -511,6 +587,9 @@ class CrawlerView(LoginRequiredMixin, TemplateView):
         from .forms import CrawlerForm, RunCrawlForm
         ctx["form"] = CrawlerForm()
         ctx["crawl_job_form"] = RunCrawlForm()
+        workers = _get_worker_choices()
+        ctx["worker_choices"] = workers
+        ctx["show_host_selector"] = len(workers) > 1
         return ctx
 
 
@@ -550,6 +629,9 @@ class ClassifierView(LoginRequiredMixin, TemplateView):
         ctx["classify_stats"] = classify_stats
         from .forms import ClassifierForm
         ctx["form"] = ClassifierForm()
+        workers = _get_worker_choices()
+        ctx["worker_choices"] = workers
+        ctx["show_host_selector"] = len(workers) > 1
         return ctx
 
 
@@ -721,6 +803,9 @@ class EnrichIndexView(LoginRequiredMixin, TemplateView):
         )
         from .forms import EnrichIndexForm
         ctx["form"] = EnrichIndexForm()
+        workers = _get_worker_choices()
+        ctx["worker_choices"] = workers
+        ctx["show_host_selector"] = len(workers) > 1
 
         qs = FilingIndex.objects.using("pipeline").all()
         ein = self.request.GET.get("ein")
@@ -758,11 +843,12 @@ class EnrichIndexJobCreateView(LoginRequiredMixin, View):
             return redirect("enrich_index")
 
         config = {k: v for k, v in form.cleaned_data.items() if v not in (None, "", False)}
+        host = request.POST.get("host", _get_hostname())
         try:
-            job = create_990_index_job(config, _get_hostname())
-            _log_audit(request, "job_create", "990-index", {"job_id": job.pk})
+            job = create_990_index_job(config, host)
+            _log_audit(request, "job_create", "990-index", {"job_id": job.pk, "host": host})
             messages.success(request, f"Created 990 index job #{job.pk}")
-        except DuplicateJobError as e:
+        except (DuplicateJobError, InvalidParameterError) as e:
             messages.error(request, str(e))
 
         params = {}
@@ -789,6 +875,9 @@ class EnrichParseView(LoginRequiredMixin, TemplateView):
         )
         from .forms import EnrichParseForm
         ctx["form"] = EnrichParseForm()
+        workers = _get_worker_choices()
+        ctx["worker_choices"] = workers
+        ctx["show_host_selector"] = len(workers) > 1
 
         qs = FilingIndex.objects.using("pipeline").all()
         ein = self.request.GET.get("ein")
@@ -814,11 +903,12 @@ class EnrichParseJobCreateView(LoginRequiredMixin, View):
             return redirect("enrich_parse")
 
         config = {k: v for k, v in form.cleaned_data.items() if v not in (None, "", False)}
+        host = request.POST.get("host", _get_hostname())
         try:
-            job = create_990_parse_job(config, _get_hostname())
-            _log_audit(request, "job_create", "990-parse", {"job_id": job.pk})
+            job = create_990_parse_job(config, host)
+            _log_audit(request, "job_create", "990-parse", {"job_id": job.pk, "host": host})
             messages.success(request, f"Created 990 parse job #{job.pk}")
-        except DuplicateJobError as e:
+        except (DuplicateJobError, InvalidParameterError) as e:
             messages.error(request, str(e))
 
         params = {}
@@ -847,6 +937,9 @@ class PhoneEnrichView(LoginRequiredMixin, TemplateView):
         ctx["pending_job"] = Job.objects.filter(phase="enrich-phone", status="pending").first()
         from .forms import PhoneEnrichForm
         ctx["form"] = PhoneEnrichForm()
+        workers = _get_worker_choices()
+        ctx["worker_choices"] = workers
+        ctx["show_host_selector"] = len(workers) > 1
         ctx["phone_count"] = NonprofitSeed.objects.exclude(phone__isnull=True).exclude(phone="").count()
         ctx["resolved_no_phone"] = NonprofitSeed.objects.filter(
             resolver_status="resolved", phone__isnull=True,
@@ -880,14 +973,74 @@ class PhoneEnrichJobCreateView(LoginRequiredMixin, View):
         config = {k: v for k, v in form.cleaned_data.items() if v not in (None, "", False)}
         raw_engines = config.get("search_engines", "brave")
         config["search_engines"] = raw_engines.replace("_", ",")
+        host = request.POST.get("host", _get_hostname())
         try:
-            job = create_phone_enrich_job(config, _get_hostname())
-            _log_audit(request, "job_create", "enrich-phone", {"job_id": job.pk})
+            job = create_phone_enrich_job(config, host)
+            _log_audit(request, "job_create", "enrich-phone", {"job_id": job.pk, "host": host})
             messages.success(request, f"Created phone enrich job #{job.pk}")
-        except DuplicateJobError as e:
+        except (DuplicateJobError, InvalidParameterError) as e:
             messages.error(request, str(e))
 
         return redirect("phone_enrich")
+
+
+# ---------------------------------------------------------------------------
+# Worker Management
+# ---------------------------------------------------------------------------
+
+
+class WorkerListView(LoginRequiredMixin, TemplateView):
+    template_name = "pipeline/workers.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        workers = Worker.objects.all().order_by("-is_active", "hostname")
+        for w in workers:
+            w.active_jobs = Job.objects.filter(
+                host=w.hostname, status__in=["running", "pending"]
+            ).count()
+            w.recent_jobs = Job.objects.filter(
+                host=w.hostname
+            ).order_by("-created_at")[:10]
+            w.phases_display = (w.capabilities or {}).get("phases", [])
+            w.notes_display = (w.capabilities or {}).get("notes", "")
+        ctx["workers"] = workers
+        return ctx
+
+
+class WorkerEditView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        worker = get_object_or_404(Worker, pk=pk)
+        action = request.POST.get("action")
+        if action == "deactivate":
+            worker.is_active = False
+            worker.save(update_fields=["is_active"])
+            _log_audit(request, "worker_deactivate", worker.hostname)
+            messages.success(request, f"Worker {worker.hostname} deactivated")
+        elif action == "reactivate":
+            worker.is_active = True
+            worker.save(update_fields=["is_active"])
+            _log_audit(request, "worker_reactivate", worker.hostname)
+            messages.success(request, f"Worker {worker.hostname} reactivated")
+        elif action == "edit":
+            worker.display_name = request.POST.get("display_name", "").strip()[:100]
+            phases = request.POST.get("phases", "").strip()[:200]
+            caps = worker.capabilities or {}
+            if phases:
+                phase_tokens = [p.strip()[:30] for p in phases.split(",")[:20]]
+                caps["phases"] = phase_tokens
+            else:
+                caps.pop("phases", None)
+            notes = request.POST.get("notes", "").strip()[:500]
+            if notes:
+                caps["notes"] = notes
+            else:
+                caps.pop("notes", None)
+            worker.capabilities = caps
+            worker.save(update_fields=["display_name", "capabilities"])
+            _log_audit(request, "worker_edit", worker.hostname, {"display_name": worker.display_name})
+            messages.success(request, f"Worker {worker.hostname} updated")
+        return redirect("worker_list")
 
 
 # ---------------------------------------------------------------------------

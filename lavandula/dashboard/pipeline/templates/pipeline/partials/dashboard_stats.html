@@ -1,5 +1,42 @@
 {% load humanize pipeline_tags %}
 
+{% if workers %}
+<div class="mb-6">
+  <h2 class="text-lg font-semibold text-gray-900 mb-3">Workers</h2>
+  <div class="overflow-x-auto">
+    <table class="min-w-full text-sm">
+      <thead class="bg-gray-100">
+        <tr>
+          <th class="px-3 py-2 text-left">Host</th>
+          <th class="px-3 py-2 text-center">Status</th>
+          <th class="px-3 py-2 text-right">Last Seen</th>
+          <th class="px-3 py-2 text-right">Active</th>
+          <th class="px-3 py-2 text-left">Phases</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for w in workers %}
+        <tr class="border-b">
+          <td class="px-3 py-2 font-medium">
+            {% if w.display_name %}{{ w.display_name }} <span class="text-gray-400 text-xs">({{ w.hostname }})</span>
+            {% else %}{{ w.hostname }}{% endif %}
+          </td>
+          <td class="px-3 py-2 text-center">
+            {% if w.status == "online" %}<span class="inline-block w-2.5 h-2.5 rounded-full bg-green-500" title="Online"></span>
+            {% elif w.status == "stale" %}<span class="inline-block w-2.5 h-2.5 rounded-full bg-yellow-500" title="Stale"></span>
+            {% else %}<span class="inline-block w-2.5 h-2.5 rounded-full bg-red-500" title="Offline"></span>{% endif %}
+          </td>
+          <td class="px-3 py-2 text-right text-gray-500">{{ w.last_heartbeat_display }}</td>
+          <td class="px-3 py-2 text-right">{{ w.active_jobs }} job{{ w.active_jobs|pluralize }}</td>
+          <td class="px-3 py-2 text-gray-500">{{ w.phases|join:", " }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
 {% if running_jobs %}
 <div class="mb-6">
   <h2 class="text-lg font-semibold text-gray-900 mb-3">Running Jobs</h2>

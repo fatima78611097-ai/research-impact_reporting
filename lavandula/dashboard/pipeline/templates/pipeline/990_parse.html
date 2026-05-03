@@ -43,6 +43,7 @@
           {{ field }}
         </div>
         {% endfor %}
+        {% include "pipeline/partials/_host_selector.html" %}
         <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded text-sm hover:bg-blue-700">Queue Parse Job</button>
       </form>
     </div>

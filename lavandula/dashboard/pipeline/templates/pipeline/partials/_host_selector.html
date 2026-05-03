@@ -1,0 +1,10 @@
+{% if show_host_selector %}
+<div class="mb-4">
+  <label class="block text-sm font-medium text-gray-700 mb-1">Host</label>
+  <select name="host" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+    {% for w in worker_choices %}
+    <option value="{{ w.hostname }}" {% if w.selected %}selected{% endif %} {% if w.disabled %}disabled{% endif %}>{{ w.label }}</option>
+    {% endfor %}
+  </select>
+</div>
+{% endif %}

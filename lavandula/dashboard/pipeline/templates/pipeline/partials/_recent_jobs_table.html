@@ -4,7 +4,9 @@
     <thead><tr class="text-left text-gray-500 border-b">
       <th class="pb-2">ID</th>
       {% if show_phase %}<th class="pb-2">Phase</th>{% endif %}
-      <th class="pb-2">State</th><th class="pb-2">Status</th><th class="pb-2">Exit</th><th class="pb-2">Progress</th><th class="pb-2">Duration</th><th class="pb-2">Created</th>
+      <th class="pb-2">State</th>
+      {% if show_host %}<th class="pb-2">Host</th>{% endif %}
+      <th class="pb-2">Status</th><th class="pb-2">Exit</th><th class="pb-2">Progress</th><th class="pb-2">Duration</th><th class="pb-2">Created</th>
     </tr></thead>
     <tbody>
       {% for job in recent_jobs %}
@@ -12,6 +14,11 @@
         <td class="py-2"><a href="{% url 'job_detail' job.pk %}" class="text-blue-600 hover:underline">#{{ job.pk }}</a></td>
         {% if show_phase %}<td class="py-2">{{ job.phase }}</td>{% endif %}
         <td class="py-2">{{ job.state_code|default:"—" }}</td>
+        {% if show_host %}
+        <td class="py-2 text-gray-500 text-xs">
+          {% if job.host_display_name %}{{ job.host_display_name }}{% else %}{{ job.host|truncatechars:20 }}{% endif %}
+        </td>
+        {% endif %}
         <td class="py-2">
           {% if job.status == "running" %}<span class="text-blue-600">Running</span>
           {% elif job.status == "completed" %}<span class="text-green-600">Completed</span>
@@ -25,7 +32,7 @@
         <td class="py-2 text-gray-500 text-xs">{{ job.created_at|timesince }} ago</td>
       </tr>
       {% empty %}
-      <tr><td colspan="{% if show_phase %}8{% else %}7{% endif %}" class="px-2 py-4 text-center text-gray-400">No jobs yet</td></tr>
+      <tr><td colspan="{% if show_phase and show_host %}9{% elif show_phase or show_host %}8{% else %}7{% endif %}" class="px-2 py-4 text-center text-gray-400">No jobs yet</td></tr>
       {% endfor %}
     </tbody>
   </table>

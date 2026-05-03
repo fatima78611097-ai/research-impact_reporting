@@ -200,6 +200,29 @@ class Job(models.Model):
         return f"Job {self.pk}: {self.phase} ({state}) [{self.status}]"
 
 
+class Worker(models.Model):
+    STATUS_CHOICES = [
+        ("online", "Online"),
+        ("offline", "Offline"),
+        ("stale", "Stale"),
+    ]
+    hostname = models.CharField(max_length=100, unique=True)
+    display_name = models.CharField(max_length=100, blank=True, default="")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="offline")
+    capabilities = models.JSONField(default=dict, blank=True)
+    last_heartbeat = models.DateTimeField(null=True, blank=True)
+    registered_at = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = "workers"
+
+    def __str__(self):
+        name = self.display_name or self.hostname
+        return f"{name} ({self.status})"
+
+
 class PipelineProcess(models.Model):
     STATUS_CHOICES = [
         ("running", "Running"),
