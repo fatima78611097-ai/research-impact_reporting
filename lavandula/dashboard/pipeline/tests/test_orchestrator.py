@@ -191,7 +191,22 @@ class GetEligibleJobsTest(TestCase):
         eligible = get_eligible_jobs("localhost")
         self.assertEqual(eligible.count(), 1)
 
-    def test_running_phase_blocks(self):
+    def test_running_same_state_blocks(self):
+        Job.objects.create(
+            state_code="NY", phase="seed", status="running", host="localhost"
+        )
+        Job.objects.create(
+            state_code="NY", phase="resolve", status="pending", host="localhost"
+        )
+        Job.objects.create(
+            state_code="NY", phase="crawl", status="pending", host="localhost"
+        )
+        eligible = get_eligible_jobs("localhost")
+        phases = set(eligible.values_list("phase", flat=True))
+        self.assertIn("resolve", phases)
+        self.assertIn("crawl", phases)
+
+    def test_running_different_state_allowed(self):
         Job.objects.create(
             state_code="NY", phase="seed", status="running", host="localhost"
         )
@@ -199,7 +214,7 @@ class GetEligibleJobsTest(TestCase):
             state_code="MA", phase="seed", status="pending", host="localhost"
         )
         eligible = get_eligible_jobs("localhost")
-        self.assertEqual(eligible.count(), 0)
+        self.assertEqual(eligible.count(), 1)
 
     def test_different_host_not_eligible(self):
         Job.objects.create(

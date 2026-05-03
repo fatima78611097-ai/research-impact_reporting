@@ -94,6 +94,11 @@ class RunStateForm(forms.Form):
 
 
 class RunCrawlForm(forms.Form):
+    state = forms.ChoiceField(
+        choices=[("", "— All states —")] + STATE_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={"class": _SELECT}),
+    )
     archive = forms.CharField(required=False, widget=forms.TextInput(
         attrs={"class": "w-full border border-gray-300 rounded px-3 py-2", "placeholder": "s3://bucket/path"}
     ))

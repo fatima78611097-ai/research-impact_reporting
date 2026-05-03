@@ -566,15 +566,20 @@ def _resolve_archive(parser: argparse.ArgumentParser, args) -> object:
     return _archive.LocalArchive(p)
 
 
-def fetch_seeds(engine: Engine) -> list[tuple[str, str]]:
+def fetch_seeds(engine: Engine, state: str | None = None) -> list[tuple[str, str]]:
     """Read (ein, website_url) pairs from `lava_corpus.nonprofits_seed`."""
+    sql = (
+        "SELECT ein, website_url FROM lava_corpus.nonprofits "
+        " WHERE website_url IS NOT NULL AND website_url <> '' "
+        "   AND (resolver_status IS NULL "
+        "        OR resolver_status IN ('resolved', 'accepted'))"
+    )
+    params = {}
+    if state:
+        sql += " AND state = :state"
+        params["state"] = state
     with engine.connect() as conn:
-        rows = conn.execute(text(
-            "SELECT ein, website_url FROM lava_corpus.nonprofits "
-            " WHERE website_url IS NOT NULL AND website_url <> '' "
-            "   AND (resolver_status IS NULL "
-            "        OR resolver_status IN ('resolved', 'accepted'))"
-        )).fetchall()
+        rows = conn.execute(text(sql), params).fetchall()
     return [(r[0], r[1]) for r in rows]
 
 
@@ -611,6 +616,8 @@ def run(argv: list[str] | None = None) -> int:
                         help="(async only) Max concurrent org workers. Default 200.")
     parser.add_argument("--max-download-workers", type=int, default=20,
                         help="(async only) Max concurrent download workers. Default 20.")
+    parser.add_argument("--state", type=str, default=None,
+                        help="Limit crawl to a single state (e.g. CA, NY)")
     parser.add_argument("--no-wayback", action="store_true",
                         help="Disable Wayback CDX fallback (spec 0022 kill-switch)")
     args = parser.parse_args(argv)
@@ -682,7 +689,9 @@ def run(argv: list[str] | None = None) -> int:
                     return 1
                 logger.info("single-org mode: ein=%s url=%s", args.ein, seeds[0][1])
             else:
-                seeds = fetch_seeds(engine)
+                seeds = fetch_seeds(engine, state=args.state)
+                if args.state:
+                    logger.info("state filter: %s (%d orgs)", args.state, len(seeds))
 
             validated: list[tuple[str, str]] = []
             for ein, website in seeds:

@@ -59,6 +59,7 @@ COMMAND_MAP: dict[str, dict[str, Any]] = {
             "max_concurrent_orgs": {"type": "int", "min": 1, "max": 500, "flag": "--max-concurrent-orgs"},
             "max_download_workers": {"type": "int", "min": 1, "max": 100, "flag": "--max-download-workers"},
             "skip_encryption_check": {"type": "bool", "flag": "--skip-encryption-check"},
+            "state": {"type": "text", "pattern": r"^[A-Z]{2}$", "flag": "--state"},
         },
     },
     "classify": {
@@ -189,7 +190,7 @@ def build_argv(phase: str, config_json: dict) -> list[str]:
     return argv
 
 
-_PER_STATE_PHASES = {"resolve", "classify", "enrich-phone", "seed"}
+_PER_STATE_PHASES = {"resolve", "classify", "enrich-phone", "seed", "crawl"}
 
 
 def check_phase_conflict(phase: str, state_code: str | None = None) -> bool:
@@ -317,21 +318,26 @@ _DEFAULT_ARCHIVE = "s3://lavandula-nonprofit-collaterals"
 
 
 def create_crawl_job(config_overrides: dict, host: str) -> Job:
-    """Create a global crawl job (state_code=NULL, no depends_on)."""
+    """Create a crawl job, scoped to a state if provided."""
     _maybe_validate_host(host)
     config_overrides.setdefault("archive", _DEFAULT_ARCHIVE)
+    state = config_overrides.get("state") or None
     with transaction.atomic():
-        existing = (
-            Job.objects.select_for_update()
-            .filter(state_code__isnull=True, phase="crawl", status__in=["pending", "running"])
-            .first()
+        qs = Job.objects.select_for_update().filter(
+            phase="crawl", status__in=["pending", "running"],
         )
+        if state:
+            qs = qs.filter(state_code=state)
+        else:
+            qs = qs.filter(state_code__isnull=True)
+        existing = qs.first()
         if existing:
-            raise DuplicateJobError(f"Active crawl job already exists: Job #{existing.pk}")
+            label = state or "global"
+            raise DuplicateJobError(f"Active crawl job already exists for {label}: Job #{existing.pk}")
 
         try:
             return Job.objects.create(
-                state_code=None,
+                state_code=state,
                 phase="crawl",
                 status="pending",
                 host=host,
