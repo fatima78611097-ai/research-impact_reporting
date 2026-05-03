@@ -32,6 +32,7 @@ from .models import (
     PipelineAuditLog,
     PipelineProcess,
     Report,
+    Worker,
 )
 from .orchestrator import (
     DuplicateJobError,
@@ -129,6 +130,47 @@ def _annotate_recent_jobs(jobs):
     return list(jobs)
 
 
+def _annotate_host_display(jobs):
+    worker_names = dict(
+        Worker.objects.filter(is_active=True).values_list("hostname", "display_name")
+    )
+    for job in jobs:
+        job.host_display_name = worker_names.get(job.host, "")
+    return jobs
+
+
+def _elapsed_since(dt):
+    if not dt:
+        return "never"
+    delta = int((timezone.now() - dt).total_seconds())
+    if delta < 60:
+        return f"{delta}s ago"
+    if delta < 3600:
+        return f"{delta // 60}m ago"
+    return f"{delta // 3600}h ago"
+
+
+def _get_worker_choices():
+    workers = Worker.objects.filter(is_active=True).order_by("hostname")
+    current = _get_hostname()
+    choices = []
+    for w in workers:
+        label = w.display_name or w.hostname
+        if w.hostname == current:
+            label += " (this host)"
+        elif w.status == "online":
+            label += " (online)"
+        else:
+            label += f" ({w.status})"
+        choices.append({
+            "hostname": w.hostname,
+            "label": label,
+            "disabled": w.status in ("offline", "stale"),
+            "selected": w.hostname == current,
+        })
+    return choices
+
+
 # ---------------------------------------------------------------------------
 # Dashboard
 # ---------------------------------------------------------------------------
@@ -213,12 +255,26 @@ def _dashboard_stats():
         row["is_pending"] = row["state"] in pending_states
 
     recent_jobs = _annotate_recent_jobs(Job.objects.order_by("-created_at")[:10])
+    _annotate_host_display(recent_jobs)
+
+    workers_qs = list(
+        Worker.objects.filter(is_active=True)
+        .values("hostname", "display_name", "status", "last_heartbeat", "capabilities")
+    )
+    for w in workers_qs:
+        w["active_jobs"] = Job.objects.filter(
+            host=w["hostname"], status__in=["running", "pending"]
+        ).count()
+        w["phases"] = (w["capabilities"] or {}).get("phases", ["all"])
+        w["last_heartbeat_display"] = _elapsed_since(w["last_heartbeat"]) if w["last_heartbeat"] else "never"
 
     return {
         "state_rows": state_rows,
         "running_jobs": running_jobs,
         "recent_jobs": recent_jobs,
+        "workers": workers_qs,
         "show_phase": True,
+        "show_host": True,
     }
 
 
@@ -253,6 +309,7 @@ class JobListView(HtmxLoginRequiredMixin, TemplateView):
         ctx["history_jobs"] = Job.objects.filter(
             status__in=["completed", "failed", "cancelled"]
         ).order_by("-finished_at")[:50]
+        ctx["show_host"] = True
         return ctx
 
 
