@@ -10,7 +10,7 @@ import time
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from pipeline.models import CrawledOrg, Job, NonprofitSeed, Report
+from pipeline.models import CrawledOrg, Job, NonprofitSeed, Report, Worker
 from pipeline.orchestrator import (
     LOG_DIR,
     PROJECT_ROOT,
@@ -20,8 +20,8 @@ from pipeline.orchestrator import (
 )
 
 POLL_INTERVAL = 10
-HEARTBEAT_STALE_LOCAL = 120
-HEARTBEAT_STALE_REMOTE = 300
+HEARTBEAT_STALE_THRESHOLD = 300
+HEARTBEAT_OFFLINE_THRESHOLD = 1800
 
 
 class Command(BaseCommand):
@@ -40,6 +40,7 @@ class Command(BaseCommand):
 
         LOG_DIR.mkdir(parents=True, exist_ok=True)
 
+        self._register_worker()
         self._recover_orphaned_jobs()
 
         self._tracked: dict[int, subprocess.Popen] = {}
@@ -47,12 +48,72 @@ class Command(BaseCommand):
         while not self._shutdown:
             self._poll_running_jobs()
             self._start_eligible_jobs()
+            self._update_worker_heartbeat()
+            self._check_worker_health()
             time.sleep(POLL_INTERVAL)
 
+        self._shutdown_worker()
         self.stdout.write("Orchestrator shutting down")
 
     def _signal_handler(self, signum, frame):
         self._shutdown = True
+
+    def _register_worker(self):
+        Worker.objects.update_or_create(
+            hostname=self.hostname,
+            defaults={
+                "status": "online",
+                "last_heartbeat": timezone.now(),
+                "ip_address": self._get_local_ip(),
+                "is_active": True,
+            },
+        )
+        self.stdout.write(f"Worker registered: {self.hostname}")
+
+    def _update_worker_heartbeat(self):
+        try:
+            Worker.objects.filter(hostname=self.hostname).update(
+                status="online",
+                last_heartbeat=timezone.now(),
+            )
+        except Exception:
+            pass
+
+    def _shutdown_worker(self):
+        try:
+            Worker.objects.filter(hostname=self.hostname).update(status="offline")
+        except Exception:
+            pass
+
+    def _check_worker_health(self):
+        from datetime import timedelta
+        now = timezone.now()
+        stale_cutoff = now - timedelta(seconds=HEARTBEAT_STALE_THRESHOLD)
+        offline_cutoff = now - timedelta(seconds=HEARTBEAT_OFFLINE_THRESHOLD)
+
+        Worker.objects.filter(
+            is_active=True,
+            status="stale",
+            last_heartbeat__lt=offline_cutoff,
+        ).update(status="offline")
+
+        Worker.objects.filter(
+            is_active=True,
+            status="online",
+            last_heartbeat__lt=stale_cutoff,
+        ).update(status="stale")
+
+    @staticmethod
+    def _get_local_ip():
+        try:
+            import socket as _socket
+            s = _socket.socket(_socket.AF_INET, _socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            ip = s.getsockname()[0]
+            s.close()
+            return ip
+        except Exception:
+            return None
 
     def _recover_orphaned_jobs(self):
         """On startup, mark dead running jobs as failed."""
@@ -92,7 +153,7 @@ class Command(BaseCommand):
         """Pick and start the next eligible job."""
         eligible = get_eligible_jobs(self.hostname)
         for job in eligible[:3]:
-            if check_phase_conflict(job.phase):
+            if check_phase_conflict(job.phase, job.state_code):
                 continue
             self._launch_job(job)
 
