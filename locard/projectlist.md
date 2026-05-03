@@ -529,7 +529,7 @@ projects:
   - id: "0033"
     title: "Multi-Host Job Distribution & Remote Workers"
     summary: "Extend the existing host-aware job queue into a fully operational multi-host system: host registry with capability tags, dashboard UI for targeting remote hosts, orchestrator heartbeat/health monitoring, and automated work distribution across hosts for national-scale ingest."
-    status: implementing
+    status: committed
     priority: high
     files:
       spec: locard/specs/0033-multi-host-workers.md
@@ -537,7 +537,7 @@ projects:
       review: null
     dependencies: ["0019", "0032"]
     tags: [infrastructure, orchestration, multi-host, national-scale, operations]
-    notes: "Motivated by national ingest bottleneck shifting from API rate limits to ops throughput. Job model already has host field, orchestrator already filters by hostname. Need registry, health, UI routing, and auto-distribution. Spec approved 2026-05-03. Plan approved 2026-05-03. Builder spawned 2026-05-03."
+    notes: "Motivated by national ingest bottleneck shifting from API rate limits to ops throughput. Job model already has host field, orchestrator already filters by hostname. Need registry, health, UI routing, and auto-distribution. Spec approved 2026-05-03. Plan approved 2026-05-03. PR #28 merged 2026-05-03. 20 files, +890/-32. Awaiting operator: Django migration + gunicorn reload + setup_worker on each host."
 
 ## Next Available Number
 
