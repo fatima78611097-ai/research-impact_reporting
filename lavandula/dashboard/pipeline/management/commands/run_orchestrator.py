@@ -212,13 +212,31 @@ class Command(BaseCommand):
         job.finished_at = timezone.now()
         if exit_code != 0:
             job.error_message = f"Process exited with code {exit_code}"
-        self._save_with_retry(job, ["status", "exit_code", "finished_at", "error_message"])
+        if job.log_file:
+            try:
+                with open(job.log_file, "rb") as f:
+                    f.seek(0, 2)
+                    size = f.tell()
+                    f.seek(max(0, size - 16_384))
+                    job.log_tail = f.read().decode("utf-8", errors="replace")[-16_384:]
+            except OSError:
+                pass
+        self._save_with_retry(job, ["status", "exit_code", "finished_at", "error_message", "log_tail"])
         self.stdout.write(f"Job #{job.pk} finished: {job.status} (exit {exit_code})")
 
     def _update_heartbeat(self, job: Job):
         job.last_heartbeat = timezone.now()
+        if job.log_file:
+            try:
+                with open(job.log_file, "rb") as f:
+                    f.seek(0, 2)
+                    size = f.tell()
+                    f.seek(max(0, size - 16_384))
+                    job.log_tail = f.read().decode("utf-8", errors="replace")[-16_384:]
+            except OSError:
+                pass
         try:
-            job.save(update_fields=["last_heartbeat"])
+            job.save(update_fields=["last_heartbeat", "log_tail"])
         except Exception:
             pass
 

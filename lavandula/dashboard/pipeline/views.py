@@ -463,6 +463,10 @@ class JobLogPartial(HtmxLoginRequiredMixin, View):
 
         if job.host and job.host != current_host:
             if not job.log_file or not Path(job.log_file).exists():
+                if job.log_tail:
+                    return HttpResponse(
+                        f'<pre class="text-xs bg-gray-900 text-green-400 p-4 rounded overflow-auto max-h-96">{_escape(job.log_tail)}</pre>'
+                    )
                 return HttpResponse(
                     f'<pre class="text-xs bg-gray-900 text-yellow-400 p-4 rounded">'
                     f'Log file is on remote host: {_escape(job.host)}\n'

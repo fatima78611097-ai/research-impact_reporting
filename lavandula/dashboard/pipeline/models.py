@@ -187,6 +187,7 @@ class Job(models.Model):
         "self", null=True, blank=True, on_delete=models.SET_NULL, related_name="dependents"
     )
     last_heartbeat = models.DateTimeField(null=True, blank=True)
+    log_tail = models.TextField(null=True, blank=True)
 
     class Meta:
         db_table = "jobs"
