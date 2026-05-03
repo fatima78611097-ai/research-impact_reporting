@@ -202,27 +202,31 @@ Add a shared helper in `orchestrator.py`:
 
 ```python
 def _validate_host(host: str) -> str:
-    """Validate that host matches an active, non-offline worker. Returns hostname."""
+    """Validate that host matches an active, online worker. Returns hostname.
+
+    Rejects offline AND stale hosts — matches the UI dropdown behavior
+    where both are disabled.
+    """
     from .models import Worker
     try:
         worker = Worker.objects.get(hostname=host, is_active=True)
     except Worker.DoesNotExist:
         raise InvalidParameterError(f"Unknown or inactive host: {host!r}")
-    if worker.status == "offline":
-        raise InvalidParameterError(f"Host {host!r} is offline")
+    if worker.status in ("offline", "stale"):
+        raise InvalidParameterError(f"Host {host!r} is {worker.status}")
     return host
 ```
 
-Call `_validate_host(host)` at the top of each `create_*_job` function, with a fallback for when no workers exist yet (fresh install):
+Call `_validate_host(host)` at the top of each `create_*_job` function, with a narrow fallback for fresh installs:
 
 ```python
 def create_resolve_job(config_overrides: dict, host: str) -> Job:
-    if Worker.objects.exists():
+    if Worker.objects.filter(is_active=True).exists():
         _validate_host(host)
     # ... rest unchanged
 ```
 
-This preserves backward compatibility — if the workers table is empty (no orchestrator has started yet), validation is skipped.
+The fallback only activates when there are zero active workers — the true fresh-install case (before any orchestrator has started). Once any worker is registered, all hosts must pass validation.
 
 **ACs covered**: 25, 26, 27, 28, 29, 41, 42
 
@@ -474,26 +478,30 @@ class WorkerEditView(LoginRequiredMixin, View):
         if action == "deactivate":
             worker.is_active = False
             worker.save(update_fields=["is_active"])
+            _log_audit(request, "worker_deactivate", worker.hostname)
             messages.success(request, f"Worker {worker.hostname} deactivated")
         elif action == "reactivate":
             worker.is_active = True
             worker.save(update_fields=["is_active"])
+            _log_audit(request, "worker_reactivate", worker.hostname)
             messages.success(request, f"Worker {worker.hostname} reactivated")
         elif action == "edit":
-            worker.display_name = request.POST.get("display_name", "").strip()
-            phases = request.POST.get("phases", "").strip()
+            worker.display_name = request.POST.get("display_name", "").strip()[:100]
+            phases = request.POST.get("phases", "").strip()[:200]
             caps = worker.capabilities or {}
             if phases:
-                caps["phases"] = [p.strip() for p in phases.split(",")]
+                phase_tokens = [p.strip()[:30] for p in phases.split(",")[:20]]
+                caps["phases"] = phase_tokens
             else:
                 caps.pop("phases", None)
-            notes = request.POST.get("notes", "").strip()
+            notes = request.POST.get("notes", "").strip()[:500]
             if notes:
                 caps["notes"] = notes
             else:
                 caps.pop("notes", None)
             worker.capabilities = caps
             worker.save(update_fields=["display_name", "capabilities"])
+            _log_audit(request, "worker_edit", worker.hostname, {"display_name": worker.display_name})
             messages.success(request, f"Worker {worker.hostname} updated")
         return redirect("worker_list")
 ```
@@ -765,3 +773,5 @@ After implementation, verify on the live system:
 
 - **Codex plan-review**: REQUEST_CHANGES → addressed (stale detection: documented intentional deviation from spec — all orchestrators run it; form validation: added explicit InvalidParameterError catch in views with messages.error; UI step split: separated into Step 4 visibility + Step 5 targeting; testing: expanded with health transitions, host validation, offline detection; host column display_name: annotate jobs with worker display names)
 - **Claude plan-review**: COMMENT → addressed (form error rendering: explicit try/except in views; 990 conflict: confirmed advisory lock lives in create_*_job, not check_phase_conflict — added note; Path import: fixed in setup_worker; audit log host: explicit "all create views" coverage; stale detection scope: documented as intentional deviation)
+- **Codex red-team-plan**: REQUEST_CHANGES → addressed (spec updated: stale detection now "every orchestrator"; _validate_host rejects stale hosts too; fresh-install fallback narrowed to `is_active=True` check; setup_worker: notes/memory_gb editable via UI post-registration)
+- **Claude red-team-plan**: REQUEST_CHANGES → addressed (WorkerEditView: input length caps on display_name, phases, notes; audit logging: added _log_audit to deactivate/reactivate/edit actions; per-state conflict locking: existing select_for_update in create_*_job already covers (phase, state_code) — check_phase_conflict is a soft gate in the orchestrator loop, not a lock)

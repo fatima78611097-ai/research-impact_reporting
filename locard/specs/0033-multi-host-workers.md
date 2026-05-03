@@ -96,7 +96,7 @@ On startup: auto-register if no Worker row exists. If one exists (even if `is_ac
 
 ### 3. Stale Worker Detection
 
-The dashboard-host orchestrator checks worker health in its poll loop (no separate cron):
+Every orchestrator checks worker health in its poll loop — the UPDATE queries are idempotent and cheap, safe to run from multiple hosts simultaneously:
 
 - Workers with `status="online"` and `last_heartbeat` older than 300s → mark `status="stale"` (transient blip — dashboard shows warning)
 - Workers with `status="stale"` and `last_heartbeat` older than 1800s (30 min) → mark `status="offline"` (definitely dead)
@@ -110,7 +110,7 @@ The dashboard-host orchestrator checks worker health in its poll loop (no separa
 - If the host is truly dead, the operator manually retries the job (existing retry mechanism)
 - If the host recovers, the orchestrator resumes tracking its jobs normally
 
-**Dashboard-host SPOF**: Stale detection only works while the dashboard orchestrator is running. If it's down, remote workers continue operating independently — they poll and execute jobs fine — but the dashboard's worker status display won't update. This is acceptable for a single-operator system. The operator notices when the dashboard itself is unreachable.
+**Distributed stale detection**: Every orchestrator runs the health check, so stale detection works as long as any orchestrator is running. If all orchestrators are down, worker statuses freeze — but the operator notices because the dashboard itself is unreachable.
 
 ### 4. Dashboard UI Changes
 
@@ -293,7 +293,7 @@ No changes to the `jobs` table — `host` field already exists.
 |------|--------|
 | `models.py` | Add `Worker` model |
 | `orchestrator.py` | Update `check_phase_conflict()` to accept `state_code` param |
-| `run_orchestrator.py` | Add heartbeat writes, stale worker detection (dashboard host only), worker auto-registration |
+| `run_orchestrator.py` | Add heartbeat writes, stale worker detection, worker auto-registration |
 | `views.py` | Add `WorkerListView`, `WorkerEditView`, update all job create views to accept `host` from form, add worker context to dashboard stats |
 | `urls.py` | Add `/workers/`, `/workers/<pk>/edit/` routes |
 | `dashboard_stats.html` | Add workers panel above state progress table |
@@ -331,7 +331,7 @@ No changes to the `jobs` table — `host` field already exists.
 9. Orchestrator sets `status="offline"` on graceful shutdown (SIGTERM/SIGINT)
 
 ### Stale Detection
-10. Dashboard-host orchestrator detects stale workers (heartbeat > 300s) and marks them `stale`
+10. Every orchestrator detects stale workers (heartbeat > 300s) and marks them `stale`
 11. Stale workers shown with warning indicator on dashboard — no auto-failure of their jobs
 12. Workers that resume heartbeating after being stale auto-recover to `online`
 
