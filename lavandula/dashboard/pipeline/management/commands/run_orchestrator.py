@@ -207,6 +207,15 @@ class Command(BaseCommand):
 
     def _finish_job(self, job: Job, exit_code: int):
         """Mark a job as completed or failed based on exit code."""
+        if exit_code == 3:
+            job.status = "pending"
+            job.pid = None
+            job.started_at = None
+            job.log_file = None
+            job.log_tail = None
+            self._save_with_retry(job, ["status", "pid", "started_at", "log_file", "log_tail"])
+            self.stdout.write(f"Job #{job.pk} returned exit 3 (lock busy), re-queued")
+            return
         job.status = "completed" if exit_code == 0 else "failed"
         job.exit_code = exit_code
         job.finished_at = timezone.now()
