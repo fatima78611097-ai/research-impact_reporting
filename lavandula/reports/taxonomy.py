@@ -404,10 +404,10 @@ def build_taxonomy_prompt_section(taxonomy: Taxonomy) -> str:
     for et in sorted(taxonomy.raw.event_types, key=lambda e: e.id):
         lines.append(f"- {et.id}")
     section = "\n".join(lines)
-    if len(section) > 5000:
+    if len(section) > 10000:
         warnings.warn(
             f"taxonomy prompt section is {len(section)} chars "
-            f"(>5000) — may be too large to inline",
+            f"(>10000) — may be too large to inline",
             stacklevel=2,
         )
     return section
