@@ -642,8 +642,11 @@ def run(argv: list[str] | None = None) -> int:
         logger.error("archive startup probe failed: %s", exc)
         return 2
 
+    lock_path = config.LOCK_PATH
+    if args.state:
+        lock_path = lock_path.with_suffix(f".{args.state}.lock")
     try:
-        lock_fd = acquire_flock(config.LOCK_PATH)
+        lock_fd = acquire_flock(lock_path)
     except FlockBusy:
         logger.error("=== CRAWLER ABORT === another instance holds the lock; exit 3")
         return 3
