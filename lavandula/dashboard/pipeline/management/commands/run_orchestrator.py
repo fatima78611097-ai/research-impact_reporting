@@ -205,6 +205,14 @@ class Command(BaseCommand):
         self._tracked[job.pk] = proc
         self.stdout.write(f"Started Job #{job.pk} ({job.phase} {state_label}) PID={proc.pid}")
 
+    _EXIT_CODE_HINTS = {
+        1: "partial failure (DB flush errors or invalid input)",
+        2: "startup check failed (archive/encryption/TLS)",
+        -9: "killed (SIGKILL — OOM or manual kill)",
+        -15: "terminated (SIGTERM — orchestrator shutdown)",
+        -2: "interrupted (SIGINT)",
+    }
+
     def _finish_job(self, job: Job, exit_code: int):
         """Mark a job as completed or failed based on exit code."""
         if exit_code == 3:
@@ -220,7 +228,11 @@ class Command(BaseCommand):
         job.exit_code = exit_code
         job.finished_at = timezone.now()
         if exit_code != 0:
-            job.error_message = f"Process exited with code {exit_code}"
+            hint = self._EXIT_CODE_HINTS.get(exit_code, "unknown error")
+            last_line = self._extract_last_meaningful_line(job)
+            job.error_message = f"Exit {exit_code}: {hint}"
+            if last_line:
+                job.error_message += f" — {last_line}"
         if job.log_file:
             try:
                 with open(job.log_file, "rb") as f:
@@ -284,6 +296,37 @@ class Command(BaseCommand):
                 return Report.objects.filter(classification__isnull=True).count()
         except Exception:
             pass
+        return None
+
+    _LOG_NOISE = frozenset([
+        "Ignoring wrong pointing object",
+        "do_cmap",
+        "Superfluous whitespace",
+    ])
+
+    def _extract_last_meaningful_line(self, job: Job) -> str | None:
+        """Extract last meaningful line from log_tail, skipping PDF parser noise."""
+        tail = job.log_tail
+        if not tail:
+            if job.log_file:
+                try:
+                    with open(job.log_file, "rb") as f:
+                        f.seek(0, 2)
+                        size = f.tell()
+                        f.seek(max(0, size - 4096))
+                        tail = f.read().decode("utf-8", errors="replace")
+                except OSError:
+                    return None
+            else:
+                return None
+
+        for line in reversed(tail.splitlines()):
+            line = line.strip()
+            if not line:
+                continue
+            if any(noise in line for noise in self._LOG_NOISE):
+                continue
+            return line[:200]
         return None
 
     @staticmethod
