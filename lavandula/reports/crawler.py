@@ -618,6 +618,8 @@ def run(argv: list[str] | None = None) -> int:
                         help="(async only) Max concurrent download workers. Default 20.")
     parser.add_argument("--state", type=str, default=None,
                         help="Limit crawl to a single state (e.g. CA, NY)")
+    parser.add_argument("--classifier-backend", type=str, default=None,
+                        help="Classifier backend: deepseek (default), gemini, claude, codex")
     parser.add_argument("--no-wayback", action="store_true",
                         help="Disable Wayback CDX fallback (spec 0022 kill-switch)")
     args = parser.parse_args(argv)
@@ -745,6 +747,7 @@ def run(argv: list[str] | None = None) -> int:
                     max_concurrent_orgs=args.max_concurrent_orgs,
                     max_download_workers=args.max_download_workers,
                     run_id=run_id,
+                    classifier_backend=args.classifier_backend,
                 ))
                 logger.info(
                     "=== ASYNC CRAWLER DONE === run_id=%s orgs=%d "
@@ -759,7 +762,7 @@ def run(argv: list[str] | None = None) -> int:
                 return crawl_stats.exit_code
             else:
                 try:
-                    cls_client = select_classifier_client()
+                    cls_client = select_classifier_client(backend=args.classifier_backend)
                     logger.info("classifier client: %s", type(cls_client).__name__)
                 except Exception:  # noqa: BLE001
                     cls_client = None

@@ -397,15 +397,23 @@ _ALL_BACKENDS = sorted(list(_CLI_CONFIGS) + ["deepseek"])
 
 def select_classifier_client(
     *,
+    backend: str | None = None,
     env: dict[str, str] | None = None,
 ) -> Any:
-    """Return the classifier client selected by `CLASSIFIER_CLIENT` env var.
+    """Return the classifier client for the given backend.
 
-    Subscription CLIs: "gemini" (default) | "claude" | "codex"
-    API clients:       "deepseek" (key from SSM)
+    Subscription CLIs: "gemini" | "claude" | "codex"
+    API clients:       "deepseek" (default, key from SSM)
+
+    If *backend* is not provided, falls back to `CLASSIFIER_CLIENT` env var,
+    then defaults to "deepseek".
     """
     env = env if env is not None else dict(os.environ)
-    backend = (env.get("CLASSIFIER_CLIENT") or "gemini").strip().lower()
+    backend = (
+        backend
+        or env.get("CLASSIFIER_CLIENT")
+        or "deepseek"
+    ).strip().lower()
     if backend == "deepseek":
         return DeepSeekAPIClient()
     if backend in _CLI_CONFIGS:

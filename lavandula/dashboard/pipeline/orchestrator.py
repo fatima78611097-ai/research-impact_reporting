@@ -60,6 +60,7 @@ COMMAND_MAP: dict[str, dict[str, Any]] = {
             "max_download_workers": {"type": "int", "min": 1, "max": 100, "flag": "--max-download-workers"},
             "skip_encryption_check": {"type": "bool", "flag": "--skip-encryption-check"},
             "state": {"type": "text", "pattern": r"^[A-Z]{2}$", "flag": "--state"},
+            "classifier_backend": {"type": "text", "pattern": r"^[a-z]+$", "flag": "--classifier-backend"},
         },
     },
     "classify": {
@@ -177,7 +178,10 @@ def build_argv(phase: str, config_json: dict) -> list[str]:
 
     for key, value in config_json.items():
         if key not in allowed:
-            raise InvalidParameterError(f"Unknown parameter {key!r} for phase {phase}")
+            raise InvalidParameterError(
+                f"Unknown parameter {key!r} for phase {phase} "
+                f"(allowed: {list(allowed.keys())})"
+            )
 
         spec = allowed[key]
         if spec["type"] == "bool":

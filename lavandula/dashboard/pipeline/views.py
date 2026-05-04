@@ -80,7 +80,7 @@ def _expand_llm_preset(config: dict) -> dict:
 _CONFIG_ALLOWLIST = {
     "seed": ["states", "target", "ntee_majors"],
     "resolve": ["state", "search_engines", "llm_model", "brave_qps", "search_qps", "consumer_threads", "limit"],
-    "crawl": ["state", "limit"],
+    "crawl": ["state", "limit", "classifier_backend"],
     "classify": ["state", "llm_model", "definition", "limit", "re_classify"],
     "enrich-phone": ["state", "search_engines", "limit"],
     "990-index": ["filing_year"],

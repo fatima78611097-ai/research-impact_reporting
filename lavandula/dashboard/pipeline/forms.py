@@ -113,6 +113,17 @@ class RunCrawlForm(forms.Form):
     ))
     skip_encryption_check = forms.BooleanField(required=False)
     async_mode = forms.BooleanField(required=False, label="Async")
+    classifier_backend = forms.ChoiceField(
+        choices=[
+            ("deepseek", "DeepSeek (API, default)"),
+            ("gemini", "Gemini (CLI)"),
+            ("claude", "Claude (CLI)"),
+        ],
+        initial="deepseek",
+        required=False,
+        widget=forms.Select(attrs={"class": _SELECT}),
+        label="Classifier",
+    )
 
 
 class ResolverForm(forms.Form):

@@ -721,6 +721,7 @@ async def run_async(
     max_download_workers: int = 20,
     run_id: str = "",
     halt_dir: Path | None = None,
+    classifier_backend: str | None = None,
 ) -> CrawlStats:
     _ensure_taxonomy()
 
@@ -766,7 +767,7 @@ async def run_async(
         loop.add_signal_handler(sig, _on_signal)
 
     try:
-        classifier_client = select_classifier_client()
+        classifier_client = select_classifier_client(backend=classifier_backend)
         _log.info("classifier client: %s", type(classifier_client).__name__)
     except Exception:  # noqa: BLE001
         classifier_client = None
