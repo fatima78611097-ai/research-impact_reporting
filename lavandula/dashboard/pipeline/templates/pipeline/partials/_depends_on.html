@@ -1,8 +1,8 @@
 {% if dependency_choices %}
 <div class="mb-4">
   <label class="block text-sm font-medium text-gray-700 mb-1">Queue after job</label>
-  <select name="depends_on" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
-    <option value="">— Run immediately —</option>
+  <select name="depends_on" autocomplete="off" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+    <option value="" selected>— Run immediately —</option>
     {% for pk, label in dependency_choices %}
     <option value="{{ pk }}">{{ label }}</option>
     {% endfor %}

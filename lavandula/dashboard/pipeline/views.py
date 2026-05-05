@@ -86,10 +86,17 @@ def _resolve_depends_on(request):
 
 def _get_dependency_choices(phase=None):
     """Return running/pending jobs suitable as dependency targets."""
-    qs = Job.objects.filter(status__in=["running", "pending"]).order_by("-created_at")
+    qs = Job.objects.filter(status__in=["running", "pending"]).select_related("depends_on").order_by("-created_at")
     if phase:
         qs = qs.filter(phase=phase)
-    return [(j.pk, f"#{j.pk} {j.phase} {j.state_code or 'global'} [{j.status}]") for j in qs[:20]]
+    choices = []
+    worker_names = dict(
+        Worker.objects.filter(is_active=True).values_list("hostname", "display_name")
+    )
+    for j in qs[:20]:
+        host_label = worker_names.get(j.host) or j.host.split("-")[-1]
+        choices.append((j.pk, f"#{j.pk} {j.phase} {j.state_code or 'global'} [{j.status}] @ {host_label}"))
+    return choices
 
 
 # ---------------------------------------------------------------------------
