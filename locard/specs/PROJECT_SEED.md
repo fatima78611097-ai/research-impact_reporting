@@ -101,7 +101,7 @@ These apply across all phases and should constrain every per-phase specification
 ### Schema philosophy
 
 - **Organization-first.** Every nonprofit in the corpus has a record regardless of customer relationship status. Customer status is metadata, not the basis of the record.
-- **Sections as citation atoms.** Sections (heading-anchored chunks of documents) are the fundamental unit. Every claim in any output cites a `section_id`.
+- **Full citation chain: org → document → section.** The section is the finest-grained citation atom, but a citation must resolve the complete chain — which organization published it, which document contains it, and which section within that document. A section_id is a database key; a citation is a human-verifiable reference (e.g., "Houston Food Bank, *2024 Annual Report*, Executive Letter").
 - **Vocabulary observations as first-class records.** Linked to source sections, with provenance preserved.
 - **Methodology versioning.** Every extraction tagged with `extractor_version` so re-extraction with improved rubrics is supported without losing prior data.
 
@@ -109,8 +109,8 @@ These apply across all phases and should constrain every per-phase specification
 
 Non-negotiable across all generated outputs:
 
-- Every factual claim cites a source section
-- Citations resolve to actual section_ids in the database
+- Every factual claim cites a source via the full chain: organization → document → section
+- Citations resolve to actual records in the database (org_id → document_id → section_id)
 - A validator checks every citation before any generated artifact is committed
 - Hallucinated citations are rejected, not warned about
 - Smart-model confident hallucination is the primary threat to defend against
