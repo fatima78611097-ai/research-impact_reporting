@@ -73,6 +73,25 @@ def _expand_llm_preset(config: dict) -> dict:
     return config
 
 
+def _resolve_depends_on(request):
+    """Parse depends_on from POST, return Job instance or None."""
+    raw = request.POST.get("depends_on", "").strip()
+    if not raw:
+        return None
+    try:
+        return Job.objects.get(pk=int(raw), status__in=["running", "pending"])
+    except (ValueError, Job.DoesNotExist):
+        return None
+
+
+def _get_dependency_choices(phase=None):
+    """Return running/pending jobs suitable as dependency targets."""
+    qs = Job.objects.filter(status__in=["running", "pending"]).order_by("-created_at")
+    if phase:
+        qs = qs.filter(phase=phase)
+    return [(j.pk, f"#{j.pk} {j.phase} {j.state_code or 'global'} [{j.status}]") for j in qs[:20]]
+
+
 # ---------------------------------------------------------------------------
 # Shared helpers for job display
 # ---------------------------------------------------------------------------
@@ -368,10 +387,14 @@ class CrawlJobCreateView(LoginRequiredMixin, View):
         if "async_mode" in config:
             config["async"] = config.pop("async_mode")
         host = request.POST.get("host", _get_hostname())
+        depends_on = _resolve_depends_on(request)
         try:
-            job = create_crawl_job(config, host)
+            job = create_crawl_job(config, host, depends_on=depends_on)
             _log_audit(request, "job_create", "crawl", {"job_id": job.pk, "host": host})
-            messages.success(request, f"Created crawl job #{job.pk}")
+            msg = f"Created crawl job #{job.pk}"
+            if depends_on:
+                msg += f" (queued after #{depends_on.pk})"
+            messages.success(request, msg)
         except (DuplicateJobError, InvalidParameterError) as e:
             messages.error(request, str(e))
 
@@ -391,10 +414,14 @@ class ResolveJobCreateView(LoginRequiredMixin, View):
         raw_engines = config.get("search_engines", "brave")
         config["search_engines"] = raw_engines.replace("_", ",")
         host = request.POST.get("host", _get_hostname())
+        depends_on = _resolve_depends_on(request)
         try:
-            job = create_resolve_job(config, host)
+            job = create_resolve_job(config, host, depends_on=depends_on)
             _log_audit(request, "job_create", "resolve", {"job_id": job.pk, "host": host})
-            messages.success(request, f"Created resolve job #{job.pk}")
+            msg = f"Created resolve job #{job.pk}"
+            if depends_on:
+                msg += f" (queued after #{depends_on.pk})"
+            messages.success(request, msg)
         except (DuplicateJobError, InvalidParameterError) as e:
             messages.error(request, str(e))
 
@@ -412,10 +439,14 @@ class ClassifyJobCreateView(LoginRequiredMixin, View):
         config = {k: v for k, v in form.cleaned_data.items() if v not in (None, "", False)}
         config = _expand_llm_preset(config)
         host = request.POST.get("host", _get_hostname())
+        depends_on = _resolve_depends_on(request)
         try:
-            job = create_classify_job(config, host)
+            job = create_classify_job(config, host, depends_on=depends_on)
             _log_audit(request, "job_create", "classify", {"job_id": job.pk, "host": host})
-            messages.success(request, f"Created classify job #{job.pk}")
+            msg = f"Created classify job #{job.pk}"
+            if depends_on:
+                msg += f" (queued after #{depends_on.pk})"
+            messages.success(request, msg)
         except (DuplicateJobError, InvalidParameterError) as e:
             messages.error(request, str(e))
 
@@ -548,6 +579,7 @@ class ResolverView(LoginRequiredMixin, TemplateView):
         ctx["resolve_stats"] = resolve_stats
         from .forms import ResolverForm
         ctx["form"] = ResolverForm()
+        ctx["dependency_choices"] = _get_dependency_choices()
         workers = _get_worker_choices()
         ctx["worker_choices"] = workers
         ctx["show_host_selector"] = len(workers) > 1
@@ -591,6 +623,7 @@ class CrawlerView(LoginRequiredMixin, TemplateView):
         from .forms import CrawlerForm, RunCrawlForm
         ctx["form"] = CrawlerForm()
         ctx["crawl_job_form"] = RunCrawlForm()
+        ctx["dependency_choices"] = _get_dependency_choices()
         workers = _get_worker_choices()
         ctx["worker_choices"] = workers
         ctx["show_host_selector"] = len(workers) > 1
@@ -633,6 +666,7 @@ class ClassifierView(LoginRequiredMixin, TemplateView):
         ctx["classify_stats"] = classify_stats
         from .forms import ClassifierForm
         ctx["form"] = ClassifierForm()
+        ctx["dependency_choices"] = _get_dependency_choices()
         workers = _get_worker_choices()
         ctx["worker_choices"] = workers
         ctx["show_host_selector"] = len(workers) > 1

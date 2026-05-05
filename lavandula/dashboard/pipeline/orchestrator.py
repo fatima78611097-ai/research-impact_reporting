@@ -289,7 +289,7 @@ def create_state_jobs(
     return created
 
 
-def create_resolve_job(config_overrides: dict, host: str) -> Job:
+def create_resolve_job(config_overrides: dict, host: str, depends_on: Job | None = None) -> Job:
     """Create a resolve job. Allows queuing multiple states; blocks duplicates per state."""
     _maybe_validate_host(host)
     state = config_overrides.get("state")
@@ -313,6 +313,7 @@ def create_resolve_job(config_overrides: dict, host: str) -> Job:
                 status="pending",
                 host=host,
                 config_json=config_overrides,
+                depends_on=depends_on,
             )
         except IntegrityError:
             raise DuplicateJobError("Duplicate resolve job (constraint violation)")
@@ -321,7 +322,7 @@ def create_resolve_job(config_overrides: dict, host: str) -> Job:
 _DEFAULT_ARCHIVE = "s3://lavandula-nonprofit-collaterals"
 
 
-def create_crawl_job(config_overrides: dict, host: str) -> Job:
+def create_crawl_job(config_overrides: dict, host: str, depends_on: Job | None = None) -> Job:
     """Create a crawl job, scoped to a state if provided."""
     _maybe_validate_host(host)
     config_overrides.setdefault("archive", _DEFAULT_ARCHIVE)
@@ -346,12 +347,13 @@ def create_crawl_job(config_overrides: dict, host: str) -> Job:
                 status="pending",
                 host=host,
                 config_json=config_overrides,
+                depends_on=depends_on,
             )
         except IntegrityError:
             raise DuplicateJobError("Duplicate crawl job (constraint violation)")
 
 
-def create_classify_job(config_overrides: dict, host: str) -> Job:
+def create_classify_job(config_overrides: dict, host: str, depends_on: Job | None = None) -> Job:
     """Create a classify job, scoped to a state if provided."""
     _maybe_validate_host(host)
     state = config_overrides.get("state") or None
@@ -375,6 +377,7 @@ def create_classify_job(config_overrides: dict, host: str) -> Job:
                 status="pending",
                 host=host,
                 config_json=config_overrides,
+                depends_on=depends_on,
             )
         except IntegrityError:
             raise DuplicateJobError("Duplicate classify job (constraint violation)")
