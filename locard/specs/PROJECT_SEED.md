@@ -221,23 +221,24 @@ The following components exist and are operational. Subsequent phases build on t
 
 ### Operational pipeline
 
-- **Seeder** — populates seed pool from IRS data. ~44K orgs in NY + partial MD as of last dashboard.
-- **Resolver** — multi-tier URL and phone resolution. DeepSeek V4 primary, Claude Haiku fallback, Codex/GPT-mini further fallbacks. Recent migration from Brave to Serper for ~10x cost reduction.
-- **Crawler** — fetches documents from resolved URLs.
-- **Classifier** — categorizes documents (annual, impact, other, not_a_report, etc.) with high precision (~99.98% classification success on 9,022 documents).
+- **Seeder** — populates seed pool from IRS data. National scope, seeding all 50 states + territories by NTEE code and revenue thresholds.
+- **Resolver** — multi-tier URL and phone resolution. DeepSeek V4 primary, with configurable LLM backend per job. Dual search engine support (Brave + Google) with per-job selection.
+- **Crawler** — fetches documents from resolved URLs. Async architecture with configurable concurrency. Wayback Machine recovery for sites that block direct crawl. Inline first-page classification via configurable backend (DeepSeek API default).
+- **Classifier** — categorizes documents (annual, impact, other, not_a_report, etc.) with high precision (~99.98% classification success on 9,022 documents). Serves as crawl quality gate and loose categorization for downstream ingest.
 - **990 ingestion pipeline** — national-scale, ~1.77M filings across 440K nonprofits, refreshed nightly. Extracts Part VII people data (officers, directors, key employees, contractors) with compensation breakdowns.
-- **Cluster architecture** — parallel processing infrastructure for scaling beyond single-machine throughput.
+- **Orchestrator** — job-based pipeline management via dashboard. Multi-host orchestration with job queuing, dependency chaining, heartbeat monitoring, and per-job configuration. Systemd-managed on each host.
+- **Dashboard** — Django web UI for pipeline control, job monitoring, and status visibility across hosts.
 
 ### Tech stack
 
 - AWS infrastructure (EC2, S3, RDS Postgres)
 - Tailscale for network isolation
-- Docling for document parsing (GPU acceleration on G6.2xlarge spot)
-- pgvector for embeddings
-- BGE-M3 for embedding generation
-- DeepSeek V4 for bulk LLM work
+- Docling for document parsing (GPU acceleration on G6.2xlarge spot — not yet integrated into pipeline)
+- pgvector for embeddings (extension installed, not yet populated)
+- BGE-M3 for embedding generation (planned)
+- DeepSeek V4 for bulk LLM work (resolver, classifier)
 - Claude Sonnet for high-stakes synthesis
-- Serper for search APIs
+- Brave + Google for search APIs (configurable per job)
 
 ### Conventions established
 
@@ -259,6 +260,11 @@ Each phase is its own design loop (spec → consult → plan → consult → bui
 
 **Dependencies:** None (current state). Some refactoring of existing classifier/parser output to fit canonical schema.
 
+**Architectural notes for spec:**
+- *Register detection method* — Register tagging (formal_report, operational, donor_facing) requires inference on section content. The Phase 1 spec must decide whether register is assigned by heuristic (section position, document_type, heading patterns) or by LLM inference. The former keeps Phase 1 a pure schema phase; the latter pulls extraction-quality prompting into foundation work.
+- *Docling integration* — The existing pipeline crawls and classifies but does not yet parse documents into sections. Phase 1 must define the relationship between Docling-based parsing and the section schema — whether Phase 1 includes building the Docling parsing stage or assumes it as a prerequisite. This is the bridge between the current pipeline (document-level) and the corpus phases (section-level).
+- *National crawl concurrency* — The pipeline is actively scaling to national coverage. Phase 1 schema work must coexist with ongoing crawl ingestion. The spec should address whether schema migration happens on a snapshot or must be compatible with live crawl writes.
+
 **Success criteria:**
 - Schema documented with foreign key relationships
 - All existing parsed sections conform to schema
@@ -274,6 +280,9 @@ Each phase is its own design loop (spec → consult → plan → consult → bui
 **Goal:** Build the extraction pipeline that produces vocabulary_observations linked to source sections. Includes prompt design, eval set construction, methodology versioning, and confidence calibration.
 
 **Dependencies:** Phase 1 schema stable.
+
+**Architectural notes for spec:**
+- *Archetype assignment* — Vocabulary extraction and aggregation are organized by archetype, but no prior phase assigns archetype to organizations. Archetype is an org-level field derived from NTEE codes and operational patterns. Phase 2 spec must define the archetype assignment method (rule-based from NTEE, LLM-inferred, or hybrid) and establish the archetype as first-class metadata before extraction begins.
 
 **Success criteria:**
 - vocabulary_terms and vocabulary_observations tables populated
@@ -322,6 +331,9 @@ Each phase is its own design loop (spec → consult → plan → consult → bui
 **Goal:** Produce prospect-specific briefings combining corpus data, 990 pipeline data, archetype rubrics, and prospect-published reports. Used by Lora and sales team before discovery calls.
 
 **Dependencies:** Phases 1-4 producing reliable archetype rubrics and lexicon. 990 pipeline integrated with corpus prospect records.
+
+**Architectural notes for spec:**
+- *990 integration ownership* — The 990 pipeline and the corpus pipeline currently share an EIN key but no explicit join layer. This phase requires person records (officers, directors, compensation) from the 990 pipeline to appear alongside corpus data in briefings. The spec must define whether 990 integration is a prerequisite delivered before Phase 5 begins (potentially as a standalone bridging spec) or built within Phase 5 itself. The join semantics (EIN matching, name resolution across years, handling orgs with 990 data but no corpus documents and vice versa) need explicit design.
 
 **Success criteria:**
 - Given an EIN, produces a 1-2 page briefing in <5 minutes
@@ -443,6 +455,13 @@ These are not blockers but should be resolved during specific phases.
 - Final naming for the lexicon ("Lavandula Lexicon" / "Sector Reporting Atlas" / other)
 - Public-facing brand for the strategic communications repositioning
 - Tagline that captures evidence-led positioning without overreaching
+
+### Architecture
+- When and how Docling parsing integrates into the pipeline (Phase 1 or prerequisite?)
+- Register detection method: heuristic vs. LLM inference (determines Phase 1 scope)
+- Archetype assignment method and ownership: rule-based from NTEE, LLM-derived, or hybrid (must be resolved before Phase 2)
+- 990-to-corpus join layer: standalone bridging spec or built within Phase 5?
+- Schema migration strategy while national crawl is actively writing to the database
 
 ### Methodology
 - Section chunking strategy at the boundary cases (long sections, sections without headings, multi-column layouts)
