@@ -304,8 +304,10 @@ class Command(BaseCommand):
         "Superfluous whitespace",
     ])
 
+    _ERROR_SIGNALS = ("ERROR", "Exception", "Traceback", "CRITICAL", "FATAL", "failed", "Error:")
+
     def _extract_last_meaningful_line(self, job: Job) -> str | None:
-        """Extract last meaningful line from log_tail, skipping PDF parser noise."""
+        """Extract last error line from log_tail, falling back to None if only progress lines."""
         tail = job.log_tail
         if not tail:
             if job.log_file:
@@ -313,7 +315,7 @@ class Command(BaseCommand):
                     with open(job.log_file, "rb") as f:
                         f.seek(0, 2)
                         size = f.tell()
-                        f.seek(max(0, size - 4096))
+                        f.seek(max(0, size - 8192))
                         tail = f.read().decode("utf-8", errors="replace")
                 except OSError:
                     return None
@@ -321,12 +323,13 @@ class Command(BaseCommand):
                 return None
 
         for line in reversed(tail.splitlines()):
-            line = line.strip()
-            if not line:
+            stripped = line.strip()
+            if not stripped:
                 continue
-            if any(noise in line for noise in self._LOG_NOISE):
+            if any(noise in stripped for noise in self._LOG_NOISE):
                 continue
-            return line[:200]
+            if any(sig in stripped for sig in self._ERROR_SIGNALS):
+                return stripped[:200]
         return None
 
     @staticmethod
