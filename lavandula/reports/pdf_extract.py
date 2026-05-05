@@ -42,9 +42,9 @@ def scan_active_content(pdf_bytes: bytes) -> dict[str, int]:
     }
 
 
-# Strip ANSI escapes, BiDi overrides, zero-width, byte-order marks, NULs.
+# Strip ANSI escapes, BiDi overrides, zero-width, byte-order marks, NULs, surrogates.
 _NOISE_RE = re.compile(
-    r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]"
+    r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f\u200b-\u200f\u202a-\u202e\u2066-\u2069\ud800-\udfff\ufeff]"
     r"|\x1b\[[0-?]*[ -/]*[@-~]"  # CSI sequences
 )
 
