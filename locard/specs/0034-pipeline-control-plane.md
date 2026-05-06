@@ -36,6 +36,40 @@ The pipeline grew organically from a single-host crawl tool into a multi-host, m
 
 9. **Org provenance history.** Not just current status but when each stage completed for each org. Enables "how long does crawl take per org?" and "which orgs have been stuck in resolve for 7+ days?"
 
+### Should Have (continued)
+
+12. **Resource-aware scheduling.** The scheduler scores candidate job-host pairings rather than running the first eligible job. Worker heartbeats report CPU/memory/disk utilization. Scheduling decisions consider current load, stage resource profiles, concurrency limits per host, and projected completion of running jobs.
+
+13. **Operator-tunable scheduling weights.** A `scheduler_config.yaml` file (hot-reloaded on mtime change) controls scheduling behavior without code changes. Includes per-host concurrency limits, resource ceilings, per-stage resource weights, host affinity, starvation boost timers, and cool-down periods after failures. The operator adjusts these as real patterns emerge during national ingest — "crawl + classify on the same box OOMs" becomes a config line, not a code PR.
+
+    ```yaml
+    host_rules:
+      max_concurrent_heavy: 2
+      memory_ceiling_pct: 75
+      cpu_ceiling_pct: 90
+      cool_down_after_failure_s: 300
+
+    stage_weights:
+      crawl:
+        resource_class: heavy      # heavy | medium | light
+        io_weight: heavy
+        prefer_hosts: [cloud1]
+      resolve:
+        resource_class: light
+      classify:
+        resource_class: medium
+        gpu_preferred: true
+      extract-vocab:
+        resource_class: light
+        api_bound: true            # bottleneck is external API, not host
+
+    scheduling:
+      starvation_boost_after_minutes: 60
+      eta_lookahead: true
+    ```
+
+    The scoring function is simple Python (not a constraint solver): for each pending job × available host, compute a score from weight config + current utilization + ETA projection. Highest score wins. ~50 lines of logic, easily debuggable.
+
 ### Nice to Have
 
 10. **Stage DAG visualization.** Dashboard page showing the pipeline as a directed graph with per-stage org counts (how many orgs are at each stage).
@@ -121,7 +155,9 @@ class StageDefinition:
     conflict_group: str | None         # "per-state" or "global" or "990-family"
     provenance_column: str | None      # "resolve_status" — column in org_provenance this stage writes
     retry_policy: RetryPolicy          # max_attempts, backoff, auto_retry
+    resource_class: str                # "heavy" | "medium" | "light" — base cost for scheduling
     progress_estimator: str | None     # "count_unresolved" — function name for progress_total
+    protocol_version: int              # 0 = legacy (no structured events), 1 = fd 3 protocol
 ```
 
 **ParamSpec types** define the validation vocabulary for stage parameters:
