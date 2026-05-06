@@ -26,7 +26,7 @@ The pipeline grew organically from a single-host crawl tool into a multi-host, m
 
 5. **Dependency resolution with diagnostics.** When a job can't start, the system records *why* (dependency not met, phase conflict, host unavailable, predecessor failed). Visible on the dashboard job detail page.
 
-6. **Forward-compatible for extract/aggregate/report.** The design must accommodate stages that don't exist yet without requiring schema changes to the control plane itself. A new `extract-vocab` stage should only need: (a) a stage registry entry, (b) a management command or script, (c) an org_provenance column.
+6. **Forward-compatible for extract/aggregate/report.** The control plane core (Job, JobEvent, orchestrator, dashboard templates) requires zero changes when adding a new stage. A new `extract-vocab` stage needs only: (a) a stage registry entry in `stages.py`, (b) a management command or script, (c) a migration adding its columns to `org_provenance`. The provenance migration is a lightweight `ALTER TABLE ADD COLUMN` — not a control-plane schema change, but a data-model extension that the stage itself owns.
 
 ### Should Have
 
@@ -47,6 +47,26 @@ The pipeline grew organically from a single-host crawl tool into a multi-host, m
 - **Workflow engine replacement** (Airflow, Prefect, Dagster). This is a lightweight control plane for a single-operator system, not an enterprise orchestrator. The complexity budget is "Django models + management commands," not "install and maintain a workflow platform."
 - **Real-time streaming logs.** The dashboard shows job summaries and event logs, not live log tails. Operators who need live logs use `tail -f` on the host.
 - **Multi-tenant isolation.** Single operator (ronp), single RDS instance. No role-based access, no team permissions.
+
+## Architecture Decisions
+
+### Orchestrator Topology: Single Central Orchestrator
+
+One `run_orchestrator` process runs on the dashboard host, polling RDS for eligible jobs. It dispatches jobs to remote workers via SSH (already established in Spec 0033's multi-host model). Workers execute subprocesses locally; the orchestrator monitors via heartbeat rows in the `Worker` table.
+
+This means:
+- **"Scheduled" = the central orchestrator picked up the job and is about to SSH-dispatch it.** The gap between `scheduled` and `running` is the SSH + process spawn latency.
+- **Locking is centralized** — only one process reads/writes job state, so no distributed lock needed.
+- **Worker liveness** is determined by the orchestrator polling `Worker.last_heartbeat`. Workers update this via a lightweight cron or the running subprocess itself.
+- **If the orchestrator dies**, no new jobs are scheduled. Running subprocesses continue on their workers. On restart, the orchestrator reclaims `scheduled` jobs (moves them back to `pending`) and reconciles `running` jobs by checking PIDs on their target hosts.
+
+### org_provenance Schema: `lava_pipeline`
+
+This is a pipeline control table, not a data table. It lives in `lava_pipeline` alongside `Job`, `JobEvent`, and `Worker`.
+
+### PipelineAuditLog: Superseded by JobEvent
+
+The unused `PipelineAuditLog` model is dropped. `JobEvent` covers its intended purpose with better structure.
 
 ## Current State
 
@@ -98,7 +118,11 @@ class StageDefinition:
     progress_estimator: str | None     # "count_unresolved" — function name for progress_total
 ```
 
+The `progress_estimator` is a callable `(config_json: dict) -> int | None` that returns the expected total record count for a job with the given config. For example, for `resolve`, it queries `SELECT COUNT(*) FROM nonprofits_seed WHERE state = :state AND resolver_status IS NULL`. Returns `None` if unknown. Called once at job creation to set `Job.progress_total`.
+
 The registry is a module-level dict in `lavandula/dashboard/pipeline/stages.py`. Adding a new stage = adding an entry. The orchestrator, dashboard views, and job creation forms all read from the registry.
+
+**Command dispatch safety:** All stage commands are executed via `subprocess.Popen(argv, ...)` with `shell=False`. Parameters from `config_json` are validated against the stage's `ParamSpec` definitions and passed as explicit argv elements — never interpolated into strings.
 
 ### 2. Job Lifecycle Enhancement
 
@@ -123,7 +147,14 @@ New field `blocked_reason` (nullable text) on Job, set by the scheduler when a j
 - "Host cloud1 not responding (last heartbeat 15m ago)"
 - "Predecessor stage 'resolve' not complete for state WA"
 
-Cleared when the job becomes eligible.
+The field holds the *current* reason. Each change is also recorded as a `JobEvent(event_type="blocked", payload={"reason": "..."})` so the full blocking history is preserved in the event log. The field is cleared when the job becomes eligible.
+
+**Crash recovery:**
+
+On orchestrator restart:
+- Jobs in `scheduled` status (picked up but never spawned) are moved back to `pending` with a `JobEvent(event_type="reset", payload={"reason": "orchestrator restart"})`.
+- Jobs in `running` status are reconciled: the orchestrator checks the target host for the recorded PID. If the process is still alive, tracking resumes. If the PID is gone, the job is marked `failed` with `error_class="orphaned"`.
+- `Popen` spawn failures (binary missing, fork error, OS limit) transition directly from `scheduled` → `failed` with the exception recorded in the event log.
 
 ### 3. Job Event Log
 
@@ -204,7 +235,11 @@ CREATE TABLE lava_pipeline.org_provenance (
 );
 ```
 
-**Population strategy:** Each pipeline stage, on completion, updates its corresponding column. The orchestrator's `_finish_job()` handler calls `update_org_provenance(stage, ein_list, status)` with the list of EINs processed.
+**Population strategy:** Each pipeline stage, on completion, reports per-EIN outcomes. The orchestrator's `_finish_job()` handler calls `update_org_provenance(stage, outcomes)` where `outcomes` is a list of `(ein, status)` tuples — not a single status for the whole batch. This handles partial success: a crawl job that processes 3,537 orgs successfully and 50 with transient failures writes `completed` for 3,537 and `failed` for 50.
+
+Stages report outcomes via the SUMMARY line: `SUMMARY: ... provenance_completed=3537 provenance_failed=50 provenance_file=/tmp/provenance_12345.jsonl`. The provenance file is a JSONL of `{"ein": "...", "status": "completed|failed|skipped"}` records. If no provenance file is emitted, the orchestrator falls back to marking all EINs in the job's scope with the job-level status.
+
+**Seed stage special case:** Seed creates EINs — the `org_provenance` row is created by the seed stage itself (INSERT with all other columns defaulting to `not_started`). Orgs with zero documents after crawl have `classify_status = not_applicable`.
 
 **Backfill:** One-time migration reads existing `nonprofits_seed`, `crawled_orgs`, and `corpus` tables to populate initial provenance state.
 
@@ -242,6 +277,10 @@ SUMMARY: duration_s=N records_processed=N records_failed=N [key=value ...]
 
 This is intentionally simple — not JSON, not protobuf. It's `key=value` pairs on tagged lines that can be parsed with a regex and are still human-readable in raw logs.
 
+**Injection safety:** Structured lines (`PROGRESS:`, `ERROR:`, `SUMMARY:`) are emitted via a dedicated helper (`from lavandula.pipeline_protocol import emit_progress, emit_error, emit_summary`) that writes to a separate file descriptor (fd 3) rather than stdout/stderr. The orchestrator reads fd 3 for structured events and captures stdout/stderr only for the raw log file. This prevents untrusted content in stdout (org names, error traces from crawl targets) from being parsed as structured events. If fd 3 is unavailable (legacy stages), the orchestrator falls back to log-tail parsing — structured protocol is opt-in per stage.
+
+**Payload size cap:** Event payloads are capped at 64KB. Payloads exceeding this are truncated with a `"_truncated": true` flag.
+
 ### 8. Retry Policy
 
 Per-stage retry configuration:
@@ -256,9 +295,11 @@ class RetryPolicy:
 ```
 
 When a job fails with a retryable exit code:
-1. If `attempts < max_attempts`, create a new job (clone of the failed one) with `depends_on=None`, status `pending`
-2. Write `JobEvent(event_type="retried", payload={"original_job_id": N, "attempt": M})`
-3. The failed job stays in `failed` status (preserving its events/logs)
+1. If `attempts < max_attempts`, create a new job (clone of the failed one) with status `pending`
+2. Cloned fields: phase, state_code, host, config_json. Not cloned: depends_on, log_file, pid, events.
+3. Write `JobEvent(event_type="retried", payload={"original_job_id": N, "attempt": M, "retry_job_id": R})` on the original job
+4. The failed job stays in `failed` status (preserving its events/logs)
+5. **Dependent rebinding:** Any jobs whose `depends_on` pointed to the failed job are updated to point to the retry job. This ensures downstream jobs wait on the retry, not the failed original. A `JobEvent(event_type="dependency_rebound")` is recorded on each affected dependent.
 
 This replaces the current exit-code-3 special case in the orchestrator.
 
@@ -290,17 +331,52 @@ Phases 1-2 can ship without changing any pipeline stage code. Phase 3 changes th
 
 ## Testing Requirements
 
+**State machine & registry:**
 - Unit tests for stage registry validation (missing predecessors, circular dependencies, invalid parameters)
-- Unit tests for job lifecycle state machine (valid/invalid transitions)
+- Unit tests for job lifecycle state machine (valid/invalid transitions, e.g. `completed` → `running` rejected)
 - Unit tests for event log creation on each state transition
-- Integration test: job creation → dependency block → dependency met → scheduled → running → completed, verifying events at each step
-- Integration test: job failure → auto-retry → new job created with correct linkage
-- Migration test: backfill org_provenance from existing tables produces correct status for sampled orgs
+- Unit tests for command construction from stage registry (never `shell=True`, proper argv splatting)
 
-## Open Questions
+**Job lifecycle integration:**
+- Job creation → dependency block → dependency met → scheduled → running → completed, verifying events at each step
+- Job failure → auto-retry → new job created with correct linkage → dependents rebound to retry
+- Job cancellation from each non-terminal state
 
-1. **Should `org_provenance` live in `lava_pipeline` or `lava_impact`?** It's a pipeline control table, but it's keyed by EIN which is a data concept. Recommend `lava_pipeline` since it's operationally focused.
+**Crash recovery:**
+- Orchestrator restart with jobs in `scheduled` state (should reset to `pending`)
+- Orchestrator restart with jobs in `running` state, PID alive (should resume tracking)
+- Orchestrator restart with jobs in `running` state, PID gone (should mark `failed`/`orphaned`)
+- Spawn failure (binary not found) from `scheduled` state (should mark `failed`)
 
-2. **How granular should classify provenance be?** Currently classification is per-document, not per-org. An org might have 10 documents, 7 classified and 3 pending. Should provenance track "all documents classified" or "at least one classified"? Recommend: `classify_status = completed` when all known documents for that org are classified.
+**Progress protocol:**
+- Well-formed PROGRESS/ERROR/SUMMARY lines parsed correctly
+- Malformed lines (missing fields, partial writes, embedded newlines) handled gracefully
+- Lines exceeding 64KB payload cap are truncated with `_truncated` flag
+- Untrusted content on stdout does NOT produce spurious events (fd 3 isolation)
+- Legacy stages (no fd 3) fall back to log-tail parsing
 
-3. **Should the event log have a retention policy?** At 1 event per heartbeat (30s) per running job, a 24-hour crawl generates ~2,880 events. Across 50 states with parallel jobs, that's manageable (< 500K events/month). Probably fine to keep indefinitely for the first year, then add TTL if needed.
+**Org provenance:**
+- Backfill migration produces correct status for orgs at various pipeline stages
+- Partial-success provenance: job completes with mixed EIN outcomes, each written correctly
+- Seed stage creates provenance row; subsequent stages update it
+- Orgs with zero documents get `classify_status = not_applicable`
+- Concurrent provenance writes on different columns for same EIN (last-writer-wins, no conflict)
+
+**Dashboard rendering:**
+- Event payloads rendered safely (no XSS via `blocked_reason` or `error_detail`)
+- Job detail page shows full event timeline including blocked/rebound events
+
+**Performance smoke:**
+- `org_provenance` filter queries at 100K rows < 100ms
+- Event log queries for a long-running job (~3K events) < 200ms
+- Dashboard job list with 500+ historical jobs renders < 2s
+
+## Resolved Decisions
+
+1. **`org_provenance` lives in `lava_pipeline`.** It's operationally focused — tracks where orgs are in the pipeline, not domain data about them.
+
+2. **Classify provenance = "all known documents classified."** An org with 10 documents, 7 classified and 3 pending, has `classify_status = in_progress`. When all 10 are done, `completed`. An org with zero documents after crawl has `classify_status = not_applicable`.
+
+3. **Event log: no retention policy initially.** Estimated volume: < 500K events/month at national scale. Reassess after Phase 4 (structured progress protocol) adds per-stage progress events — if volume exceeds 5M/month, add a 90-day TTL on `progress` events only, keeping lifecycle events indefinitely.
+
+4. **Dashboard rendering security.** All event payloads and `blocked_reason` text must be rendered through Django's autoescaping. Plan must explicitly prohibit `|safe` filter on any user-facing field derived from job events or log content.
