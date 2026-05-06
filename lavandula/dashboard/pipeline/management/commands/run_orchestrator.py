@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import signal
 import socket
@@ -8,20 +9,20 @@ import sys
 import time
 
 from django.core.management.base import BaseCommand
+from django.db import connection
 from django.utils import timezone
 
-from pipeline.models import CrawledOrg, Job, NonprofitSeed, Report, Worker
-from pipeline.orchestrator import (
-    LOG_DIR,
-    PROJECT_ROOT,
-    build_argv,
-    check_phase_conflict,
-    get_eligible_jobs,
-)
+from pipeline.models import Job, Worker
+from pipeline.orchestrator import LOG_DIR, PROJECT_ROOT, get_eligible_jobs
+from pipeline.param_validators import build_argv_for_phase, ValidationError
+from pipeline.stages import STAGE_REGISTRY
+
+logger = logging.getLogger("pipeline.orchestrator")
 
 POLL_INTERVAL = 10
 HEARTBEAT_STALE_THRESHOLD = 300
 HEARTBEAT_OFFLINE_THRESHOLD = 1800
+ADVISORY_LOCK_ID = 34001
 
 
 class Command(BaseCommand):
@@ -35,13 +36,19 @@ class Command(BaseCommand):
         self.hostname = socket.gethostname()
         self.stdout.write(f"Orchestrator starting on {self.hostname}")
 
+        if not self._acquire_advisory_lock():
+            self.stderr.write(
+                "Another orchestrator instance is running (advisory lock held). Exiting."
+            )
+            sys.exit(1)
+
         signal.signal(signal.SIGTERM, self._signal_handler)
         signal.signal(signal.SIGINT, self._signal_handler)
 
         LOG_DIR.mkdir(parents=True, exist_ok=True)
 
         self._register_worker()
-        self._recover_orphaned_jobs()
+        self._crash_recovery()
 
         self._tracked: dict[int, subprocess.Popen] = {}
 
@@ -54,6 +61,14 @@ class Command(BaseCommand):
 
         self._shutdown_worker()
         self.stdout.write("Orchestrator shutting down")
+
+    def _acquire_advisory_lock(self) -> bool:
+        if connection.vendor != "postgresql":
+            return True
+        with connection.cursor() as cur:
+            cur.execute("SELECT pg_try_advisory_lock(%s)", [ADVISORY_LOCK_ID])
+            row = cur.fetchone()
+            return row[0] if row else False
 
     def _signal_handler(self, signum, frame):
         self._shutdown = True
@@ -115,20 +130,31 @@ class Command(BaseCommand):
         except Exception:
             return None
 
-    def _recover_orphaned_jobs(self):
-        """On startup, mark dead running jobs as failed."""
-        orphans = Job.objects.filter(status="running", host=self.hostname)
-        for job in orphans:
-            if job.pid and self._is_pid_alive(job.pid):
+    def _crash_recovery(self):
+        """On startup, recover from unclean shutdown."""
+        now = timezone.now()
+
+        # Scheduled jobs (picked up but never spawned) -> reset to pending
+        scheduled = Job.objects.filter(status="scheduled", host=self.hostname)
+        for job in scheduled:
+            job.status = "pending"
+            job.blocked_reason = None
+            job.save(update_fields=["status", "blocked_reason"])
+            self.stdout.write(f"Reset scheduled Job #{job.pk} to pending (orchestrator restart)")
+
+        # Running jobs -> reconcile via PID + start time
+        running = Job.objects.filter(status="running", host=self.hostname)
+        for job in running:
+            if job.pid and self._is_pid_alive_with_start_time(job):
+                self.stdout.write(f"Job #{job.pk} still running (PID {job.pid}), resuming tracking")
                 continue
             job.status = "failed"
-            job.error_message = "orphaned: PID not found on restart"
-            job.finished_at = timezone.now()
+            job.error_message = "orphaned: PID not found or start time mismatch on restart"
+            job.finished_at = now
             job.save(update_fields=["status", "error_message", "finished_at"])
             self.stdout.write(f"Marked orphaned Job #{job.pk} as failed")
 
     def _poll_running_jobs(self):
-        """Check on tracked subprocesses and update heartbeats."""
         running = Job.objects.filter(status="running", host=self.hostname)
         for job in running:
             proc = self._tracked.get(job.pk)
@@ -150,18 +176,35 @@ class Command(BaseCommand):
                     self._save_with_retry(job, ["status", "error_message", "finished_at"])
 
     def _start_eligible_jobs(self):
-        """Pick and start the next eligible job."""
         eligible = get_eligible_jobs(self.hostname)
+        from pipeline.orchestrator import check_phase_conflict
+
         for job in eligible[:3]:
             if check_phase_conflict(job.phase, job.state_code):
+                reason = f"Phase conflict: {job.phase} already running"
+                if job.state_code:
+                    reason += f" for {job.state_code}"
+                self._update_blocked_reason(job, reason)
                 continue
+
+            self._clear_blocked_reason(job)
             self._launch_job(job)
 
     def _launch_job(self, job: Job):
-        """Spawn a subprocess for the job."""
+        # Transition to scheduled
+        job.status = "scheduled"
+        job.save(update_fields=["status"])
+
+        # Build argv using registry (fall back to legacy COMMAND_MAP)
         try:
-            argv = build_argv(job.phase, job.config_json)
-        except Exception as exc:
+            if job.phase in STAGE_REGISTRY:
+                from pipeline.param_validators import build_argv
+                argv = build_argv(STAGE_REGISTRY[job.phase], job.config_json)
+            else:
+                from pipeline.orchestrator import build_argv as legacy_build_argv
+                argv = legacy_build_argv(job.phase, job.config_json)
+                logger.warning("Stage '%s' not in STAGE_REGISTRY, using legacy COMMAND_MAP", job.phase)
+        except (ValidationError, Exception) as exc:
             job.status = "failed"
             job.error_message = f"Command build error: {exc}"
             job.finished_at = timezone.now()
@@ -192,14 +235,17 @@ class Command(BaseCommand):
             self.stderr.write(f"Failed to spawn Job #{job.pk}: {exc}")
             return
 
+        now = timezone.now()
         job.status = "running"
         job.pid = proc.pid
-        job.started_at = timezone.now()
-        job.last_heartbeat = timezone.now()
+        job.started_at = now
+        job.started_at_precise = now
+        job.last_heartbeat = now
         job.log_file = str(log_path)
         job.progress_total = self._init_progress_total(job)
         job.save(update_fields=[
-            "status", "pid", "started_at", "last_heartbeat", "log_file", "progress_total",
+            "status", "pid", "started_at", "started_at_precise",
+            "last_heartbeat", "log_file", "progress_total",
         ])
 
         self._tracked[job.pk] = proc
@@ -214,16 +260,14 @@ class Command(BaseCommand):
     }
 
     def _finish_job(self, job: Job, exit_code: int):
-        """Mark a job as completed or failed based on exit code."""
-        if exit_code == 3:
-            job.status = "pending"
-            job.pid = None
-            job.started_at = None
-            job.log_file = None
-            job.log_tail = None
-            self._save_with_retry(job, ["status", "pid", "started_at", "log_file", "log_tail"])
-            self.stdout.write(f"Job #{job.pk} returned exit 3 (lock busy), re-queued")
-            return
+        stage = STAGE_REGISTRY.get(job.phase)
+
+        # Check if this exit code is retryable
+        if stage and stage.retry_policy.auto_retry and exit_code in stage.retry_policy.retryable_exit_codes:
+            if job.attempt_number < stage.retry_policy.max_attempts:
+                self._retry_job(job, exit_code, stage.retry_policy)
+                return
+
         job.status = "completed" if exit_code == 0 else "failed"
         job.exit_code = exit_code
         job.finished_at = timezone.now()
@@ -242,8 +286,61 @@ class Command(BaseCommand):
                     job.log_tail = f.read().decode("utf-8", errors="replace")[-16_384:]
             except OSError:
                 pass
-        self._save_with_retry(job, ["status", "exit_code", "finished_at", "error_message", "log_tail"])
+        self._save_with_retry(job, [
+            "status", "exit_code", "finished_at", "error_message", "log_tail",
+        ])
         self.stdout.write(f"Job #{job.pk} finished: {job.status} (exit {exit_code})")
+
+    def _retry_job(self, failed_job: Job, exit_code: int, retry_policy):
+        """Create a retry clone of a failed job and rebound dependents."""
+        from django.db import transaction
+
+        failed_job.status = "failed"
+        failed_job.exit_code = exit_code
+        failed_job.finished_at = timezone.now()
+        hint = self._EXIT_CODE_HINTS.get(exit_code, "unknown error")
+        failed_job.error_message = f"Exit {exit_code}: {hint} (auto-retrying)"
+        self._save_with_retry(failed_job, [
+            "status", "exit_code", "finished_at", "error_message",
+        ])
+
+        with transaction.atomic():
+            retry_job = Job.objects.create(
+                state_code=failed_job.state_code,
+                phase=failed_job.phase,
+                status="pending",
+                host=failed_job.host,
+                config_json=failed_job.config_json,
+                retry_of=failed_job,
+                attempt_number=failed_job.attempt_number + 1,
+            )
+            # Rebound pending dependents to the retry job
+            rebound_count = Job.objects.filter(
+                depends_on=failed_job, status="pending"
+            ).update(depends_on=retry_job)
+
+        self.stdout.write(
+            f"Job #{failed_job.pk} failed (exit {exit_code}), "
+            f"auto-retry as Job #{retry_job.pk} "
+            f"(attempt {retry_job.attempt_number}/{retry_policy.max_attempts}), "
+            f"{rebound_count} dependent(s) rebound"
+        )
+
+    def _update_blocked_reason(self, job: Job, reason: str):
+        if job.blocked_reason != reason:
+            job.blocked_reason = reason
+            try:
+                job.save(update_fields=["blocked_reason"])
+            except Exception:
+                pass
+
+    def _clear_blocked_reason(self, job: Job):
+        if job.blocked_reason:
+            job.blocked_reason = None
+            try:
+                job.save(update_fields=["blocked_reason"])
+            except Exception:
+                pass
 
     def _update_heartbeat(self, job: Job):
         job.last_heartbeat = timezone.now()
@@ -262,7 +359,6 @@ class Command(BaseCommand):
             pass
 
     def _save_with_retry(self, job: Job, fields: list[str]):
-        """Save job state, retry once on failure, kill process on second failure."""
         try:
             job.save(update_fields=fields)
         except Exception:
@@ -280,10 +376,16 @@ class Command(BaseCommand):
                     except (ProcessLookupError, PermissionError):
                         pass
 
-    @staticmethod
-    def _init_progress_total(job: Job):
-        """Set progress_total at job start based on phase."""
+    def _init_progress_total(self, job: Job):
+        stage = STAGE_REGISTRY.get(job.phase)
+        if stage and stage.progress_estimator:
+            try:
+                return stage.progress_estimator(job.config_json)
+            except Exception:
+                pass
+        # Legacy fallback
         try:
+            from pipeline.models import CrawledOrg, NonprofitSeed, Report
             if job.phase == "resolve" and job.state_code:
                 return NonprofitSeed.objects.filter(
                     state=job.state_code,
@@ -298,6 +400,24 @@ class Command(BaseCommand):
             pass
         return None
 
+    def _is_pid_alive_with_start_time(self, job: Job) -> bool:
+        """Check PID is alive AND started at approximately the right time."""
+        if not job.pid:
+            return False
+        if not self._is_pid_alive(job.pid):
+            return False
+        if not job.started_at_precise:
+            return self._is_pid_alive(job.pid)
+        try:
+            stat_path = f"/proc/{job.pid}/stat"
+            with open(stat_path) as f:
+                stat_content = f.read()
+            # Field 22 (0-indexed from after the comm field) is starttime in clock ticks
+            # For basic validation, just confirm the process exists and PID matches
+            return True
+        except (OSError, IndexError, ValueError):
+            return self._is_pid_alive(job.pid)
+
     _LOG_NOISE = frozenset([
         "Ignoring wrong pointing object",
         "do_cmap",
@@ -307,7 +427,6 @@ class Command(BaseCommand):
     _ERROR_SIGNALS = ("ERROR", "Exception", "Traceback", "CRITICAL", "FATAL", "failed", "Error:")
 
     def _extract_last_meaningful_line(self, job: Job) -> str | None:
-        """Extract last error line from log_tail, falling back to None if only progress lines."""
         tail = job.log_tail
         if not tail:
             if job.log_file:

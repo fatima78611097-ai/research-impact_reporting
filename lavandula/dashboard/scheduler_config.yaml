@@ -1,0 +1,23 @@
+host_rules:
+  max_concurrent_heavy: 2
+  memory_ceiling_pct: 75
+  cpu_ceiling_pct: 90
+  cool_down_after_failure_s: 300
+
+stage_weights:
+  crawl:
+    resource_class: heavy
+    io_weight: heavy
+    prefer_hosts: []
+  resolve:
+    resource_class: light
+  classify:
+    resource_class: medium
+    gpu_preferred: false
+  enrich-phone:
+    resource_class: light
+    api_bound: true
+
+scheduling:
+  starvation_boost_after_minutes: 60
+  eta_lookahead: true

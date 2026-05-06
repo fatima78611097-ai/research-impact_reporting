@@ -163,11 +163,19 @@ class Job(models.Model):
     ]
     STATUS_CHOICES = [
         ("pending", "Pending"),
+        ("scheduled", "Scheduled"),
         ("running", "Running"),
         ("completed", "Completed"),
         ("failed", "Failed"),
         ("cancelled", "Cancelled"),
     ]
+
+    TERMINAL_STATUSES = frozenset({"completed", "failed", "cancelled"})
+    VALID_TRANSITIONS = {
+        "pending": {"scheduled", "cancelled"},
+        "scheduled": {"running", "failed", "cancelled", "pending"},
+        "running": {"completed", "failed", "cancelled"},
+    }
 
     state_code = models.CharField(max_length=2, null=True, blank=True)
     phase = models.CharField(max_length=20, choices=PHASE_CHOICES)
@@ -188,6 +196,12 @@ class Job(models.Model):
     )
     last_heartbeat = models.DateTimeField(null=True, blank=True)
     log_tail = models.TextField(null=True, blank=True)
+    blocked_reason = models.TextField(null=True, blank=True)
+    retry_of = models.ForeignKey(
+        "self", null=True, blank=True, on_delete=models.SET_NULL, related_name="retries"
+    )
+    attempt_number = models.IntegerField(default=1)
+    started_at_precise = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = "jobs"
@@ -199,6 +213,19 @@ class Job(models.Model):
     def __str__(self):
         state = self.state_code or "global"
         return f"Job {self.pk}: {self.phase} ({state}) [{self.status}]"
+
+    def can_transition_to(self, new_status: str) -> bool:
+        if self.status in self.TERMINAL_STATUSES:
+            return False
+        allowed = self.VALID_TRANSITIONS.get(self.status, set())
+        return new_status in allowed
+
+    def transition_status(self, new_status: str) -> None:
+        if not self.can_transition_to(new_status):
+            raise ValueError(
+                f"Invalid transition: {self.status} -> {new_status} "
+                f"(allowed: {self.VALID_TRANSITIONS.get(self.status, {})})"
+            )
 
 
 class Worker(models.Model):
@@ -215,6 +242,9 @@ class Worker(models.Model):
     registered_at = models.DateTimeField(auto_now_add=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
+    cpu_pct = models.FloatField(null=True, blank=True)
+    mem_pct = models.FloatField(null=True, blank=True)
+    has_gpu = models.BooleanField(default=False)
 
     class Meta:
         db_table = "workers"

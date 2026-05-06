@@ -478,7 +478,7 @@ def create_phone_enrich_job(config_overrides: dict, host: str) -> Job:
 
 
 def retry_job(job: Job) -> Job:
-    """Create a new pending job from a failed job, rewiring dependents."""
+    """Create a new pending job from a failed job, rewiring pending dependents."""
     if job.status != "failed":
         raise ValueError(f"Can only retry failed jobs, got {job.status}")
 
@@ -489,15 +489,16 @@ def retry_job(job: Job) -> Job:
             status="pending",
             host=job.host,
             config_json=job.config_json,
-            depends_on=job.depends_on,
+            retry_of=job,
+            attempt_number=job.attempt_number + 1,
         )
-        Job.objects.filter(depends_on=job).update(depends_on=new_job)
+        Job.objects.filter(depends_on=job, status="pending").update(depends_on=new_job)
         return new_job
 
 
 def cancel_job(job: Job) -> None:
     """Cancel a job. If running, send SIGTERM→SIGKILL. Cascade to dependents."""
-    if job.status not in ("pending", "running"):
+    if job.status not in ("pending", "scheduled", "running"):
         return
 
     if job.status == "running" and job.pid:
@@ -524,16 +525,24 @@ def cancel_job(job: Job) -> None:
     job.finished_at = timezone.now()
     job.save(update_fields=["status", "finished_at"])
 
-    for dep in Job.objects.filter(depends_on=job, status__in=["pending", "running"]):
+    for dep in Job.objects.filter(depends_on=job, status__in=["pending", "scheduled", "running"]):
         cancel_job(dep)
 
 
 def get_eligible_jobs(host: str):
-    """Get jobs that are ready to run on this host."""
+    """Get jobs that are ready to run on this host.
+
+    A job is eligible if:
+    - Status is pending
+    - Its dependency is satisfied (completed, or a retry of the dependency completed)
+    - No phase conflict (global or per-state)
+    """
     from django.db.models import Q
 
+    active_statuses = ("running", "scheduled")
+
     globally_blocked = set(
-        Job.objects.filter(status="running")
+        Job.objects.filter(status__in=active_statuses)
         .exclude(phase__in=_PER_STATE_PHASES)
         .values_list("phase", flat=True)
     ) | set(
@@ -541,7 +550,7 @@ def get_eligible_jobs(host: str):
     )
 
     running_per_state = set(
-        Job.objects.filter(status="running", phase__in=_PER_STATE_PHASES)
+        Job.objects.filter(status__in=active_statuses, phase__in=_PER_STATE_PHASES)
         .values_list("phase", "state_code")
     )
 
