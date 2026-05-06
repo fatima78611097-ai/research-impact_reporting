@@ -2,11 +2,15 @@
 
 ## Overview
 
-Implementation plan for Spec 0034. Four phases, each independently shippable. Phases 1-2 don't change pipeline stage code. Phase 3 adds data model. Phase 4 migrates each stage to the structured protocol.
+Implementation plan for Spec 0034. Five phases (Phase 1 split into 1A/1B for risk bounding), each independently shippable. Phases 1-2 don't change pipeline stage code. Phase 3 adds data model. Phase 4 migrates each stage to the structured protocol.
 
-**Estimated effort:** ~3-4 days agentic time across all phases.
+**Estimated effort:** ~4-5 days agentic time across all phases.
 
-## Phase 1: Stage Registry + Job Lifecycle (Foundation)
+**Status enum (canonical):** `not_started | in_progress | completed | failed | not_applicable`
+
+(The spec's original mention of "skipped" is superseded by the security review decision to use `not_applicable` — semantically clearer and consistent with the CHECK constraints.)
+
+## Phase 1A: Stage Registry + Parameter Validation (Low Risk)
 
 ### 1.1 Stage Registry Module
 
@@ -46,10 +50,12 @@ class StageDefinition:
     resource_class: str  # "heavy" | "medium" | "light"
     progress_estimator: str | None = None
     protocol_version: int = 0  # 0 = legacy, 1 = fd 3
-    provenance_query: str | None = None  # SQL template for fallback provenance
+    provenance_query: callable | None = None  # (config_json) -> list[(ein, status)]
 
 STAGE_REGISTRY: dict[str, StageDefinition] = { ... }
 ```
+
+The `provenance_query` is a Python callable (not a SQL string) because per-stage outcome derivation requires stage-specific logic (e.g., classify checks all documents for an org, not just a simple SELECT). Each stage defines its own function; the registry just holds the reference.
 
 Register existing stages: seed, resolve, crawl, classify, 990-index, 990-parse, enrich-phone.
 
@@ -59,6 +65,7 @@ Register existing stages: seed, resolve, crawl, classify, 990-index, 990-parse, 
 - No duplicate provenance_column values
 - All conflict_groups are valid
 - RetryPolicy.max_attempts ≤ 3
+- Each stage's provenance_column matches pattern `{stage_name}_status`
 
 ### 1.2 Parameter Validation
 
@@ -84,7 +91,23 @@ def build_argv(stage: StageDefinition, config_json: dict) -> list[str]:
     return argv
 ```
 
-### 1.3 Job Model Migration
+### 1.3 Tests (Phase 1A)
+
+- `tests/test_stages.py`: Registry validation (circular deps, missing predecessors, duplicate columns)
+- `tests/test_param_validators.py`: Each type validator, shell metachar rejection, argv construction
+
+**Acceptance Criteria (Phase 1A):**
+- [ ] AC1: Stage registry contains all existing stages with correct commands
+- [ ] AC2: `validate_registry()` passes; invalid registries rejected with clear errors
+- [ ] AC3: `build_argv()` produces correct argv for each stage
+- [ ] AC4: Parameter validation rejects shell metacharacters, invalid states, out-of-range integers
+- [ ] AC5: Existing orchestrator still works (registry coexists with COMMAND_MAP during transition)
+
+---
+
+## Phase 1B: Job Lifecycle, Scheduler, Crash Recovery (Higher Risk)
+
+### 1B.1 Job Model Migration
 
 **Migration:** `lavandula/dashboard/pipeline/migrations/XXXX_job_lifecycle_v2.py`
 
@@ -93,8 +116,9 @@ Add fields to Job model:
 - `blocked_reason` (TextField, nullable)
 - `retry_of` (ForeignKey to Job, nullable, related_name="retries")
 - `attempt_number` (IntegerField, default=1)
+- `started_at_precise` (DateTimeField, nullable) — records actual process start for PID reconciliation
 
-### 1.4 Orchestrator Refactor
+### 1B.2 Orchestrator Refactor
 
 **File:** `lavandula/dashboard/pipeline/management/commands/run_orchestrator.py`
 
@@ -109,48 +133,96 @@ Refactor to use stage registry:
 6. Add `blocked_reason` updates in eligibility check loop
 7. Add retry logic: on retryable failure, clone job + rebound dependents
 
-### 1.5 Scheduler Scoring Function
+### 1B.3 Scheduler Scoring Function
 
 **File:** `lavandula/dashboard/pipeline/scheduler.py` (NEW)
 
 ```python
 def score_placement(job: Job, worker: Worker, config: SchedulerConfig) -> float | None:
-    """Score a job-host pairing. Returns None if hard-rule blocked."""
-    # Hard rules (gates)
-    if worker.cpu_pct and worker.cpu_pct > config.cpu_ceiling_pct:
-        return None
-    if worker.mem_pct and worker.mem_pct > config.memory_ceiling_pct:
-        return None
-    running_heavy = Job.objects.filter(host=worker.hostname, status="running", phase__in=heavy_phases).count()
-    if running_heavy >= config.max_concurrent_heavy:
-        return None
-
-    # Soft scoring
-    score = 1.0
+    """Score a job-host pairing. Returns None if hard-rule blocked (gate)."""
     stage = STAGE_REGISTRY[job.phase]
     stage_config = config.stage_weights.get(job.phase, {})
+
+    # === HARD RULES (gates — return None to block) ===
+    
+    # Resource ceilings
+    if worker.cpu_pct and worker.cpu_pct > config.host_rules.cpu_ceiling_pct:
+        return None
+    if worker.mem_pct and worker.mem_pct > config.host_rules.memory_ceiling_pct:
+        return None
+    
+    # Per-host concurrency limit for heavy stages
+    if stage.resource_class == "heavy":
+        running_heavy = Job.objects.filter(
+            host=worker.hostname, status="running",
+            phase__in=[s.name for s in STAGE_REGISTRY.values() if s.resource_class == "heavy"]
+        ).count()
+        if running_heavy >= config.host_rules.max_concurrent_heavy:
+            return None
+    
+    # GPU requirement
+    if stage_config.get("gpu_preferred") and not worker.has_gpu:
+        return None  # hard gate if gpu_preferred AND no GPU on host
+    
+    # Cool-down after failure on this host
+    cool_down_s = config.host_rules.cool_down_after_failure_s
+    if cool_down_s:
+        recent_failure = Job.objects.filter(
+            host=worker.hostname, status="failed",
+            finished_at__gte=now() - timedelta(seconds=cool_down_s)
+        ).exists()
+        if recent_failure:
+            return None
+
+    # === SOFT SCORING (preferences — higher = better) ===
+    score = 1.0
     
     # Host affinity
     if worker.hostname in stage_config.get("prefer_hosts", []):
         score += 0.3
     
-    # Memory headroom bonus
+    # Memory headroom bonus (more headroom = higher score)
     if worker.mem_pct:
         score += (100 - worker.mem_pct) / 100 * 0.5
     
-    # Starvation boost
+    # Starvation boost (long-waiting jobs get priority)
     wait_minutes = (now() - job.created_at).total_seconds() / 60
-    if wait_minutes > config.starvation_boost_after_minutes:
+    if wait_minutes > config.scheduling.starvation_boost_after_minutes:
         score += 0.5
+    
+    # ETA lookahead: if a running heavy job is near completion, boost this host
+    if config.scheduling.eta_lookahead:
+        running_on_host = Job.objects.filter(host=worker.hostname, status="running")
+        for rj in running_on_host:
+            if rj.progress_total and rj.progress_current:
+                pct_done = rj.progress_current / rj.progress_total
+                if pct_done > 0.9:  # >90% done, about to free up
+                    score += 0.2
     
     return score
 
-def select_next_job(pending_jobs, workers, config) -> tuple[Job, Worker] | None:
-    """Pick the best job-host pair from all candidates."""
-    ...
+def select_next_jobs(pending_jobs, workers, config) -> list[tuple[Job, Worker]]:
+    """Score all pending × worker combinations, return best pairings."""
+    candidates = []
+    for job in pending_jobs:
+        for worker in workers:
+            s = score_placement(job, worker, config)
+            if s is not None:
+                candidates.append((s, job, worker))
+    candidates.sort(key=lambda x: -x[0])
+    # Greedy assignment: pick best pair, mark worker busy, repeat
+    assigned_workers = set()
+    result = []
+    for score, job, worker in candidates:
+        if worker.hostname not in assigned_workers:
+            result.append((job, worker))
+            assigned_workers.add(worker.hostname)
+    return result
 ```
 
-### 1.6 Scheduler Config
+The `api_bound` flag in stage config is informational — it means the bottleneck is an external API rate limit, not host resources. The scheduler treats `api_bound` stages as `resource_class=light` for scoring purposes (they don't compete for host CPU/RAM).
+
+### 1B.4 Scheduler Config
 
 **File:** `lavandula/dashboard/pipeline/scheduler_config.py` (NEW)
 
@@ -160,34 +232,77 @@ Loads `scheduler_config.yaml` from a configurable path. Watches file mtime and r
 
 Initial config with conservative defaults based on current operational knowledge.
 
-### 1.7 Dashboard Updates (Minimal)
+### 1B.5 Retry Chain Satisfaction
+
+The orchestrator's eligibility check must follow retry chains. When checking if `job.depends_on` is satisfied:
+
+```python
+def is_dependency_satisfied(job: Job) -> bool:
+    dep = job.depends_on
+    if dep is None:
+        return True
+    # Walk the retry chain: if any retry of dep completed, dep is satisfied
+    current = dep
+    while current:
+        if current.status == "completed":
+            return True
+        current = current.retries.order_by("-attempt_number").first()
+    return False
+```
+
+This ensures that if job A depends on job B, and B fails but B' (retry of B) succeeds, A can proceed.
+
+### 1B.6 Cancellation
+
+Jobs can be cancelled from any non-terminal state:
+- `pending → cancelled`: immediate, no side effects
+- `scheduled → cancelled`: immediate (subprocess not yet spawned)
+- `running → cancelled`: send SIGTERM to the process group, wait 10s, SIGKILL if needed. Mark `cancelled` after process exits.
+
+Each cancellation creates `JobEvent(event_type="cancelled", payload={"from_status": "...", "actor": "operator"})`.
+
+### 1B.7 Progress Estimator Wiring
+
+On job creation, the orchestrator calls the stage's `progress_estimator` (if defined) and writes the result to `Job.progress_total`:
+
+```python
+stage = STAGE_REGISTRY[job.phase]
+if stage.progress_estimator:
+    job.progress_total = stage.progress_estimator(job.config_json)
+    job.save(update_fields=["progress_total"])
+```
+
+### 1B.8 Dashboard Updates (Minimal)
 
 - Job list: show `blocked_reason` in a tooltip/column for pending jobs
 - Job list: show `scheduled` status with distinct color
 - Job creation forms: read stage parameters from registry (replaces hardcoded form fields)
 
-### 1.8 Tests
+### 1B.9 Tests (Phase 1B)
 
-- `tests/test_stages.py`: Registry validation, param validation, argv construction
-- `tests/test_scheduler.py`: Scoring function unit tests, hard-rule gates, starvation boost
-- `tests/test_job_lifecycle.py`: State transitions, retry+rebound, crash recovery
+- `tests/test_scheduler.py`: Scoring function unit tests — hard gates (memory ceiling, concurrent heavy, cool_down, gpu), soft weights (affinity, headroom, starvation, ETA), greedy assignment
+- `tests/test_job_lifecycle.py`: State transitions (valid + invalid rejected), retry chain creation + dependent rebinding, retry chain satisfaction check, cancellation from each non-terminal state
+- `tests/test_crash_recovery.py`: `scheduled` reset, PID alive + matching start time (resume), PID gone (orphan), PID alive + wrong start time (orphan)
+- `tests/test_scheduler_config.py`: YAML loading, hot-reload on mtime change, missing file uses defaults
 
-**Acceptance Criteria (Phase 1):**
-- [ ] AC1: Stage registry contains all existing stages with correct commands
-- [ ] AC2: `validate_registry()` passes; invalid registries rejected
-- [ ] AC3: `build_argv()` produces correct argv for each stage
-- [ ] AC4: Parameter validation rejects shell metacharacters, invalid states
-- [ ] AC5: Job model has `scheduled` status, `blocked_reason`, `retry_of` fields
-- [ ] AC6: Orchestrator acquires advisory lock; second instance exits cleanly
-- [ ] AC7: Jobs transition through `pending → scheduled → running → completed`
-- [ ] AC8: Blocked reason populated and visible on dashboard
-- [ ] AC9: Crash recovery: `scheduled` reset to `pending` on restart
-- [ ] AC10: Crash recovery: `running` jobs reconciled via PID + start time
-- [ ] AC11: Retry: failed job with retryable code spawns retry, dependents rebound
-- [ ] AC12: Scheduler scoring respects memory ceiling (hard rule)
-- [ ] AC13: Scheduler scoring applies host affinity preference (soft weight)
-- [ ] AC14: `scheduler_config.yaml` hot-reload on file change
-- [ ] AC15: Dashboard shows blocked reason and scheduled status
+**Acceptance Criteria (Phase 1B):**
+- [ ] AC6: Job model has `scheduled` status, `blocked_reason`, `retry_of`, `attempt_number` fields
+- [ ] AC7: Orchestrator acquires advisory lock; second instance exits cleanly
+- [ ] AC8: Jobs transition through `pending → scheduled → running → completed`
+- [ ] AC9: Invalid transitions rejected (e.g., `completed → running`)
+- [ ] AC10: Blocked reason populated and visible on dashboard
+- [ ] AC11: Crash recovery: `scheduled` reset to `pending` on restart
+- [ ] AC12: Crash recovery: `running` jobs reconciled via PID + start time
+- [ ] AC13: Retry: failed job with retryable code spawns retry, dependents rebound
+- [ ] AC14: Retry chain satisfaction: dependent on failed job proceeds when retry completes
+- [ ] AC15: Cancellation works from pending, scheduled, and running states
+- [ ] AC16: Scheduler scoring respects memory ceiling (hard rule)
+- [ ] AC17: Scheduler scoring respects cool_down_after_failure_s (hard rule)
+- [ ] AC18: Scheduler scoring applies host affinity, ETA lookahead (soft weights)
+- [ ] AC19: `scheduler_config.yaml` hot-reload on file change
+- [ ] AC20: Dashboard shows blocked reason and scheduled status
+- [ ] AC21: Progress estimator populates `progress_total` on job creation
+- [ ] AC22: Orchestrator uses registry-based dispatch (COMMAND_MAP kept as 1-week fallback)
 
 ---
 
@@ -246,11 +361,21 @@ Replace the current `log_tail` display with a timeline of `JobEvent` records:
 
 **Security:** All payload values rendered via `{{ value }}` (autoescaped). No `|safe` filter anywhere in job detail templates.
 
-### 2.6 Deprecate log_tail
+### 2.6 Legacy v0 Stage Handling (Spec Reconciliation)
 
-- Stop writing `log_tail` on job completion (orchestrator no longer reads log files for dashboard display)
-- Leave the field on the model for now (remove in a future cleanup)
-- Dashboard no longer reads `log_tail`; reads `job.events.all()` instead
+Per spec's security review: v0 stages get NO structured event parsing from logs. The orchestrator captures only:
+- Exit code (from subprocess return)
+- Log file path and size (for operator reference)
+- Duration (from started_at to finished_at)
+
+These three values are written as the `completed`/`failed` JobEvent payload for v0 stages:
+```json
+{"exit_code": 1, "duration_s": 29376, "log_file": "/var/log/.../crawl_WA_..._234.log", "log_size_bytes": 4521088, "protocol": "v0"}
+```
+
+The dashboard shows this minimal info for v0 jobs. No progress events, no error classification, no structured summary. This is intentionally degraded — it creates pressure to migrate stages to v1.
+
+**log_tail field:** Stop writing on job completion. Leave on model (nullable, unused for new jobs). Dashboard falls back to `log_tail` only for historical jobs created before Phase 2 deployment. New jobs show event timeline only.
 
 ### 2.7 Tests
 
@@ -258,15 +383,18 @@ Replace the current `log_tail` display with a timeline of `JobEvent` records:
 - `tests/test_summary_parser.py`: Parse each stage's DONE line format
 - `tests/test_job_detail_view.py`: Timeline renders correctly, XSS safety
 
+**Actor attribution:** Every JobEvent includes an `actor` field in the payload: `"orchestrator"`, `"operator"` (for manual actions like cancel), or `"system"` (for crash recovery resets). This satisfies the spec requirement that state changes record "timestamp, reason, and actor."
+
 **Acceptance Criteria (Phase 2):**
-- [ ] AC16: JobEvent model created with indexes
-- [ ] AC17: Every state transition creates a corresponding event
-- [ ] AC18: Completed/failed events contain structured summary payload
-- [ ] AC19: Payloads exceeding 64KB are truncated with `_truncated` flag
-- [ ] AC20: Dashboard job detail shows event timeline
-- [ ] AC21: No `|safe` filter used on any event-derived content
-- [ ] AC22: Progress events created from heartbeat polling
-- [ ] AC23: log_tail field no longer written (backward compat: still readable if populated)
+- [ ] AC23: JobEvent model created with indexes
+- [ ] AC24: Every state transition creates a corresponding event with actor attribution
+- [ ] AC25: Completed/failed events contain structured summary payload
+- [ ] AC26: v0 stages get minimal completion events (exit code + duration + log path only)
+- [ ] AC27: Payloads exceeding 64KB are truncated with `_truncated` flag
+- [ ] AC28: Dashboard job detail shows event timeline (new jobs) or log_tail (historical)
+- [ ] AC29: No `|safe` filter used on any event-derived content
+- [ ] AC30: `dependency_rebound` events recorded when dependents are rebound (from Phase 1B)
+- [ ] AC31: log_tail field no longer written for new jobs
 
 ---
 
@@ -383,12 +511,20 @@ UPDATE lava_pipeline.org_provenance SET
     END;
 ```
 
-### 3.6 Dashboard: Provenance Page
+### 3.6 Dashboard: Provenance Page (Registry-Driven)
 
 **Template:** `pipeline/templates/pipeline/provenance.html` (NEW)
 
-Table with columns: EIN, Org Name, State, NTEE, Seed, Resolve, Crawl, Classify, 990.
-Each stage cell color-coded: green=completed, yellow=in_progress, red=failed, gray=not_started.
+The provenance page renders columns **dynamically from the stage registry** — not hardcoded. The view queries `STAGE_REGISTRY` for all stages with a `provenance_column`, and the template iterates over them to build headers and cells. When a new stage is added (with a provenance column), it appears automatically on this page.
+
+```python
+# In view:
+provenance_stages = [s for s in STAGE_REGISTRY.values() if s.provenance_column]
+# Template iterates: {% for stage in provenance_stages %} <th>{{ stage.display_name }}</th>
+```
+
+Table columns: EIN, Org Name, State, NTEE, then one column per registered stage.
+Each stage cell color-coded: green=completed, yellow=in_progress, red=failed, gray=not_started, blue=not_applicable.
 Filters: state dropdown, status dropdown per stage, "stuck" checkbox (failed or in_progress > 7 days).
 Paginated (50 per page).
 
@@ -403,15 +539,16 @@ New view `provenance_list` with queryset filters.
 - `tests/test_provenance_views.py`: Dashboard page renders, filters work, XSS safe
 
 **Acceptance Criteria (Phase 3):**
-- [ ] AC24: `org_provenance` table created with CHECK constraints
-- [ ] AC25: Backfill populates correct status for orgs at each pipeline stage
-- [ ] AC26: `update_org_provenance` writes correct per-EIN outcomes
-- [ ] AC27: Column ownership enforced — stage can only write its own column
-- [ ] AC28: Provenance file path validated (realpath + prefix check)
-- [ ] AC29: Fallback to `provenance_query` when no file exists
-- [ ] AC30: Dashboard provenance page renders with color-coded statuses
-- [ ] AC31: Filters (state, status, stuck) produce correct results
-- [ ] AC32: Performance: provenance queries < 100ms at 100K rows
+- [ ] AC32: `org_provenance` table created with CHECK constraints on all status columns
+- [ ] AC33: Backfill populates correct status for orgs at each pipeline stage (spot-check 20 orgs)
+- [ ] AC34: `update_org_provenance` writes correct per-EIN outcomes for partial success
+- [ ] AC35: Column ownership enforced — attempt to write wrong column raises error + security event log
+- [ ] AC36: Provenance file path validated (realpath + prefix check); path traversal rejected
+- [ ] AC37: Fallback to `provenance_query` callable when no file exists
+- [ ] AC38: Dashboard provenance page renders dynamically from registry (columns auto-discovered)
+- [ ] AC39: Filters (state, status, stuck) produce correct results
+- [ ] AC40: Performance: provenance filter queries < 100ms at 100K rows
+- [ ] AC41: Concurrent writes on different columns for same EIN succeed without conflict
 
 ---
 
@@ -497,16 +634,18 @@ Each stage migration is an independent commit, independently testable.
 - `tests/test_protocol_integration.py`: Full cycle — subprocess emits, orchestrator captures events
 
 **Acceptance Criteria (Phase 4):**
-- [ ] AC33: `pipeline_protocol.py` library emits correct format on fd 3
-- [ ] AC34: Library gracefully handles fd 3 unavailable (no-op)
-- [ ] AC35: Orchestrator opens pipe, passes as fd 3, reads structured lines
-- [ ] AC36: Parsed lines create JobEvents with correct payloads
-- [ ] AC37: Malformed lines logged as warnings, don't crash orchestrator
-- [ ] AC38: Crawler stage migrated to v1, emits progress/error/summary
-- [ ] AC39: Resolver stage migrated to v1
-- [ ] AC40: Classifier stage migrated to v1
-- [ ] AC41: All stages write provenance JSONL at assigned path
-- [ ] AC42: Legacy v0 stages still work (exit code only, no event parsing)
+- [ ] AC42: `pipeline_protocol.py` library emits correct format on fd 3
+- [ ] AC43: Library gracefully handles fd 3 unavailable (no-op, no crash)
+- [ ] AC44: Orchestrator opens pipe, passes as fd 3, reads in non-blocking thread
+- [ ] AC45: Parsed lines create JobEvents with correct payloads
+- [ ] AC46: Malformed lines logged as warnings, don't crash orchestrator or create spurious events
+- [ ] AC47: Untrusted content on stdout does NOT produce events (fd 3 isolation verified)
+- [ ] AC48: Crawler stage migrated to v1, emits progress/error/summary
+- [ ] AC49: Resolver stage migrated to v1
+- [ ] AC50: Classifier stage migrated to v1
+- [ ] AC51: All v1 stages write provenance JSONL at orchestrator-assigned path
+- [ ] AC52: Legacy v0 stages still work (exit code + duration only)
+- [ ] AC53: Pipe buffer exhaustion handled (non-blocking thread drains continuously)
 
 ---
 
@@ -580,4 +719,4 @@ Each stage migration is an independent commit, independently testable.
 
 3. **fd 3 pipe exhaustion** — if a stage writes faster than the orchestrator reads, the pipe buffer fills (default 64KB on Linux). The stage's `emit_*` calls will block. Mitigate: orchestrator reads fd 3 in a non-blocking thread, not just on heartbeat ticks.
 
-4. **Advisory lock prevents legitimate restart** — if the orchestrator crashes without releasing the lock, the lock persists until the DB connection is cleaned up (typically immediate on process death, but verify). Add a `--force` flag that issues `pg_advisory_unlock_all()` before acquiring.
+4. **Advisory lock prevents legitimate restart** — Postgres session-level advisory locks are released automatically when the connection drops (which happens when the process dies). No `--force` flag needed — if the orchestrator crashes, the lock is released within the `idle_in_transaction_session_timeout` window (default: immediate on TCP RST). If a stale connection persists (rare), the operator can terminate it via `pg_terminate_backend()` targeting the specific PID. This is safer than a blanket `pg_advisory_unlock_all()` which could release unrelated locks.
