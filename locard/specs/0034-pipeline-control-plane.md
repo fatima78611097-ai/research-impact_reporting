@@ -448,3 +448,14 @@ Phases 1-2 can ship without changing any pipeline stage code. Phase 3 changes th
 3. **Event log: no retention policy initially.** Estimated volume: < 500K events/month at national scale. Reassess after Phase 4 (structured progress protocol) adds per-stage progress events — if volume exceeds 5M/month, add a 90-day TTL on `progress` events only, keeping lifecycle events indefinitely.
 
 4. **Dashboard rendering security.** All event payloads and `blocked_reason` text must be rendered through Django's autoescaping. Plan must explicitly prohibit `|safe` filter on any user-facing field derived from job events or log content.
+
+## Consultation Log
+
+| Round | Model | Type | Verdict | Key Findings |
+|-------|-------|------|---------|--------------|
+| 1 | Codex | spec-review | REQUEST_CHANGES | Host availability underspecified, cancellation/recovery missing, test gaps |
+| 1 | Claude | spec-review | REQUEST_CHANGES | Single vs multi-orchestrator unspecified, per-EIN provenance shape, heartbeat undefined, progress injection |
+| 2 | Codex | red-team-spec | REQUEST_CHANGES | Provenance status enum inconsistent, retry semantics fragile, PID-only recovery insufficient |
+| 2 | Claude | red-team-spec | REQUEST_CHANGES | 2 CRITICAL (legacy log-tail fallback injection, attacker-controlled provenance path), 5 HIGH |
+
+All findings addressed in commits 957cca0 and 30fbf08.

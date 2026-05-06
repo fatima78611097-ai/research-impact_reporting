@@ -737,3 +737,14 @@ Each stage migration is an independent commit, independently testable.
 3. **fd 3 pipe exhaustion** — if a stage writes faster than the orchestrator reads, the pipe buffer fills (default 64KB on Linux). The stage's `emit_*` calls will block. Mitigate: orchestrator reads fd 3 in a non-blocking thread, not just on heartbeat ticks.
 
 4. **Advisory lock prevents legitimate restart** — Postgres session-level advisory locks are released automatically when the connection drops (which happens when the process dies). No `--force` flag needed — if the orchestrator crashes, the lock is released within the `idle_in_transaction_session_timeout` window (default: immediate on TCP RST). If a stale connection persists (rare), the operator can terminate it via `pg_terminate_backend()` targeting the specific PID. This is safer than a blanket `pg_advisory_unlock_all()` which could release unrelated locks.
+
+## Consultation Log
+
+| Round | Model | Type | Verdict | Key Findings |
+|-------|-------|------|---------|--------------|
+| 1 | Codex | plan-review | REQUEST_CHANGES | Phase 1 too large, legacy v0 handling conflicts with spec, forward-compat not registry-driven, retry satisfaction incomplete |
+| 1 | Claude | plan-review | REQUEST_CHANGES | Phase 1 oversized, progress_estimator wiring missing, ALLOWED_COLUMNS undefined, scheduler config gaps |
+| 2 | Codex | red-team-plan | REQUEST_CHANGES | Legacy parsing regression, greedy scheduler double-assignment, PID fingerprint for remote reconciliation |
+| 2 | Claude | red-team-plan | REQUEST_CHANGES | assert for authz (CRITICAL), YAML loader RCE, cancellation PID-reuse, provenance file transport undefined |
+
+All findings addressed in commits bde1a94, 3a9ba31, and a2fb16e.
