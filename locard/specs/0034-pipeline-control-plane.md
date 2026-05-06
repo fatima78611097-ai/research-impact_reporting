@@ -56,9 +56,15 @@ One `run_orchestrator` process runs on the dashboard host, polling RDS for eligi
 
 This means:
 - **"Scheduled" = the central orchestrator picked up the job and is about to SSH-dispatch it.** The gap between `scheduled` and `running` is the SSH + process spawn latency.
-- **Locking is centralized** — only one process reads/writes job state, so no distributed lock needed.
+- **Locking is centralized** — only one process reads/writes job state, so no distributed lock needed. The orchestrator acquires a Postgres advisory lock on startup; a second instance attempting to start will detect the lock and exit. This prevents split-brain from accidental double-launch.
 - **Worker liveness** is determined by the orchestrator polling `Worker.last_heartbeat`. Workers update this via a lightweight cron or the running subprocess itself.
 - **If the orchestrator dies**, no new jobs are scheduled. Running subprocesses continue on their workers. On restart, the orchestrator reclaims `scheduled` jobs (moves them back to `pending`) and reconciles `running` jobs by checking PIDs on their target hosts.
+
+**SSH dispatch security:**
+- Workers are pre-registered in the `Worker` table with their SSH hostname and key fingerprint.
+- The orchestrator connects via SSH key authentication (no passwords), using `ssh -o StrictHostKeyChecking=yes` with host keys pinned in `~/.ssh/known_hosts`.
+- Remote commands are constructed as explicit argv arrays (`ssh host python3 -m module --arg value`) — never passed through a remote shell. The orchestrator uses `subprocess.Popen(["ssh", host, "--"] + argv)` with `shell=False`.
+- Workers do not need inbound SSH access to the orchestrator — communication is one-directional (orchestrator → worker).
 
 ### org_provenance Schema: `lava_pipeline`
 
@@ -110,13 +116,33 @@ class StageDefinition:
     name: str                          # "resolve", "crawl", "classify", "extract-vocab"
     display_name: str                  # "URL Resolver", "Site Crawler"
     command: list[str]                 # ["python3", "-m", "lavandula.nonprofits.tools.pipeline_resolve"]
-    parameters: dict[str, ParamSpec]   # {"state": ParamSpec(required=True, type="state_code"), ...}
+    parameters: dict[str, ParamSpec]   # see ParamSpec types below
     predecessors: list[str]            # ["seed"] — stages that must be complete before this one
     conflict_group: str | None         # "per-state" or "global" or "990-family"
     provenance_column: str | None      # "resolve_status" — column in org_provenance this stage writes
     retry_policy: RetryPolicy          # max_attempts, backoff, auto_retry
     progress_estimator: str | None     # "count_unresolved" — function name for progress_total
 ```
+
+**ParamSpec types** define the validation vocabulary for stage parameters:
+
+```python
+@dataclass
+class ParamSpec:
+    required: bool = False
+    type: str = "string"  # one of: state_code, string, integer, boolean, choice
+    choices: list[str] | None = None  # for type="choice"
+    cli_flag: str = ""  # e.g., "--state" — how the param maps to argv
+```
+
+Type validators:
+- `state_code`: 2-letter uppercase US state abbreviation, validated against a fixed list
+- `string`: Non-empty, max 200 chars, alphanumeric + hyphens/underscores only (no shell metacharacters)
+- `integer`: Parseable as int, within optional min/max bounds
+- `boolean`: Emitted as a flag (`--re-classify`) when true, omitted when false
+- `choice`: Value must be in the `choices` list
+
+Parameters are validated BEFORE command construction. Invalid parameters reject the job with a `JobEvent(event_type="failed", payload={"error_class": "invalid_params", ...})`.
 
 The `progress_estimator` is a callable `(config_json: dict) -> int | None` that returns the expected total record count for a job with the given config. For example, for `resolve`, it queries `SELECT COUNT(*) FROM nonprofits_seed WHERE state = :state AND resolver_status IS NULL`. Returns `None` if unknown. Called once at job creation to set `Job.progress_total`.
 
@@ -153,7 +179,7 @@ The field holds the *current* reason. Each change is also recorded as a `JobEven
 
 On orchestrator restart:
 - Jobs in `scheduled` status (picked up but never spawned) are moved back to `pending` with a `JobEvent(event_type="reset", payload={"reason": "orchestrator restart"})`.
-- Jobs in `running` status are reconciled: the orchestrator checks the target host for the recorded PID. If the process is still alive, tracking resumes. If the PID is gone, the job is marked `failed` with `error_class="orphaned"`.
+- Jobs in `running` status are reconciled: the orchestrator checks the target host for the recorded PID AND verifies the process start time matches `Job.started_at` (within 5s tolerance) using `/proc/<pid>/stat` or `ps -o lstart`. This prevents PID-reuse false positives. If the PID is alive with matching start time, tracking resumes. If the PID is gone or start time mismatches, the job is marked `failed` with `error_class="orphaned"`.
 - `Popen` spawn failures (binary missing, fork error, OS limit) transition directly from `scheduled` → `failed` with the exception recorded in the event log.
 
 ### 3. Job Event Log
@@ -217,7 +243,8 @@ New table `org_provenance` in `lava_pipeline` schema:
 ```sql
 CREATE TABLE lava_pipeline.org_provenance (
     ein TEXT PRIMARY KEY,
-    -- Stage statuses (enum: not_started, in_progress, completed, failed, skipped)
+    -- Stage statuses (enum: not_started, in_progress, completed, failed, not_applicable)
+    -- CHECK constraint enforces valid values per column
     seed_status       TEXT NOT NULL DEFAULT 'not_started',
     seed_completed_at TIMESTAMPTZ,
     resolve_status       TEXT NOT NULL DEFAULT 'not_started',
@@ -237,7 +264,7 @@ CREATE TABLE lava_pipeline.org_provenance (
 
 **Population strategy:** Each pipeline stage, on completion, reports per-EIN outcomes. The orchestrator's `_finish_job()` handler calls `update_org_provenance(stage, outcomes)` where `outcomes` is a list of `(ein, status)` tuples — not a single status for the whole batch. This handles partial success: a crawl job that processes 3,537 orgs successfully and 50 with transient failures writes `completed` for 3,537 and `failed` for 50.
 
-Stages report outcomes via the SUMMARY line: `SUMMARY: ... provenance_completed=3537 provenance_failed=50 provenance_file=/tmp/provenance_12345.jsonl`. The provenance file is a JSONL of `{"ein": "...", "status": "completed|failed|skipped"}` records. If no provenance file is emitted, the orchestrator falls back to marking all EINs in the job's scope with the job-level status.
+The orchestrator assigns each job a provenance output path at dispatch time: `--provenance-out /var/lib/lava/provenance/<job_id>.jsonl`. The stage writes per-EIN outcomes to this file as JSONL: `{"ein": "...", "status": "completed|failed|not_applicable"}`. The orchestrator reads ONLY from this pre-assigned path (validated with `os.path.realpath` + prefix check against the configured base directory). Stages cannot specify an arbitrary provenance path — this prevents path traversal attacks. If the provenance file does not exist at job completion, the orchestrator queries the stage's source tables directly to determine per-EIN outcomes (stage-specific query defined in the stage registry's `provenance_query` callable).
 
 **Seed stage special case:** Seed creates EINs — the `org_provenance` row is created by the seed stage itself (INSERT with all other columns defaulting to `not_started`). Orgs with zero documents after crawl have `classify_status = not_applicable`.
 
@@ -277,7 +304,11 @@ SUMMARY: duration_s=N records_processed=N records_failed=N [key=value ...]
 
 This is intentionally simple — not JSON, not protobuf. It's `key=value` pairs on tagged lines that can be parsed with a regex and are still human-readable in raw logs.
 
-**Injection safety:** Structured lines (`PROGRESS:`, `ERROR:`, `SUMMARY:`) are emitted via a dedicated helper (`from lavandula.pipeline_protocol import emit_progress, emit_error, emit_summary`) that writes to a separate file descriptor (fd 3) rather than stdout/stderr. The orchestrator reads fd 3 for structured events and captures stdout/stderr only for the raw log file. This prevents untrusted content in stdout (org names, error traces from crawl targets) from being parsed as structured events. If fd 3 is unavailable (legacy stages), the orchestrator falls back to log-tail parsing — structured protocol is opt-in per stage.
+**Injection safety:** Structured lines (`PROGRESS:`, `ERROR:`, `SUMMARY:`) are emitted via a dedicated helper (`from lavandula.pipeline_protocol import emit_progress, emit_error, emit_summary`) that writes to a separate file descriptor (fd 3) rather than stdout/stderr. The orchestrator reads fd 3 for structured events and captures stdout/stderr only for the raw log file. This prevents untrusted content in stdout (org names, error traces from crawl targets) from being parsed as structured events.
+
+**Legacy stage handling:** Stages are explicitly marked `protocol_version: 1` (fd 3) or `protocol_version: 0` (legacy) in the stage registry. Legacy stages (v0) do NOT get structured event parsing at all — the orchestrator reads only exit code and log file size for them. No log-tail parsing for structured data. This eliminates the injection vector entirely. All existing stages must be migrated to protocol v1 before the legacy fallback is removed; the stage registry tracks migration status. Target: all stages at v1 by end of Phase 4.
+
+**Provenance column ownership:** Each stage's `provenance_column` in the registry is enforced at write time. The `update_org_provenance()` function validates that the calling stage is writing only to its own column. Attempts to write to another stage's column raise an error and log a security event.
 
 **Payload size cap:** Event payloads are capped at 64KB. Payloads exceeding this are truncated with a `"_truncated": true` flag.
 
@@ -299,7 +330,8 @@ When a job fails with a retryable exit code:
 2. Cloned fields: phase, state_code, host, config_json. Not cloned: depends_on, log_file, pid, events.
 3. Write `JobEvent(event_type="retried", payload={"original_job_id": N, "attempt": M, "retry_job_id": R})` on the original job
 4. The failed job stays in `failed` status (preserving its events/logs)
-5. **Dependent rebinding:** Any jobs whose `depends_on` pointed to the failed job are updated to point to the retry job. This ensures downstream jobs wait on the retry, not the failed original. A `JobEvent(event_type="dependency_rebound")` is recorded on each affected dependent.
+5. **Dependent rebinding:** Any `pending` jobs whose `depends_on` pointed to the failed job are updated to point to the retry job. Only pending dependents are rebound — running or completed dependents are not touched. The retry job's `retry_of` FK (new field) links back to the original, forming a chain. The eligibility check follows `retry_of` chains: a dependent waiting on job X is also satisfied if any retry of X completed. A `JobEvent(event_type="dependency_rebound")` is recorded on each affected dependent.
+6. **Max retry cap:** `max_attempts` is capped at 3 in the `RetryPolicy` dataclass validation. This prevents infinite retry loops from misconfiguration.
 
 This replaces the current exit-code-3 special case in the orchestrator.
 
