@@ -27,7 +27,9 @@ from .models import (
     FilingIndex,
     IndexRefreshLog,
     Job,
+    JobEvent,
     NonprofitSeed,
+    OrgProvenance,
     Person,
     PipelineAuditLog,
     PipelineProcess,
@@ -1164,3 +1166,57 @@ class ReportDownloadView(LoginRequiredMixin, View):
             ExpiresIn=300,
         )
         return HttpResponseRedirect(url)
+
+
+class ProvenanceView(LoginRequiredMixin, ListView):
+    model = OrgProvenance
+    template_name = "pipeline/provenance.html"
+    context_object_name = "orgs"
+    paginate_by = 50
+
+    def get_queryset(self):
+        from datetime import timedelta
+        from .stages import STAGE_REGISTRY
+        from .orchestrator import US_STATES
+
+        qs = OrgProvenance.objects.all()
+
+        state = self.request.GET.get("state")
+        if state and state in US_STATES:
+            qs = qs.filter(ein__in=NonprofitSeed.objects.filter(state=state).values("ein"))
+
+        stage_name = self.request.GET.get("stage")
+        status_filter = self.request.GET.get("status")
+        if stage_name and stage_name in STAGE_REGISTRY:
+            stage = STAGE_REGISTRY[stage_name]
+            if stage.provenance_column and status_filter:
+                qs = qs.filter(**{stage.provenance_column: status_filter})
+
+        stuck = self.request.GET.get("stuck")
+        if stuck:
+            from django.db.models import Q
+            seven_days_ago = timezone.now() - timedelta(days=7)
+            stuck_q = Q()
+            for stage in STAGE_REGISTRY.values():
+                col = stage.provenance_column
+                if col:
+                    stuck_q |= Q(**{col: "failed"})
+                    stuck_q |= Q(**{col: "in_progress", "updated_at__lt": seven_days_ago})
+            qs = qs.filter(stuck_q)
+
+        return qs.order_by("-updated_at")
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        from .stages import STAGE_REGISTRY
+        from .orchestrator import US_STATES
+
+        ctx["provenance_stages"] = [
+            s for s in STAGE_REGISTRY.values() if s.provenance_column
+        ]
+        ctx["state_choices"] = US_STATES
+        # Preserve filter params for pagination links
+        params = self.request.GET.copy()
+        params.pop("page", None)
+        ctx["filter_params"] = params.urlencode()
+        return ctx

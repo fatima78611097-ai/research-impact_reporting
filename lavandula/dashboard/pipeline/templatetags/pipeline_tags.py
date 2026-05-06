@@ -111,3 +111,11 @@ def dictget(d, key):
     if not isinstance(d, dict):
         return None
     return d.get(key)
+
+
+@register.filter
+def get_provenance_status(obj, column):
+    """Get the value of a provenance column from an OrgProvenance instance."""
+    if not column:
+        return "not_started"
+    return getattr(obj, column, "not_started")

@@ -340,6 +340,36 @@ def create_job_event(job, event_type: str, payload: dict | None = None, actor: s
     return JobEvent.objects.create(job=job, event_type=event_type, payload=payload)
 
 
+class OrgProvenance(models.Model):
+    PROVENANCE_STATUS_CHOICES = [
+        ("not_started", "Not Started"),
+        ("in_progress", "In Progress"),
+        ("completed", "Completed"),
+        ("failed", "Failed"),
+        ("not_applicable", "Not Applicable"),
+    ]
+
+    ein = models.TextField(primary_key=True)
+    seed_status = models.TextField(default="not_started")
+    seed_completed_at = models.DateTimeField(null=True, blank=True)
+    resolve_status = models.TextField(default="not_started")
+    resolve_completed_at = models.DateTimeField(null=True, blank=True)
+    crawl_status = models.TextField(default="not_started")
+    crawl_completed_at = models.DateTimeField(null=True, blank=True)
+    classify_status = models.TextField(default="not_started")
+    classify_completed_at = models.DateTimeField(null=True, blank=True)
+    filing_990_status = models.TextField(default="not_started")
+    filing_990_completed_at = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        managed = False
+        db_table = '"lava_pipeline"."org_provenance"'
+
+    def __str__(self):
+        return f"Provenance {self.ein}"
+
+
 class PipelineAuditLog(models.Model):
     action = models.CharField(max_length=20)
     process_name = models.CharField(max_length=50)
