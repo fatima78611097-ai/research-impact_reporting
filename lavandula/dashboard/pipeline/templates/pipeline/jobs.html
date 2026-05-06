@@ -44,7 +44,7 @@
     <div class="overflow-x-auto">
       <table class="w-full text-sm">
         <thead><tr class="text-left text-gray-500 border-b">
-          <th class="pb-2">ID</th><th class="pb-2">Phase</th><th class="pb-2">State</th><th class="pb-2">Host</th><th class="pb-2">Depends On</th><th class="pb-2">Created</th>
+          <th class="pb-2">ID</th><th class="pb-2">Phase</th><th class="pb-2">State</th><th class="pb-2">Host</th><th class="pb-2">Depends On</th><th class="pb-2">Blocked</th><th class="pb-2">Created</th>
         </tr></thead>
         <tbody>
           {% for job in pending_jobs %}
@@ -54,6 +54,7 @@
             <td class="py-2">{{ job.state_code|default:"global" }}</td>
             <td class="py-2">{{ job.host }}</td>
             <td class="py-2">{% if job.depends_on %}<a href="{% url 'job_detail' job.depends_on.pk %}" class="text-blue-600">#{{ job.depends_on.pk }}</a>{% else %}-{% endif %}</td>
+            <td class="py-2 text-orange-600 text-xs">{{ job.blocked_reason|default:"-" }}</td>
             <td class="py-2 text-gray-500">{{ job.created_at|timesince }} ago</td>
           </tr>
           {% endfor %}

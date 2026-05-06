@@ -13,6 +13,8 @@
   <span class="px-3 py-1 rounded text-sm bg-green-100 text-green-800">Completed</span>
   {% elif job.status == "failed" %}
   <span class="px-3 py-1 rounded text-sm bg-red-100 text-red-800">Failed</span>
+  {% elif job.status == "scheduled" %}
+  <span class="px-3 py-1 rounded text-sm bg-purple-100 text-purple-800">Scheduled</span>
   {% elif job.status == "cancelled" %}
   <span class="px-3 py-1 rounded text-sm bg-gray-100 text-gray-600">Cancelled</span>
   {% endif %}
@@ -39,6 +41,12 @@
       {% if job.depends_on %}
       <div class="flex"><dt class="w-32 text-gray-500">Depends On</dt><dd><a href="{% url 'job_detail' job.depends_on.pk %}" class="text-blue-600 hover:underline">Job #{{ job.depends_on.pk }}</a></dd></div>
       {% endif %}
+      {% if job.blocked_reason %}
+      <div class="flex"><dt class="w-32 text-gray-500">Blocked</dt><dd class="text-orange-600">{{ job.blocked_reason }}</dd></div>
+      {% endif %}
+      {% if job.retry_of %}
+      <div class="flex"><dt class="w-32 text-gray-500">Retry Of</dt><dd><a href="{% url 'job_detail' job.retry_of.pk %}" class="text-blue-600 hover:underline">Job #{{ job.retry_of.pk }}</a> (attempt {{ job.attempt_number }})</dd></div>
+      {% endif %}
       {% if job.error_message %}
       <div class="flex"><dt class="w-32 text-gray-500">Error</dt><dd class="text-red-600">{{ job.error_message }}</dd></div>
       {% endif %}
@@ -51,7 +59,7 @@
 
     <!-- Actions -->
     <div class="mt-4 flex gap-2">
-      {% if job.status == "pending" or job.status == "running" %}
+      {% if job.status == "pending" or job.status == "scheduled" or job.status == "running" %}
       <form method="post" action="{% url 'job_cancel' job.pk %}">
         {% csrf_token %}
         <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded text-sm hover:bg-red-700">Cancel</button>
@@ -73,11 +81,33 @@
   </div>
 </div>
 
+<!-- Event Timeline -->
+{% if events %}
+<div class="mt-6 bg-white rounded-lg shadow p-5">
+  <h2 class="text-lg font-semibold text-gray-900 mb-3">Event Timeline</h2>
+  <div class="space-y-2 max-h-96 overflow-auto">
+    {% for event in events %}
+    <div class="flex items-start gap-3 text-sm border-l-2 pl-3 {% if event.event_type == 'error' or event.event_type == 'failed' %}border-red-400{% elif event.event_type == 'completed' %}border-green-400{% elif event.event_type == 'progress' %}border-blue-200{% elif event.event_type == 'warning' %}border-yellow-400{% else %}border-gray-200{% endif %}">
+      <span class="text-xs text-gray-400 whitespace-nowrap">{{ event.timestamp|localtime|date:"M j g:i:s A" }}</span>
+      <span class="font-medium {% if event.event_type == 'error' or event.event_type == 'failed' %}text-red-600{% elif event.event_type == 'completed' %}text-green-600{% elif event.event_type == 'warning' %}text-yellow-600{% else %}text-gray-700{% endif %}">{{ event.get_event_type_display }}</span>
+      {% if event.payload %}
+      <span class="text-gray-500 text-xs">
+        {% for key, value in event.payload.items %}{% if key != "actor" %}{{ key }}={{ value }} {% endif %}{% endfor %}
+      </span>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
 <!-- Log Output -->
+{% if log_content %}
 <div class="mt-6 bg-white rounded-lg shadow p-5">
   <h2 class="text-lg font-semibold text-gray-900 mb-3">Log Output</h2>
   <div hx-get="{% url 'job_log' job.pk %}" hx-trigger="every 5s" hx-swap="innerHTML">
     <pre class="text-xs bg-gray-900 text-green-400 p-4 rounded overflow-auto max-h-96">{{ log_content }}</pre>
   </div>
 </div>
+{% endif %}
 {% endblock %}

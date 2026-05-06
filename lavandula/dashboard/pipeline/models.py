@@ -277,6 +277,69 @@ class PipelineProcess(models.Model):
         return f"{self.name} [{self.status}]"
 
 
+class JobEvent(models.Model):
+    EVENT_TYPE_CHOICES = [
+        ("created", "Created"),
+        ("blocked", "Blocked"),
+        ("scheduled", "Scheduled"),
+        ("started", "Started"),
+        ("progress", "Progress"),
+        ("warning", "Warning"),
+        ("error", "Error"),
+        ("completed", "Completed"),
+        ("failed", "Failed"),
+        ("cancelled", "Cancelled"),
+        ("retried", "Retried"),
+        ("reset", "Reset"),
+        ("dependency_rebound", "Dependency Rebound"),
+    ]
+
+    job = models.ForeignKey(Job, on_delete=models.CASCADE, related_name="events")
+    timestamp = models.DateTimeField(auto_now_add=True)
+    event_type = models.CharField(max_length=20, choices=EVENT_TYPE_CHOICES, db_index=True)
+    payload = models.JSONField(default=dict)
+
+    class Meta:
+        db_table = "job_events"
+        ordering = ["timestamp"]
+        indexes = [
+            models.Index(fields=["job", "timestamp"]),
+            models.Index(fields=["event_type", "timestamp"]),
+        ]
+
+    def __str__(self):
+        return f"Job #{self.job_id} {self.event_type} @ {self.timestamp}"
+
+
+PAYLOAD_MAX_BYTES = 65536
+
+
+def truncate_payload(payload: dict, max_bytes: int = PAYLOAD_MAX_BYTES) -> dict:
+    """Truncate payload if its JSON representation exceeds max_bytes."""
+    import json
+    encoded = json.dumps(payload)
+    if len(encoded.encode("utf-8")) <= max_bytes:
+        return payload
+    # Truncate string values to fit
+    truncated = {}
+    for key, value in payload.items():
+        if isinstance(value, str) and len(value) > 500:
+            truncated[key] = value[:500] + "..."
+        else:
+            truncated[key] = value
+    truncated["_truncated"] = True
+    return truncated
+
+
+def create_job_event(job, event_type: str, payload: dict | None = None, actor: str = "orchestrator") -> "JobEvent":
+    """Create a JobEvent with payload truncation and actor attribution."""
+    if payload is None:
+        payload = {}
+    payload["actor"] = actor
+    payload = truncate_payload(payload)
+    return JobEvent.objects.create(job=job, event_type=event_type, payload=payload)
+
+
 class PipelineAuditLog(models.Model):
     action = models.CharField(max_length=20)
     process_name = models.CharField(max_length=50)

@@ -351,6 +351,8 @@ class JobDetailView(LoginRequiredMixin, DetailView):
         ctx = super().get_context_data(**kwargs)
         ctx["log_content"] = read_log_tail(self.object.log_file)
         ctx["hostname"] = _get_hostname()
+        from .models import JobEvent
+        ctx["events"] = JobEvent.objects.filter(job=self.object).order_by("-timestamp")[:200]
         return ctx
 
 
