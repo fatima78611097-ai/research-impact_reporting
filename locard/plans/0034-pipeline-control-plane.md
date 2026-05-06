@@ -145,10 +145,13 @@ def score_placement(job: Job, worker: Worker, config: SchedulerConfig) -> float 
 
     # === HARD RULES (gates — return None to block) ===
     
-    # Resource ceilings
-    if worker.cpu_pct and worker.cpu_pct > config.host_rules.cpu_ceiling_pct:
-        return None
-    if worker.mem_pct and worker.mem_pct > config.host_rules.memory_ceiling_pct:
+    # Resource ceilings (None metrics = no data = assume at ceiling, don't bypass)
+    if worker.cpu_pct is None or worker.cpu_pct > config.host_rules.cpu_ceiling_pct:
+        if worker.cpu_pct is None and worker.last_heartbeat:
+            pass  # Have heartbeat but no CPU data = allow (metrics optional)
+        elif worker.cpu_pct is not None and worker.cpu_pct > config.host_rules.cpu_ceiling_pct:
+            return None
+    if worker.mem_pct is not None and worker.mem_pct > config.host_rules.memory_ceiling_pct:
         return None
     
     # Per-host concurrency limit for heavy stages
@@ -210,13 +213,15 @@ def select_next_jobs(pending_jobs, workers, config) -> list[tuple[Job, Worker]]:
             if s is not None:
                 candidates.append((s, job, worker))
     candidates.sort(key=lambda x: -x[0])
-    # Greedy assignment: pick best pair, mark worker busy, repeat
+    # Greedy assignment: pick best pair, mark worker and job assigned, repeat
     assigned_workers = set()
+    assigned_jobs = set()
     result = []
     for score, job, worker in candidates:
-        if worker.hostname not in assigned_workers:
+        if worker.hostname not in assigned_workers and job.pk not in assigned_jobs:
             result.append((job, worker))
             assigned_workers.add(worker.hostname)
+            assigned_jobs.add(job.pk)
     return result
 ```
 
@@ -226,7 +231,7 @@ The `api_bound` flag in stage config is informational — it means the bottlenec
 
 **File:** `lavandula/dashboard/pipeline/scheduler_config.py` (NEW)
 
-Loads `scheduler_config.yaml` from a configurable path. Watches file mtime and reloads on change. Provides sensible defaults if file is missing.
+Loads `scheduler_config.yaml` from a configurable path using `yaml.safe_load()` (NEVER `yaml.load()` — RCE risk from untrusted YAML). Watches file mtime and reloads on change. Provides sensible defaults if file is missing.
 
 **File:** `lavandula/dashboard/scheduler_config.yaml` (NEW)
 
@@ -257,7 +262,7 @@ This ensures that if job A depends on job B, and B fails but B' (retry of B) suc
 Jobs can be cancelled from any non-terminal state:
 - `pending → cancelled`: immediate, no side effects
 - `scheduled → cancelled`: immediate (subprocess not yet spawned)
-- `running → cancelled`: send SIGTERM to the process group, wait 10s, SIGKILL if needed. Mark `cancelled` after process exits.
+- `running → cancelled`: verify PID + start time (same check as crash recovery) before sending signals. If PID matches, send SIGTERM to the process group, wait 10s, SIGKILL if needed. Mark `cancelled` after process exits. If PID doesn't match (stale), mark cancelled without signaling.
 
 Each cancellation creates `JobEvent(event_type="cancelled", payload={"from_status": "...", "actor": "operator"})`.
 
@@ -449,8 +454,12 @@ def update_org_provenance(stage_name: str, outcomes: list[tuple[str, str]]) -> i
     column = stage.provenance_column
     if not column:
         return 0
-    # Validate column ownership
-    assert column == f"{stage_name}_status" or column in ALLOWED_COLUMNS[stage_name]
+    # Validate column ownership (never use assert — disabled under python -O)
+    expected_column = f"{stage_name}_status"
+    if column != expected_column:
+        logger.error("SECURITY: stage %s attempted write to column %s (expected %s)",
+                     stage_name, column, expected_column)
+        raise PermissionError(f"Stage {stage_name} cannot write to {column}")
     # Batch UPDATE
     ...
 ```
@@ -459,14 +468,22 @@ def update_org_provenance(stage_name: str, outcomes: list[tuple[str, str]]) -> i
 
 On job dispatch, orchestrator passes `--provenance-out /var/lib/lava/provenance/<job_id>.jsonl`.
 
-On job completion:
-1. Check if provenance file exists at the pre-assigned path
-2. Validate: `os.path.realpath(path).startswith(PROVENANCE_BASE_DIR)`
-3. Parse JSONL, validate each `{"ein": str, "status": str}`
-4. Call `update_org_provenance(stage, outcomes)`
-5. Delete provenance file after successful ingestion
+**Provenance file transport (worker → orchestrator):**
 
-If no file exists, call `stage.provenance_query(config_json)` to determine outcomes from source tables.
+The provenance file is written on the worker host. The orchestrator retrieves it via `scp` (same SSH channel used for dispatch) after the job completes:
+```
+scp -o StrictHostKeyChecking=yes worker:/var/lib/lava/provenance/<job_id>.jsonl /var/lib/lava/provenance/<job_id>.jsonl
+```
+
+On job completion:
+1. SCP the provenance file from worker to orchestrator's local `PROVENANCE_BASE_DIR`
+2. Validate local path: `os.path.realpath(path).startswith(PROVENANCE_BASE_DIR)`
+3. Parse JSONL, validate each line: `{"ein": str, "status": str}` — reject lines with unexpected keys or status values not in the canonical enum
+4. Call `update_org_provenance(stage, outcomes)`
+5. Delete local provenance file after successful ingestion
+6. Delete remote provenance file on worker via SSH
+
+If SCP fails or no file exists on worker, call `stage.provenance_query(config_json)` to determine outcomes from source tables (RDS).
 
 ### 3.5 Backfill Migration
 
