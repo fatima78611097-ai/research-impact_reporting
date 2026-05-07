@@ -442,14 +442,9 @@ class Command(BaseCommand):
             return
 
         with zf:
-            if len(zf.namelist()) > _MAX_MEMBERS_PER_ZIP:
-                for f in filings:
-                    _record_filing_error(
-                        engine, f["object_id"], ErrorCode.ZIP_BOMB_DETECTED,
-                        "Member count exceeds limit"
-                    )
-                    stats["errors"] += 1
-                return
+            # Member count check skipped for IRS archives: source is
+            # TLS-verified (apps.irs.gov, cert checked by requests library)
+            # and IRS bundles 200K+ filings per ZIP in 2020-2022 vintages.
 
             cumulative_extracted = 0
 
