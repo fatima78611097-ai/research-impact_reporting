@@ -48,6 +48,9 @@ urlpatterns = [
     path("orgs/", views.OrgListView.as_view(), name="org_list"),
     path("orgs/<str:pk>/", views.OrgDetailView.as_view(), name="org_detail"),
 
+    # Provenance
+    path("provenance/", views.ProvenanceView.as_view(), name="provenance"),
+
     # Reports Browser
     path("reports/", views.ReportListView.as_view(), name="report_list"),
     path("reports/<str:sha>/", views.ReportDetailView.as_view(), name="report_detail"),

@@ -1,0 +1,93 @@
+{% extends "pipeline/base.html" %}
+{% load pipeline_tags %}
+{% block title %}Org Pipeline Status — Lavandula Pipeline{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold text-gray-900 mb-6">Org Pipeline Status</h1>
+
+<!-- Filters -->
+<form method="get" class="flex flex-wrap gap-3 mb-4 items-end">
+  <div>
+    <label class="text-xs text-gray-500">State</label>
+    <select name="state" class="border rounded px-2 py-1 text-sm">
+      <option value="">All</option>
+      {% for code in state_choices %}
+      <option value="{{ code }}" {% if request.GET.state == code %}selected{% endif %}>{{ code }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label class="text-xs text-gray-500">Stage</label>
+    <select name="stage" class="border rounded px-2 py-1 text-sm">
+      <option value="">Any</option>
+      {% for stage in provenance_stages %}
+      <option value="{{ stage.name }}" {% if request.GET.stage == stage.name %}selected{% endif %}>{{ stage.display_name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label class="text-xs text-gray-500">Status</label>
+    <select name="status" class="border rounded px-2 py-1 text-sm">
+      <option value="">Any</option>
+      <option value="not_started" {% if request.GET.status == "not_started" %}selected{% endif %}>Not Started</option>
+      <option value="in_progress" {% if request.GET.status == "in_progress" %}selected{% endif %}>In Progress</option>
+      <option value="completed" {% if request.GET.status == "completed" %}selected{% endif %}>Completed</option>
+      <option value="failed" {% if request.GET.status == "failed" %}selected{% endif %}>Failed</option>
+      <option value="not_applicable" {% if request.GET.status == "not_applicable" %}selected{% endif %}>N/A</option>
+    </select>
+  </div>
+  <div>
+    <label class="text-xs text-gray-500 flex items-center gap-1">
+      <input type="checkbox" name="stuck" {% if request.GET.stuck %}checked{% endif %}>
+      Stuck (failed or in_progress > 7d)
+    </label>
+  </div>
+  <button type="submit" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">Filter</button>
+</form>
+
+<!-- Results -->
+<div class="bg-white rounded-lg shadow overflow-x-auto">
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="text-left text-gray-500 border-b">
+        <th class="px-3 py-2">EIN</th>
+        {% for stage in provenance_stages %}
+        <th class="px-3 py-2">{{ stage.display_name }}</th>
+        {% endfor %}
+        <th class="px-3 py-2">Updated</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for org in page_obj %}
+      <tr class="border-b hover:bg-gray-50">
+        <td class="px-3 py-2 font-mono text-xs">
+          <a href="{% url 'org_detail' org.ein %}" class="text-blue-600 hover:underline">{{ org.ein }}</a>
+        </td>
+        {% for stage in provenance_stages %}
+        {% with status=org|get_provenance_status:stage.provenance_column %}
+        <td class="px-3 py-2">
+          <span class="px-2 py-0.5 text-xs rounded {% if status == 'completed' %}bg-green-100 text-green-800{% elif status == 'in_progress' %}bg-yellow-100 text-yellow-800{% elif status == 'failed' %}bg-red-100 text-red-800{% elif status == 'not_applicable' %}bg-blue-100 text-blue-800{% else %}bg-gray-100 text-gray-500{% endif %}">{{ status }}</span>
+        </td>
+        {% endwith %}
+        {% endfor %}
+        <td class="px-3 py-2 text-gray-500 text-xs">{{ org.updated_at|timesince }} ago</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="99" class="px-3 py-4 text-gray-500 text-center">No results.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<div class="flex gap-2 mt-4 justify-center">
+  {% if page_obj.has_previous %}
+  <a href="?page={{ page_obj.previous_page_number }}&{{ filter_params }}" class="px-3 py-1 border rounded text-sm hover:bg-gray-50">Prev</a>
+  {% endif %}
+  <span class="px-3 py-1 text-sm text-gray-500">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+  {% if page_obj.has_next %}
+  <a href="?page={{ page_obj.next_page_number }}&{{ filter_params }}" class="px-3 py-1 border rounded text-sm hover:bg-gray-50">Next</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

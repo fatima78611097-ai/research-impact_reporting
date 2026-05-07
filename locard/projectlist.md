@@ -539,9 +539,22 @@ projects:
     tags: [infrastructure, orchestration, multi-host, national-scale, operations]
     notes: "Motivated by national ingest bottleneck shifting from API rate limits to ops throughput. Job model already has host field, orchestrator already filters by hostname. Need registry, health, UI routing, and auto-distribution. Spec approved 2026-05-03. Plan approved 2026-05-03. PR #28 merged 2026-05-03. 20 files, +890/-32. Awaiting operator: Django migration + gunicorn reload + setup_worker on each host."
 
+  - id: "0034"
+    title: "Pipeline Control Plane & Org Provenance"
+    summary: "Re-engineer job lifecycle (scheduler, dependency resolution, structured logging), unified org provenance tracking (single view of where each org is across all pipeline stages), and extensible stage registry so future stages (extract, aggregate, report) plug in without re-engineering."
+    status: implementing
+    priority: high
+    files:
+      spec: locard/specs/0034-pipeline-control-plane.md
+      plan: locard/plans/0034-pipeline-control-plane.md
+      review: null
+    dependencies: ["0019", "0033"]
+    tags: [infrastructure, orchestration, observability, pipeline, architecture]
+    notes: "Motivated by 2026-05-05 observation: jobs silently fail to start, exit codes require log spelunking, org pipeline status spread across multiple tables with no unified view. Current system grew organically — needs a proper control plane before adding extract/aggregate/report stages. Spec approved 2026-05-06 after 4 review rounds (spec+red-team, Codex+Claude). Plan approved 2026-05-06 after 4 review rounds (plan+red-team, Codex+Claude). 53 ACs, 5 phases."
+
 ## Next Available Number
 
-**0034** - Reserve this number for your next project
+**0035** - Reserve this number for your next project
 
 ---
 
