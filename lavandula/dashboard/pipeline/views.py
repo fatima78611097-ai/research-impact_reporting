@@ -829,6 +829,12 @@ class OrgDetailView(LoginRequiredMixin, DetailView):
                 for f in filings
             ]
 
+        # Pipeline provenance status
+        try:
+            ctx["provenance"] = OrgProvenance.objects.get(ein=ein)
+        except OrgProvenance.DoesNotExist:
+            ctx["provenance"] = None
+
         return ctx
 
 
