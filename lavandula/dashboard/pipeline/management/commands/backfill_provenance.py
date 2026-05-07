@@ -34,7 +34,7 @@ class Command(BaseCommand):
         sql = """
         INSERT INTO lava_pipeline.org_provenance (ein, seed_status, seed_completed_at, updated_at)
         SELECT ein, 'completed', COALESCE(resolver_updated_at, NOW()), NOW()
-        FROM lava_impact.nonprofits_seed
+        FROM lava_corpus.nonprofits_seed
         ON CONFLICT (ein) DO NOTHING
         """
         return self._execute(sql, dry_run)
@@ -53,7 +53,7 @@ class Command(BaseCommand):
                 ELSE NULL
             END,
             updated_at = NOW()
-        FROM lava_impact.nonprofits_seed s
+        FROM lava_corpus.nonprofits_seed s
         WHERE p.ein = s.ein
         """
         return self._execute(sql, dry_run)
@@ -71,7 +71,7 @@ class Command(BaseCommand):
             END,
             updated_at = NOW()
         FROM lava_pipeline.org_provenance p2
-        LEFT JOIN lava_impact.crawled_orgs co ON p2.ein = co.ein
+        LEFT JOIN lava_corpus.crawled_orgs co ON p2.ein = co.ein
         WHERE p.ein = p2.ein
         """
         return self._execute(sql, dry_run)
