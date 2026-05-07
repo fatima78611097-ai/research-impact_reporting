@@ -293,7 +293,9 @@ _SYSTEM_PROMPT_V2_TEMPLATE = (
     '- "other_collateral" is the catch-all for nonprofit materials that don\'t '
     "fit any specific type.\n"
     '- "not_relevant" means the PDF is clearly not nonprofit collateral '
-    "(e.g., a tax form, map, menu, syllabus).\n"
+    "(e.g., IRS Form 990, tax returns, maps, menus, syllabi). "
+    "IRS Form 990s are ALWAYS not_relevant — they are government filings, "
+    "not org-produced collateral.\n"
     "- event_type is ONLY for documents explicitly tied to a named fundraising "
     'event (e.g., "2025 Spring Gala", "Annual Golf Classic"). '
     "Set event_type=null for:\n"

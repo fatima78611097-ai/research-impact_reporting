@@ -75,14 +75,13 @@ material_types:
     tier: web
     filename_signals:
       strong_positive: [financial-statement, financial-report, audited-financial, financial-audit, consolidated-financial]
-      medium_positive: [financial, "990", audit, char-500, char500]
+      medium_positive: [financial, audit, char-500, char500]
     anchor_signals:
       - financial statements
       - financial report
       - audited financial
-      - "990"
       - financial audit
-    description: "Audited financial statements, 990s, and financial reports"
+    description: "Audited financial statements and financial reports (not IRS filings)"
 
   - id: community_benefit_report
     group: reports
@@ -616,7 +615,16 @@ material_types:
   - id: not_relevant
     group: other
     tier: web
-    description: "Classifier negative class"
+    filename_signals:
+      strong_positive: ["990", form-990, irs-990]
+      medium_positive: [990-return, tax-return, form990]
+    anchor_signals:
+      - "form 990"
+      - "return of organization exempt from income tax"
+      - "internal revenue service"
+      - "OMB No. 1545-0047"
+      - "department of the treasury"
+    description: "Not nonprofit collateral (IRS tax forms, maps, menus, etc.)"
 
 
 # ---------------------------------------------------------------------------
