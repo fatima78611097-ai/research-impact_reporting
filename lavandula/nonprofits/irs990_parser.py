@@ -284,6 +284,20 @@ def _parse_part_vii_b(irs990: ET.Element, warnings: list[str]) -> list[Person]:
     return contractors
 
 
+_NAME_SUFFIXES_RE = re.compile(
+    r",?\s+(?:JR|SR|II|III|IV|V|MD|DO|PHD|ESQ|CPA|RN|DDS|MBA|MPA|MSW|LCSW|FACHE)\.?$",
+    re.IGNORECASE,
+)
+
+
+def _normalize_name(name: str) -> str:
+    """Normalize a person name for fuzzy matching."""
+    n = name.upper().strip()
+    n = _NAME_SUFFIXES_RE.sub("", n)
+    n = n.replace(",", " ").replace(".", " ")
+    return " ".join(n.split())
+
+
 def _merge_schedule_j(
     root: ET.Element,
     people: list[Person],
@@ -293,10 +307,17 @@ def _merge_schedule_j(
     if not schedule_j_groups:
         return
 
+    # Exact match index
     name_to_person: dict[str, Person] = {}
     for p in people:
         if p.person_type != "contractor":
             name_to_person[p.person_name] = p
+
+    # Normalized match index (fallback)
+    norm_to_person: dict[str, Person] = {}
+    for p in people:
+        if p.person_type != "contractor":
+            norm_to_person[_normalize_name(p.person_name)] = p
 
     matched = 0
     total = len(schedule_j_groups)
@@ -313,6 +334,8 @@ def _merge_schedule_j(
 
         person = name_to_person.get(raw_name)
         if person is None:
+            person = norm_to_person.get(_normalize_name(raw_name))
+        if person is None:
             warnings.append(
                 f"Schedule J name {raw_name!r} not found in Part VII — skipped"
             )
@@ -327,11 +350,11 @@ def _merge_schedule_j(
         person.total_comp_sch_j = _dollars(_find(grp, "TotalCompensationFilingOrgAmt"))
 
     if total > 0 and matched == 0:
-        log.error(
+        log.warning(
             "All %d Schedule J entries failed to match Part VII names", total,
         )
         warnings.append(
-            f"ERROR: All {total} Schedule J entries failed to match Part VII names"
+            f"All {total} Schedule J entries failed to match Part VII names"
         )
 
 

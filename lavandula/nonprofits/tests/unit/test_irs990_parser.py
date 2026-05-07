@@ -188,7 +188,7 @@ class TestScheduleJMismatch:
         assert alice.person_name == "ALICE SMITH"
         assert alice.base_comp is None  # not merged
         assert any("COMPLETELY WRONG NAME" in w for w in result.warnings)
-        assert any("ERROR:" in w for w in result.warnings)
+        assert any("failed to match Part VII" in w for w in result.warnings)
 
 
 class TestXXERejection:
