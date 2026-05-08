@@ -49,6 +49,9 @@ class EventTypeDef:
     id: str
 
 
+_VALID_CONTEXT_MODES = frozenset({"single_page", "multipage"})
+
+
 @dataclass(frozen=True)
 class ClassifierDefinition:
     name: str
@@ -61,6 +64,7 @@ class ClassifierDefinition:
     guidelines: str
     event_types: list[EventTypeDef]
     tool_schema: dict
+    context_mode: str = "single_page"
     _categories_by_id: dict[str, CategoryDef] = field(
         default_factory=dict, repr=False, compare=False,
     )
@@ -174,6 +178,7 @@ def _parse_definition(raw: str, name: str, path: Path) -> ClassifierDefinition:
         guidelines=guidelines,
         event_types=event_types,
         tool_schema=tool_schema,
+        context_mode=meta["context_mode"],
     )
 
 
@@ -223,12 +228,20 @@ def _parse_frontmatter(fm_text: str, expected_name: str) -> dict:
     if not isinstance(meta["output_columns"], list) or not meta["output_columns"]:
         raise DefinitionLoadError("output_columns must be a non-empty list")
 
+    context_mode = meta.get("context_mode", "single_page")
+    if context_mode not in _VALID_CONTEXT_MODES:
+        raise DefinitionLoadError(
+            f"context_mode must be one of {sorted(_VALID_CONTEXT_MODES)}, "
+            f"got {context_mode!r}"
+        )
+
     return {
         "name": meta["name"],
         "version": meta["version"],
         "description": meta["description"],
         "source_taxonomy": meta.get("source_taxonomy"),
         "output_columns": meta["output_columns"],
+        "context_mode": context_mode,
     }
 
 

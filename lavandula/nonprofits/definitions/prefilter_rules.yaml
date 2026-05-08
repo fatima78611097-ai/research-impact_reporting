@@ -1,0 +1,34 @@
+rules:
+  # 990s — strongest signal (text markers)
+  - name: irs_990_text
+    material_type: not_relevant
+    confidence: 0.99
+    reasoning: "Rule: IRS Form 990 detected from page text markers"
+    conditions:
+      text_contains_any:
+        - "OMB No. 1545-0047"
+        - "Return of Organization Exempt From Income Tax"
+        - "Form 990-EZ"
+        - "Form 990-PF"
+        - "Form 990-T"
+
+  # 990s — URL pattern
+  - name: irs_990_url
+    material_type: not_relevant
+    confidence: 0.95
+    reasoning: "Rule: URL contains 990 filing indicator"
+    conditions:
+      url_matches: "(?i)/990[^a-z]|form.?990|irs.?990"
+
+  # 990s — compound: known filing software + text co-signal
+  - name: irs_990_creator_plus_text
+    material_type: not_relevant
+    confidence: 0.95
+    reasoning: "Rule: Known 990 filing software + 990 text markers"
+    conditions:
+      pdf_creator_any:
+        - "ProSystem fx"
+        - "Intuit Inc. FPS Engine"
+      text_contains_any:
+        - "Form 990"
+        - "Return of Organization"

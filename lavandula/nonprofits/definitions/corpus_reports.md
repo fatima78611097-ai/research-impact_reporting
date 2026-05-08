@@ -1,8 +1,9 @@
 ---
 name: corpus_reports
-version: 1
+version: 2
 description: Classify nonprofit PDF documents by material type
 source_taxonomy: collateral_taxonomy.yaml
+context_mode: multipage
 output_columns:
   - material_type
   - material_group

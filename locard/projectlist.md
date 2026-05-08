@@ -552,9 +552,22 @@ projects:
     tags: [infrastructure, orchestration, observability, pipeline, architecture]
     notes: "Motivated by 2026-05-05 observation: jobs silently fail to start, exit codes require log spelunking, org pipeline status spread across multiple tables with no unified view. Current system grew organically — needs a proper control plane before adding extract/aggregate/report stages. Spec approved 2026-05-06 after 4 review rounds (spec+red-team, Codex+Claude). Plan approved 2026-05-06 after 4 review rounds (plan+red-team, Codex+Claude). 53 ACs, 5 phases. PR #29 merged 2026-05-07: 32 files, +3189/-59. Awaiting operator: Django migrations 0007+0008, RDS migration 013, gunicorn reload."
 
+  - id: "0035"
+    title: "Multi-Page Classification Context & Hardened Classifier"
+    summary: "Extract pages 1-5 from S3-archived PDFs into a persistent classification_context table, augment the classifier prompt with metadata (URL, page count, pdf_creator), add rule-based pre-filters for obvious categories (990s, financial statements), and re-classify the full corpus. Keeps extracted context for iterative prompt tuning without re-touching S3."
+    status: planned
+    priority: high
+    files:
+      spec: locard/specs/0035-multipage-classification.md
+      plan: locard/plans/0035-multipage-classification.md
+      review: null
+    dependencies: ["0023", "0025", "0007"]
+    tags: [classifier, data-quality, extraction, cost-optimization]
+    notes: "Motivated by 2026-05-08 analysis: 33% of corpus has <200 chars of first-page text (cover pages only), causing low-confidence guesses. 1,965 IRS 990s misclassified as financial_report. Impact_report has 17% low-confidence rate. Sending 5 pages + metadata to DeepSeek costs $32 total for 145K docs."
+
 ## Next Available Number
 
-**0035** - Reserve this number for your next project
+**0036** - Reserve this number for your next project
 
 ---
 

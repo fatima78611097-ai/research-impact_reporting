@@ -14,7 +14,11 @@ Design:
 from __future__ import annotations
 
 import dataclasses
+import os
+import re
+import secrets
 from typing import TYPE_CHECKING, Any, Protocol
+from urllib.parse import urlparse
 
 from . import config
 from .logging_utils import sanitize_exception
@@ -452,6 +456,131 @@ def classify_first_page_v2(
 
 
 # ---------------------------------------------------------------------------
+# Augmented prompt builder (Spec 0035)
+# ---------------------------------------------------------------------------
+
+_XML_TAG_RE = re.compile(r"</?[a-zA-Z][^>]{0,200}>")
+_CONTROL_CHAR_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+_ZERO_WIDTH_RE = re.compile(r"[​-‏‪-‮⁦-⁩﻿]")
+_ALLOWED_SCHEMES = frozenset({"http", "https"})
+
+
+def _sanitize_text(text: str) -> str:
+    """Strip XML-like tags, control chars, zero-width chars from untrusted text."""
+    text = _XML_TAG_RE.sub("", text)
+    text = _CONTROL_CHAR_RE.sub("", text)
+    text = _ZERO_WIDTH_RE.sub("", text)
+    return text
+
+
+def _sanitize_pdf_creator(creator: str) -> str:
+    """Sanitize pdf_creator: strip tags, control chars, newlines, cap 100 chars."""
+    creator = _sanitize_text(creator)
+    creator = creator.replace("\n", " ").replace("\r", " ")
+    return creator[:100]
+
+
+def _extract_url_path(url: str) -> str:
+    """Extract URL path only. Scheme allowlist: http, https."""
+    if not url:
+        return ""
+    try:
+        parsed = urlparse(url)
+    except Exception:
+        return ""
+    if parsed.scheme.lower() not in _ALLOWED_SCHEMES:
+        return ""
+    path = parsed.path or ""
+    path = _CONTROL_CHAR_RE.sub("", path)
+    path = path.replace("<", "").replace(">", "")
+    return path[:_URL_MAX_LEN]
+
+
+_URL_MAX_LEN = 2048
+
+
+def _format_file_size(size_bytes: int | None) -> str | None:
+    """Format bytes as human-readable size."""
+    if size_bytes is None:
+        return None
+    if size_bytes < 1024:
+        return f"{size_bytes} bytes"
+    elif size_bytes < 1024 * 1024:
+        return f"{size_bytes / 1024:.1f} KB"
+    else:
+        return f"{size_bytes / (1024 * 1024):.1f} MB"
+
+
+def build_augmented_user_message(
+    *,
+    pages_text: str | None,
+    first_page_text: str,
+    url_path: str | None = None,
+    page_count: int | None = None,
+    file_size_bytes: int | None = None,
+    pdf_creator: str | None = None,
+    nonce: str | None = None,
+) -> str:
+    """Build augmented user message with metadata and multi-page text.
+
+    Security notes:
+      - page_count and file_size are system-derived → <document_metadata>
+      - url_path and pdf_creator are attacker-controlled → <untrusted_document>
+      - Page markers include a nonce to distinguish from attacker-planted markers
+    """
+    if nonce is None:
+        nonce = secrets.token_hex(4)
+
+    doc_text = pages_text if pages_text else first_page_text
+    doc_text = _sanitize_text(doc_text)
+
+    if pages_text:
+        doc_text = re.sub(
+            r"--- PAGE (\d+) ---",
+            lambda m: f"--- PAGE {m.group(1)} [{nonce}] ---",
+            doc_text,
+        )
+
+    metadata_parts = []
+    if page_count is not None:
+        metadata_parts.append(f"Page count: {page_count}")
+    file_size_str = _format_file_size(file_size_bytes)
+    if file_size_str:
+        metadata_parts.append(f"File size: {file_size_str}")
+
+    metadata_block = ""
+    if metadata_parts:
+        metadata_block = (
+            "<document_metadata>\n"
+            + "\n".join(metadata_parts)
+            + "\n</document_metadata>\n\n"
+        )
+
+    untrusted_parts = []
+    if url_path:
+        clean_path = _extract_url_path(url_path) if "://" in url_path else url_path[:_URL_MAX_LEN]
+        clean_path = _sanitize_text(clean_path)
+        if clean_path:
+            untrusted_parts.append(f"URL path: {clean_path}")
+    if pdf_creator:
+        untrusted_parts.append(f"PDF creator: {_sanitize_pdf_creator(pdf_creator)}")
+
+    untrusted_prefix = ""
+    if untrusted_parts:
+        untrusted_prefix = "\n".join(untrusted_parts) + "\n\n"
+
+    return (
+        "Classify the nonprofit PDF below by calling the "
+        "record_classification tool.\n\n"
+        f"{metadata_block}"
+        "<untrusted_document>\n"
+        f"{untrusted_prefix}"
+        f"{doc_text}\n"
+        "</untrusted_document>"
+    )
+
+
+# ---------------------------------------------------------------------------
 # V3 classifier — definition-driven (Spec 0025)
 # ---------------------------------------------------------------------------
 
@@ -463,6 +592,11 @@ def classify_first_page_v3(
     definition: "ClassifierDefinition",
     model: str | None = None,
     raise_on_error: bool = True,
+    pages_text: str | None = None,
+    url_path: str | None = None,
+    page_count: int | None = None,
+    file_size_bytes: int | None = None,
+    pdf_creator: str | None = None,
 ) -> ClassificationResult:
     """V3 classifier using definition-driven prompt."""
     from lavandula.nonprofits.definition_loader import (
@@ -472,7 +606,32 @@ def classify_first_page_v3(
     from lavandula.reports.taxonomy import material_type_to_legacy
 
     used_model = model or config.CLASSIFIER_MODEL
-    sanitized = sanitize_document_text(first_page_text)
+
+    use_augmented = (
+        getattr(definition, "context_mode", "single_page") == "multipage"
+        and (pages_text is not None or url_path is not None
+             or page_count is not None or file_size_bytes is not None
+             or pdf_creator is not None)
+    )
+
+    if use_augmented:
+        user_content = build_augmented_user_message(
+            pages_text=pages_text,
+            first_page_text=first_page_text,
+            url_path=url_path,
+            page_count=page_count,
+            file_size_bytes=file_size_bytes,
+            pdf_creator=pdf_creator,
+        )
+    else:
+        sanitized = sanitize_document_text(first_page_text)
+        user_content = (
+            "Classify the nonprofit PDF below by calling the "
+            "record_classification tool.\n"
+            "<untrusted_document>\n"
+            f"{sanitized}\n"
+            "</untrusted_document>"
+        )
 
     tool = openai_to_anthropic_tool(definition.tool_schema)
     kwargs = {
@@ -480,13 +639,7 @@ def classify_first_page_v3(
         "max_tokens": 512,
         "temperature": config.CLASSIFIER_TEMPERATURE,
         "system": definition.system_prompt,
-        "messages": [{"role": "user", "content": (
-            "Classify the nonprofit PDF below by calling the "
-            "record_classification tool.\n"
-            "<untrusted_document>\n"
-            f"{sanitized}\n"
-            "</untrusted_document>"
-        )}],
+        "messages": [{"role": "user", "content": user_content}],
         "tools": [tool],
         "tool_choice": {"type": "tool", "name": "record_classification"},
     }
@@ -585,6 +738,7 @@ __all__ = [
     "build_messages_v2",
     "build_anthropic_kwargs",
     "build_anthropic_kwargs_v2",
+    "build_augmented_user_message",
     "ClassifierError",
     "ClassificationResult",
     "classify_first_page",
