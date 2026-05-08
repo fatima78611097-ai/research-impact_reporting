@@ -111,7 +111,7 @@ class RunCrawlForm(forms.Form):
     max_download_workers = forms.IntegerField(required=False, min_value=1, max_value=100, widget=forms.NumberInput(
         attrs={"class": "w-full border border-gray-300 rounded px-3 py-2"}
     ))
-async_mode = forms.BooleanField(required=False, label="Async")
+    async_mode = forms.BooleanField(required=False, label="Async")
     classifier_backend = forms.ChoiceField(
         choices=[
             ("deepseek", "DeepSeek (API, default)"),
