@@ -316,7 +316,7 @@ class Command(BaseCommand):
 
     _EXIT_CODE_HINTS = {
         1: "partial failure (DB flush errors or invalid input)",
-        2: "startup check failed (archive/encryption/TLS)",
+        2: "startup check failed (archive/TLS)",
         -9: "killed (SIGKILL — OOM or manual kill)",
         -15: "terminated (SIGTERM — orchestrator shutdown)",
         -2: "interrupted (SIGINT)",

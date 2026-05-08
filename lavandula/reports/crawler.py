@@ -2,8 +2,7 @@
 
 Loops the seed list from `lava_corpus.nonprofits_seed`, runs
 discovery → fetch → sandbox → db_writer for each candidate, and
-enforces operational ACs (flock AC19, resume AC20, permissions AC21,
-encryption-at-rest AC21.1).
+enforces operational ACs (flock AC19, resume AC20, permissions AC21).
 
 Spec 0017: SQLite is gone. Every DB call flows through the SQLAlchemy
 engine from `lavandula.common.db.make_app_engine()`. Each db_writer
@@ -162,49 +161,6 @@ def should_skip_ein(engine: Engine, *, ein: str, refresh: bool) -> bool:
 
 
 # ---------------------------------------------------------------------
-# Encryption-at-rest (AC21.1)
-# ---------------------------------------------------------------------
-
-@dataclasses.dataclass
-class EncryptionCheckResult:
-    ok: bool
-    reason: str = ""
-    mechanism: str = ""
-
-
-def check_encryption_at_rest(path: Path) -> EncryptionCheckResult:
-    """AC21.1 — halt at startup if data/raw paths aren't on encrypted storage."""
-    path = Path(path)
-    marker = path / ".encrypted-volume"
-    if marker.exists():
-        return EncryptionCheckResult(
-            ok=True,
-            reason="operator_attested",
-            mechanism="marker_file",
-        )
-    try:
-        mounts = Path("/proc/mounts").read_text()
-        for line in mounts.splitlines():
-            parts = line.split()
-            if len(parts) < 2:
-                continue
-            src, mnt = parts[0], parts[1]
-            if any(s in src for s in ("dm-crypt", "mapper/", "ecryptfs")):
-                if str(path.resolve()).startswith(mnt):
-                    return EncryptionCheckResult(
-                        ok=True, reason="dm-crypt", mechanism=src
-                    )
-    except OSError:
-        pass
-    return EncryptionCheckResult(
-        ok=False,
-        reason=(
-            "no encryption auto-detected and no .encrypted-volume marker; "
-            "see HANDOFF.md for marker format"
-        ),
-    )
-
-
 # ---------------------------------------------------------------------
 # HALT files
 # ---------------------------------------------------------------------
@@ -601,9 +557,7 @@ def run(argv: list[str] | None = None) -> int:
                         help="Override AWS region for the S3 archive")
     parser.add_argument("--skip-tls-self-test", action="store_true",
                         help="(ops only) skip startup TLS self-test")
-    parser.add_argument("--skip-encryption-check", action="store_true",
-                        help="(ops only) skip encryption-at-rest check")
-    parser.add_argument("--ein", type=str, default=None,
+parser.add_argument("--ein", type=str, default=None,
                         help="Crawl a single org by EIN (for debugging)")
     parser.add_argument("--limit", type=int, default=0,
                         help="Max orgs to crawl (0 = no limit)")
@@ -654,9 +608,6 @@ def run(argv: list[str] | None = None) -> int:
         return 3
 
     try:
-        # Encryption-at-rest check removed: all crawled data (IRS 990s, nonprofit
-        # websites) is public information, not PII.
-
         if not args.skip_tls_self_test:
             try:
                 tls_self_test()
@@ -836,8 +787,6 @@ __all__ = [
     "FlockBusy",
     "acquire_flock",
     "should_skip_ein",
-    "EncryptionCheckResult",
-    "check_encryption_at_rest",
     "write_halt",
     "process_org",
     "fetch_seeds",
