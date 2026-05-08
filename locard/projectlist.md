@@ -555,7 +555,7 @@ projects:
   - id: "0035"
     title: "Multi-Page Classification Context & Hardened Classifier"
     summary: "Extract pages 1-5 from S3-archived PDFs into a persistent classification_context table, augment the classifier prompt with metadata (URL, page count, pdf_creator), add rule-based pre-filters for obvious categories (990s, financial statements), and re-classify the full corpus. Keeps extracted context for iterative prompt tuning without re-touching S3."
-    status: planned
+    status: integrated
     priority: high
     files:
       spec: locard/specs/0035-multipage-classification.md
@@ -563,7 +563,7 @@ projects:
       review: null
     dependencies: ["0023", "0025", "0007"]
     tags: [classifier, data-quality, extraction, cost-optimization]
-    notes: "Motivated by 2026-05-08 analysis: 33% of corpus has <200 chars of first-page text (cover pages only), causing low-confidence guesses. 1,965 IRS 990s misclassified as financial_report. Impact_report has 17% low-confidence rate. Sending 5 pages + metadata to DeepSeek costs $32 total for 145K docs."
+    notes: "Motivated by 2026-05-08 analysis: 33% of corpus has <200 chars of first-page text (cover pages only), causing low-confidence guesses. 1,965 IRS 990s misclassified as financial_report. Impact_report has 17% low-confidence rate. Sending 5 pages + metadata to DeepSeek costs $32 total for 145K docs. PR #30 merged 2026-05-08: 18 files, +3636/-10, 49 tests. Phases 1-7 complete (schema, extraction, prefilter, augmented prompt, reclassification, comparison, promotion). Phase 8 (dashboard integration) remains. Awaiting operator: RDS migration 014, run extract_classification_context, then reclassify_corpus."
 
 ## Next Available Number
 
