@@ -557,7 +557,7 @@ def run(argv: list[str] | None = None) -> int:
                         help="Override AWS region for the S3 archive")
     parser.add_argument("--skip-tls-self-test", action="store_true",
                         help="(ops only) skip startup TLS self-test")
-parser.add_argument("--ein", type=str, default=None,
+    parser.add_argument("--ein", type=str, default=None,
                         help="Crawl a single org by EIN (for debugging)")
     parser.add_argument("--limit", type=int, default=0,
                         help="Max orgs to crawl (0 = no limit)")
