@@ -654,17 +654,8 @@ def run(argv: list[str] | None = None) -> int:
         return 3
 
     try:
-        if not args.skip_encryption_check:
-            enc = check_encryption_at_rest(args.data_dir)
-            if not enc.ok:
-                write_halt(
-                    config.HALT,
-                    "encryption-not-detected",
-                    "# HALT: data volume encryption not detected\n\n"
-                    f"{enc.reason}\n",
-                )
-                logger.error("encryption-at-rest halt: %s", enc.reason)
-                return 2
+        # Encryption-at-rest check removed: all crawled data (IRS 990s, nonprofit
+        # websites) is public information, not PII.
 
         if not args.skip_tls_self_test:
             try:
