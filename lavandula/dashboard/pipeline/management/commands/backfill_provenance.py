@@ -21,6 +21,7 @@ class Command(BaseCommand):
             ("resolve", self._backfill_resolve),
             ("crawl", self._backfill_crawl),
             ("classify", self._backfill_classify),
+            ("filing_990", self._backfill_filing_990),
         ]
 
         for name, fn in steps:
@@ -88,6 +89,28 @@ class Command(BaseCommand):
                     WHERE c.source_org_ein = p.ein AND c.material_type IS NULL
                 ) THEN 'completed'
                 ELSE 'in_progress'
+            END,
+            updated_at = NOW()
+        """
+        return self._execute(sql, dry_run)
+
+    def _backfill_filing_990(self, dry_run: bool) -> int:
+        sql = """
+        UPDATE lava_pipeline.org_provenance p SET
+            filing_990_status = CASE
+                WHEN EXISTS (
+                    SELECT 1 FROM lava_corpus.filing_index fi
+                    WHERE fi.ein = p.ein AND fi.status = 'parsed'
+                ) THEN 'completed'
+                WHEN EXISTS (
+                    SELECT 1 FROM lava_corpus.filing_index fi
+                    WHERE fi.ein = p.ein AND fi.status IN ('indexed', 'downloaded')
+                ) THEN 'in_progress'
+                WHEN EXISTS (
+                    SELECT 1 FROM lava_corpus.filing_index fi
+                    WHERE fi.ein = p.ein AND fi.status = 'error'
+                ) THEN 'failed'
+                ELSE 'not_started'
             END,
             updated_at = NOW()
         """

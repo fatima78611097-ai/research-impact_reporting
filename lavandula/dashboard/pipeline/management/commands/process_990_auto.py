@@ -24,6 +24,7 @@ import unicodedata
 import zipfile
 from urllib.parse import urlparse
 
+import zipfile_deflate64  # noqa: F401 — monkey-patches zipfile for Deflate64
 import defusedxml.ElementTree as ET
 import requests
 from django.core.management.base import BaseCommand
@@ -52,7 +53,7 @@ _XML_PARSE_TIMEOUT = 30
 _MEMBER_NAME_RE = re.compile(r"^([\w]+/)?\d+_public\.xml$", re.ASCII)
 _EIN_RE = re.compile(r"^\d{9}$", re.ASCII)
 _OBJECT_ID_RE = re.compile(r"^\d+$", re.ASCII)
-_BATCH_ID_RE = re.compile(r"^\d{4}_TEOS_XML_(0[1-9]|1[0-2])[A-D]$", re.ASCII)
+_BATCH_ID_RE = re.compile(r"^\d{4}_TEOS_XML_(0[1-9]|1[0-2])[A-Da-d]$", re.ASCII)
 
 _RETRY_DELAYS = [2, 4, 8]
 _MAX_RETRIES = 3
@@ -446,31 +447,39 @@ class Command(BaseCommand):
             # TLS-verified (apps.irs.gov, cert checked by requests library)
             # and IRS bundles 200K+ filings per ZIP in 2020-2022 vintages.
 
+            # Build a lookup of basenames → full paths inside the ZIP.
+            # IRS uses inconsistent directory names (e.g. "2021Redo_allCycles/",
+            # "Cycles_202242_202252/") that don't match the batch_id.
+            member_lookup: dict[str, str] = {}
+            for zname in zf.namelist():
+                basename = zname.rsplit("/", 1)[-1] if "/" in zname else zname
+                member_lookup[basename] = zname
+
             cumulative_extracted = 0
 
             for filing in filings:
                 oid = filing["object_id"]
                 ein = filing["ein"]
 
-                nested_name = f"{batch_id}/{oid}_public.xml"
-                flat_name = f"{oid}_public.xml"
+                xml_basename = f"{oid}_public.xml"
+                resolved = member_lookup.get(xml_basename)
 
                 info = None
                 member_name = None
-                try:
-                    info = zf.getinfo(nested_name)
-                    member_name = nested_name
-                except KeyError:
+                if resolved:
                     try:
-                        info = zf.getinfo(flat_name)
-                        member_name = flat_name
+                        info = zf.getinfo(resolved)
+                        member_name = resolved
                     except KeyError:
-                        _record_filing_error(
-                            engine, oid, ErrorCode.ZIP_MEMBER_MISSING,
-                            f"Tried {oid}_public.xml"
-                        )
-                        stats["errors"] += 1
-                        continue
+                        pass
+
+                if info is None:
+                    _record_filing_error(
+                        engine, oid, ErrorCode.ZIP_MEMBER_MISSING,
+                        f"Tried {xml_basename}"
+                    )
+                    stats["errors"] += 1
+                    continue
 
                 if not _MEMBER_NAME_RE.match(info.filename):
                     _record_filing_error(
@@ -586,6 +595,7 @@ class Command(BaseCommand):
 
     def _upsert_people_and_mark_parsed(self, engine, result, filing: dict):
         oid = filing["object_id"]
+        is_reparse = filing.get("status") == "parsed"
 
         insert_sql = text("""
             INSERT INTO lava_corpus.people
@@ -602,14 +612,32 @@ class Command(BaseCommand):
                  :nontaxable_benefits, :total_comp_sch_j,
                  :services_desc, :is_officer, :is_director, :is_key_employee,
                  :is_highest_comp, :is_former)
-            ON CONFLICT (ein, object_id, person_name, person_type) DO NOTHING
+            ON CONFLICT (ein, object_id, person_name, person_type) DO UPDATE SET
+                title = EXCLUDED.title,
+                avg_hours_per_week = EXCLUDED.avg_hours_per_week,
+                reportable_comp = EXCLUDED.reportable_comp,
+                related_org_comp = EXCLUDED.related_org_comp,
+                other_comp = EXCLUDED.other_comp,
+                base_comp = EXCLUDED.base_comp,
+                bonus = EXCLUDED.bonus,
+                other_reportable = EXCLUDED.other_reportable,
+                deferred_comp = EXCLUDED.deferred_comp,
+                nontaxable_benefits = EXCLUDED.nontaxable_benefits,
+                total_comp_sch_j = EXCLUDED.total_comp_sch_j,
+                services_desc = EXCLUDED.services_desc,
+                is_officer = EXCLUDED.is_officer,
+                is_director = EXCLUDED.is_director,
+                is_key_employee = EXCLUDED.is_key_employee,
+                is_highest_comp = EXCLUDED.is_highest_comp,
+                is_former = EXCLUDED.is_former
         """)
 
         with engine.begin() as conn:
-            conn.execute(
-                text("DELETE FROM lava_corpus.people WHERE object_id = :oid"),
-                {"oid": oid},
-            )
+            if is_reparse:
+                conn.execute(
+                    text("DELETE FROM lava_corpus.people WHERE object_id = :oid"),
+                    {"oid": oid},
+                )
 
             if result.people:
                 meta = result.metadata

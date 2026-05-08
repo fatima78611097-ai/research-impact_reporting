@@ -17,16 +17,21 @@ import datetime
 import io
 import ipaddress
 import logging
+import os
 import re
 import socket
 import time
 from urllib.parse import urlparse
 
+import platform
+
 import requests
 from django.core.management.base import BaseCommand
+from django.utils import timezone
 from sqlalchemy import text
 
 from lavandula.common.db import make_app_engine
+from pipeline.models import Job
 
 log = logging.getLogger(__name__)
 
@@ -47,7 +52,7 @@ _COL_XML_BATCH_ID = 9
 
 _EIN_RE = re.compile(r"^\d{9}$", re.ASCII)
 _OBJECT_ID_RE = re.compile(r"^\d+$", re.ASCII)
-_BATCH_ID_RE = re.compile(r"^\d{4}_TEOS_XML_(0[1-9]|1[0-2])[A-D]$", re.ASCII)
+_BATCH_ID_RE = re.compile(r"^\d{4}_TEOS_XML_(0[1-9]|1[0-2])[A-Da-d]$", re.ASCII)
 
 _MAX_CSV_BYTES = 200 * 1024 * 1024  # 200 MB
 _BATCH_SIZE = 5000
@@ -157,6 +162,15 @@ class Command(BaseCommand):
 
         engine = make_app_engine()
 
+        job = Job.objects.create(
+            phase="990-index",
+            status="running",
+            host=platform.node(),
+            pid=os.getpid(),
+            started_at=timezone.now(),
+            config_json={"years": years, "ein": ein_filter},
+        )
+
         lock_conn = engine.connect()
         lock_conn.execute(
             text("SELECT pg_advisory_lock(hashtext(:key))"),
@@ -164,10 +178,26 @@ class Command(BaseCommand):
         )
         lock_conn.commit()
 
+        total_inserted = 0
+        total_updated = 0
         try:
             for year in sorted(years):
-                self._load_year(engine, year, ein_filter)
+                inserted, updated = self._load_year(engine, year, ein_filter)
+                total_inserted += inserted
+                total_updated += updated
+
+            job.status = "completed"
+            job.finished_at = timezone.now()
+            job.log_tail = (
+                f"Inserted: {total_inserted:,} Updated: {total_updated:,}"
+            )
+        except Exception as e:
+            job.status = "failed"
+            job.finished_at = timezone.now()
+            job.error_message = str(e)[:1000]
+            raise
         finally:
+            job.save()
             lock_conn.execute(
                 text("SELECT pg_advisory_unlock(hashtext(:key))"),
                 {"key": _LOCK_KEY},
@@ -175,7 +205,7 @@ class Command(BaseCommand):
             lock_conn.commit()
             lock_conn.close()
 
-    def _load_year(self, engine, year: int, ein_filter: str | None):
+    def _load_year(self, engine, year: int, ein_filter: str | None) -> tuple[int, int]:
         url = TEOS_INDEX_URL.format(year=year)
         self.stdout.write(f"Loading index for {year}...")
 
@@ -185,17 +215,17 @@ class Command(BaseCommand):
             csv_data = _safe_download_csv(url)
         except ValueError as e:
             self.stderr.write(f"  Skipping {year}: {e}")
-            return
+            return 0, 0
 
         if csv_data is None:
             self.stdout.write(f"  {year}: 404 (not available)")
-            return
+            return 0, 0
 
         reader = csv.reader(csv_data)
         header = next(reader, None)
         if header is None:
             self.stdout.write(f"  {year}: empty CSV")
-            return
+            return 0, 0
 
         col_count = len(header)
         self.stdout.write(f"  {year}: {col_count}-column format")
@@ -294,3 +324,5 @@ class Command(BaseCommand):
             f"  {year}: scanned={rows_scanned} inserted={rows_inserted} "
             f"updated={rows_updated} ({duration:.1f}s)"
         )
+
+        return rows_inserted, rows_updated

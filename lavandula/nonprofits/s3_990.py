@@ -26,7 +26,7 @@ log = logging.getLogger(__name__)
 
 _EIN_RE = re.compile(r"^\d{9}$", re.ASCII)
 _OBJECT_ID_RE = re.compile(r"^\d+$", re.ASCII)
-_BATCH_ID_RE = re.compile(r"^\d{4}_TEOS_XML_(0[1-9]|1[0-2])[A-D]$", re.ASCII)
+_BATCH_ID_RE = re.compile(r"^\d{4}_TEOS_XML_(0[1-9]|1[0-2])[A-Da-d]$", re.ASCII)
 
 _DEFAULT_BUCKET = "lavandula-990-corpus"
 _MULTIPART_THRESHOLD = 100 * 1024 * 1024  # 100 MB
