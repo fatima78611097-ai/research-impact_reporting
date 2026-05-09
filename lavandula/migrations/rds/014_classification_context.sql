@@ -5,7 +5,7 @@
 
 BEGIN;
 
-INSERT INTO lava_corpus.schema_version (version, description)
+INSERT INTO lava_corpus.schema_version (version, name)
 VALUES (14, 'classification_context, classification_runs, classification_results, v3 columns');
 
 -- classification_context: persistent multi-page extraction cache

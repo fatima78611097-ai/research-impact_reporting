@@ -107,6 +107,42 @@ COMMAND_MAP: dict[str, dict[str, Any]] = {
             "search_engines": {"type": "text", "pattern": r"^[a-z,]+$", "flag": "--search-engines"},
         },
     },
+    "extract-context": {
+        "cmd": ["python3", "lavandula/dashboard/manage.py", "extract_classification_context"],
+        "params": {
+            "limit": {"type": "int", "min": 1, "max": 999999, "flag": "--limit"},
+            "reextract": {"type": "bool", "flag": "--reextract"},
+            "download_workers": {"type": "int", "min": 1, "max": 32, "flag": "--download-workers"},
+            "extract_workers": {"type": "int", "min": 1, "max": 32, "flag": "--extract-workers"},
+        },
+    },
+    "reclassify": {
+        "cmd": ["python3", "lavandula/dashboard/manage.py", "reclassify_corpus"],
+        "params": {
+            "run_tag": {"type": "text", "pattern": r"^[a-zA-Z0-9][a-zA-Z0-9_-]*$", "flag": "--run-tag"},
+            "sample": {"type": "int", "min": 1, "max": 999999, "flag": "--sample"},
+            "where": {"type": "text", "flag": "--where"},
+            "dry_run": {"type": "bool", "flag": "--dry-run"},
+            "backend": {"type": "choice", "choices": ["deepseek", "haiku", "gemini", "claude"], "flag": "--backend"},
+            "workers": {"type": "int", "min": 1, "max": 32, "flag": "--workers"},
+            "resume": {"type": "bool", "flag": "--resume"},
+            "definition": {"type": "text", "pattern": r"^[a-z][a-z0-9_]*$", "flag": "--definition"},
+        },
+    },
+    "compare-classify": {
+        "cmd": ["python3", "lavandula/dashboard/manage.py", "compare_classifications"],
+        "params": {
+            "run_tag": {"type": "text", "pattern": r"^[a-zA-Z0-9][a-zA-Z0-9_-]*$", "flag": "--run-tag"},
+            "show_reasoning": {"type": "bool", "flag": "--show-reasoning"},
+        },
+    },
+    "promote-classify": {
+        "cmd": ["python3", "lavandula/dashboard/manage.py", "promote_classification_run"],
+        "params": {
+            "run_tag": {"type": "text", "pattern": r"^[a-zA-Z0-9][a-zA-Z0-9_-]*$", "flag": "--run-tag"},
+            "confirm": {"type": "bool", "flag": "--confirm"},
+        },
+    },
 }
 
 

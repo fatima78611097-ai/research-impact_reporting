@@ -113,6 +113,10 @@ _CONFIG_ALLOWLIST = {
     "enrich-phone": ["state", "search_engines", "limit"],
     "990-index": ["filing_year"],
     "990-parse": ["filing_year", "limit"],
+    "extract-context": ["limit", "reextract"],
+    "reclassify": ["run_tag", "backend", "sample", "definition", "dry_run"],
+    "compare-classify": ["run_tag"],
+    "promote-classify": ["run_tag", "confirm"],
 }
 
 
@@ -684,17 +688,53 @@ class ClassifierView(LoginRequiredMixin, TemplateView):
         return ctx
 
 
+class ClassifierV3View(LoginRequiredMixin, TemplateView):
+    template_name = "pipeline/classifier_v3.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        from .forms import (
+            CompareClassifyForm,
+            ExtractContextForm,
+            PromoteClassifyForm,
+            ReclassifyForm,
+        )
+        ctx["extract_form"] = ExtractContextForm()
+        ctx["reclassify_form"] = ReclassifyForm()
+        ctx["compare_form"] = CompareClassifyForm()
+        ctx["promote_form"] = PromoteClassifyForm()
+        for phase in ("extract-context", "reclassify", "compare-classify", "promote-classify"):
+            try:
+                ctx[phase.replace("-", "_") + "_process"] = check_process(phase)
+            except PipelineProcess.DoesNotExist:
+                pass
+        ctx["recent_jobs"] = _annotate_recent_jobs(
+            Job.objects.filter(
+                phase__in=["extract-context", "reclassify", "compare-classify", "promote-classify"]
+            ).order_by("-created_at")[:20]
+        )
+        return ctx
+
+
 class ProcessStartView(LoginRequiredMixin, View):
     def post(self, request, phase):
         form_map = {
             "resolve": "ResolverForm",
             "crawl": "CrawlerForm",
             "classify": "ClassifierForm",
+            "extract-context": "ExtractContextForm",
+            "reclassify": "ReclassifyForm",
+            "compare-classify": "CompareClassifyForm",
+            "promote-classify": "PromoteClassifyForm",
         }
         redirect_map = {
             "resolve": "resolver",
             "crawl": "crawler",
             "classify": "classifier",
+            "extract-context": "classifier_v3",
+            "reclassify": "classifier_v3",
+            "compare-classify": "classifier_v3",
+            "promote-classify": "classifier_v3",
         }
         if phase not in form_map:
             messages.error(request, f"Unknown phase: {phase}")
@@ -724,6 +764,10 @@ class ProcessStopView(LoginRequiredMixin, View):
             "resolve": "resolver",
             "crawl": "crawler",
             "classify": "classifier",
+            "extract-context": "classifier_v3",
+            "reclassify": "classifier_v3",
+            "compare-classify": "classifier_v3",
+            "promote-classify": "classifier_v3",
         }
         try:
             stop_process(phase)

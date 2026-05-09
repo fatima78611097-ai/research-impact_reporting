@@ -27,6 +27,9 @@ urlpatterns = [
     path("classifier/", views.ClassifierView.as_view(), name="classifier"),
     path("classifier/queue/", views.ClassifyJobCreateView.as_view(), name="classify_job_create"),
 
+    # Classifier v3 Pipeline
+    path("classifier-v3/", views.ClassifierV3View.as_view(), name="classifier_v3"),
+
     # Phone Enrichment
     path("phone-enrich/", views.PhoneEnrichView.as_view(), name="phone_enrich"),
     path("phone-enrich/queue/", views.PhoneEnrichJobCreateView.as_view(), name="phone_enrich_job_create"),

@@ -269,3 +269,51 @@ class PhoneEnrichForm(forms.Form):
         widget=forms.Select(attrs={"class": _SELECT}),
         label="Search Engine",
     )
+
+
+BACKEND_CHOICES = [
+    ("deepseek", "DeepSeek"),
+    ("haiku", "Haiku"),
+    ("gemini", "Gemini"),
+    ("claude", "Claude"),
+]
+
+
+class ExtractContextForm(forms.Form):
+    limit = forms.IntegerField(required=False, min_value=1, max_value=999999,
+        widget=forms.NumberInput(attrs={"class": _SELECT}))
+    reextract = forms.BooleanField(required=False, label="Re-extract existing")
+    download_workers = forms.IntegerField(initial=8, required=False, min_value=1, max_value=32,
+        widget=forms.NumberInput(attrs={"class": _SELECT}), label="Download workers")
+    extract_workers = forms.IntegerField(initial=4, required=False, min_value=1, max_value=32,
+        widget=forms.NumberInput(attrs={"class": _SELECT}), label="Extract workers")
+
+
+class ReclassifyForm(forms.Form):
+    run_tag = forms.CharField(max_length=100,
+        widget=forms.TextInput(attrs={"class": _SELECT, "placeholder": "e.g. v3-deepseek-20260509"}),
+        label="Run tag")
+    backend = forms.ChoiceField(choices=BACKEND_CHOICES, initial="deepseek",
+        widget=forms.Select(attrs={"class": _SELECT}))
+    definition = forms.ChoiceField(choices=_get_definition_choices, initial="corpus_reports",
+        widget=forms.Select(attrs={"class": _SELECT}), label="Definition", required=False)
+    sample = forms.IntegerField(required=False, min_value=1, max_value=999999,
+        widget=forms.NumberInput(attrs={"class": _SELECT}), label="Sample size")
+    workers = forms.IntegerField(initial=4, required=False, min_value=1, max_value=32,
+        widget=forms.NumberInput(attrs={"class": _SELECT}))
+    dry_run = forms.BooleanField(required=False, label="Dry run")
+    resume = forms.BooleanField(required=False, label="Resume")
+
+
+class CompareClassifyForm(forms.Form):
+    run_tag = forms.CharField(max_length=100,
+        widget=forms.TextInput(attrs={"class": _SELECT, "placeholder": "Run tag to compare"}),
+        label="Run tag")
+    show_reasoning = forms.BooleanField(required=False, label="Show reasoning")
+
+
+class PromoteClassifyForm(forms.Form):
+    run_tag = forms.CharField(max_length=100,
+        widget=forms.TextInput(attrs={"class": _SELECT, "placeholder": "Run tag to promote"}),
+        label="Run tag")
+    confirm = forms.BooleanField(required=False, label="Confirm promotion")

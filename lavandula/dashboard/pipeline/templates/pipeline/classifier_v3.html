@@ -1,0 +1,148 @@
+{% extends "pipeline/base.html" %}
+{% load humanize pipeline_tags %}
+{% block title %}Classifier v3 — Lavandula Pipeline{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold text-gray-900 mb-2">Classifier v3 Pipeline</h1>
+<p class="text-sm text-gray-500 mb-6">Multi-page context extraction, run-tagged classification, comparison, and promotion.</p>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+  <!-- Step 1: Extract Context -->
+  <div class="bg-white rounded-lg shadow p-5">
+    <div class="flex items-center gap-2 mb-3">
+      <span class="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-0.5 rounded">Step 1</span>
+      <h2 class="text-sm font-semibold text-gray-700 uppercase">Extract Context</h2>
+      {% if extract_context_process and extract_context_process.status == "running" %}
+      <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse ml-auto"></span>
+      {% endif %}
+    </div>
+    <p class="text-xs text-gray-500 mb-3">Extract multi-page text from PDFs into classification_context table.</p>
+    <form method="post" action="{% url 'process_start' 'extract-context' %}">
+      {% csrf_token %}
+      {% for field in extract_form %}
+      <div class="mb-3">
+        <label class="block text-xs font-medium text-gray-600 mb-1">{{ field.label }}</label>
+        {{ field }}
+      </div>
+      {% endfor %}
+      <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded text-sm hover:bg-blue-700">Run Extract</button>
+    </form>
+    {% if extract_context_process and extract_context_process.status == "running" %}
+    <form method="post" action="{% url 'process_stop' 'extract-context' %}" class="mt-2">
+      {% csrf_token %}
+      <button type="submit" class="w-full bg-red-600 text-white py-2 rounded text-sm hover:bg-red-700">Stop</button>
+    </form>
+    {% endif %}
+  </div>
+
+  <!-- Step 2: Reclassify -->
+  <div class="bg-white rounded-lg shadow p-5">
+    <div class="flex items-center gap-2 mb-3">
+      <span class="bg-indigo-100 text-indigo-700 text-xs font-bold px-2 py-0.5 rounded">Step 2</span>
+      <h2 class="text-sm font-semibold text-gray-700 uppercase">Reclassify Corpus</h2>
+      {% if reclassify_process and reclassify_process.status == "running" %}
+      <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse ml-auto"></span>
+      {% endif %}
+    </div>
+    <p class="text-xs text-gray-500 mb-3">Run classification with a tagged run for A/B comparison.</p>
+    <form method="post" action="{% url 'process_start' 'reclassify' %}">
+      {% csrf_token %}
+      {% for field in reclassify_form %}
+      <div class="mb-3">
+        <label class="block text-xs font-medium text-gray-600 mb-1">{{ field.label }}</label>
+        {{ field }}
+      </div>
+      {% endfor %}
+      <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded text-sm hover:bg-indigo-700">Run Reclassify</button>
+    </form>
+    {% if reclassify_process and reclassify_process.status == "running" %}
+    <form method="post" action="{% url 'process_stop' 'reclassify' %}" class="mt-2">
+      {% csrf_token %}
+      <button type="submit" class="w-full bg-red-600 text-white py-2 rounded text-sm hover:bg-red-700">Stop</button>
+    </form>
+    {% endif %}
+  </div>
+
+  <!-- Step 3: Compare -->
+  <div class="bg-white rounded-lg shadow p-5">
+    <div class="flex items-center gap-2 mb-3">
+      <span class="bg-amber-100 text-amber-700 text-xs font-bold px-2 py-0.5 rounded">Step 3</span>
+      <h2 class="text-sm font-semibold text-gray-700 uppercase">Compare Classifications</h2>
+      {% if compare_classify_process and compare_classify_process.status == "running" %}
+      <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse ml-auto"></span>
+      {% endif %}
+    </div>
+    <p class="text-xs text-gray-500 mb-3">Compare a run's results against current classifications.</p>
+    <form method="post" action="{% url 'process_start' 'compare-classify' %}">
+      {% csrf_token %}
+      {% for field in compare_form %}
+      <div class="mb-3">
+        <label class="block text-xs font-medium text-gray-600 mb-1">{{ field.label }}</label>
+        {{ field }}
+      </div>
+      {% endfor %}
+      <button type="submit" class="w-full bg-amber-600 text-white py-2 rounded text-sm hover:bg-amber-700">Run Compare</button>
+    </form>
+    {% if compare_classify_process and compare_classify_process.status == "running" %}
+    <form method="post" action="{% url 'process_stop' 'compare-classify' %}" class="mt-2">
+      {% csrf_token %}
+      <button type="submit" class="w-full bg-red-600 text-white py-2 rounded text-sm hover:bg-red-700">Stop</button>
+    </form>
+    {% endif %}
+  </div>
+
+  <!-- Step 4: Promote -->
+  <div class="bg-white rounded-lg shadow p-5">
+    <div class="flex items-center gap-2 mb-3">
+      <span class="bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded">Step 4</span>
+      <h2 class="text-sm font-semibold text-gray-700 uppercase">Promote Run</h2>
+      {% if promote_classify_process and promote_classify_process.status == "running" %}
+      <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse ml-auto"></span>
+      {% endif %}
+    </div>
+    <p class="text-xs text-gray-500 mb-3">Promote a run's results to the v3 columns on corpus.</p>
+    <form method="post" action="{% url 'process_start' 'promote-classify' %}">
+      {% csrf_token %}
+      {% for field in promote_form %}
+      <div class="mb-3">
+        <label class="block text-xs font-medium text-gray-600 mb-1">{{ field.label }}</label>
+        {{ field }}
+      </div>
+      {% endfor %}
+      <button type="submit" class="w-full bg-green-600 text-white py-2 rounded text-sm hover:bg-green-700">Promote Run</button>
+    </form>
+    {% if promote_classify_process and promote_classify_process.status == "running" %}
+    <form method="post" action="{% url 'process_stop' 'promote-classify' %}" class="mt-2">
+      {% csrf_token %}
+      <button type="submit" class="w-full bg-red-600 text-white py-2 rounded text-sm hover:bg-red-700">Stop</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Recent v3 Pipeline Jobs -->
+{% if recent_jobs %}
+<div class="bg-white rounded-lg shadow p-5 mt-6">
+  <h2 class="text-lg font-semibold text-gray-900 mb-3">Recent v3 Pipeline Jobs</h2>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead><tr class="text-left text-gray-500 border-b">
+        <th class="pb-2">Phase</th><th class="pb-2">Status</th><th class="pb-2">Started</th><th class="pb-2">Duration</th>
+      </tr></thead>
+      <tbody>
+        {% for job in recent_jobs %}
+        <tr class="border-b hover:bg-gray-50">
+          <td class="py-2 font-mono text-xs">{{ job.phase }}</td>
+          <td class="py-2">
+            <span class="px-2 py-0.5 rounded text-xs {% if job.status == 'completed' %}bg-green-100 text-green-700{% elif job.status == 'running' %}bg-blue-100 text-blue-700{% elif job.status == 'failed' %}bg-red-100 text-red-700{% else %}bg-gray-100 text-gray-600{% endif %}">{{ job.status }}</span>
+          </td>
+          <td class="py-2 text-gray-500 text-xs">{{ job.started_at|default:"-" }}</td>
+          <td class="py-2 text-gray-500 text-xs">{{ job.duration_display|default:"-" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
