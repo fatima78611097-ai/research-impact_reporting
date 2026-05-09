@@ -568,7 +568,7 @@ projects:
   - id: "0036"
     title: "Pipeline Stall Watchdog"
     summary: "Generic deadlock/stall detection for producer-consumer pipelines. Monitors progress counters and detects when active workers stop completing work. Covers crawler, extract_classification_context, reclassify_corpus, and future Docling extraction."
-    status: implementing
+    status: committed
     priority: high
     files:
       spec: locard/specs/0036-pipeline-stall-watchdog.md
@@ -576,7 +576,7 @@ projects:
       review: null
     dependencies: []
     tags: [reliability, crawler, pipeline, observability, ses-notification]
-    notes: "Motivated by 2026-05-08/09 deadlock incidents: VA crawler stalled 2h at 38/2935, WA crawler stalled 5h at 699/2137. Same backpressure chain: DB writer or S3 blocks → download queue fills → org workers block. Spec approved 2026-05-09. Includes SES email alerts."
+    notes: "Motivated by 2026-05-08/09 deadlock incidents: VA crawler stalled 2h at 38/2935, WA crawler stalled 5h at 699/2137. PR #31 merged 2026-05-09. 47 tests, +2618/-131. Includes SES email alerts, dashboard Job updates, pre_abort cleanup hooks. Set WATCHDOG_NOTIFY_EMAIL env var to enable email alerts."
 
 ## Next Available Number
 
