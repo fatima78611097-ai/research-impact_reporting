@@ -690,6 +690,7 @@ def run(argv: list[str] | None = None) -> int:
                     max_download_workers=args.max_download_workers,
                     run_id=run_id,
                     classifier_backend=args.classifier_backend,
+                    lock_path=lock_path,
                 ))
                 logger.info(
                     "=== ASYNC CRAWLER DONE === run_id=%s orgs=%d "

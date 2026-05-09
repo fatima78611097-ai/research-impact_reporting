@@ -565,9 +565,22 @@ projects:
     tags: [classifier, data-quality, extraction, cost-optimization]
     notes: "Motivated by 2026-05-08 analysis: 33% of corpus has <200 chars of first-page text (cover pages only), causing low-confidence guesses. 1,965 IRS 990s misclassified as financial_report. Impact_report has 17% low-confidence rate. Sending 5 pages + metadata to DeepSeek costs $32 total for 145K docs. PR #30 merged 2026-05-08: 18 files, +3636/-10, 49 tests. Phases 1-7 complete (schema, extraction, prefilter, augmented prompt, reclassification, comparison, promotion). Phase 8 (dashboard integration) remains. Awaiting operator: RDS migration 014, run extract_classification_context, then reclassify_corpus."
 
+  - id: "0036"
+    title: "Pipeline Stall Watchdog"
+    summary: "Generic deadlock/stall detection for producer-consumer pipelines. Monitors progress counters and detects when active workers stop completing work. Covers crawler, extract_classification_context, reclassify_corpus, and future Docling extraction."
+    status: implementing
+    priority: high
+    files:
+      spec: locard/specs/0036-pipeline-stall-watchdog.md
+      plan: locard/plans/0036-pipeline-stall-watchdog.md
+      review: null
+    dependencies: []
+    tags: [reliability, crawler, pipeline, observability, ses-notification]
+    notes: "Motivated by 2026-05-08/09 deadlock incidents: VA crawler stalled 2h at 38/2935, WA crawler stalled 5h at 699/2137. Same backpressure chain: DB writer or S3 blocks → download queue fills → org workers block. Spec approved 2026-05-09. Includes SES email alerts."
+
 ## Next Available Number
 
-**0036** - Reserve this number for your next project
+**0037** - Reserve this number for your next project
 
 ---
 

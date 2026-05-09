@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import os
 import queue
 import threading
 import time
@@ -94,6 +95,18 @@ class Command(BaseCommand):
         result_lock = threading.Lock()
         results_batch: list[dict] = []
         batch_size = 100
+        active_workers = [0]
+
+        from lavandula.reports.stall_watchdog import StallWatchdog
+
+        watchdog = StallWatchdog(
+            get_progress=lambda: stats["processed"],
+            get_active=lambda: active_workers[0],
+            stall_threshold_sec=300,
+            notify_email=os.environ.get("WATCHDOG_NOTIFY_EMAIL"),
+            job_id=job_id,
+        )
+        watchdog.start_thread()
 
         def extraction_consumer():
             while True:
@@ -102,6 +115,7 @@ class Command(BaseCommand):
                     work_queue.task_done()
                     break
                 sha256, pdf_bytes = item
+                active_workers[0] += 1
                 try:
                     result = extract_pages(pdf_bytes)
                     row = {
@@ -125,6 +139,7 @@ class Command(BaseCommand):
                         stats["failed"] += 1
                         stats["processed"] += 1
                 finally:
+                    active_workers[0] -= 1
                     work_queue.task_done()
 
         extract_threads = []
@@ -257,6 +272,10 @@ class Command(BaseCommand):
                 work_queue.put(None)
             for t in extract_threads:
                 t.join(timeout=60)
+
+            watchdog.stop()
+            if watchdog._thread is not None:
+                watchdog._thread.join(timeout=2)
 
             if results_batch:
                 with result_lock:

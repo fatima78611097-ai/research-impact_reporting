@@ -722,6 +722,8 @@ async def run_async(
     run_id: str = "",
     halt_dir: Path | None = None,
     classifier_backend: str | None = None,
+    job_id: int | None = None,
+    lock_path: Path | None = None,
 ) -> CrawlStats:
     _ensure_taxonomy()
 
@@ -792,6 +794,35 @@ async def run_async(
             _progress_reporter(stats, shutdown_event, download_queue)
         )
 
+        from .stall_watchdog import StallWatchdog, StallInfo, StallAction
+
+        def _handle_crawler_stall(info: StallInfo) -> StallAction:
+            if info.stall_duration_sec >= 4 * 300:
+                return StallAction.ABORT
+            if info.stall_duration_sec >= 3 * 300:
+                shutdown_event.set()
+                return StallAction.SHUTDOWN
+            return StallAction.CONTINUE
+
+        def _crawler_pre_abort() -> None:
+            if lock_path is not None:
+                try:
+                    Path(lock_path).unlink(missing_ok=True)
+                except Exception:
+                    _log.warning("pre_abort: failed to remove lock file")
+
+        watchdog = StallWatchdog(
+            get_progress=lambda: stats.orgs_completed,
+            get_active=lambda: stats.orgs_active,
+            stall_threshold_sec=300,
+            on_stall=_handle_crawler_stall,
+            pre_abort=_crawler_pre_abort,
+            notify_email=os.environ.get("WATCHDOG_NOTIFY_EMAIL"),
+            progress_total=stats.orgs_total,
+            job_id=job_id,
+        )
+        watchdog_task = asyncio.create_task(watchdog.run_async())
+
         producer_task = asyncio.create_task(
             _org_producer(seeds, org_queue, shutdown_event, max_concurrent_orgs)
         )
@@ -831,9 +862,11 @@ async def run_async(
         except asyncio.CancelledError:
             pass
 
+        watchdog.stop()
+        watchdog_task.cancel()
         halt_task.cancel()
         reporter_task.cancel()
-        for t in (halt_task, reporter_task):
+        for t in (halt_task, reporter_task, watchdog_task):
             try:
                 await t
             except asyncio.CancelledError:

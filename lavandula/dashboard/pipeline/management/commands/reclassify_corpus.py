@@ -12,6 +12,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import os
 import time
 from collections import defaultdict
 from pathlib import Path
@@ -117,155 +118,179 @@ class Command(BaseCommand):
         domain_not_relevant = defaultdict(int)
         domain_total = defaultdict(int)
         suppression_disagreements = 0
+        classifying = [0]
+
+        from lavandula.reports.stall_watchdog import StallWatchdog
+
+        watchdog = StallWatchdog(
+            get_progress=lambda: stats["total"],
+            get_active=lambda: classifying[0],
+            stall_threshold_sec=600,
+            notify_email=os.environ.get("WATCHDOG_NOTIFY_EMAIL"),
+        )
+        watchdog.start_thread()
 
         last_cursor = cursor or ""
         batch_num = 0
 
-        while True:
-            rows = self._fetch_batch(engine, run_id, last_cursor, sample, where_clause)
-            if not rows:
-                break
+        try:
+            while True:
+                rows = self._fetch_batch(engine, run_id, last_cursor, sample, where_clause)
+                if not rows:
+                    break
 
-            for row in rows:
-                sha = row["content_sha256"]
-                last_cursor = sha
+                for row in rows:
+                    sha = row["content_sha256"]
+                    last_cursor = sha
 
-                pages_text = row.get("pages_text") or ""
-                first_page_text = row.get("first_page_text") or ""
-                source_url = row.get("source_url") or ""
-                file_size = row.get("file_size")
-                pdf_creator = row.get("pdf_creator") or ""
-                total_pages = row.get("total_pages")
+                    pages_text = row.get("pages_text") or ""
+                    first_page_text = row.get("first_page_text") or ""
+                    source_url = row.get("source_url") or ""
+                    file_size = row.get("file_size")
+                    pdf_creator = row.get("pdf_creator") or ""
+                    total_pages = row.get("total_pages")
 
-                domain = self._extract_domain(source_url)
-                domain_total[domain] += 1
+                    domain = self._extract_domain(source_url)
+                    domain_total[domain] += 1
 
-                eval_text = pages_text or first_page_text
+                    eval_text = pages_text or first_page_text
 
-                # Step A: Rule pre-filter
-                rule_match = rule_engine.evaluate(
-                    text=eval_text, url=source_url,
-                    pdf_creator=pdf_creator, page_count=total_pages,
-                    file_size=file_size,
-                )
-
-                if rule_match is not None:
-                    classified_by = f"rule:{rule_match.rule_name}@{rule_match.rules_sha256[:8]}"
-                    cat = definition.get_category(rule_match.material_type)
-                    mg = cat.group if cat else None
-                    self._write_result(
-                        engine, run_id, sha,
-                        material_type=rule_match.material_type,
-                        material_group=mg,
-                        event_type=None,
-                        confidence=rule_match.confidence,
-                        reasoning=rule_match.reasoning[:500],
-                        classified_by=classified_by,
+                    # Step A: Rule pre-filter
+                    rule_match = rule_engine.evaluate(
+                        text=eval_text, url=source_url,
+                        pdf_creator=pdf_creator, page_count=total_pages,
+                        file_size=file_size,
                     )
-                    stats["rule_matched"] += 1
-                    stats["total"] += 1
 
-                    if rule_match.material_type == "not_relevant":
-                        domain_not_relevant[domain] += 1
+                    if rule_match is not None:
+                        classified_by = f"rule:{rule_match.rule_name}@{rule_match.rules_sha256[:8]}"
+                        cat = definition.get_category(rule_match.material_type)
+                        mg = cat.group if cat else None
+                        self._write_result(
+                            engine, run_id, sha,
+                            material_type=rule_match.material_type,
+                            material_group=mg,
+                            event_type=None,
+                            confidence=rule_match.confidence,
+                            reasoning=rule_match.reasoning[:500],
+                            classified_by=classified_by,
+                        )
+                        stats["rule_matched"] += 1
+                        stats["total"] += 1
 
-                        # Deterministic 5% suppression sampling
-                        sample_hash = hashlib.sha256(
-                            f"{run_id}:{sha}".encode()
-                        ).digest()[0]
-                        if sample_hash < 13:  # 13/256 ≈ 5.1%
-                            llm_result = self._classify_llm(
+                        if rule_match.material_type == "not_relevant":
+                            domain_not_relevant[domain] += 1
+
+                            # Deterministic 5% suppression sampling
+                            sample_hash = hashlib.sha256(
+                                f"{run_id}:{sha}".encode()
+                            ).digest()[0]
+                            if sample_hash < 13:  # 13/256 ≈ 5.1%
+                                classifying[0] = 1
+                                try:
+                                    llm_result = self._classify_llm(
+                                        client, definition, first_page_text,
+                                        pages_text=pages_text, url_path=source_url,
+                                        page_count=total_pages,
+                                        file_size_bytes=file_size,
+                                        pdf_creator=pdf_creator,
+                                    )
+                                finally:
+                                    classifying[0] = 0
+                                if llm_result and llm_result.material_type != rule_match.material_type:
+                                    suppression_disagreements += 1
+                                    log.info(
+                                        "Suppression disagreement: sha=%s rule=%s llm=%s",
+                                        sha[:12], rule_match.material_type,
+                                        llm_result.material_type,
+                                    )
+                        continue
+
+                    # Step B: Insufficient text check
+                    if len(eval_text.strip()) < _MIN_TEXT_LEN:
+                        self._write_result(
+                            engine, run_id, sha,
+                            material_type="other_collateral",
+                            material_group="other",
+                            event_type=None,
+                            confidence=0.1,
+                            reasoning="Insufficient text for classification",
+                            classified_by="rule:insufficient_text",
+                        )
+                        stats["insufficient_text"] += 1
+                        stats["total"] += 1
+                        continue
+
+                    # Step C: LLM classification
+                    result = None
+                    for attempt in range(_MAX_DOC_FAILURES):
+                        classifying[0] = 1
+                        try:
+                            result = self._classify_llm(
                                 client, definition, first_page_text,
                                 pages_text=pages_text, url_path=source_url,
                                 page_count=total_pages,
                                 file_size_bytes=file_size,
                                 pdf_creator=pdf_creator,
                             )
-                            if llm_result and llm_result.material_type != rule_match.material_type:
-                                suppression_disagreements += 1
-                                log.info(
-                                    "Suppression disagreement: sha=%s rule=%s llm=%s",
-                                    sha[:12], rule_match.material_type,
-                                    llm_result.material_type,
-                                )
-                    continue
+                        finally:
+                            classifying[0] = 0
+                        if result is not None:
+                            consecutive_failures = 0
+                            break
 
-                # Step B: Insufficient text check
-                if len(eval_text.strip()) < _MIN_TEXT_LEN:
-                    self._write_result(
-                        engine, run_id, sha,
-                        material_type="other_collateral",
-                        material_group="other",
-                        event_type=None,
-                        confidence=0.1,
-                        reasoning="Insufficient text for classification",
-                        classified_by="rule:insufficient_text",
-                    )
-                    stats["insufficient_text"] += 1
-                    stats["total"] += 1
-                    continue
+                        consecutive_failures += 1
+                        log.warning("LLM failure attempt %d for sha=%s", attempt + 1, sha[:12])
+                        if consecutive_failures >= _MAX_CONSECUTIVE_FAILURES:
+                            self._checkpoint(engine, run_id, last_cursor, stats,
+                                             suppression_disagreements, domain_not_relevant,
+                                             domain_total)
+                            self.stderr.write(
+                                f"Halting: {_MAX_CONSECUTIVE_FAILURES} consecutive failures. "
+                                f"Resume with --resume."
+                            )
+                            return
+                        if attempt < _MAX_DOC_FAILURES - 1:
+                            delay = _RETRY_DELAYS[min(attempt, len(_RETRY_DELAYS) - 1)]
+                            time.sleep(delay)
 
-                # Step C: LLM classification
-                result = None
-                for attempt in range(_MAX_DOC_FAILURES):
-                    result = self._classify_llm(
-                        client, definition, first_page_text,
-                        pages_text=pages_text, url_path=source_url,
-                        page_count=total_pages,
-                        file_size_bytes=file_size,
-                        pdf_creator=pdf_creator,
-                    )
-                    if result is not None:
-                        consecutive_failures = 0
-                        break
-
-                    consecutive_failures += 1
-                    log.warning("LLM failure attempt %d for sha=%s", attempt + 1, sha[:12])
-                    if consecutive_failures >= _MAX_CONSECUTIVE_FAILURES:
-                        self._checkpoint(engine, run_id, last_cursor, stats,
-                                         suppression_disagreements, domain_not_relevant,
-                                         domain_total)
-                        self.stderr.write(
-                            f"Halting: {_MAX_CONSECUTIVE_FAILURES} consecutive failures. "
-                            f"Resume with --resume."
+                    if result is None:
+                        self._write_result(
+                            engine, run_id, sha,
+                            material_type=None, material_group=None, event_type=None,
+                            confidence=0.0, reasoning="LLM classification failed",
+                            classified_by="llm:error",
                         )
-                        return
-                    if attempt < _MAX_DOC_FAILURES - 1:
-                        delay = _RETRY_DELAYS[min(attempt, len(_RETRY_DELAYS) - 1)]
-                        time.sleep(delay)
+                        stats["llm_errors"] += 1
+                        stats["total"] += 1
+                        continue
 
-                if result is None:
+                    cat = definition.get_category(result.material_type)
+                    mg = cat.group if cat else (result.material_group or None)
+                    model_name = getattr(client, "_cli_model", None) or getattr(client, "_model", backend)
                     self._write_result(
                         engine, run_id, sha,
-                        material_type=None, material_group=None, event_type=None,
-                        confidence=0.0, reasoning="LLM classification failed",
-                        classified_by="llm:error",
+                        material_type=result.material_type,
+                        material_group=mg,
+                        event_type=result.event_type,
+                        confidence=result.classification_confidence or 0.0,
+                        reasoning=(result.reasoning or "")[:500],
+                        classified_by=f"llm:{model_name}",
                     )
-                    stats["llm_errors"] += 1
+                    stats["llm_classified"] += 1
                     stats["total"] += 1
-                    continue
 
-                cat = definition.get_category(result.material_type)
-                mg = cat.group if cat else (result.material_group or None)
-                model_name = getattr(client, "_cli_model", None) or getattr(client, "_model", backend)
-                self._write_result(
-                    engine, run_id, sha,
-                    material_type=result.material_type,
-                    material_group=mg,
-                    event_type=result.event_type,
-                    confidence=result.classification_confidence or 0.0,
-                    reasoning=(result.reasoning or "")[:500],
-                    classified_by=f"llm:{model_name}",
-                )
-                stats["llm_classified"] += 1
-                stats["total"] += 1
+                batch_num += 1
+                self._checkpoint(engine, run_id, last_cursor, stats,
+                                 suppression_disagreements, domain_not_relevant,
+                                 domain_total)
 
-            batch_num += 1
-            self._checkpoint(engine, run_id, last_cursor, stats,
-                             suppression_disagreements, domain_not_relevant,
-                             domain_total)
-
-            if sample and stats["total"] >= sample:
-                break
+                if sample and stats["total"] >= sample:
+                    break
+        finally:
+            watchdog.stop()
+            if watchdog._thread is not None:
+                watchdog._thread.join(timeout=2)
 
         # Post-run: finalize
         domain_warnings = []
