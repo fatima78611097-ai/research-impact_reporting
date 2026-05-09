@@ -162,7 +162,7 @@ class Command(BaseCommand):
 
                 if reextract:
                     sql = (
-                        f"SELECT c.content_sha256, c.file_size "
+                        f"SELECT c.content_sha256, c.file_size_bytes "
                         f"FROM {_SCHEMA}.corpus c "
                         f"WHERE c.content_type = 'application/pdf' "
                         f"  AND c.content_sha256 > :cursor "
@@ -170,7 +170,7 @@ class Command(BaseCommand):
                     )
                 else:
                     sql = (
-                        f"SELECT c.content_sha256, c.file_size "
+                        f"SELECT c.content_sha256, c.file_size_bytes "
                         f"FROM {_SCHEMA}.corpus c "
                         f"LEFT JOIN {_SCHEMA}.classification_context cc "
                         f"  ON cc.content_sha256 = c.content_sha256 "

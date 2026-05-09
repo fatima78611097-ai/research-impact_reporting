@@ -381,8 +381,8 @@ class Command(BaseCommand):
 
     def _fetch_batch(self, engine, run_id, cursor, sample, where_clause):
         sql = (
-            f"SELECT c.content_sha256, c.first_page_text, c.source_url, "
-            f"  c.file_size, c.pdf_creator, "
+            f"SELECT c.content_sha256, c.first_page_text, c.source_url_redacted, "
+            f"  c.file_size_bytes, c.pdf_creator, "
             f"  cc.pages_text, cc.pages_extracted, cc.total_pages "
             f"FROM {_SCHEMA}.corpus c "
             f"LEFT JOIN {_SCHEMA}.classification_context cc "
