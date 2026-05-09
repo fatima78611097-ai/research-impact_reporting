@@ -636,7 +636,7 @@ def classify_first_page_v3(
     tool = openai_to_anthropic_tool(definition.tool_schema)
     kwargs = {
         "model": used_model,
-        "max_tokens": 512,
+        "max_tokens": 2048,
         "temperature": config.CLASSIFIER_TEMPERATURE,
         "system": definition.system_prompt,
         "messages": [{"role": "user", "content": user_content}],
