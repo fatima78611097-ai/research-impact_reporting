@@ -90,6 +90,17 @@ class Command(BaseCommand):
             "processed": 0, "extracted": 0, "skipped_oversized": 0,
             "skipped_missing": 0, "sha_mismatch": 0, "failed": 0,
         }
+        try:
+            return self._run_inner(engine, archive, job_id, stats,
+                                   limit=limit, reextract=reextract,
+                                   download_workers=download_workers,
+                                   extract_workers=extract_workers)
+        except BaseException:
+            self._fail_job(engine, job_id, stats)
+            raise
+
+    def _run_inner(self, engine, archive, job_id, stats, *,
+                   limit, reextract, download_workers, extract_workers):
 
         work_queue: queue.Queue = queue.Queue(maxsize=extract_workers * 2)
         result_lock = threading.Lock()
@@ -347,3 +358,14 @@ class Command(BaseCommand):
             )
         except Exception:
             log.exception("Failed to finish job %d", job_id)
+
+    def _fail_job(self, engine, job_id, stats):
+        try:
+            from pipeline.models import Job
+            Job.objects.filter(id=job_id, status="running").update(
+                status="failed",
+                config_json={"stats": stats},
+                finished_at=timezone.now(),
+            )
+        except Exception:
+            log.exception("Failed to mark job %d as failed", job_id)
