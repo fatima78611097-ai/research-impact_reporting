@@ -757,6 +757,66 @@ class ProcessLogPartial(HtmxLoginRequiredMixin, View):
         )
 
 
+class ClassifierV3StatusPartial(HtmxLoginRequiredMixin, TemplateView):
+    template_name = "pipeline/partials/classifier_v3_status.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        from django.db import connections
+        steps = []
+        for phase, label in [
+            ("extract-context", "Extract Context"),
+            ("reclassify", "Reclassify"),
+            ("compare-classify", "Compare"),
+            ("promote-classify", "Promote"),
+        ]:
+            try:
+                p = check_process(phase)
+                started = p.started_at
+                if started:
+                    delta = int((timezone.now() - started).total_seconds())
+                    if delta < 60:
+                        elapsed = f"{delta}s"
+                    elif delta < 3600:
+                        elapsed = f"{delta // 60}m {delta % 60}s"
+                    else:
+                        elapsed = f"{delta // 3600}h {(delta % 3600) // 60}m"
+                else:
+                    elapsed = None
+                steps.append({
+                    "phase": phase, "label": label,
+                    "status": p.status, "started_at": started,
+                    "elapsed": elapsed,
+                    "config": p.config_json or {},
+                })
+            except PipelineProcess.DoesNotExist:
+                steps.append({
+                    "phase": phase, "label": label,
+                    "status": "never_run", "started_at": None,
+                    "elapsed": None, "config": {},
+                })
+
+        runs = []
+        with connections["default"].cursor() as cur:
+            cur.execute("""
+                SELECT r.id, r.run_tag, r.started_at, r.finished_at,
+                       (SELECT COUNT(*) FROM lava_corpus.classification_results
+                        WHERE run_id = r.id) AS results
+                FROM lava_corpus.classification_runs r
+                ORDER BY r.id DESC LIMIT 5
+            """)
+            for row in cur.fetchall():
+                runs.append({
+                    "id": row[0], "run_tag": row[1],
+                    "started_at": row[2], "finished_at": row[3],
+                    "results": row[4],
+                })
+        ctx["steps"] = steps
+        ctx["runs"] = runs
+        ctx["recent_logs"] = _scan_v3_logs(limit=10)
+        return ctx
+
+
 class ProcessStartView(LoginRequiredMixin, View):
     def post(self, request, phase):
         form_map = {

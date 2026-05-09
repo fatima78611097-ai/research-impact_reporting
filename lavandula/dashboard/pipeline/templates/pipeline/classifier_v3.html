@@ -3,7 +3,10 @@
 {% block title %}Classifier v3 — Lavandula Pipeline{% endblock %}
 {% block content %}
 <h1 class="text-2xl font-bold text-gray-900 mb-2">Classifier v3 Pipeline</h1>
-<p class="text-sm text-gray-500 mb-6">Multi-page context extraction, run-tagged classification, comparison, and promotion.</p>
+<p class="text-sm text-gray-500 mb-6">Multi-page context extraction, run-tagged classification, comparison, and promotion. Status auto-refreshes every 5s.</p>
+
+<!-- Auto-polling status block -->
+<div hx-get="{% url 'classifier_v3_status' %}" hx-trigger="load, every 5s" hx-swap="innerHTML"></div>
 
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
@@ -120,37 +123,6 @@
   </div>
 </div>
 
-<!-- Recent v3 Runs (from log files) -->
-<div class="bg-white rounded-lg shadow p-5 mt-6">
-  <h2 class="text-lg font-semibold text-gray-900 mb-3">Recent v3 Runs</h2>
-  {% if recent_logs %}
-  <div class="overflow-x-auto">
-    <table class="w-full text-sm">
-      <thead><tr class="text-left text-gray-500 border-b">
-        <th class="pb-2">Phase</th><th class="pb-2">Started</th><th class="pb-2">Size</th><th class="pb-2">Log</th>
-      </tr></thead>
-      <tbody>
-        {% for entry in recent_logs %}
-        <tr class="border-b hover:bg-gray-50">
-          <td class="py-2 font-mono text-xs">{{ entry.phase }}</td>
-          <td class="py-2 text-gray-500 text-xs">{{ entry.mtime }}</td>
-          <td class="py-2 text-gray-500 text-xs">{{ entry.size|filesizeformat }}</td>
-          <td class="py-2">
-            <button class="text-blue-600 hover:underline text-xs"
-                    hx-get="{% url 'process_log_partial' entry.filename %}"
-                    hx-target="#log-viewer"
-                    hx-swap="innerHTML">View</button>
-            <span class="text-gray-400 ml-2 font-mono text-xs">{{ entry.filename }}</span>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% else %}
-  <p class="text-gray-500 text-sm">No v3 runs yet.</p>
-  {% endif %}
-
-  <div id="log-viewer" class="mt-4"></div>
-</div>
+<!-- Log viewer target (filled when user clicks 'View' on a log) -->
+<div id="log-viewer" class="mt-4"></div>
 {% endblock %}
