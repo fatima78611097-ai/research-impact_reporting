@@ -688,6 +688,33 @@ class ClassifierView(LoginRequiredMixin, TemplateView):
         return ctx
 
 
+_V3_PHASES = ("extract-context", "reclassify", "compare-classify", "promote-classify")
+
+
+def _scan_v3_logs(limit=20):
+    """List recent v3 pipeline log files from LOG_DIR, sorted by mtime."""
+    import datetime as _dt
+    from .orchestrator import LOG_DIR
+    if not LOG_DIR.exists():
+        return []
+    tz = timezone.get_current_timezone()
+    entries = []
+    for phase in _V3_PHASES:
+        for path in LOG_DIR.glob(f"{phase}_*.log"):
+            try:
+                stat = path.stat()
+            except OSError:
+                continue
+            entries.append({
+                "filename": path.name,
+                "phase": phase,
+                "mtime": _dt.datetime.fromtimestamp(stat.st_mtime, tz=tz),
+                "size": stat.st_size,
+            })
+    entries.sort(key=lambda e: e["mtime"], reverse=True)
+    return entries[:limit]
+
+
 class ClassifierV3View(LoginRequiredMixin, TemplateView):
     template_name = "pipeline/classifier_v3.html"
 
@@ -703,17 +730,31 @@ class ClassifierV3View(LoginRequiredMixin, TemplateView):
         ctx["reclassify_form"] = ReclassifyForm()
         ctx["compare_form"] = CompareClassifyForm()
         ctx["promote_form"] = PromoteClassifyForm()
-        for phase in ("extract-context", "reclassify", "compare-classify", "promote-classify"):
+        for phase in _V3_PHASES:
             try:
                 ctx[phase.replace("-", "_") + "_process"] = check_process(phase)
             except PipelineProcess.DoesNotExist:
                 pass
-        ctx["recent_jobs"] = _annotate_recent_jobs(
-            Job.objects.filter(
-                phase__in=["extract-context", "reclassify", "compare-classify", "promote-classify"]
-            ).order_by("-created_at")[:20]
-        )
+        ctx["recent_logs"] = _scan_v3_logs()
         return ctx
+
+
+class ProcessLogPartial(HtmxLoginRequiredMixin, View):
+    def get(self, request, filename):
+        from pathlib import Path
+        from .orchestrator import LOG_DIR
+        log_path = (LOG_DIR / filename).resolve()
+        allowed_dir = LOG_DIR.resolve()
+        if not str(log_path).startswith(str(allowed_dir) + "/"):
+            return HttpResponse("forbidden", status=403)
+        if not Path(log_path).exists():
+            return HttpResponse(
+                f'<pre class="text-xs bg-gray-900 text-yellow-400 p-4 rounded">[log not found: {_escape(filename)}]</pre>'
+            )
+        content = read_log_tail(str(log_path))
+        return HttpResponse(
+            f'<pre class="text-xs bg-gray-900 text-green-400 p-4 rounded overflow-auto max-h-96">{_escape(content)}</pre>'
+        )
 
 
 class ProcessStartView(LoginRequiredMixin, View):

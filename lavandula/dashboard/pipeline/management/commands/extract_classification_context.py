@@ -325,7 +325,7 @@ class Command(BaseCommand):
         job = Job.objects.create(
             phase="extract-context",
             status="running",
-            config={},
+            config_json={},
             started_at=timezone.now(),
         )
         return job.id
@@ -333,7 +333,7 @@ class Command(BaseCommand):
     def _update_job(self, engine, job_id, stats):
         try:
             from pipeline.models import Job
-            Job.objects.filter(id=job_id).update(config={"stats": stats})
+            Job.objects.filter(id=job_id).update(config_json={"stats": stats})
         except Exception:
             log.exception("Failed to update job %d", job_id)
 
@@ -342,8 +342,8 @@ class Command(BaseCommand):
             from pipeline.models import Job
             Job.objects.filter(id=job_id).update(
                 status="completed",
-                config={"stats": stats},
-                completed_at=timezone.now(),
+                config_json={"stats": stats},
+                finished_at=timezone.now(),
             )
         except Exception:
             log.exception("Failed to finish job %d", job_id)

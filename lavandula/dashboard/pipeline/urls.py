@@ -29,6 +29,7 @@ urlpatterns = [
 
     # Classifier v3 Pipeline
     path("classifier-v3/", views.ClassifierV3View.as_view(), name="classifier_v3"),
+    path("classifier-v3/log/<str:filename>/", views.ProcessLogPartial.as_view(), name="process_log_partial"),
 
     # Phone Enrichment
     path("phone-enrich/", views.PhoneEnrichView.as_view(), name="phone_enrich"),

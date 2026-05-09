@@ -120,29 +120,37 @@
   </div>
 </div>
 
-<!-- Recent v3 Pipeline Jobs -->
-{% if recent_jobs %}
+<!-- Recent v3 Runs (from log files) -->
 <div class="bg-white rounded-lg shadow p-5 mt-6">
-  <h2 class="text-lg font-semibold text-gray-900 mb-3">Recent v3 Pipeline Jobs</h2>
+  <h2 class="text-lg font-semibold text-gray-900 mb-3">Recent v3 Runs</h2>
+  {% if recent_logs %}
   <div class="overflow-x-auto">
     <table class="w-full text-sm">
       <thead><tr class="text-left text-gray-500 border-b">
-        <th class="pb-2">Phase</th><th class="pb-2">Status</th><th class="pb-2">Started</th><th class="pb-2">Duration</th>
+        <th class="pb-2">Phase</th><th class="pb-2">Started</th><th class="pb-2">Size</th><th class="pb-2">Log</th>
       </tr></thead>
       <tbody>
-        {% for job in recent_jobs %}
+        {% for entry in recent_logs %}
         <tr class="border-b hover:bg-gray-50">
-          <td class="py-2 font-mono text-xs">{{ job.phase }}</td>
+          <td class="py-2 font-mono text-xs">{{ entry.phase }}</td>
+          <td class="py-2 text-gray-500 text-xs">{{ entry.mtime }}</td>
+          <td class="py-2 text-gray-500 text-xs">{{ entry.size|filesizeformat }}</td>
           <td class="py-2">
-            <span class="px-2 py-0.5 rounded text-xs {% if job.status == 'completed' %}bg-green-100 text-green-700{% elif job.status == 'running' %}bg-blue-100 text-blue-700{% elif job.status == 'failed' %}bg-red-100 text-red-700{% else %}bg-gray-100 text-gray-600{% endif %}">{{ job.status }}</span>
+            <button class="text-blue-600 hover:underline text-xs"
+                    hx-get="{% url 'process_log_partial' entry.filename %}"
+                    hx-target="#log-viewer"
+                    hx-swap="innerHTML">View</button>
+            <span class="text-gray-400 ml-2 font-mono text-xs">{{ entry.filename }}</span>
           </td>
-          <td class="py-2 text-gray-500 text-xs">{{ job.started_at|default:"-" }}</td>
-          <td class="py-2 text-gray-500 text-xs">{{ job.duration_display|default:"-" }}</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
+  {% else %}
+  <p class="text-gray-500 text-sm">No v3 runs yet.</p>
+  {% endif %}
+
+  <div id="log-viewer" class="mt-4"></div>
 </div>
-{% endif %}
 {% endblock %}
