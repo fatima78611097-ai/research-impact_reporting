@@ -578,9 +578,22 @@ projects:
     tags: [reliability, crawler, pipeline, observability, ses-notification]
     notes: "Motivated by 2026-05-08/09 deadlock incidents: VA crawler stalled 2h at 38/2935, WA crawler stalled 5h at 699/2137. PR #31 merged 2026-05-09. 47 tests, +2618/-131. Includes SES email alerts, dashboard Job updates, pre_abort cleanup hooks. Set WATCHDOG_NOTIFY_EMAIL env var to enable email alerts."
 
+  - id: "0037"
+    title: "Rename RDS Roles to Project-Prefixed Names"
+    summary: "Rename app_user1/ro_user1 to lavandula_app/lavandula_ro on shared RDS so a second project can coexist without role-name collisions. SSM keys (rds-app-user, rds-ro-user) stay stable; only values change."
+    status: conceived
+    priority: medium
+    files:
+      spec: locard/specs/0037-rds-role-rename.md
+      plan: null
+      review: null
+    dependencies: []
+    tags: [rds, iam, multi-tenant, ops]
+    notes: "Motivated by adding a second project to the shared RDS instance. Schemas keep lava_* names (already namespaced). 6 source files require edits (4 SQL migrations + 2 test files). Code uses SSM indirection for usernames, so settings.py and db.py are untouched. Requires coordinated dashboard/workers restart and IAM policy update for rds-db:connect resource ARNs."
+
 ## Next Available Number
 
-**0037** - Reserve this number for your next project
+**0038** - Reserve this number for your next project
 
 ---
 
