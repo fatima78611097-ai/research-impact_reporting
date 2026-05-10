@@ -44,11 +44,10 @@ The builder's job is to (1) update 6 files where old role names are hardcoded, (
    - `app_user1` → `research_app`
    - `ro_user1` → `research_ro`
 
-2. **Verify zero remaining references** in source tree:
+2. **Verify zero remaining references** in source tree (matches Phase 1 acceptance and spec AC #7):
    ```bash
-   grep -rn -E "app_user1|ro_user1" \
-     lavandula/migrations/ lavandula/common/tests/
-   # Expected: zero matches
+   grep -rn -E "app_user1|ro_user1" lavandula/
+   # Expected: zero matches across the entire lavandula/ tree
    ```
 
 3. **Verify SSM-indirection files are NOT edited** (regression check):
@@ -95,24 +94,31 @@ The builder's job is to (1) update 6 files where old role names are hardcoded, (
 
 ### Implementation Steps
 
-1. **Write the runbook** as a numbered T-1..T+6 sequence. Each step includes:
+1. **Write the runbook** as a numbered T-1..T+6 sequence. **The runbook must be self-contained: an operator can execute it without reading the spec.** Each step includes:
    - **Precondition**: SQL or shell command + expected output
    - **Action**: exact command(s) to run
    - **Verification**: SQL or shell command + expected output
-   - **Failure branch**: pointer to spec §"Rollback Plan §Decision tree by failure point"
+   - **Failure branch**: the failure-mode decision tree from spec §"Rollback Plan §Decision tree by failure point" is copied INTO the runbook at the relevant step (not referenced — copied). Each step's failure section names the exact next action.
 
-   The runbook copies content from spec §"Cutover sequence" verbatim, then expands placeholders to concrete values. The operator will fill in `$RDS_ENDPOINT`, `$DB`, `ACCT`, and `DB-RES-ID` as environment variables before running.
+   Concrete branches that MUST be fully resolved in the runbook (not pointers):
+   - **`dashboard_user1` decision**: the runbook contains the exact `psql` invocation to query state, the literal three-row decision table, and the next-action for each row.
+   - **Privileged pre-check execution**: the runbook explicitly states which connection (master role) to use for steps 2/4b/4c, and which connection (master OR IAM-tier) to use for steps 1/3/4a/4d. The operator does not have to figure this out.
+   - **Smoke-test write path**: the exact INSERT into `lava_pipeline.org_provenance` with EIN `ZZ-SMOKETEST-37` (per step 10 below) is in the runbook verbatim — the operator does not improvise the write target.
+
+   The runbook copies content from spec §"Cutover sequence" verbatim, then expands placeholders to concrete values. The operator fills in `$RDS_ENDPOINT`, `$DB`, `ACCT`, and `DB-RES-ID` as environment variables before running.
 
 2. **Write `0037-pre-rename-checks.sql`** with the four queries from spec §"Pre-rename checks" (steps 1, 2, 3, and 4a-4d). Each query has a header comment explaining its purpose and expected output. The file is operator-runnable via `psql -f`.
 
-3. **Write `0037-snapshot-pre.sh`**:
-   - Reads `RDS_ENDPOINT`, `DB`, `IAM_USER` from env vars
-   - Calls `aws rds generate-db-auth-token` to mint a token for the IAM_USER
-   - Runs each snapshot query with `psql -At` (tab-aligned, no headers) and writes output to `/tmp/0037_<dimension>.before.txt`
-   - Files produced: `grants_corpus.before.txt`, `grants_pipeline.before.txt`, `grants_dashboard.before.txt`, `default_acl.before.txt`, `ownership_objects.before.txt`, `ownership_schemas.before.txt`, `memberships.before.txt`
-   - Exits non-zero if any query fails
+3. **Write `0037-snapshot-pre.sh`** — must run as the **RDS instance master role** (the bootstrap superuser), not as `research_app` or `research_ro`. Reason: snapshots 4b (`pg_default_acl`) and 4c (`pg_class.relowner`) read columns that require ownership-or-superuser access. Running as the IAM-tier role would silently return empty rows and mask privilege regressions.
 
-4. **Write `0037-snapshot-post.sh`**: identical to `pre.sh` but writes `.after.txt` files. (Could be a single script with a CLI flag — builder's call.)
+   - Reads env vars: `RDS_ENDPOINT`, `DB`, `MASTER_USER` (the master role name), `MASTER_PW` (master password from SSM).
+   - Connects via password auth (NOT IAM) — the master role uses password auth: `PGPASSWORD="$MASTER_PW" psql -h $RDS_ENDPOINT -U $MASTER_USER -d $DB --set=sslmode=require -v ON_ERROR_STOP=1`.
+   - Runs each of the 7 snapshot queries with `psql -At` (tab-aligned, no headers). Overwrites pre-existing output files (idempotent).
+   - Files produced (overwritten on each run): `grants_corpus.before.txt`, `grants_pipeline.before.txt`, `grants_dashboard.before.txt`, `default_acl.before.txt`, `ownership_objects.before.txt`, `ownership_schemas.before.txt`, `memberships.before.txt`.
+   - Print one-line warning if previous output files existed and were overwritten.
+   - Exits non-zero if any query fails.
+
+4. **Write `0037-snapshot-post.sh`**: identical to `pre.sh` but writes `.after.txt` files. (Could be a single script with a `--mode pre|post` flag — builder's call.)
 
 5. **Write `0037-parity-diff.sh`** — must cover ALL 7 produced files (4 dimensions, but ownership splits into objects+schemas and object-privileges splits across 3 schemas). The script iterates this exact list:
 
@@ -157,23 +163,65 @@ The builder's job is to (1) update 6 files where old role names are hardcoded, (
    ```
    The `dashboard_user1` HALT branch is enforced in the runbook (operator stops if pre-check finds it with grants); this SQL file does NOT touch dashboard_user1. The DROP path lives in a separate file (step 8b below) so the operator runs it explicitly only when pre-check directs.
 
-8b. **Write `0037-cutover-dashboard-user-drop.sql`** — operator runs ONLY if pre-check determines `dashboard_user1` exists AND has zero GRANTs AND zero non-`rds_iam` memberships:
+8b. **Write `0037-cutover-dashboard-user-drop.sql`** — operator runs ONLY if pre-check determines `dashboard_user1` exists AND has zero GRANTs AND zero non-`rds_iam` memberships. The SQL re-validates BOTH conditions before dropping (defense-in-depth — operator could misinterpret pre-check):
    ```sql
-   DO $$ BEGIN
-     IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'dashboard_user1') THEN
-       -- Defense-in-depth re-check: confirm zero non-rds_iam memberships
-       -- before dropping. If any exist, raise — operator must HALT.
-       IF EXISTS (
-         SELECT 1 FROM pg_auth_members am
-         JOIN pg_roles r ON r.oid = am.member
-         JOIN pg_roles m ON m.oid = am.roleid
-         WHERE r.rolname = 'dashboard_user1' AND m.rolname <> 'rds_iam'
-       ) THEN
-         RAISE EXCEPTION 'dashboard_user1 has non-rds_iam memberships — '
-                         'HALT per spec §"dashboard_user1 decision rule"';
-       END IF;
-       DROP ROLE dashboard_user1;
+   DO $$
+   DECLARE
+     v_grant_count int;
+     v_owned_count int;
+     v_nonimg_member_count int;
+   BEGIN
+     IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'dashboard_user1') THEN
+       RAISE NOTICE 'dashboard_user1 does not exist — no-op';
+       RETURN;
      END IF;
+
+     -- Check 1: zero non-rds_iam memberships
+     SELECT count(*) INTO v_nonimg_member_count
+     FROM pg_auth_members am
+     JOIN pg_roles r ON r.oid = am.member
+     JOIN pg_roles m ON m.oid = am.roleid
+     WHERE r.rolname = 'dashboard_user1' AND m.rolname <> 'rds_iam';
+
+     IF v_nonimg_member_count > 0 THEN
+       RAISE EXCEPTION 'dashboard_user1 has % non-rds_iam memberships — '
+                       'HALT per spec §"dashboard_user1 decision rule"',
+                       v_nonimg_member_count;
+     END IF;
+
+     -- Check 2: zero object-privilege grants on the role across all schemas
+     -- (covers tables, sequences, functions, schemas).
+     SELECT count(*) INTO v_grant_count
+     FROM (
+       SELECT 1 FROM information_schema.table_privileges
+         WHERE grantee = 'dashboard_user1'
+       UNION ALL
+       SELECT 1 FROM information_schema.routine_privileges
+         WHERE grantee = 'dashboard_user1'
+       UNION ALL
+       SELECT 1 FROM information_schema.usage_privileges
+         WHERE grantee = 'dashboard_user1'
+     ) g;
+
+     IF v_grant_count > 0 THEN
+       RAISE EXCEPTION 'dashboard_user1 has % object-privilege grants — '
+                       'HALT per spec §"dashboard_user1 decision rule"',
+                       v_grant_count;
+     END IF;
+
+     -- Check 3: zero objects owned by the role (defense-in-depth — DROP ROLE
+     -- on an owner would fail anyway, but raise a clearer message).
+     SELECT count(*) INTO v_owned_count
+     FROM pg_class c JOIN pg_roles r ON c.relowner = r.oid
+     WHERE r.rolname = 'dashboard_user1';
+
+     IF v_owned_count > 0 THEN
+       RAISE EXCEPTION 'dashboard_user1 owns % objects — HALT', v_owned_count;
+     END IF;
+
+     -- All three defense-in-depth checks passed; safe to drop.
+     DROP ROLE dashboard_user1;
+     RAISE NOTICE 'dashboard_user1 dropped (was vestigial)';
    END $$;
    ```
 
@@ -192,13 +240,31 @@ The builder's job is to (1) update 6 files where old role names are hardcoded, (
    ```
    Run only if rollback decision tree directs full rollback (per spec §"Rollback Plan §Decision tree").
 
-10. **Write `0037-smoke-test.sh`**:
-    - Generates IAM tokens for `research_app` and `research_ro`
-    - Connects with each via `psql` and runs `SELECT current_user, 1 AS ok`
-    - Asserts the returned `current_user` matches the expected role
-    - Runs read query (`SELECT 1 FROM lava_corpus.corpus LIMIT 1`) as `research_ro`
-    - Runs write query (`INSERT into a no-op table; ROLLBACK`) as `research_app`
-    - Exits 0 only if all four checks pass
+10. **Write `0037-smoke-test.sh`** with concrete, named queries (no operator improvisation):
+
+    For each `(role, role_purpose)` in `[(research_ro, "read-only SELECT"), (research_app, "CRUD")]`:
+    - Generate IAM token: `aws rds generate-db-auth-token --hostname $RDS_ENDPOINT --port 5432 --username $role --region us-east-1`
+    - Connect: `PGPASSWORD=$tok psql -h $RDS_ENDPOINT -U $role -d $DB --set=sslmode=require -v ON_ERROR_STOP=1`
+    - Identity check: `SELECT current_user, 1 AS ok` — expect a single row with `current_user = $role`.
+    - Read check (both roles): `SELECT count(*) FROM lava_corpus.corpus LIMIT 1` — expect a row with a non-negative integer (does NOT need rows to exist; just proves SELECT permission).
+
+    For `research_app` only, ALSO run a write check using a transactional INSERT that is GUARANTEED to roll back regardless of operator error:
+    ```sql
+    BEGIN;
+    INSERT INTO lava_pipeline.org_provenance (ein, seed_status, updated_at)
+      VALUES ('ZZ-SMOKETEST-37', 'completed', NOW())
+      ON CONFLICT (ein) DO NOTHING;
+    -- Force rollback unconditionally with a deliberate error:
+    ROLLBACK;
+    ```
+    Then verify (in a new connection): `SELECT count(*) FROM lava_pipeline.org_provenance WHERE ein = 'ZZ-SMOKETEST-37'` — expect `0`. This proves:
+    (a) `research_app` has INSERT permission on `lava_pipeline.org_provenance` (otherwise the INSERT would fail).
+    (b) The ROLLBACK was honored (no smoke-test row leaked into production data).
+    (c) The session is connected as the right role with the right grants.
+
+    The script exits 0 ONLY if all checks pass. Any failure → exit non-zero with a one-line description of which check failed.
+
+    **Why `lava_pipeline.org_provenance` and EIN `ZZ-SMOKETEST-37`?** It's a real production table (so we test real grants), it has INSERT permission for `research_app` per `migration_011_990_index_automation.sql`, and the EIN format `ZZ-...` is invalid (real EINs are 9 digits) — even if the rollback somehow fails, downstream code that filters by valid EIN format will ignore the smoke row.
 
 ### Phase 2 Acceptance
 
@@ -247,13 +313,28 @@ The builder's job is to (1) update 6 files where old role names are hardcoded, (
    ```
    All 14 migrations must apply successfully. If a migration requires `rds_iam` (an AWS-RDS-only role that doesn't exist on plain Postgres), the builder records this as a bootstrap-script gap in the PR and adds `CREATE ROLE rds_iam;` to the scratch setup. Do not silently pre-grant — surface the issue.
 
-3. **Document results** in the PR description: paste the test summary lines and the migration loop's "all OK" output. The reviewer should be able to read the PR description and see all checks passed without re-running them.
+3. **Exercise helper scripts end-to-end against scratch DB**. Syntax-checking is not enough; the scripts must actually run against a real Postgres instance. Specifically:
+   - Run `0037-snapshot-pre.sh` against the scratch DB (with the renamed roles created) — verify all 7 `.before.txt` files are produced with expected content.
+   - Run `0037-cutover-rename.sql` TWICE against the scratch DB (first time renames; second time is a no-op due to idempotency guards). Confirm second run produces no error.
+   - Run `0037-snapshot-post.sh` against the scratch DB — verify all 7 `.after.txt` files are produced.
+   - Run `0037-parity-diff.sh` — expect PASS on all 7 dimensions (renames preserve grants, default ACLs, ownership, memberships).
+   - Run `0037-cutover-rollback.sql` — verify it reverses the rename. Run a SECOND time — verify it's a no-op.
+   - Run `0037-cutover-dashboard-user-drop.sql` against scratch DB where `dashboard_user1` doesn't exist — verify it raises NOTICE and exits 0 (no-op branch).
+   - (Optional but recommended) Create a fake `dashboard_user1` in scratch DB with grants, run drop SQL — verify it RAISEs EXCEPTION (HALT branch).
+
+4. **Document results** in the PR description: paste the test summary lines, the migration loop's "all OK" output, and the helper-script exercise output. The reviewer should be able to read the PR description and see all checks passed without re-running them.
 
 ### Phase 3 Acceptance
 
 - `pytest` exit code 0 for both test invocations.
 - Scratch-DB migration loop applies all 14 migrations to completion (exit 0 from the for-loop).
-- PR description contains the test output summary and migration validation output.
+- All 6 helper-script exercises pass against scratch DB:
+  - snapshot-pre/snapshot-post produce all 7 expected files
+  - cutover-rename idempotent (second run no-op)
+  - parity-diff PASSes all 7 dimensions
+  - cutover-rollback reverses cleanly and is itself idempotent
+  - dashboard-user-drop is a no-op when role absent; RAISEs when role has grants/memberships
+- PR description contains the test output summary, migration validation output, and helper-script exercise output.
 
 ---
 
