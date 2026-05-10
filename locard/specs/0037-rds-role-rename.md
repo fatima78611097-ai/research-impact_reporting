@@ -101,7 +101,7 @@ The `lava_*` prefix already namespaces the schemas. The collision risk is on rol
 
 The numeric `1` suffix is dropped — it implied a sequence (`app_user2`?) that never existed.
 
-**Decision pending:** Operator confirms `lavandula` as the prefix at spec-approval time. Alternative: `lava` (matches the schemas exactly but loses the package-name match). Recommendation: `lavandula`.
+**Prefix decision:** `lavandula` (final — see Open Questions §1). Operator can veto at spec approval and trigger a global rename of the spec.
 
 ## Migration Strategy
 
@@ -134,12 +134,39 @@ FROM pg_roles r JOIN pg_auth_members am ON r.oid = am.member
 JOIN pg_roles m ON am.roleid = m.oid
 WHERE r.rolname IN ('app_user1','ro_user1','dashboard_user1') AND m.rolname = 'rds_iam';
 
--- 4. Snapshot grants AND memberships (for post-rename verification).
---    Save the output of each to a file; compare post-rename diffs must show
---    only role-name substitutions, never added/removed privileges.
+-- 4a. Object-privilege snapshot (covers GRANT statements, not default ACLs).
+--     Save each output; compare post-rename diffs must show only role-name
+--     substitutions, never added/removed privileges.
 \dp lava_corpus.*           > /tmp/grants_corpus.before.txt
 \dp lava_pipeline.*         > /tmp/grants_pipeline.before.txt
 \dp lava_dashboard.*        > /tmp/grants_dashboard.before.txt
+
+-- 4b. Default-ACL snapshot (covers ALTER DEFAULT PRIVILEGES — these
+--     determine what GRANTs are auto-applied to FUTURE objects). \dp does
+--     NOT show default ACLs; they live in pg_default_acl.
+SELECT n.nspname, r.rolname AS grantor, d.defaclobjtype, d.defaclacl
+FROM pg_default_acl d
+LEFT JOIN pg_namespace n ON d.defaclnamespace = n.oid
+JOIN pg_roles r ON d.defaclrole = r.oid
+WHERE n.nspname IN ('lava_corpus','lava_pipeline','lava_dashboard')
+   OR n.nspname IS NULL
+ORDER BY n.nspname, defaclobjtype; -- > /tmp/default_acl.before.txt
+
+-- 4c. Ownership snapshot (tables, views, sequences, schemas).
+--     ALTER ROLE … RENAME TO … should preserve ownership by OID, but verify.
+SELECT n.nspname, c.relname, c.relkind, r.rolname AS owner
+FROM pg_class c
+JOIN pg_namespace n ON c.relnamespace = n.oid
+JOIN pg_roles r ON c.relowner = r.oid
+WHERE n.nspname IN ('lava_corpus','lava_pipeline','lava_dashboard')
+ORDER BY n.nspname, c.relname; -- > /tmp/ownership_objects.before.txt
+
+SELECT n.nspname, r.rolname AS owner
+FROM pg_namespace n JOIN pg_roles r ON n.nspowner = r.oid
+WHERE n.nspname IN ('lava_corpus','lava_pipeline','lava_dashboard')
+ORDER BY n.nspname; -- > /tmp/ownership_schemas.before.txt
+
+-- 4d. Membership snapshot.
 SELECT r.rolname, m.rolname AS member_of
 FROM pg_roles r JOIN pg_auth_members am ON r.oid = am.member
 JOIN pg_roles m ON am.roleid = m.oid
@@ -153,9 +180,9 @@ The query in step 1 returns one of three states. The runbook acts on the result 
 
 | Step 1 returns | Action |
 |---|---|
-| Only `app_user1, ro_user1` | **Skip dashboard_user1 entirely.** Do not create, drop, or rename. Confirms the inventory finding. |
-| Includes `dashboard_user1` AND it has GRANTs in step 4 snapshots | **Rename:** `ALTER ROLE dashboard_user1 RENAME TO lavandula_dashboard;` Add to SSM as `rds-dashboard-user` (new key) and update IAM resource ARN. **This expands scope** — operator must explicitly approve this branch before proceeding. |
-| Includes `dashboard_user1` BUT it has zero GRANTs and zero memberships beyond `rds_iam` | **Drop:** `DROP ROLE dashboard_user1;` (vestigial — confirmed unused in code inventory). |
+| Only `app_user1, ro_user1` | **Skip dashboard_user1 entirely.** Do not create, drop, or rename. Confirms the inventory finding. This is the expected case. |
+| Includes `dashboard_user1` BUT it has zero GRANTs (per pre-check step 4) and zero memberships beyond `rds_iam` (per pre-check step 3) | **Drop:** `DROP ROLE dashboard_user1;` (vestigial — confirmed unused in code inventory). |
+| Includes `dashboard_user1` AND it has GRANTs OR non-`rds_iam` memberships | **HALT.** This is out of scope for Spec 0037 — the rename branch would require introducing a new SSM key (`rds-dashboard-user`) and a new consumer in code, which contradicts the "zero production-code change" goal. The operator records the finding and writes a follow-up spec (Spec 0038+) to address it. The Spec 0037 cutover does NOT proceed in this state. |
 
 The runbook records which branch was taken in its execution log.
 
@@ -171,10 +198,19 @@ T-1   IAM ADDITIVE OVERLAP (do this BEFORE the outage window).
         arn:aws:rds-db:us-east-1:ACCT:dbuser/DB-RES-ID/lavandula_app   ← new
         arn:aws:rds-db:us-east-1:ACCT:dbuser/DB-RES-ID/lavandula_ro    ← new
       Wait ≥5 minutes for IAM propagation.
-      Verify: aws sts get-caller-identity (confirm role)
-              aws iam simulate-principal-policy ...
-              (or generate-db-auth-token --db-user lavandula_app and confirm
-               token is issued — this only checks IAM, not the role exists yet)
+      Verify by ATTEMPTING ACTUAL CONNECT (not just token generation):
+        # The new role doesn't exist yet, so the connect should fail with
+        # "role lavandula_app does not exist" — this is the desired result.
+        # It proves IAM is allowing the rds-db:connect call through (otherwise
+        # we'd see "PAM authentication failed for user lavandula_app").
+        TOK=$(aws rds generate-db-auth-token --hostname $RDS_ENDPOINT \
+              --port 5432 --username lavandula_app --region us-east-1)
+        PGPASSWORD="$TOK" psql -h $RDS_ENDPOINT -U lavandula_app -d $DB \
+          --set=sslmode=require -c "SELECT 1" 2>&1 | tee /tmp/iam_warmup.log
+        # Expected output contains "role \"lavandula_app\" does not exist".
+        # If output contains "PAM authentication failed" or "permission denied
+        # to use this connection method", IAM has not propagated yet — wait
+        # another 2 min and retry. Do NOT proceed to T+0 until this confirms.
       This step is reversible at any time by removing the new ARNs again.
 
 T+0   PRECONDITION: confirm rename has not already happened.
@@ -219,7 +255,20 @@ T+2   PRECONDITION: read SSM current values; if already lavandula_*, skip.
 T+3   No action — additive overlap was applied at T-1.
       (Old ARNs remain; they will be removed at T+6.)
 
-T+4   PRECONDITION: psql connect test as the new roles works (see T+5 below).
+T+4   PRECONDITION: actual IAM-authenticated psql connect as the new role
+      MUST succeed before starting the dashboard. This is the definitive
+      authorization check — token generation is local and never fails;
+      rds-db:connect is what we actually need.
+        TOK=$(aws rds generate-db-auth-token --hostname $RDS_ENDPOINT \
+              --port 5432 --username lavandula_app --region us-east-1)
+        PGPASSWORD="$TOK" psql -h $RDS_ENDPOINT -U lavandula_app -d $DB \
+          --set=sslmode=require -c "SELECT current_user, 1 AS ok"
+        # Expected: a row returned with current_user='lavandula_app'.
+        # If "PAM authentication failed": IAM not propagated → wait, retry.
+        # If "role \"lavandula_app\" does not exist": rename didn't apply.
+        # If "permission denied for ...": grants didn't follow OID — investigate.
+      Repeat for lavandula_ro before continuing.
+
       Start: dashboard (systemctl start lavandula-dashboard)
       Watch: journalctl -u lavandula-dashboard -f
       Wait up to 60s; if first connection fails with auth error, this is most
@@ -309,12 +358,27 @@ The work is complete when ALL of the following hold:
 3. EC2 instance profile IAM policy `rds-db:connect` resource ARNs reference `lavandula_app` and `lavandula_ro`. Old ARNs (`.../app_user1`, `.../ro_user1`) have been removed at T+6 (no overlap remains in steady state).
 4. Dashboard is running and serving requests; `/orgs/`, `/jobs/`, and at least one write endpoint succeed.
 5. Direct psql connect as `lavandula_ro` and `lavandula_app` (via IAM token) both succeed.
-6. **Privilege parity (no regression).** The pre-rename grant snapshots (§"Pre-rename checks" step 4) compared against post-rename snapshots show ONLY role-name substitutions — no added, removed, or modified privileges, and no added or removed role memberships. A `diff` of the two snapshot sets, after sed-substituting the old names for the new, must be empty.
+6. **Privilege parity (no regression) — covers four dimensions.** The four pre-rename snapshots (§"Pre-rename checks" steps 4a-4d) re-collected post-rename, sed-substituted (`s/app_user1/lavandula_app/g; s/ro_user1/lavandula_ro/g`), and `diff`'d against the originals must produce **zero output for each of**:
+   - **4a Object privileges** (`\dp` of `lava_corpus.*`, `lava_pipeline.*`, `lava_dashboard.*`)
+   - **4b Default ACLs** (`pg_default_acl` for the same schemas)
+   - **4c Ownership** of tables/views/sequences (`pg_class`) and schemas (`pg_namespace`)
+   - **4d Memberships** (`pg_auth_members`)
+
+   If ANY of these four diffs are non-empty, AC #6 fails and the rollback procedure is triggered.
 7. The 6 source files in §"Code Changes" have zero remaining `app_user1` or `ro_user1` references (verified by `grep -rn`).
-8. **Targeted test verification** (NOT full suite — narrowed per-Codex feedback). The following must pass:
-   - `pytest lavandula/common/tests/unit/test_db_adapter_0013.py` (touched fixtures + assertions).
-   - `pytest lavandula/common/tests/conftest.py`-using tests in `lavandula/common/tests/` (fixture validity).
-   - **Bootstrap + migration validation:** Against a scratch Postgres (local or ephemeral RDS), manually `CREATE ROLE lavandula_app; CREATE ROLE lavandula_ro;` then run all 14 migrations in order to completion. Confirms the SQL files reference the new names consistently.
+8. **Targeted test verification** (NOT full suite — narrowed per-Codex feedback). The following exact commands must pass:
+   - `pytest lavandula/common/tests/unit/test_db_adapter_0013.py -v` (touched fixtures + assertions; the file with 11 hardcoded `app_user1`/`ro_user1` references).
+   - `pytest lavandula/common/tests/ -v -k "not slow"` (catches any indirect references via the shared `conftest.py` fixture; `-k "not slow"` excludes any tests that require live RDS).
+   - **Bootstrap + migration validation** against a scratch Postgres:
+     ```bash
+     # In a local Docker container or ephemeral RDS scratch instance:
+     createdb lava_test
+     psql lava_test -c "CREATE ROLE lavandula_app; CREATE ROLE lavandula_ro;"
+     for f in lavandula/migrations/rds/{001,002,003,004,005,006,007,008,009,010,011,012,013,014}_*.sql; do
+       psql lava_test -v ON_ERROR_STOP=1 -f "$f" || { echo "FAIL: $f"; exit 1; }
+     done
+     ```
+     All 14 migrations must run to completion without error. Confirms the SQL files reference the new names consistently.
 9. Runbook `locard/operations/0037-role-rename-runbook.md` is committed alongside the source-tree PR.
 10. Lessons-learned added to `locard/resources/lessons-learned.md` if anything unexpected was hit during cutover.
 
@@ -362,13 +426,19 @@ systemctl start lavandula-dashboard
 
 IAM policy stays in additive-overlap state during rollback (both old and new ARNs allowed) — no IAM action needed for rollback. Old ARNs continue to authorize, which is what we want.
 
-Source-tree edits: leave in (they're forward-only and don't break the live system) OR `git revert` if the PR has merged. Prefer leaving them — they document the intent and a future re-attempt only needs the cutover, not new edits.
+### Source-tree handling during rollback (explicit policy)
+
+If the live RDS rollback is **short (under ~4 hours)** and the cutover will be retried in the same maintenance window: **leave the source-tree edits in place** (already merged or not). The runtime reads usernames from SSM, so source-tree consistency does not affect the live system; bootstrap SQL describing the new names is harmless on a system that's only renamed back temporarily.
+
+If the live RDS rollback is **extended (overnight or longer)** without a retry scheduled: **`git revert` the PR**. Reason: a fresh-environment build (new dev EC2, new scratch DB) would create the new role names while production runs old names, which silently diverges. A revert restores source-tree truth to match production.
+
+The runbook records which policy was applied in its execution log.
 
 Total rollback time: ~3 minutes from decision-to-rollback to dashboard-back-up.
 
 ## Open Questions / Decisions
 
-1. **Prefix value (BLOCKING — must be resolved before approval).** Recommended: `lavandula`. Alternative: `lava` (matches schema prefix exactly). Operator decides at spec approval. This affects every source-file edit, every SSM value, every IAM ARN, and the runbook. **No builder work begins until the operator picks one.** Throughout this spec, `lavandula_*` is used as the placeholder; if the operator picks `lava_*`, the spec is updated globally before plan-writing begins.
+1. **Prefix value — RESOLVED (pending operator veto at approval).** **Final decision: `lavandula`.** This matches the package directory (`lavandula/`) and is the natural choice given `lava_*` already prefixes the schemas. Alternatives considered: `lava` (rejected — package name is `lavandula`, not `lava`; schema abbreviation is incidental). The operator can veto at spec-approval review and trigger a global rename of the spec, but the spec is now consistent end-to-end on `lavandula_*` and is ready for plan phase as-is.
 
 2. **Vestigial `dashboard_user1` — RESOLVED.** Decision rule is now concrete (§"`dashboard_user1` decision rule"). The pre-check answers it deterministically: if absent, no-op; if present without grants, drop; if present with grants, rename and expand scope (operator approval required for that branch).
 
