@@ -580,7 +580,7 @@ projects:
 
   - id: "0037"
     title: "Rename RDS Roles to Project-Prefixed Names"
-    summary: "Rename app_user1/ro_user1 to lavandula_app/lavandula_ro on shared RDS so a second project can coexist without role-name collisions. SSM keys (rds-app-user, rds-ro-user) stay stable; only values change."
+    summary: "Rename app_user1/ro_user1 to research_app/research_ro on shared RDS so a second project can coexist without role-name collisions. SSM keys (rds-app-user, rds-ro-user) stay stable; only values change."
     status: conceived
     priority: medium
     files:
@@ -589,7 +589,7 @@ projects:
       review: null
     dependencies: []
     tags: [rds, iam, multi-tenant, ops]
-    notes: "Motivated by adding a second project to the shared RDS instance. Schemas keep lava_* names (already namespaced). 6 source files require edits (4 SQL migrations + 2 test files). Code uses SSM indirection for usernames, so settings.py and db.py are untouched. Requires coordinated dashboard/workers restart and IAM policy update for rds-db:connect resource ARNs."
+    notes: "Motivated by adding a second project to the shared RDS instance. Prefix decision: research (operator-confirmed 2026-05-10). Schemas keep lava_* names (already namespaced). 6 source files require edits (4 SQL migrations + 2 test files). Code uses SSM indirection for usernames, so settings.py and db.py are untouched. Requires coordinated dashboard/workers restart and IAM policy update for rds-db:connect resource ARNs."
 
 ## Next Available Number
 
