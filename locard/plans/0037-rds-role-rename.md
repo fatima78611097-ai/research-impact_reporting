@@ -75,14 +75,23 @@ The builder's job is to (1) update 6 files where old role names are hardcoded, (
 **Files (new)**:
 - `locard/operations/0037-role-rename-runbook.md` — step-by-step T-1..T+6 procedure with exact commands, expected outputs, and decision points
 - `locard/operations/0037-pre-rename-checks.sql` — the four pre-check queries from spec §"Pre-rename checks"
-- `locard/operations/0037-snapshot-pre.sh` — bash script that runs the 4 snapshot queries and writes outputs to `/tmp/0037_*.before.txt`
+- `locard/operations/0037-snapshot-pre.sh` — bash script that runs the snapshot queries and writes outputs to `/tmp/0037_*.before.txt`
 - `locard/operations/0037-snapshot-post.sh` — same queries against post-rename DB; writes to `/tmp/0037_*.after.txt`
 - `locard/operations/0037-parity-diff.sh` — applies `sed 's/app_user1/research_app/g; s/ro_user1/research_ro/g'` to each `before` file and `diff`s against `after`; non-zero exit if any diff is non-empty
 - `locard/operations/0037-iam-policy-overlay.json` — the additive-overlap policy JSON for the EC2 instance profile (operator copies this into the AWS console at T-1)
 - `locard/operations/0037-iam-policy-final.json` — the post-cleanup policy with only the new ARNs (operator applies at T+6)
 - `locard/operations/0037-cutover-rename.sql` — the transactional rename
 - `locard/operations/0037-cutover-rollback.sql` — the symmetric reverse rename
+- `locard/operations/0037-cutover-dashboard-user-drop.sql` — conditional `DROP ROLE dashboard_user1;` for the vestigial branch (operator runs ONLY if pre-check directs DROP per spec §"dashboard_user1 decision rule")
 - `locard/operations/0037-smoke-test.sh` — runs the IAM-authenticated psql connect tests for both roles (T+4 and T+5)
+
+**Idempotency requirement for ALL scripts in this phase**: every script must be safe to re-run. Specifically:
+- Snapshot scripts: overwrite (don't append) any pre-existing `/tmp/0037_*.{before,after}.txt` so a re-run produces a clean snapshot. Print a one-line warning if previous output is overwritten.
+- Cutover SQL: each `ALTER ROLE` is wrapped in `DO $$ BEGIN IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'app_user1') THEN ALTER ROLE app_user1 RENAME TO research_app; END IF; END $$;` — re-running after a successful rename is a no-op, not an error.
+- Rollback SQL: symmetric — uses `IF EXISTS (... rolname = 'research_app')` guard.
+- DROP-dashboard-user SQL: `DO $$ BEGIN IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'dashboard_user1') THEN DROP ROLE dashboard_user1; END IF; END $$;`.
+- Smoke test: connect tests are inherently idempotent; just ensure they don't accumulate side-effects (write test creates and rolls back).
+- Parity diff: re-runnable; reads existing snapshots and reports.
 
 ### Implementation Steps
 
@@ -105,27 +114,83 @@ The builder's job is to (1) update 6 files where old role names are hardcoded, (
 
 4. **Write `0037-snapshot-post.sh`**: identical to `pre.sh` but writes `.after.txt` files. (Could be a single script with a CLI flag — builder's call.)
 
-5. **Write `0037-parity-diff.sh`**:
-   - For each of the 4 snapshot dimensions, apply `sed 's/app_user1/research_app/g; s/ro_user1/research_ro/g'` to the `.before.txt` file and `diff -u` against the `.after.txt` file
-   - Print PASS/FAIL per dimension
-   - Exit non-zero if ANY dimension diff is non-empty
-   - This script implements AC #6 from the spec (privilege parity, 4 dimensions)
+5. **Write `0037-parity-diff.sh`** — must cover ALL 7 produced files (4 dimensions, but ownership splits into objects+schemas and object-privileges splits across 3 schemas). The script iterates this exact list:
+
+   ```bash
+   FILES=(
+     grants_corpus           # dim 4a: object privileges, lava_corpus
+     grants_pipeline         # dim 4a: object privileges, lava_pipeline
+     grants_dashboard        # dim 4a: object privileges, lava_dashboard
+     default_acl             # dim 4b: pg_default_acl
+     ownership_objects       # dim 4c: pg_class
+     ownership_schemas       # dim 4c: pg_namespace
+     memberships             # dim 4d: pg_auth_members
+   )
+   for f in "${FILES[@]}"; do
+     sed 's/app_user1/research_app/g; s/ro_user1/research_ro/g' \
+       "/tmp/0037_${f}.before.txt" \
+       | diff -u - "/tmp/0037_${f}.after.txt"
+     if [[ $? -ne 0 ]]; then echo "FAIL: $f"; FAIL=1; fi
+   done
+   exit ${FAIL:-0}
+   ```
+   - Print `PASS: <name>` or `FAIL: <name>` per file.
+   - Exit non-zero if ANY file diff is non-empty.
+   - This script implements AC #6 from the spec (privilege parity across all 7 outputs).
 
 6. **Write `0037-iam-policy-overlay.json`**: a JSON IAM policy document with `Statement` containing `Action: rds-db:connect` and `Resource` listing all FOUR ARNs (old × 2 + new × 2). Operator applies this at T-1.
 
 7. **Write `0037-iam-policy-final.json`**: the post-cleanup version listing only the two new ARNs. Operator applies at T+6.
 
-8. **Write `0037-cutover-rename.sql`**:
+8. **Write `0037-cutover-rename.sql`** with idempotency guards:
    ```sql
    BEGIN;
-   ALTER ROLE app_user1 RENAME TO research_app;
-   ALTER ROLE ro_user1  RENAME TO research_ro;
-   -- dashboard_user1 branch: only if pre-check directs DROP. If RENAME branch
-   -- triggered, runbook HALTs — see spec §"dashboard_user1 decision rule".
+   DO $$ BEGIN
+     IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'app_user1') THEN
+       ALTER ROLE app_user1 RENAME TO research_app;
+     END IF;
+     IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'ro_user1') THEN
+       ALTER ROLE ro_user1 RENAME TO research_ro;
+     END IF;
+   END $$;
    COMMIT;
    ```
+   The `dashboard_user1` HALT branch is enforced in the runbook (operator stops if pre-check finds it with grants); this SQL file does NOT touch dashboard_user1. The DROP path lives in a separate file (step 8b below) so the operator runs it explicitly only when pre-check directs.
 
-9. **Write `0037-cutover-rollback.sql`**: the symmetric reverse, run only if rollback decision tree directs full rollback.
+8b. **Write `0037-cutover-dashboard-user-drop.sql`** — operator runs ONLY if pre-check determines `dashboard_user1` exists AND has zero GRANTs AND zero non-`rds_iam` memberships:
+   ```sql
+   DO $$ BEGIN
+     IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'dashboard_user1') THEN
+       -- Defense-in-depth re-check: confirm zero non-rds_iam memberships
+       -- before dropping. If any exist, raise — operator must HALT.
+       IF EXISTS (
+         SELECT 1 FROM pg_auth_members am
+         JOIN pg_roles r ON r.oid = am.member
+         JOIN pg_roles m ON m.oid = am.roleid
+         WHERE r.rolname = 'dashboard_user1' AND m.rolname <> 'rds_iam'
+       ) THEN
+         RAISE EXCEPTION 'dashboard_user1 has non-rds_iam memberships — '
+                         'HALT per spec §"dashboard_user1 decision rule"';
+       END IF;
+       DROP ROLE dashboard_user1;
+     END IF;
+   END $$;
+   ```
+
+9. **Write `0037-cutover-rollback.sql`** — symmetric reverse with idempotency guards:
+   ```sql
+   BEGIN;
+   DO $$ BEGIN
+     IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'research_app') THEN
+       ALTER ROLE research_app RENAME TO app_user1;
+     END IF;
+     IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'research_ro') THEN
+       ALTER ROLE research_ro RENAME TO ro_user1;
+     END IF;
+   END $$;
+   COMMIT;
+   ```
+   Run only if rollback decision tree directs full rollback (per spec §"Rollback Plan §Decision tree").
 
 10. **Write `0037-smoke-test.sh`**:
     - Generates IAM tokens for `research_app` and `research_ro`
@@ -137,11 +202,12 @@ The builder's job is to (1) update 6 files where old role names are hardcoded, (
 
 ### Phase 2 Acceptance
 
-- All 9 files created under `locard/operations/0037-*`.
+- All 10 files created under `locard/operations/0037-*` (the 9 originally listed plus `0037-cutover-dashboard-user-drop.sql`).
 - `bash -n locard/operations/*.sh` (syntax check) passes for each shell script.
-- `psql -f locard/operations/0037-pre-rename-checks.sql --set ON_ERROR_STOP=1` runs cleanly against any Postgres ≥14 (does not need RDS).
+- **Pre-rename-checks SQL caveat**: the file contains queries with two privilege tiers. Steps 1, 3, 4a, 4d run as any role (validate against plain Postgres ≥14). Steps 2, 4b, 4c require master/`rds_superuser` access; on plain Postgres they require running as the bootstrap superuser. Acceptance: `psql -v ON_ERROR_STOP=1 -f locard/operations/0037-pre-rename-checks.sql` against a fresh local Postgres run as `postgres` superuser must complete without error. (RDS execution at cutover time has the same effective privilege level.)
 - The runbook references each helper script by relative path; no orphan or broken references.
 - IAM policy JSONs validate against the AWS IAM policy schema (use `aws iam validate-policy-document` if available, otherwise manual review).
+- All 5 SQL/shell scripts that mutate state are demonstrably idempotent: re-running each one twice in succession against the same DB produces no error and no second-effect (verified in scratch DB).
 
 ---
 
@@ -167,9 +233,11 @@ The builder's job is to (1) update 6 files where old role names are hardcoded, (
    sleep 5
    psql "host=localhost port=5499 user=postgres dbname=postgres" \
      -c "CREATE DATABASE lava_test;"
+   # Spec AC #8 requires only CREATE ROLE — no rds_iam grant. If any
+   # migration depends on rds_iam membership, the migration fails here
+   # and that's a real bootstrap-script gap to surface.
    psql "host=localhost port=5499 user=postgres dbname=lava_test" \
-     -c "CREATE ROLE research_app; CREATE ROLE research_ro; CREATE ROLE rds_iam;
-         GRANT rds_iam TO research_app; GRANT rds_iam TO research_ro;"
+     -c "CREATE ROLE research_app; CREATE ROLE research_ro;"
    for f in lavandula/migrations/rds/{001,002,003,004,005,006,007,008,009,010,011,012,013,014}_*.sql; do
      psql "host=localhost port=5499 user=postgres dbname=lava_test" \
        -v ON_ERROR_STOP=1 -f "$f" \
@@ -177,7 +245,7 @@ The builder's job is to (1) update 6 files where old role names are hardcoded, (
    done
    docker stop pg37
    ```
-   All 14 migrations must apply successfully.
+   All 14 migrations must apply successfully. If a migration requires `rds_iam` (an AWS-RDS-only role that doesn't exist on plain Postgres), the builder records this as a bootstrap-script gap in the PR and adds `CREATE ROLE rds_iam;` to the scratch setup. Do not silently pre-grant — surface the issue.
 
 3. **Document results** in the PR description: paste the test summary lines and the migration loop's "all OK" output. The reviewer should be able to read the PR description and see all checks passed without re-running them.
 
@@ -227,21 +295,28 @@ If any step fails, consult spec §"Rollback Plan §Decision tree by failure poin
 
 ### Steps
 
-1. **Builder merges PR** after operator confirms Phase 4 acceptance. Ordering matters: live cutover MUST happen first, source-tree edits MUST be merged within the same maintenance window. If cutover succeeds but PR merge is delayed, source tree is correct but historical inconsistency persists — flag and merge ASAP.
+1. **Builder merges PR** after operator confirms Phase 4 acceptance. Ordering matters: live cutover MUST happen first, source-tree edits MUST be merged within the same maintenance window.
 
-2. **Builder writes lessons-learned entry** in `locard/resources/lessons-learned.md` if any deviations from the runbook occurred during cutover. Examples worth recording:
+2. **Source-tree handling on rollback** (per spec §"Rollback Plan §Source-tree handling during rollback"). If Phase 4 triggers full rollback, the builder applies one of two policies based on rollback duration:
+   - **Short rollback (<4 hours, retry scheduled in same maintenance window)**: leave PR/edits in place if already merged; merge if not yet merged. Runtime reads from SSM, so source-tree leading production is harmless during a brief window.
+   - **Extended rollback (overnight or longer, no retry scheduled)**: `git revert` the merged PR. Reason: a fresh-environment build (new dev EC2, new scratch DB) would create the new role names while production runs old names — silent divergence. Revert restores source-tree truth to match production.
+
+   The builder records which policy was applied and why in the cutover log.
+
+3. **Builder writes lessons-learned entry** in `locard/resources/lessons-learned.md` if any deviations from the runbook occurred during cutover. Examples worth recording:
    - IAM propagation took longer/shorter than expected
    - Connection drain required `pg_terminate_backend` (sessions didn't close cleanly)
    - Privilege-parity diff revealed unexpected differences (and how they were resolved)
    - `dashboard_user1` branch hit any state other than "absent"
+   - Scratch-DB migration validation surfaced a missing `rds_iam` dependency
 
-3. **Builder writes review document** at `locard/reviews/0037-rds-role-rename.md` summarizing:
+4. **Builder writes review document** at `locard/reviews/0037-rds-role-rename.md` summarizing:
    - Outage duration (actual vs estimated 3-10 min)
    - All 6 AC items from spec verified
    - Any changes made during execution (deviations from plan)
    - Sign-off: builder + operator
 
-4. **Operator updates project status** in `locard/projectlist.md` from `planned` → `implementing` → `implemented` → `committed` → `integrated` as the work progresses.
+5. **Operator updates project status** in `locard/projectlist.md` from `planned` → `implementing` → `implemented` → `committed` → `integrated` as the work progresses.
 
 ### Phase 5 Acceptance
 
