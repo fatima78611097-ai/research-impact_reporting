@@ -118,8 +118,9 @@ Interpret the result:
 ### Action
 
 ```bash
-# Stop the dashboard
+# Stop the dashboard and orchestrator
 systemctl stop lavandula-dashboard
+systemctl stop lavandula-orchestrator
 
 # Stop any running CLI processes (crawler, classifier, etc.)
 ps -ef | grep python3
@@ -223,13 +224,20 @@ fi
 ```
 
 ### Failure handling
-If `put-parameter` fails: retry up to 3 times. If still failing, revert via:
+If `put-parameter` fails: retry up to 3 times. If still failing, restore **both** SSM values to old names first (even if one already succeeded — idempotent), then revert the DB rename:
 ```bash
+# 1. Restore SSM to old values (prevents split-brain if one update succeeded)
+aws ssm put-parameter --name /cloud2.lavandulagroup.com/rds-app-user \
+    --type SecureString --value app_user1 --overwrite
+aws ssm put-parameter --name /cloud2.lavandulagroup.com/rds-ro-user \
+    --type SecureString --value ro_user1 --overwrite
+
+# 2. Revert DB rename
 PGPASSWORD="$MASTER_PW" psql -h "$RDS_ENDPOINT" -U "$MASTER_USER" -d "$DB" \
   --set=sslmode=require -v ON_ERROR_STOP=1 \
   -f locard/operations/0037-cutover-rollback.sql
 ```
-This reverts to old names so the system is consistent (old name everywhere).
+This ensures SSM and DB are consistent (old name everywhere) before restarting services.
 
 ---
 
@@ -265,11 +273,12 @@ PGPASSWORD="$TOK" psql -h "$RDS_ENDPOINT" -U research_ro -d "$DB" \
 **If `role does not exist`**: Rename didn't apply — go back to T+1.
 **If `permission denied for ...`**: Grants didn't follow OID — investigate. If unresolvable after 10 minutes, run full rollback.
 
-### Restart dashboard
+### Restart services
 
 ```bash
 systemctl start lavandula-dashboard
-journalctl -u lavandula-dashboard -f
+systemctl start lavandula-orchestrator
+journalctl -u lavandula-dashboard -u lavandula-orchestrator -f
 # Watch for 60 seconds. If auth error: likely IAM propagation lag — wait 5 min, retry start.
 ```
 
