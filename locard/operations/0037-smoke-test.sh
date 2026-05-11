@@ -44,9 +44,9 @@ psql_as() {
 # --- research_ro checks ---
 echo "=== research_ro ==="
 
-check "research_ro: identity" \
-  psql_as research_ro -Atc "SELECT current_user" \
-  | grep -q "research_ro"
+RO_IDENTITY=$(psql_as research_ro -Atc "SELECT current_user")
+check "research_ro: identity (current_user=$RO_IDENTITY)" \
+  test "$RO_IDENTITY" = "research_ro"
 
 check "research_ro: SELECT on lava_corpus.corpus" \
   psql_as research_ro -Atc "SELECT count(*) FROM lava_corpus.corpus LIMIT 1"
@@ -55,9 +55,9 @@ check "research_ro: SELECT on lava_corpus.corpus" \
 echo ""
 echo "=== research_app ==="
 
-check "research_app: identity" \
-  psql_as research_app -Atc "SELECT current_user" \
-  | grep -q "research_app"
+APP_IDENTITY=$(psql_as research_app -Atc "SELECT current_user")
+check "research_app: identity (current_user=$APP_IDENTITY)" \
+  test "$APP_IDENTITY" = "research_app"
 
 check "research_app: SELECT on lava_corpus.corpus" \
   psql_as research_app -Atc "SELECT count(*) FROM lava_corpus.corpus LIMIT 1"

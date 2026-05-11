@@ -57,11 +57,11 @@ Examine the Step 1 output from `0037-pre-rename-checks.sql`:
 bash locard/operations/0037-snapshot-pre.sh
 ```
 
-Verify all 7 files are produced:
+Verify all 8 files are produced:
 ```bash
 ls -la /tmp/0037_*.before.txt
-# Expected: 7 files (grants_corpus, grants_pipeline, grants_dashboard,
-#   default_acl, ownership_objects, ownership_schemas, memberships)
+# Expected: 8 files (grants_corpus, grants_pipeline, grants_dashboard,
+#   routine_privileges, default_acl, ownership_objects, ownership_schemas, memberships)
 ```
 
 ---
@@ -305,7 +305,7 @@ bash locard/operations/0037-snapshot-post.sh
 # its rows from the before-snapshot (intentional deletion, not a regression):
 bash locard/operations/0037-parity-diff.sh              # normal case
 bash locard/operations/0037-parity-diff.sh --dashboard-dropped  # if dashboard_user1 was dropped
-# Expected: PASS on all 7 dimensions
+# Expected: PASS on all 8 dimensions
 ```
 
 If ANY dimension shows FAIL, investigate before removing old ARNs. A FAIL means privilege regression — potential grounds for full rollback.
@@ -314,7 +314,7 @@ If ANY dimension shows FAIL, investigate before removing old ARNs. A FAIL means 
 
 ## T+6: Remove Old IAM ARNs (Post-Cutover Cleanup)
 
-**Only after ≥30 minutes of stable operation and parity-diff PASSing all 7 dimensions.**
+**Only after ≥30 minutes of stable operation and parity-diff PASSing all 8 dimensions.**
 
 ### Action
 
@@ -382,7 +382,7 @@ Record timestamps and decisions as you execute:
 |------|------|--------|-------|
 | P1 Pre-checks | | | |
 | P2 dashboard_user1 decision | | Branch taken: | |
-| P3 Snapshots | | 7 files: Y/N | |
+| P3 Snapshots | | 8 files: Y/N | |
 | T-1 IAM overlay | | Propagation confirmed: Y/N | |
 | T+0 Stop services | | Sessions drained: Y/N | |
 | T+1 Rename | | research_app + research_ro: Y/N | |
@@ -390,5 +390,5 @@ Record timestamps and decisions as you execute:
 | T+4 IAM connect verify | | Both roles connect: Y/N | |
 | T+4 Dashboard restart | | Health OK: Y/N | |
 | T+5 Smoke tests | | All pass: Y/N | |
-| Parity diff | | All 7 PASS: Y/N | |
+| Parity diff | | All 8 PASS: Y/N | |
 | T+6 Remove old ARNs | | Old ARN denied: Y/N | |
