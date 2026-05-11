@@ -445,3 +445,15 @@ Total rollback time: ~3 minutes from decision-to-rollback to dashboard-back-up.
 3. **Source-tree edits in same PR or separate?** Recommend **same PR** so the source tree never disagrees with the live database for more than the cutover window. The PR merges *after* the live cutover (so reviewers can see the runbook executed cleanly).
 
 4. **Should this work create a `015_role_rename_documentation.sql` migration?** No. Migrations write to `lava_corpus.schema_version` to track schema evolution, but role renames are not schema events. Document the rename in the runbook + git log; do not pollute the migration sequence.
+
+## Consultation Log
+
+- **Codex (spec-review)**: REQUEST_CHANGES — 10 findings: (1) blocking prefix decision unresolved; (2) AC #8 "full test suite" too broad; (3) idempotent runbook underspecified — `ALTER ROLE` fails if already renamed, no expected-reality checks; (4) IAM policy update treated as atomic swap, no additive overlap for outage reduction; (5) `pg_authid` requires privileges not stated; (6) rollback decision tree missing for timing-sensitive failures; (7) connection-pool drain weak — `pg_stat_activity` check alone is not enough; (8) least-privilege validation incomplete — grants checked but not memberships; (9) fresh-environment story inconsistent; (10) `dashboard_user1` treatment too open
+- **Gemini (spec-review)**: Rate-limited (API quota exhausted across 3 attempts)
+
+All findings addressed in revision 2.
+
+- **Codex (red-team-spec)**: REQUEST_CHANGES — 6 findings: (1) HIGH: `dashboard_user1` rename branch had no consumer for new SSM key — contradicts "zero production-code change"; reduced to drop-if-vestigial or HALT; (2) HIGH: privilege-parity verification incomplete — `\dp` covers object privs but not default ACLs or ownership; expanded to 4 dimensions (object, default ACL, ownership, memberships); (3) MEDIUM: AC #8 not operationally precise — provided exact pytest commands and exact bootstrap+migration loop; (4) MEDIUM: prefix decision still blocking — promoted from placeholder to final (operator-confirmed `research` later); (5) MEDIUM: source-tree rollback policy ambiguous — added short-vs-extended rollback policy; (6) LOW: IAM verification relied on token generation — switched to actual `psql` IAM-authenticated connect tests with explicit expected output for each failure mode
+- **Gemini (red-team-spec)**: Rate-limited (API quota exhausted)
+
+All findings addressed in revision 3. Prefix decision resolved by operator to `research` (revision 4).
