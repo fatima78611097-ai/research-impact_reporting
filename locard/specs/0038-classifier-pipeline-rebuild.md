@@ -46,13 +46,17 @@ The multi-page extraction infrastructure (Spec 0035 Phase 1) works correctly. Th
 
 6. **Validation comparison**: Built-in `--compare` mode that compares v3 results against the existing `corpus.material_type` Haiku v2 classifications.
 
+7. **Drop confidence scores**: LLM self-reported confidence is poorly calibrated and wastes output tokens. Remove `confidence` from the tool schema's required fields. The real validation signal comes from v2/v3 agreement and the tiebreaker pass, not a self-assessed number.
+
+8. **Tiebreaker pass for disagreements**: After comparison identifies v2/v3 disagreements, a tiebreaker command sends those docs through a second LLM (different model or different prompt) for a deciding vote. This targets token spend on the uncertain cases rather than burning it uniformly.
+
 ## Non-Goals
 
 - Changing the taxonomy or definition file (that's independent)
 - Modifying the extraction pipeline (`extract_classification_context` is fine)
 - Replacing the rule-based prefilter concept (it's sound; it just needs correct data)
 - Real-time/streaming classification of newly crawled docs
-- Modifying the `classify_first_page_v3` function or prompt assembly (Spec 0025/0035 — those work correctly when given the right data)
+- Modifying the `classify_first_page_v3` prompt assembly or augmented context logic (Spec 0025/0035 — those work correctly when given the right data). The tool schema is modified minimally to drop `confidence` from required fields.
 
 ## Technical Design
 
@@ -326,7 +330,6 @@ New management command `compare_classifications`:
 python3 manage.py compare_classifications --run-tag v3.2
 python3 manage.py compare_classifications --run-tag v3.2 --state TX
 python3 manage.py compare_classifications --run-tag v3.2 --show-reasoning
-python3 manage.py compare_classifications --run-tag v3.2 --confidence-threshold 0.8
 ```
 
 Compares `classification_results` (for the given run_tag) against `corpus.material_type` (the Haiku v2 crawl-time classifications):
@@ -338,12 +341,6 @@ Classification Comparison: v3.2 vs corpus (Haiku v2)
   Agreement: 6,291 (74.6%)
   Disagreement: 2,141 (25.4%)
 
-  Confidence comparison:
-    Avg confidence (Haiku v2):  0.87
-    Avg confidence (v3.2):      0.94
-    v3 confidence >= 0.9:       7,102 (84.2%)
-    v2 confidence >= 0.9:       5,841 (69.3%)
-
   Top disagreements (v2 → v3):
     other_collateral → annual_report:        412
     other_collateral → program_brochure:     287
@@ -353,15 +350,129 @@ Classification Comparison: v3.2 vs corpus (Haiku v2)
     not_relevant → donor_newsletter:         112
     ...
 
-  Docs where v3 is NOT confident (< 0.8):   412
-    These should be manually reviewed.
-
   By classification source:
     Rule-matched disagreements:  198 (all financial_report → not_relevant)
     LLM disagreements:         1,943
+
+  Tiebreaker candidates: 1,943 (use --tiebreaker to resolve)
 ```
 
 The comparison output breaks down disagreements by `classified_by` source (rule vs LLM) so the operator can distinguish rule overrides (expected, deterministic) from classifier drift (needs investigation).
+
+### Tiebreaker Pass
+
+New management command `resolve_disagreements`:
+
+```
+# Run tiebreaker on all LLM disagreements from a comparison
+python3 manage.py resolve_disagreements --run-tag v3.2
+
+# Use a different model for the tiebreaker (default: haiku)
+python3 manage.py resolve_disagreements --run-tag v3.2 --backend haiku
+
+# Limit to a state
+python3 manage.py resolve_disagreements --run-tag v3.2 --state TX
+
+# Dry run
+python3 manage.py resolve_disagreements --run-tag v3.2 --dry-run
+```
+
+**How it works:**
+
+The tiebreaker sends each disagreement doc through a DIFFERENT LLM than the original v3 run. The prompt presents both candidates and the document text, and asks the model to pick the correct classification:
+
+```
+Two classifiers disagree on this document.
+
+Classifier A (Haiku, single page) says: annual_report
+Classifier B (DeepSeek, 5 pages) says: impact_report
+
+Read the document below and determine which classification is correct.
+Pick one of the two options, or classify it yourself if both are wrong.
+Explain your reasoning in under 200 characters.
+
+<untrusted_document>
+--- PAGE 1 ---
+[page 1 text]
+--- PAGE 2 ---
+[page 2 text]
+...
+</untrusted_document>
+```
+
+**Tool schema for tiebreaker:**
+
+```json
+{
+  "name": "resolve_disagreement",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "winner": {
+        "type": "string",
+        "enum": ["A", "B", "neither"],
+        "description": "Which classifier is correct, or 'neither' if both are wrong"
+      },
+      "material_type": {
+        "type": "string",
+        "description": "The correct material_type. Must match winner's type unless winner is 'neither'."
+      },
+      "reasoning": {
+        "type": "string",
+        "description": "Short (<=200 char) rationale for the decision."
+      }
+    },
+    "required": ["winner", "material_type", "reasoning"]
+  }
+}
+```
+
+**Results stored in `classification_results`** with a new run_tag (e.g., `v3.2-tiebreaker`) and `classified_by='tiebreaker:{model}'`. The tiebreaker run references the parent run_tag in its `config_json.parent_run_tag`.
+
+**Output:**
+
+```
+Tiebreaker results (v3.2-tiebreaker):
+  Disagreements resolved: 1,943
+  Winner A (v2 Haiku):    412 (21.2%)
+  Winner B (v3 DeepSeek): 1,287 (66.2%)
+  Neither (new class):    244 (12.6%)
+
+  Resolution distribution:
+    annual_report:     687
+    impact_report:     445
+    not_relevant:      312
+    ...
+```
+
+**Why this works:**
+- Token spend is targeted at the ~2K uncertain docs, not the ~6K that already agree
+- The tiebreaker model sees both candidates AND 5 pages of text — it has maximum context for a decision
+- Presenting both options as candidates reduces the chance of a completely novel (wrong) answer
+- Rule-matched disagreements are excluded from tiebreaker — those are deterministic and correct by design (990 patterns)
+- The tiebreaker result becomes the final classification for disagreement docs
+
+**Cost:** ~2K docs × ~1,500 tokens × Haiku pricing ≈ $0.75. Negligible compared to the ~$24 primary run.
+
+### Dropping Confidence Scores
+
+**What changes:**
+
+1. **Tool schema**: `confidence` removed from `required` list in both `_TOOL_SCHEMA_V2` and the v3 tool schema. The field remains in the schema as optional for backward compatibility but is not requested or validated.
+
+2. **`classify_first_page_v3`**: If `confidence` is present in the tool response, it is accepted but not stored. If absent, no error. The validation logic (`0.0 <= confidence <= 1.0`) is removed from the critical path.
+
+3. **`classification_results`**: The `confidence` column remains in the table (no schema migration needed) but new rows write `NULL`. Existing rows from prior runs retain their confidence values for historical reference.
+
+4. **`reclassify_corpus`**: The `_write_result` method passes `confidence=NULL` for all new classifications.
+
+5. **`compare_classifications`**: Confidence comparison metrics are removed from output. The comparison focuses on agreement/disagreement and reasoning.
+
+**Why:**
+- LLM self-reported confidence is poorly calibrated — models say 0.95 on classifications they get wrong
+- The confidence field costs ~10 output tokens per classification (× 130K = ~1.3M tokens wasted)
+- Real validation comes from v2/v3 agreement + tiebreaker + human spot-check, not a self-assessed number
+- The v2 confidence values in `corpus.classification_confidence` remain available for historical analysis
 
 ### Watchdog Integration
 
@@ -390,7 +501,7 @@ watchdog = StallWatchdog(
 
 ### What This Spec Does NOT Change
 
-- **`classify_first_page_v3` function**: The LLM classification function works correctly when given the right data. No changes needed.
+- **`classify_first_page_v3` function**: Minor change only — remove `confidence` from the tool schema's `required` list and make the field optional. The prompt assembly, augmented context logic, and validation flow are unchanged.
 - **`extract_classification_context` command**: The extraction pipeline works correctly. No changes needed.
 - **`classification_context` table schema**: No changes.
 - **`classification_runs` / `classification_results` table schemas**: No changes.
@@ -401,7 +512,7 @@ watchdog = StallWatchdog(
 
 The entire `reclassify_corpus.py` management command is rewritten. The replacement keeps the same file path and command name for continuity. The command signature is backward-compatible (all existing flags still work) with new flags added.
 
-A new `compare_classifications.py` management command is added.
+Two new management commands are added: `compare_classifications.py` and `resolve_disagreements.py`.
 
 ## Migration Plan
 
@@ -438,8 +549,22 @@ No schema changes required. All tables from Spec 0035 are already created and co
 
 ### Comparison
 - AC18: `compare_classifications` command compares run results against `corpus.material_type`.
-- AC19: Shows agreement/disagreement rate, top category changes, confidence comparison.
+- AC19: Shows agreement/disagreement rate, top category changes, breakdown by rule vs LLM source.
 - AC20: Supports `--state` filter for scoped comparison.
+
+### Tiebreaker
+- AC25: `resolve_disagreements` command processes LLM disagreements from a comparison run.
+- AC26: Tiebreaker prompt presents both candidate classifications and 5-page text.
+- AC27: Uses a different LLM backend than the primary run (default: haiku).
+- AC28: Rule-matched disagreements are excluded from tiebreaker (deterministic, correct by design).
+- AC29: Results stored in `classification_results` with `classified_by='tiebreaker:{model}'`.
+- AC30: Output shows winner distribution (A/B/neither) and resolved classification distribution.
+
+### Confidence Removal
+- AC31: `confidence` removed from tool schema `required` fields.
+- AC32: New classification rows write `confidence=NULL`.
+- AC33: Comparison output does not include confidence metrics.
+- AC34: Existing confidence values in `corpus.classification_confidence` are preserved (no migration).
 
 ### Resumability
 - AC21: `--resume` reads cursor from the most recent incomplete run with the same tag and continues.
@@ -461,6 +586,7 @@ No change from Spec 0035 estimates. The work is a code rewrite, not a schema or 
 | Single state (e.g., TX, ~8K docs, 4 workers) | ~$1.50 | ~6 min |
 | Single EIN (1-50 docs) | < $0.01 | < 10 sec |
 | Comparison query | $0 | < 5 sec |
+| Tiebreaker pass (~2K disagreements × Haiku) | ~$0.75 | ~5 min |
 
 The 4-worker concurrency should reduce wall-clock time by roughly 3-4x vs single-threaded.
 
@@ -513,17 +639,16 @@ When `--allow-fallback` is active:
 The comparison joins `classification_results` (for the given `run_tag`) against `corpus` on `content_sha256`:
 
 - **v2 material_type**: `corpus.material_type` (populated by crawler's Haiku v2 classifier)
-- **v2 confidence**: `corpus.classification_confidence` (same source)
 - **v2 reasoning**: `corpus.reasoning` (same source)
 - Documents where `corpus.material_type IS NULL` (never classified by v2) are reported as a separate count ("v2 unclassified: N") and excluded from agreement/disagreement calculations
 - Documents where the v3 run has `classified_by = 'llm:error'` are excluded from comparison (reported separately as "v3 errors: N")
 - `--show-reasoning` prints v2 and v3 reasoning side-by-side for disagreements only (capped at `--limit 50` by default)
-- `--confidence-threshold 0.8` filters the comparison to only show docs where EITHER classifier had confidence below the threshold (the uncertain cases worth reviewing)
+- Disagreements are broken down by `classified_by` source (rule vs LLM) and listed as tiebreaker candidates
 
 ## Error Row Semantics
 
 When a document fails LLM classification after 4 retries:
-- Written to `classification_results` with: `material_type=NULL`, `confidence=0.0`, `reasoning='LLM classification failed after 4 attempts'`, `classified_by='llm:error'`
+- Written to `classification_results` with: `material_type=NULL`, `confidence=NULL`, `reasoning='LLM classification failed after 4 attempts'`, `classified_by='llm:error'`
 - These rows ARE counted toward progress (they're "processed", just not successfully classified)
 - On `--resume`, error rows are NOT retried (they exist in `classification_results` and the `LEFT JOIN ... IS NULL` skips them)
 - To retry errors from a prior run, start a new run with a new `--run-tag`. Or delete the error rows manually (`DELETE FROM classification_results WHERE run_id = X AND classified_by = 'llm:error'`) and `--resume`.
