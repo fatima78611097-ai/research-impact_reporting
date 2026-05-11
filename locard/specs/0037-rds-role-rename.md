@@ -448,12 +448,59 @@ Total rollback time: ~3 minutes from decision-to-rollback to dashboard-back-up.
 
 ## Consultation Log
 
-- **Codex (spec-review)**: REQUEST_CHANGES — 10 findings: (1) blocking prefix decision unresolved; (2) AC #8 "full test suite" too broad; (3) idempotent runbook underspecified — `ALTER ROLE` fails if already renamed, no expected-reality checks; (4) IAM policy update treated as atomic swap, no additive overlap for outage reduction; (5) `pg_authid` requires privileges not stated; (6) rollback decision tree missing for timing-sensitive failures; (7) connection-pool drain weak — `pg_stat_activity` check alone is not enough; (8) least-privilege validation incomplete — grants checked but not memberships; (9) fresh-environment story inconsistent; (10) `dashboard_user1` treatment too open
-- **Gemini (spec-review)**: Rate-limited (API quota exhausted across 3 attempts)
+### First Consultation (After Initial Draft)
+**Date**: 2026-05-10
+**Models Consulted**: Codex ✅ (Gemini unavailable — quota exhausted across 3 retry attempts)
+**Commands**:
+```
+consult --model codex --type spec-review spec 0037
+consult --model gemini --type spec-review spec 0037   # all attempts 429
+```
 
-All findings addressed in revision 2.
+**Verdict**: REQUEST_CHANGES (Codex) — all findings addressed in v2
 
-- **Codex (red-team-spec)**: REQUEST_CHANGES — 6 findings: (1) HIGH: `dashboard_user1` rename branch had no consumer for new SSM key — contradicts "zero production-code change"; reduced to drop-if-vestigial or HALT; (2) HIGH: privilege-parity verification incomplete — `\dp` covers object privs but not default ACLs or ownership; expanded to 4 dimensions (object, default ACL, ownership, memberships); (3) MEDIUM: AC #8 not operationally precise — provided exact pytest commands and exact bootstrap+migration loop; (4) MEDIUM: prefix decision still blocking — promoted from placeholder to final (operator-confirmed `research` later); (5) MEDIUM: source-tree rollback policy ambiguous — added short-vs-extended rollback policy; (6) LOW: IAM verification relied on token generation — switched to actual `psql` IAM-authenticated connect tests with explicit expected output for each failure mode
-- **Gemini (red-team-spec)**: Rate-limited (API quota exhausted)
+| Model  | Verdict          | Key Issues |
+|--------|------------------|------------|
+| Codex  | REQUEST_CHANGES  | Prefix decision blocking; AC #8 "full test suite" too broad; runbook not idempotent (`ALTER ROLE` fails on re-run); IAM ARN swap not additive; `pg_authid` privilege not stated; rollback decision tree missing for timing-sensitive failures; connection drain weak; least-privilege validation grants-only; fresh-environment story inconsistent; `dashboard_user1` treatment open |
+| Gemini | (unavailable)    | API quota exhausted — 10 attempts each, all 429 |
 
-All findings addressed in revision 3. Prefix decision resolved by operator to `research` (revision 4).
+### Red Team Security Review (MANDATORY)
+**Date**: 2026-05-10
+**Models Consulted**: Codex ✅ (Gemini unavailable — quota exhausted)
+**Commands**:
+```
+consult --model codex --type red-team-spec spec 0037
+consult --model gemini --type red-team-spec spec 0037  # 429
+```
+
+**Verdict**: REQUEST_CHANGES (Codex) — all findings addressed in v3
+
+| Model  | Verdict          | Key Issues |
+|--------|------------------|------------|
+| Codex  | REQUEST_CHANGES  | HIGH: `dashboard_user1` rename branch had no consumer for new SSM key — contradicted "zero production-code change"; HIGH: privilege-parity check covered only `\dp` (object privs), missed default ACLs and ownership; MEDIUM: AC #8 not operationally precise; MEDIUM: prefix decision still blocking; MEDIUM: source-tree rollback policy ambiguous; LOW: IAM verification relied on token generation, not actual connect |
+| Gemini | (unavailable)    | API quota exhausted |
+
+### Changes in v2 (post spec-review)
+
+1. **Operator-privilege assumption stated** for `pg_authid` pre-check (master / `rds_superuser` required; otherwise skip — IAM doesn't use stored passwords).
+2. **`dashboard_user1` decision rule made concrete**: three explicit branches in a table, runbook acts without deliberation.
+3. **Cutover sequence restructured as idempotent T-1..T+6** with explicit precondition checks per step; halt-on-mixed-state behavior.
+4. **IAM additive-overlap strategy added** (T-1 warm-up, T+6 cleanup) to eliminate the IAM-propagation race during cutover.
+5. **Session drain via `pg_terminate_backend`** after service stop.
+6. **Rollback decision tree by failure point** (replaces flat rollback).
+7. **AC #8 narrowed** from "full test suite" to targeted unit tests + scratch-DB migration validation.
+8. **AC #6 strengthened**: empty diff after name substitution — no privilege regression.
+9. **Prefix decision (Open Question 1)** marked as BLOCKING approval.
+
+### Changes in v3 (post red-team)
+
+1. **`dashboard_user1` rename branch removed** (no consumer exists; would contradict zero-code-change goal). Branch is now: drop if vestigial, HALT if non-vestigial (defer to follow-up spec).
+2. **Privilege parity verification expanded** from `\dp` alone to four dimensions: object privileges (`\dp`), default ACLs (`pg_default_acl`), ownership (`pg_class` + `pg_namespace`), memberships (`pg_auth_members`). AC #6 now requires zero-diff on ALL four.
+3. **AC #8 made operationally precise**: exact pytest commands and exact bootstrap+migration loop with `-v ON_ERROR_STOP=1`.
+4. **Prefix decision promoted from placeholder to final**: `lavandula` (later changed to `research` by operator in v4).
+5. **Source-tree rollback policy made explicit**: leave-in for short rollback (<4hr), `git revert` for extended rollback.
+6. **IAM verification at T-1 and T+4 changed** from token-generation only (which never fails locally) to actual IAM-authenticated `psql` connect with explicit expected output for each failure mode.
+
+### Changes in v4 (post operator review)
+
+1. **Prefix value confirmed by operator**: `research` (matches the repo root name) — all 39 `lavandula_*` references in the spec replaced with `research_*` (plus the projectlist entry).

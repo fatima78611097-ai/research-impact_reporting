@@ -422,14 +422,52 @@ This plan does not introduce new risks beyond those documented in spec §"Risks 
 
 ## Consultation Log
 
-- **Codex (plan-review)**: REQUEST_CHANGES — 6 findings: (1) idempotency required only in prose runbook, not in helper SQL/scripts — added DO/IF EXISTS guards to every state-mutating SQL; (2) `dashboard_user1` HALT branch had only a comment in cutover-rename.sql — moved to its own file `0037-cutover-dashboard-user-drop.sql`; (3) parity-diff iterated vague "4 dimensions" — expanded to enumerate all 7 produced files (3 grants + 1 default ACL + 2 ownership + 1 memberships); (4) Phase 3 scratch DB pre-granted `rds_iam` not in spec AC #8 — removed; if a migration depends on `rds_iam`, surface it as a real bootstrap-script gap; (5) Phase 2 acceptance for pre-rename-checks.sql said "any Postgres ≥14 runs cleanly" but step 2 needs `rds_superuser` — distinguished privileged vs non-privileged execution context; (6) Phase 5 missing the spec's short-vs-extended source-tree rollback policy — added
-- **Gemini (plan-review)**: Rate-limited (API quota exhausted)
+### First Consultation (After Initial Draft)
+**Date**: 2026-05-10
+**Models Consulted**: Codex ✅ (Gemini unavailable — quota exhausted)
+**Commands**:
+```
+consult --model codex --type plan-review plan 0037
+consult --model gemini --type plan-review plan 0037   # 429
+```
 
-All findings addressed in revision 2.
+**Verdict**: REQUEST_CHANGES (Codex) — all findings addressed in v2
 
-- **Codex (red-team-plan)**: REQUEST_CHANGES — 5 findings: (1) HIGH: `0037-cutover-dashboard-user-drop.sql` checked memberships but not GRANTs — expanded to 3 defense-in-depth checks (zero non-`rds_iam` memberships, zero object-privilege grants across `information_schema.table_privileges`/`routine_privileges`/`usage_privileges`, zero owned objects); each RAISEs EXCEPTION with count if fails; (2) HIGH: smoke-test write path underspecified — named exact INSERT into `lava_pipeline.org_provenance` with EIN `ZZ-SMOKETEST-37` (invalid format so downstream code rejects even if rollback fails); (3) MEDIUM: snapshot scripts used single IAM_USER but `pg_default_acl` and `pg_class.relowner` require master/superuser — clarified scripts must connect as RDS master via password auth, not IAM; (4) MEDIUM: Phase 1 grep scope mismatched between step 2 (`migrations/+tests/`) and acceptance (`lavandula/` tree-wide) — aligned both; (5) MEDIUM: runbook self-containment — required `dashboard_user1` decision table, privileged-execution role choice, and smoke-test write path to be COPIED into the runbook, not pointers to spec
-- **Gemini (red-team-plan)**: Rate-limited (API quota exhausted)
+| Model  | Verdict          | Key Issues |
+|--------|------------------|------------|
+| Codex  | REQUEST_CHANGES  | Idempotency required only in prose runbook, not in helper SQL/scripts; `dashboard_user1` HALT branch only commented in cutover-rename.sql; parity-diff iterated vague "4 dimensions" rather than enumerating 7 produced files; Phase 3 scratch DB pre-granted `rds_iam` not in spec AC #8; Phase 2 acceptance for pre-rename-checks.sql claimed "any Postgres ≥14 runs cleanly" but step 2 needs `rds_superuser`; Phase 5 missing the spec's short-vs-extended source-tree rollback policy |
+| Gemini | (unavailable)    | API quota exhausted |
 
-Plan also added end-to-end helper-script exercise to Phase 3 (not just `bash -n` syntax checks) including double-run idempotency proof.
+### Red Team Security Review (MANDATORY)
+**Date**: 2026-05-10
+**Models Consulted**: Codex ✅ (Gemini unavailable — quota exhausted)
+**Commands**:
+```
+consult --model codex --type red-team-plan plan 0037
+consult --model gemini --type red-team-plan plan 0037  # 429
+```
 
-All findings addressed in revision 3.
+**Verdict**: REQUEST_CHANGES (Codex) — all findings addressed in v3
+
+| Model  | Verdict          | Key Issues |
+|--------|------------------|------------|
+| Codex  | REQUEST_CHANGES  | HIGH: `0037-cutover-dashboard-user-drop.sql` checked memberships but not GRANTs; HIGH: smoke-test write path underspecified (operator would improvise); MEDIUM: snapshot scripts used IAM_USER but `pg_default_acl` and `pg_class.relowner` require master/superuser; MEDIUM: Phase 1 grep scope mismatched between step 2 and acceptance; MEDIUM: runbook self-containment — too much referenced back to spec |
+| Gemini | (unavailable)    | API quota exhausted |
+
+### Changes in v2 (post plan-review)
+
+1. **Idempotency made explicit per script**: SQL uses `DO`/`IF EXISTS` guards; shell scripts overwrite snapshots cleanly; smoke test rolls back side effects.
+2. **`dashboard_user1` DROP path moved** from inline comment to its own file `0037-cutover-dashboard-user-drop.sql` with defense-in-depth re-check.
+3. **Parity-diff script now lists all 7 produced files explicitly** (4 dimensions split into: 3 grants + 1 default ACL + 2 ownership + 1 memberships).
+4. **Phase 3 scratch-DB validation**: removed `rds_iam` pre-grant. If a migration depends on `rds_iam`, surface that as a real bootstrap-script gap.
+5. **Phase 2 acceptance for pre-rename-checks.sql**: distinguished plain vs privileged execution context; no longer claims "any Postgres ≥14" runs all 4 query tiers cleanly.
+6. **Phase 5**: added explicit short-vs-extended rollback policy per spec §"Rollback Plan §Source-tree handling during rollback".
+
+### Changes in v3 (post red-team)
+
+1. **`0037-cutover-dashboard-user-drop.sql` now defends 3 conditions** before `DROP`: zero non-`rds_iam` memberships, zero object-privilege grants (table/routine/usage), zero owned objects. RAISEs with count if any check fails.
+2. **Smoke-test write path made concrete**: `BEGIN/INSERT/ROLLBACK` against `lava_pipeline.org_provenance` with EIN `ZZ-SMOKETEST-37` (invalid format, ignored by downstream code if rollback ever fails).
+3. **Snapshot scripts** (pre/post) now explicitly require master/super-user role, NOT IAM-tier roles. Reason: `pg_default_acl` and `pg_class.relowner` are masked for non-superuser; reading as `research_*` would silently miss privilege regressions.
+4. **Phase 1 grep scope** aligned with Phase 1 acceptance: `lavandula/` tree-wide, not just `migrations/`+`tests/`.
+5. **Runbook self-containment** requirement strengthened: `dashboard_user1` decision table, privileged-execution role choice, and smoke-test write path must be COPIED into the runbook (not pointers to spec).
+6. **Phase 3 adds end-to-end helper-script exercise** (not just `bash -n` syntax checks) including double-run idempotency proof.
