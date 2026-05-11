@@ -53,12 +53,12 @@ CREATE TABLE IF NOT EXISTS lava_corpus.filing_status_audit (
 );
 
 -- GRANTs
-GRANT SELECT, INSERT ON lava_corpus.index_refresh_log TO app_user1;
-GRANT SELECT ON lava_corpus.index_refresh_log TO ro_user1;
-GRANT USAGE, SELECT ON SEQUENCE lava_corpus.index_refresh_log_id_seq TO app_user1;
+GRANT SELECT, INSERT ON lava_corpus.index_refresh_log TO research_app;
+GRANT SELECT ON lava_corpus.index_refresh_log TO research_ro;
+GRANT USAGE, SELECT ON SEQUENCE lava_corpus.index_refresh_log_id_seq TO research_app;
 
-GRANT SELECT, INSERT ON lava_corpus.filing_status_audit TO app_user1;
-GRANT SELECT ON lava_corpus.filing_status_audit TO ro_user1;
-GRANT USAGE, SELECT ON SEQUENCE lava_corpus.filing_status_audit_id_seq TO app_user1;
+GRANT SELECT, INSERT ON lava_corpus.filing_status_audit TO research_app;
+GRANT SELECT ON lava_corpus.filing_status_audit TO research_ro;
+GRANT USAGE, SELECT ON SEQUENCE lava_corpus.filing_status_audit_id_seq TO research_app;
 
 COMMIT;

@@ -23,17 +23,17 @@ CREATE TABLE IF NOT EXISTS schema_version (
 
 -- =========================================================================
 -- Default privileges — makes every table created by postgres auto-grant
--- CRUD to app_user1 and SELECT to ro_user1. Must be set BEFORE CREATE TABLE
+-- CRUD to research_app and SELECT to research_ro. Must be set BEFORE CREATE TABLE
 -- so the newly-created objects inherit the grants.
 -- =========================================================================
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA lava_impact
-  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO app_user1;
+  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO research_app;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA lava_impact
-  GRANT SELECT ON TABLES TO ro_user1;
+  GRANT SELECT ON TABLES TO research_ro;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA lava_impact
-  GRANT USAGE, SELECT ON SEQUENCES TO app_user1;
+  GRANT USAGE, SELECT ON SEQUENCES TO research_app;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA lava_impact
-  GRANT SELECT ON SEQUENCES TO ro_user1;
+  GRANT SELECT ON SEQUENCES TO research_ro;
 
 -- =========================================================================
 -- nonprofits_seed — seed list of nonprofit orgs with resolver output
@@ -249,10 +249,10 @@ CREATE INDEX IF NOT EXISTS idx_budget_ledger_at ON budget_ledger(at_timestamp);
 -- Explicit grants on existing objects (defensive; default privileges above
 -- handle NEW objects, these cover tables just created in this transaction).
 -- =========================================================================
-GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA lava_impact TO app_user1;
-GRANT SELECT ON ALL TABLES IN SCHEMA lava_impact TO ro_user1;
-GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA lava_impact TO app_user1;
-GRANT SELECT ON ALL SEQUENCES IN SCHEMA lava_impact TO ro_user1;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA lava_impact TO research_app;
+GRANT SELECT ON ALL TABLES IN SCHEMA lava_impact TO research_ro;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA lava_impact TO research_app;
+GRANT SELECT ON ALL SEQUENCES IN SCHEMA lava_impact TO research_ro;
 
 -- =========================================================================
 -- Record this migration

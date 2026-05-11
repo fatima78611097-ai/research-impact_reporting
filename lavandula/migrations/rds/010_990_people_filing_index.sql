@@ -64,10 +64,10 @@ CREATE INDEX IF NOT EXISTS idx_people_ein_period ON lava_corpus.people(ein, tax_
 CREATE UNIQUE INDEX IF NOT EXISTS idx_people_dedup ON lava_corpus.people(ein, object_id, person_name, person_type);
 
 -- GRANTs
-GRANT SELECT, INSERT, UPDATE, DELETE ON lava_corpus.people TO app_user1;
-GRANT SELECT, INSERT, UPDATE, DELETE ON lava_corpus.filing_index TO app_user1;
-GRANT SELECT ON lava_corpus.people TO ro_user1;
-GRANT SELECT ON lava_corpus.filing_index TO ro_user1;
-GRANT USAGE, SELECT ON SEQUENCE lava_corpus.people_id_seq TO app_user1;
+GRANT SELECT, INSERT, UPDATE, DELETE ON lava_corpus.people TO research_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON lava_corpus.filing_index TO research_app;
+GRANT SELECT ON lava_corpus.people TO research_ro;
+GRANT SELECT ON lava_corpus.filing_index TO research_ro;
+GRANT USAGE, SELECT ON SEQUENCE lava_corpus.people_id_seq TO research_app;
 
 COMMIT;
