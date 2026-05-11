@@ -1,6 +1,6 @@
 # Spec 0038: Classifier Pipeline Rebuild
 
-**Status**: Draft
+**Status**: Draft (with Codex review)
 **Author**: Architect
 **Date**: 2026-05-11
 **Dependencies**: 0035 (multi-page extraction), 0025 (definition-driven classifier)
@@ -102,7 +102,7 @@ python3 manage.py compare_classifications --run-tag v3.2 --state TX
 | `--state` | str | None | Two-letter state code (joins to `org_seed.state`) |
 | `--ein` | str | None | EIN (e.g., "13-1234567") |
 | `--org-id` | int | None | org_seed.id |
-| `--where` | str | None | Raw SQL WHERE clause (power user) |
+| `--where` | str | None | Additional SQL WHERE predicate (operator-only, see Safety below) |
 | `--sample` | int | None | Random sample size |
 | `--workers` | int | 4 | Concurrent LLM workers |
 | `--batch-size` | int | 200 | Docs per database fetch |
@@ -204,7 +204,7 @@ INNER JOIN lava_corpus.org_provenance op
 WHERE op.org_id = :org_id
 ```
 
-Note: one document can belong to multiple orgs (many-to-many via `org_provenance`). The query uses DISTINCT or deduplicates in Python to avoid classifying the same SHA256 twice.
+Note: one document can belong to multiple orgs (many-to-many via `org_provenance`). The query wraps the filtered result in a `SELECT DISTINCT c.content_sha256` subquery before the main fetch, so all counts (eligible, dry-run, progress total, ETA denominator) reflect deduplicated document counts, not row counts. The deduplication happens in SQL, not Python.
 
 ### Progress Reporting
 
@@ -456,10 +456,98 @@ The 4-worker concurrency should reduce wall-clock time by roughly 3-4x vs single
 
 | Risk | Mitigation |
 |---|---|
-| Extraction not yet run for full corpus | Dry run reports coverage. Startup blocks if coverage < threshold (configurable). |
+| Extraction not yet run for full corpus | Startup summary reports extraction coverage %. If coverage is 0% (no `classification_context` rows match the filter), the command prints an error and exits — there's nothing to classify. Otherwise it proceeds with whatever coverage exists and reports excluded doc count. |
 | Thread pool overwhelms DeepSeek rate limits | Exponential backoff handles 429s. Default 4 workers is conservative. |
 | org_provenance join is slow on 186K docs | Query uses existing indexes. State filter narrows the scan. |
 | Comparison misleading if Haiku v2 was also wrong | Comparison is informational — human spot-check is the real validation. |
+
+## Resumability & Checkpointing
+
+Checkpoint state lives in `classification_runs.config_json.cursor` (the last processed `content_sha256`). An incomplete run is identified by `finished_at IS NULL`.
+
+**Resume rules:**
+- `--resume` finds the most recent run with matching `run_tag` where `finished_at IS NULL`
+- The cursor is a `content_sha256` value; batches are ordered by `content_sha256 ASC` (deterministic, resumable)
+- Already-classified rows (in `classification_results` for this `run_id`) are skipped via the existing `LEFT JOIN ... IS NULL` on `cr`
+- Filters (`--state`, `--ein`, `--where`) are stored in `config_json` at run creation. On `--resume`, the command reads stored filters and uses them — it does NOT accept new filter flags. If the operator passes different filters on resume, the command prints an error and exits.
+- `--sample` runs are NOT resumable. `--resume` with a `--sample` run prints an error. Random sampling is inherently non-deterministic and intended for quick tests, not long production runs.
+
+**Checkpoint frequency:** After every batch (same as current). On Ctrl+C (SIGINT), a signal handler triggers one final checkpoint before exit.
+
+## `--where` Safety
+
+This is a single-operator system (only `ronp` has access). The `--where` flag exists for ad-hoc queries that don't justify a named flag. Guardrails:
+
+- The value is interpolated into a `WHERE ... AND ({where_clause})` position — it cannot escape to a separate statement
+- The query runs on a read-heavy connection (SQLAlchemy `engine.connect()`, not `engine.begin()`) — any attempted DML fails because there's no open transaction for writes (writes go through separate `engine.begin()` blocks)
+- No sanitization beyond parenthetical wrapping. This is an operator tool, not a user-facing API.
+
+## Fallback Quality Gate Semantics
+
+When `--allow-fallback` is active:
+- Documents WITH `classification_context` rows: quality gate checks `cc.text_length` (same as default mode)
+- Documents WITHOUT `classification_context` rows: quality gate checks `LENGTH(c.first_page_text)` against `--min-text-len`
+- Skipped docs from either path are counted separately in progress output: `skip(ctx):N skip(fp):M` so the operator can see how many fallbacks had inadequate text
+- The startup summary shows: `Fallback docs (no context): 1,204 — will use first_page_text`
+
+## Comparison Command Details
+
+The comparison joins `classification_results` (for the given `run_tag`) against `corpus` on `content_sha256`:
+
+- **v2 material_type**: `corpus.material_type` (populated by crawler's Haiku v2 classifier)
+- **v2 confidence**: `corpus.classification_confidence` (same source)
+- **v2 reasoning**: `corpus.reasoning` (same source)
+- Documents where `corpus.material_type IS NULL` (never classified by v2) are reported as a separate count ("v2 unclassified: N") and excluded from agreement/disagreement calculations
+- Documents where the v3 run has `classified_by = 'llm:error'` are excluded from comparison (reported separately as "v3 errors: N")
+- `--show-reasoning` prints v2 and v3 reasoning side-by-side for disagreements only (capped at `--limit 50` by default)
+- `--confidence-threshold 0.8` filters the comparison to only show docs where EITHER classifier had confidence below the threshold (the uncertain cases worth reviewing)
+
+## Error Row Semantics
+
+When a document fails LLM classification after 4 retries:
+- Written to `classification_results` with: `material_type=NULL`, `confidence=0.0`, `reasoning='LLM classification failed after 4 attempts'`, `classified_by='llm:error'`
+- These rows ARE counted toward progress (they're "processed", just not successfully classified)
+- On `--resume`, error rows are NOT retried (they exist in `classification_results` and the `LEFT JOIN ... IS NULL` skips them)
+- To retry errors from a prior run, start a new run with a new `--run-tag`. Or delete the error rows manually (`DELETE FROM classification_results WHERE run_id = X AND classified_by = 'llm:error'`) and `--resume`.
+
+## Sampling Semantics
+
+- `--sample N` uses `ORDER BY random() LIMIT N` after all other filters and deduplication
+- Sampling is NOT reproducible across runs (no seed). It's for quick spot-checks, not controlled experiments. For reproducible subsets, use `--state` or `--ein`.
+- Sampling applies after extraction context filtering — all sampled docs have `pages_text` (unless `--allow-fallback`)
+- `--sample` is incompatible with `--resume` (error on combination)
+
+## Progress Metric Definitions
+
+- **Throughput (docs/sec)**: Rolling average over the last 5 batches. Includes ALL docs processed in those batches (rule-matched + LLM-classified + skipped + errors). This is "documents evaluated per second", not "LLM calls per second."
+- **ETA**: `(total_eligible - total_processed) / rolling_throughput`. Displayed as "ETA Xm" or "ETA Xh Ym" for longer runs. Shows "ETA --" if fewer than 2 batches have completed (insufficient data for estimate).
+- **Elapsed**: Wall-clock time from first batch start (excludes startup count query time).
+
+## Testing Strategy
+
+### Required Tests
+
+**Concurrency:**
+- Verify that `--workers 4` results in 4 concurrent LLM calls (mock the LLM client with a delayed response, assert 4 calls are in-flight simultaneously)
+- Verify that database writes are serialized (no concurrent write conflicts)
+
+**Deduplication:**
+- Create test data with one document linked to 3 orgs in the same state. Verify `--state` filter classifies it exactly once.
+
+**Resume:**
+- Start a run, interrupt after 2 batches, resume. Verify no duplicate classifications, correct final count.
+- Verify `--resume` with different filters than the original run produces an error.
+- Verify `--resume` with `--sample` produces an error.
+
+**Fallback:**
+- Default mode: verify docs without `classification_context` are excluded (count matches expected)
+- `--allow-fallback`: verify docs without context use `first_page_text`, quality gate checks `first_page_text` length, separate skip counts reported
+
+**Interrupt handling:**
+- Send SIGINT during a batch. Verify checkpoint is written, partial results are persisted, no corrupt state.
+
+**Quality gate:**
+- Docs with `pages_text` below threshold are skipped and counted, not classified as `other_collateral`
 
 ## Traps to Avoid
 
