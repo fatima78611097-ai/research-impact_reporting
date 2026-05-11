@@ -581,7 +581,7 @@ projects:
   - id: "0037"
     title: "Rename RDS Roles to Project-Prefixed Names"
     summary: "Rename app_user1/ro_user1 to research_app/research_ro on shared RDS so a second project can coexist without role-name collisions. SSM keys (rds-app-user, rds-ro-user) stay stable; only values change."
-    status: implementing
+    status: committed
     priority: medium
     files:
       spec: locard/specs/0037-rds-role-rename.md
