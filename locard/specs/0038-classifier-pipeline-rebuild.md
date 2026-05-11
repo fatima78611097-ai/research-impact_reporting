@@ -1,6 +1,6 @@
 # Spec 0038: Classifier Pipeline Rebuild
 
-**Status**: Draft (with Codex review)
+**Status**: Draft (with Codex review + red team)
 **Author**: Architect
 **Date**: 2026-05-11
 **Dependencies**: 0035 (multi-page extraction), 0025 (definition-driven classifier)
@@ -293,6 +293,10 @@ with ThreadPoolExecutor(max_workers=workers) as pool:
 
 Rule evaluation stays in the main thread (it's fast — microseconds per doc). Only LLM calls go to the thread pool.
 
+**Thread safety**: Each worker gets its own LLM client instance, created at pool initialization (not shared). The `select_classifier_client()` function returns a new client per call. This avoids any thread-safety assumptions about the underlying SDK.
+
+**Rate limiting**: Per-document backoff handles transient 429s. If the pool experiences 3+ concurrent 429 responses within a 10-second window, the main thread pauses new submissions for 30 seconds (global throttle). This prevents synchronized retry storms. Backoff delays include random jitter (±25%) to desynchronize workers.
+
 ### Dry Run Enhancement
 
 Current dry run shows a single count. New dry run shows a useful breakdown:
@@ -308,9 +312,11 @@ Dry run (v3.2-TX, state=TX):
   Already classified in this run: 0
   Would process: 8,134
 
-  Estimated cost (DeepSeek): ~$1.60
-  Estimated time (4 workers):  ~11 minutes
+  Estimated cost (DeepSeek): ~$1.60  (heuristic: doc_count × $0.00019)
+  Estimated time (4 workers):  ~11 minutes  (heuristic: doc_count / 12 docs/sec)
 ```
+
+Cost and time estimates are rough heuristics based on observed averages (~1,200 input tokens/doc at DeepSeek pricing, ~3 docs/sec/worker). They are labeled as estimates. If no historical data exists for the selected backend, estimates are omitted with "estimate unavailable."
 
 ### Comparison Command
 
@@ -349,7 +355,13 @@ Classification Comparison: v3.2 vs corpus (Haiku v2)
 
   Docs where v3 is NOT confident (< 0.8):   412
     These should be manually reviewed.
+
+  By classification source:
+    Rule-matched disagreements:  198 (all financial_report → not_relevant)
+    LLM disagreements:         1,943
 ```
+
+The comparison output breaks down disagreements by `classified_by` source (rule vs LLM) so the operator can distinguish rule overrides (expected, deterministic) from classifier drift (needs investigation).
 
 ### Watchdog Integration
 
@@ -374,7 +386,7 @@ watchdog = StallWatchdog(
 - **LLM transient errors**: Exponential backoff per doc (2s, 4s, 8s, 16s), max 4 attempts. After 4 failures, write `classified_by='llm:error'` and continue.
 - **20 consecutive failures**: Checkpoint and halt. Print clear message with resume instructions.
 - **Database errors**: Checkpoint what's done, log error, halt. Don't silently continue with partial writes.
-- **Keyboard interrupt (Ctrl+C)**: Catch SIGINT, checkpoint current progress, print summary of what was completed, exit cleanly.
+- **Keyboard interrupt (Ctrl+C)**: SIGINT handler sets a shutdown flag. Main thread stops submitting new work to the pool. Completed futures are drained and their results written. The cursor is checkpointed to the highest `content_sha256` that was durably written to `classification_results`. Remaining in-flight futures are cancelled. A partial summary prints showing what was completed. Then exit.
 
 ### What This Spec Does NOT Change
 
@@ -471,16 +483,22 @@ Checkpoint state lives in `classification_runs.config_json.cursor` (the last pro
 - Already-classified rows (in `classification_results` for this `run_id`) are skipped via the existing `LEFT JOIN ... IS NULL` on `cr`
 - Filters (`--state`, `--ein`, `--where`) are stored in `config_json` at run creation. On `--resume`, the command reads stored filters and uses them — it does NOT accept new filter flags. If the operator passes different filters on resume, the command prints an error and exits.
 - `--sample` runs are NOT resumable. `--resume` with a `--sample` run prints an error. Random sampling is inherently non-deterministic and intended for quick tests, not long production runs.
+- **Cursor and dedup interaction**: The `WHERE c.content_sha256 > :cursor` filter applies INSIDE the deduplicated subquery, not outside it. The query shape for resume with filters is: `SELECT DISTINCT c.content_sha256 FROM corpus c INNER JOIN ... WHERE c.content_sha256 > :cursor AND <filters> ORDER BY c.content_sha256 LIMIT :batch_size`. This ensures no duplicates or skips regardless of the many-to-many join cardinality.
 
 **Checkpoint frequency:** After every batch (same as current). On Ctrl+C (SIGINT), a signal handler triggers one final checkpoint before exit.
 
 ## `--where` Safety
 
-This is a single-operator system (only `ronp` has access). The `--where` flag exists for ad-hoc queries that don't justify a named flag. Guardrails:
+This is a single-operator system (only `ronp` has access). The `--where` flag exists for ad-hoc queries that don't justify a named flag.
 
-- The value is interpolated into a `WHERE ... AND ({where_clause})` position — it cannot escape to a separate statement
-- The query runs on a read-heavy connection (SQLAlchemy `engine.connect()`, not `engine.begin()`) — any attempted DML fails because there's no open transaction for writes (writes go through separate `engine.begin()` blocks)
-- No sanitization beyond parenthetical wrapping. This is an operator tool, not a user-facing API.
+**Explicit scope**: `--where` is an operator convenience with NO safety guarantees. It is equivalent to running ad-hoc SQL in psql. The operator is responsible for the predicate they write. The flag is NOT suitable for automation, scripting, or any context where the value comes from untrusted input.
+
+Guardrails (defense-in-depth, not security boundaries):
+- The value is interpolated into a `WHERE ... AND ({where_clause})` position
+- The query uses `engine.connect()` (autocommit off) — DML without explicit `BEGIN` is rejected by PostgreSQL
+- Parenthetical wrapping prevents some forms of clause escape
+
+If structured filtering (`--state`, `--ein`, `--org-id`) covers the use case, prefer those over `--where`.
 
 ## Fallback Quality Gate Semantics
 
@@ -548,6 +566,9 @@ When a document fails LLM classification after 4 retries:
 
 **Quality gate:**
 - Docs with `pages_text` below threshold are skipped and counted, not classified as `other_collateral`
+
+**Mixed-failure batches:**
+- Submit a batch where some LLM futures succeed and others fail. Verify: successful results are written, failed results get `llm:error` rows, stats are internally consistent (total = success + fail + skip + rule), checkpoint cursor advances to the highest durably written SHA.
 
 ## Traps to Avoid
 
