@@ -106,9 +106,14 @@ SELECT rolname FROM pg_roles
 WHERE rolname IN ('app_user1', 'ro_user1', 'research_app', 'research_ro');
 ```
 
-- **Expected**: `app_user1`, `ro_user1` only.
-- If `research_app` present → jump to T+2 (rename already done).
-- If BOTH pairs present → **HALT** — mixed state requires manual investigation.
+Interpret the result:
+
+| Query returns | Meaning | Action |
+|---|---|---|
+| Only `app_user1`, `ro_user1` | Normal pre-rename state | Proceed to T+0 actions below |
+| Only `research_app`, `research_ro` | Rename already complete | Jump to T+2 (SSM update) |
+| All four roles present | Mixed state — collision | **HALT.** Investigate per spec §Rollback Decision Tree |
+| Any other mix (e.g., `research_app` + `ro_user1`) | Partial rename from a prior aborted run | Run T+1 anyway — the cutover SQL is idempotent and will complete the missing rename. Verify with the post-T+1 SELECT |
 
 ### Action
 
