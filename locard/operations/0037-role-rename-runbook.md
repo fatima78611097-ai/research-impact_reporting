@@ -46,8 +46,8 @@ Examine the Step 1 output from `0037-pre-rename-checks.sql`:
 | Step 1 returns | Action |
 |---|---|
 | Only `app_user1`, `ro_user1` | **Skip dashboard_user1 entirely.** Do not create, drop, or rename. This is the expected case. |
-| Includes `dashboard_user1` BUT it has zero GRANTs (Step 4a) and zero memberships beyond `rds_iam` (Step 3) | **Drop:** Run `psql -f locard/operations/0037-cutover-dashboard-user-drop.sql` at T+1 (after the rename). |
-| Includes `dashboard_user1` AND it has GRANTs OR non-`rds_iam` memberships | **HALT.** Do NOT proceed with the cutover. Record the finding and write a follow-up spec. |
+| Includes `dashboard_user1` BUT it has zero table GRANTs (Step 4a), zero function GRANTs (Step 4e), zero USAGE GRANTs (Step 4e), zero owned objects (Step 4e), and zero memberships beyond `rds_iam` (Step 3) | **Drop:** Run `psql -f locard/operations/0037-cutover-dashboard-user-drop.sql` at T+1 (after the rename). |
+| Includes `dashboard_user1` AND any of: table GRANTs (Step 4a), function GRANTs (Step 4e), USAGE GRANTs (Step 4e), owned objects (Step 4e), or non-`rds_iam` memberships (Step 3) | **HALT.** Do NOT proceed with the cutover. Record the finding and write a follow-up spec. |
 
 **Record which branch was taken:** ____________
 

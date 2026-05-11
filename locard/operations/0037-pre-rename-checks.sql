@@ -78,3 +78,29 @@ JOIN pg_auth_members am ON r.oid = am.member
 JOIN pg_roles m ON am.roleid = m.oid
 WHERE r.rolname IN ('app_user1', 'ro_user1', 'dashboard_user1')
 ORDER BY r.rolname, m.rolname;
+
+-- Step 4e: dashboard_user1 drop-guard pre-validation.
+-- These three queries mirror the checks in 0037-cutover-dashboard-user-drop.sql.
+-- If dashboard_user1 exists, these must ALL return 0 rows for the DROP branch
+-- to be safe. Any non-zero result means the HALT branch applies.
+-- Run BEFORE the maintenance window so HALT surfaces early, not mid-cutover.
+
+\echo '=== Step 4e: dashboard_user1 — function (EXECUTE) privileges ==='
+SELECT routine_schema, routine_name, grantee, privilege_type
+FROM information_schema.routine_privileges
+WHERE grantee = 'dashboard_user1'
+ORDER BY routine_schema, routine_name;
+
+\echo '=== Step 4e: dashboard_user1 — USAGE privileges ==='
+SELECT object_schema, object_name, object_type, grantee, privilege_type
+FROM information_schema.usage_privileges
+WHERE grantee = 'dashboard_user1'
+ORDER BY object_schema, object_name;
+
+\echo '=== Step 4e: dashboard_user1 — owned objects ==='
+SELECT n.nspname, c.relname, c.relkind
+FROM pg_class c
+JOIN pg_namespace n ON c.relnamespace = n.oid
+JOIN pg_roles r ON c.relowner = r.oid
+WHERE r.rolname = 'dashboard_user1'
+ORDER BY n.nspname, c.relname;
