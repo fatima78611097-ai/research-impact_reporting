@@ -7,18 +7,24 @@
 
 BEGIN;
 DO $$ BEGIN
-  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'research_app') THEN
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'research_app')
+     AND NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'app_user1') THEN
     ALTER ROLE research_app RENAME TO app_user1;
     RAISE NOTICE 'Rolled back research_app → app_user1';
+  ELSIF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'app_user1') THEN
+    RAISE NOTICE 'app_user1 already exists — no-op';
   ELSE
-    RAISE NOTICE 'research_app does not exist (already rolled back or never renamed) — no-op';
+    RAISE NOTICE 'research_app does not exist and app_user1 does not exist — nothing to roll back';
   END IF;
 
-  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'research_ro') THEN
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'research_ro')
+     AND NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'ro_user1') THEN
     ALTER ROLE research_ro RENAME TO ro_user1;
     RAISE NOTICE 'Rolled back research_ro → ro_user1';
+  ELSIF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'ro_user1') THEN
+    RAISE NOTICE 'ro_user1 already exists — no-op';
   ELSE
-    RAISE NOTICE 'research_ro does not exist (already rolled back or never renamed) — no-op';
+    RAISE NOTICE 'research_ro does not exist and ro_user1 does not exist — nothing to roll back';
   END IF;
 END $$;
 COMMIT;
