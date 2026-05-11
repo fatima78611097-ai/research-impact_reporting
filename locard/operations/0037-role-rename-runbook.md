@@ -4,7 +4,10 @@
 
 **Estimated outage**: 3–10 minutes (T+0 through T+5). Total elapsed including IAM warm-up and cleanup: hours, but only the cutover window is service-impacting.
 
-**Prerequisites**: Operator has master/`rds_superuser` access to the RDS instance and `aws` CLI configured with permissions to edit IAM policies and SSM parameters.
+**Prerequisites**:
+- Operator has master/`rds_superuser` access to the RDS instance and `aws` CLI configured with permissions to edit IAM policies and SSM parameters.
+- No other applications/repos connect to this shared RDS using the role names `app_user1`/`ro_user1` directly (all consumers go through SSM).
+- **Scheduled tasks**: Run `crontab -l` and `systemctl list-timers --all`. Confirm the cutover window does not overlap any scheduled job (e.g., `load_990_index` at 03:00 UTC). Disable affected cron entries or systemd timers for the duration of the cutover window. Re-enable after T+5 confirms success.
 
 ---
 

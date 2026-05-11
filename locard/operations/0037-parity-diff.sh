@@ -9,7 +9,7 @@
 # from before-snapshots before diffing (the DROP was intentional, not
 # a privilege regression).
 #
-# Implements spec AC #6 (privilege parity across all 4 dimensions / 7 files).
+# Implements spec AC #6 (privilege parity across all dimensions / 8 files).
 #
 # Usage: bash locard/operations/0037-parity-diff.sh [--dashboard-dropped]
 # Exit code: 0 if all pass, 1 if any diff is non-empty.
@@ -29,6 +29,7 @@ FILES=(
   grants_corpus
   grants_pipeline
   grants_dashboard
+  routine_privileges
   default_acl
   ownership_objects
   ownership_schemas

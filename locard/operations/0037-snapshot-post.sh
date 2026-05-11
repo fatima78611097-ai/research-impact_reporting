@@ -5,7 +5,7 @@
 # Reason: pg_default_acl and pg_class.relowner require master/superuser access.
 #
 # Required env vars: RDS_ENDPOINT, DB, MASTER_USER, MASTER_PW
-# Output: /tmp/0037_*.after.txt (7 files, overwritten on each run)
+# Output: /tmp/0037_*.after.txt (8 files, overwritten on each run)
 #
 # Usage:
 #   export RDS_ENDPOINT=... DB=... MASTER_USER=postgres MASTER_PW=...
@@ -26,6 +26,7 @@ FILES=(
   grants_corpus
   grants_pipeline
   grants_dashboard
+  routine_privileges
   default_acl
   ownership_objects
   ownership_schemas
@@ -45,6 +46,16 @@ echo "Capturing post-rename snapshots..."
 psql "${PSQL_ARGS[@]}" -c "\dp lava_corpus.*" > "${PREFIX}_grants_corpus.${SUFFIX}.txt"
 psql "${PSQL_ARGS[@]}" -c "\dp lava_pipeline.*" > "${PREFIX}_grants_pipeline.${SUFFIX}.txt"
 psql "${PSQL_ARGS[@]}" -c "\dp lava_dashboard.*" > "${PREFIX}_grants_dashboard.${SUFFIX}.txt"
+
+# 4a+: Function (EXECUTE) privileges — \dp does not cover functions
+psql "${PSQL_ARGS[@]}" -c "
+SELECT routine_schema, routine_name, grantee, privilege_type
+FROM information_schema.routine_privileges
+WHERE grantee IN ('app_user1','ro_user1','dashboard_user1',
+                  'research_app','research_ro')
+  AND routine_schema IN ('lava_corpus','lava_pipeline','lava_dashboard')
+ORDER BY routine_schema, routine_name, grantee, privilege_type;
+" > "${PREFIX}_routine_privileges.${SUFFIX}.txt"
 
 # 4b: Default ACLs
 psql "${PSQL_ARGS[@]}" -c "

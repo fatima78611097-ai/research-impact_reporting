@@ -62,6 +62,11 @@ check "research_app: identity" \
 check "research_app: SELECT on lava_corpus.corpus" \
   psql_as research_app -Atc "SELECT count(*) FROM lava_corpus.corpus LIMIT 1"
 
+# Function EXECUTE check: attribution_rank must be callable
+RANK_RESULT=$(psql_as research_app -Atc "SELECT lava_corpus.attribution_rank('own_domain')")
+check "research_app: EXECUTE on attribution_rank (result=$RANK_RESULT)" \
+  test "$RANK_RESULT" -ge 0
+
 # Write check: INSERT into lava_pipeline.org_provenance then ROLLBACK.
 echo "--- research_app: write check (INSERT + ROLLBACK) ---"
 psql_as research_app <<'EOSQL'
