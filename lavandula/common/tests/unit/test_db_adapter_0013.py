@@ -33,7 +33,7 @@ def _make_mgr(clock, tokens=("tok-1", "tok-2", "tok-3")):
         region="us-east-1",
         host="db.example",
         port=5432,
-        user="app_user1",
+        user="research_app",
         rds_client=rds,
         clock=clock,
     )
@@ -74,7 +74,7 @@ def test_token_generate_call_arguments():
     rds.generate_db_auth_token.assert_called_once_with(
         DBHostname="db.example",
         Port=5432,
-        DBUsername="app_user1",
+        DBUsername="research_app",
         Region="us-east-1",
     )
 
@@ -124,11 +124,11 @@ def test_engine_url_has_no_password_and_requires_ssl():
         host="db.example",
         port=5432,
         database="lava_prod1",
-        user="app_user1",
+        user="research_app",
         token_manager=mgr,
     )
     url = str(engine.url)
-    assert "app_user1@db.example:5432/lava_prod1" in url
+    assert "research_app@db.example:5432/lava_prod1" in url
     # SQLAlchemy masks passwords; assert the render-with-password is empty
     assert engine.url.password is None
     assert engine.url.query.get("sslmode") == "require"
@@ -208,8 +208,8 @@ def test_ssm_based_factory_wiring(monkeypatch):
         "rds-port": "5432",
         "rds-database": "lava_prod1",
         "rds-schema": "lava_corpus",
-        "rds-app-user": "app_user1",
-        "rds-ro-user": "ro_user1",
+        "rds-app-user": "research_app",
+        "rds-ro-user": "research_ro",
     }
     secretsmod.clear_cache()
     monkeypatch.setattr(
@@ -225,7 +225,7 @@ def test_ssm_based_factory_wiring(monkeypatch):
     monkeypatch.setattr(dbmod, "make_engine", fake_make_engine)
 
     assert dbmod.make_app_engine() == "ENGINE"
-    assert captured["user"] == "app_user1"
+    assert captured["user"] == "research_app"
     assert captured["host"] == "db.prod.example"
     assert captured["port"] == 5432
     assert captured["database"] == "lava_prod1"
@@ -234,7 +234,7 @@ def test_ssm_based_factory_wiring(monkeypatch):
 
     captured.clear()
     assert dbmod.make_ro_engine() == "ENGINE"
-    assert captured["user"] == "ro_user1"
+    assert captured["user"] == "research_ro"
 
 
 def test_ro_engine_uses_ro_user(monkeypatch):
@@ -256,14 +256,14 @@ def test_ro_engine_uses_ro_user(monkeypatch):
             "rds-port": "5432",
             "rds-database": "d",
             "rds-schema": "s",
-            "rds-ro-user": "ro_user1",
-            "rds-app-user": "app_user1",
+            "rds-ro-user": "research_ro",
+            "rds-app-user": "research_app",
         }[name]),
     )
     monkeypatch.setattr(dbmod, "make_engine", lambda **kw: kw)
 
     kw = dbmod.make_ro_engine()
-    assert kw["user"] == "ro_user1"
+    assert kw["user"] == "research_ro"
     assert "rds-ro-user" in asked
     assert "rds-app-user" not in asked
 
@@ -278,7 +278,7 @@ def test_ro_engine_uses_ro_user(monkeypatch):
 def test_live_rds_app_engine_select_1():
     """AC5: real make_app_engine() connects and runs SELECT 1.
 
-    Requires the EC2 IAM role to have rds-db:connect for app_user1 and
+    Requires the EC2 IAM role to have rds-db:connect for research_app and
     the SSM parameters to be populated. Run manually after deployment.
     """
     from sqlalchemy import text

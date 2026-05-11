@@ -22,7 +22,7 @@ LANGUAGE SQL IMMUTABLE AS $$
 $$;
 
 GRANT EXECUTE ON FUNCTION lava_impact.attribution_rank(TEXT)
-  TO app_user1, ro_user1;
+  TO research_app, research_ro;
 
 INSERT INTO schema_version (version, name)
   VALUES (2, 'attribution_rank_helper')
