@@ -80,7 +80,7 @@ WHERE r.rolname IN ('app_user1', 'ro_user1', 'dashboard_user1')
 ORDER BY r.rolname, m.rolname;
 
 -- Step 4e: dashboard_user1 drop-guard pre-validation.
--- These three queries mirror the checks in 0037-cutover-dashboard-user-drop.sql.
+-- These four queries mirror the checks in 0037-cutover-dashboard-user-drop.sql.
 -- If dashboard_user1 exists, these must ALL return 0 rows for the DROP branch
 -- to be safe. Any non-zero result means the HALT branch applies.
 -- Run BEFORE the maintenance window so HALT surfaces early, not mid-cutover.
@@ -91,11 +91,20 @@ FROM information_schema.routine_privileges
 WHERE grantee = 'dashboard_user1'
 ORDER BY routine_schema, routine_name;
 
-\echo '=== Step 4e: dashboard_user1 — USAGE privileges ==='
+\echo '=== Step 4e: dashboard_user1 — USAGE privileges (sequences, etc.) ==='
 SELECT object_schema, object_name, object_type, grantee, privilege_type
 FROM information_schema.usage_privileges
 WHERE grantee = 'dashboard_user1'
 ORDER BY object_schema, object_name;
+
+\echo '=== Step 4e: dashboard_user1 — schema-level privileges (USAGE/CREATE) ==='
+-- information_schema.usage_privileges does NOT cover schema USAGE/CREATE.
+-- Query pg_namespace.nspacl directly for any ACL entry naming dashboard_user1.
+SELECT n.nspname, a.acl_entry
+FROM pg_namespace n,
+     LATERAL unnest(n.nspacl) AS a(acl_entry)
+WHERE a.acl_entry::text LIKE 'dashboard_user1=%'
+ORDER BY n.nspname;
 
 \echo '=== Step 4e: dashboard_user1 — owned objects ==='
 SELECT n.nspname, c.relname, c.relkind

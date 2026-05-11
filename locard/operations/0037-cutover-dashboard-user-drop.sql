@@ -4,7 +4,7 @@
 -- zero GRANTs AND zero non-rds_iam memberships (per spec §"dashboard_user1
 -- decision rule").
 --
--- Defense-in-depth: re-validates all three conditions before dropping.
+-- Defense-in-depth: re-validates all four conditions before dropping.
 -- If any check fails, RAISEs an EXCEPTION (HALT — operator investigates).
 --
 -- Usage: psql -h $RDS_ENDPOINT -U $MASTER_USER -d $DB -f 0037-cutover-dashboard-user-drop.sql
@@ -12,6 +12,7 @@
 DO $$
 DECLARE
   v_grant_count int;
+  v_schema_grant_count int;
   v_owned_count int;
   v_noniam_member_count int;
 BEGIN
@@ -50,7 +51,19 @@ BEGIN
                     v_grant_count;
   END IF;
 
-  -- Check 3: zero objects owned by the role
+  -- Check 3: zero schema-level privileges (USAGE/CREATE on schemas)
+  -- information_schema.usage_privileges does NOT cover schemas.
+  SELECT count(*) INTO v_schema_grant_count
+  FROM pg_namespace n,
+       LATERAL unnest(n.nspacl) AS a(acl_entry)
+  WHERE a.acl_entry::text LIKE 'dashboard_user1=%';
+
+  IF v_schema_grant_count > 0 THEN
+    RAISE EXCEPTION 'dashboard_user1 has % schema-level privilege grants — HALT per spec',
+                    v_schema_grant_count;
+  END IF;
+
+  -- Check 4: zero objects owned by the role
   SELECT count(*) INTO v_owned_count
   FROM pg_class c JOIN pg_roles r ON c.relowner = r.oid
   WHERE r.rolname = 'dashboard_user1';
