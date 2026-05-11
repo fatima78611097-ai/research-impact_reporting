@@ -16,7 +16,8 @@ set -euo pipefail
 : "${RDS_ENDPOINT:?Set RDS_ENDPOINT}" "${DB:?Set DB}"
 : "${MASTER_USER:?Set MASTER_USER}" "${MASTER_PW:?Set MASTER_PW}"
 
-PSQL="PGPASSWORD=$MASTER_PW psql -h $RDS_ENDPOINT -U $MASTER_USER -d $DB --set=sslmode=require -v ON_ERROR_STOP=1 -At"
+export PGPASSWORD="$MASTER_PW"
+PSQL_ARGS=(-h "$RDS_ENDPOINT" -U "$MASTER_USER" -d "$DB" --set=sslmode=require -v ON_ERROR_STOP=1 -At)
 
 SUFFIX="before"
 PREFIX="/tmp/0037"
@@ -41,12 +42,12 @@ done
 echo "Capturing pre-rename snapshots..."
 
 # 4a: Object privileges per schema
-eval $PSQL -c "\\dp lava_corpus.*" > "${PREFIX}_grants_corpus.${SUFFIX}.txt"
-eval $PSQL -c "\\dp lava_pipeline.*" > "${PREFIX}_grants_pipeline.${SUFFIX}.txt"
-eval $PSQL -c "\\dp lava_dashboard.*" > "${PREFIX}_grants_dashboard.${SUFFIX}.txt"
+psql "${PSQL_ARGS[@]}" -c "\dp lava_corpus.*" > "${PREFIX}_grants_corpus.${SUFFIX}.txt"
+psql "${PSQL_ARGS[@]}" -c "\dp lava_pipeline.*" > "${PREFIX}_grants_pipeline.${SUFFIX}.txt"
+psql "${PSQL_ARGS[@]}" -c "\dp lava_dashboard.*" > "${PREFIX}_grants_dashboard.${SUFFIX}.txt"
 
 # 4b: Default ACLs
-eval $PSQL -c "
+psql "${PSQL_ARGS[@]}" -c "
 SELECT n.nspname, r.rolname AS grantor, d.defaclobjtype, d.defaclacl
 FROM pg_default_acl d
 LEFT JOIN pg_namespace n ON d.defaclnamespace = n.oid
@@ -57,7 +58,7 @@ ORDER BY n.nspname, defaclobjtype;
 " > "${PREFIX}_default_acl.${SUFFIX}.txt"
 
 # 4c: Ownership — objects
-eval $PSQL -c "
+psql "${PSQL_ARGS[@]}" -c "
 SELECT n.nspname, c.relname, c.relkind, r.rolname AS owner
 FROM pg_class c
 JOIN pg_namespace n ON c.relnamespace = n.oid
@@ -67,7 +68,7 @@ ORDER BY n.nspname, c.relname;
 " > "${PREFIX}_ownership_objects.${SUFFIX}.txt"
 
 # 4c: Ownership — schemas
-eval $PSQL -c "
+psql "${PSQL_ARGS[@]}" -c "
 SELECT n.nspname, r.rolname AS owner
 FROM pg_namespace n
 JOIN pg_roles r ON n.nspowner = r.oid
@@ -76,7 +77,7 @@ ORDER BY n.nspname;
 " > "${PREFIX}_ownership_schemas.${SUFFIX}.txt"
 
 # 4d: Memberships
-eval $PSQL -c "
+psql "${PSQL_ARGS[@]}" -c "
 SELECT r.rolname, m.rolname AS member_of
 FROM pg_roles r
 JOIN pg_auth_members am ON r.oid = am.member

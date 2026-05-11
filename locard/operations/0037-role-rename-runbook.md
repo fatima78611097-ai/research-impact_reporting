@@ -297,7 +297,11 @@ During this time, run the post-rename snapshots and parity diff:
 
 ```bash
 bash locard/operations/0037-snapshot-post.sh
-bash locard/operations/0037-parity-diff.sh
+
+# If dashboard_user1 was DROPPED at T+1, use --dashboard-dropped to filter
+# its rows from the before-snapshot (intentional deletion, not a regression):
+bash locard/operations/0037-parity-diff.sh              # normal case
+bash locard/operations/0037-parity-diff.sh --dashboard-dropped  # if dashboard_user1 was dropped
 # Expected: PASS on all 7 dimensions
 ```
 

@@ -8,24 +8,35 @@
 
 BEGIN;
 DO $$ BEGIN
+  -- HALT on mixed state: both source and target exist simultaneously
   IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'app_user1')
-     AND NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'research_app') THEN
+     AND EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'research_app') THEN
+    RAISE EXCEPTION 'MIXED STATE: both app_user1 and research_app exist — '
+                    'operator must investigate per spec §Rollback Decision Tree';
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'ro_user1')
+     AND EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'research_ro') THEN
+    RAISE EXCEPTION 'MIXED STATE: both ro_user1 and research_ro exist — '
+                    'operator must investigate per spec §Rollback Decision Tree';
+  END IF;
+
+  -- Rename or no-op
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'app_user1') THEN
     ALTER ROLE app_user1 RENAME TO research_app;
     RAISE NOTICE 'Renamed app_user1 → research_app';
   ELSIF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'research_app') THEN
     RAISE NOTICE 'research_app already exists — no-op';
   ELSE
-    RAISE NOTICE 'app_user1 does not exist and research_app does not exist — nothing to rename';
+    RAISE NOTICE 'Neither app_user1 nor research_app exist — nothing to rename';
   END IF;
 
-  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'ro_user1')
-     AND NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'research_ro') THEN
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'ro_user1') THEN
     ALTER ROLE ro_user1 RENAME TO research_ro;
     RAISE NOTICE 'Renamed ro_user1 → research_ro';
   ELSIF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'research_ro') THEN
     RAISE NOTICE 'research_ro already exists — no-op';
   ELSE
-    RAISE NOTICE 'ro_user1 does not exist and research_ro does not exist — nothing to rename';
+    RAISE NOTICE 'Neither ro_user1 nor research_ro exist — nothing to rename';
   END IF;
 END $$;
 COMMIT;
