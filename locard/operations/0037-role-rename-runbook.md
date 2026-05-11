@@ -355,6 +355,7 @@ Use if the rollback decision tree directs full rollback at any step.
 ```bash
 # 1. Stop services
 systemctl stop lavandula-dashboard
+systemctl stop lavandula-orchestrator
 
 # 2. Drain leftover sessions
 PGPASSWORD="$MASTER_PW" psql -h "$RDS_ENDPOINT" -U "$MASTER_USER" -d "$DB" \
@@ -377,6 +378,7 @@ aws ssm put-parameter --name /cloud2.lavandulagroup.com/rds-ro-user \
 
 # 5. Restart (IAM policy stays in overlap — old ARNs still allowed)
 systemctl start lavandula-dashboard
+systemctl start lavandula-orchestrator
 ```
 
 **Total rollback time**: ~3 minutes from decision-to-rollback to dashboard-back-up.
