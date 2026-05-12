@@ -592,11 +592,11 @@ projects:
   - id: "0038"
     title: "Classifier Pipeline Rebuild"
     summary: "Ground-up rewrite of reclassify_corpus: require extraction context (no silent fallback), real progress logging, state/EIN/org filtering, actual concurrent workers, quality gates. Replace the broken v3 pipeline with something trustworthy."
-    status: specified
+    status: planned
     priority: high
     files:
       spec: locard/specs/0038-classifier-pipeline-rebuild.md
-      plan: null
+      plan: locard/plans/0038-classifier-pipeline-rebuild.md
       review: null
     dependencies: [0035]
     tags: [classifier, pipeline, quality, reliability]
