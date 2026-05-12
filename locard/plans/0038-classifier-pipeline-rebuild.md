@@ -616,7 +616,8 @@ TIEBREAKER_TOOL = {
             },
             "material_type": {
                 "type": "string",
-                "description": "The correct material_type",
+                "enum": ["annual_report", "impact_report", "financial_report", "donor_newsletter", "program_brochure", "other_collateral", "not_relevant"],
+                "description": "The correct material_type (constrained to taxonomy)",
             },
             "reasoning": {
                 "type": "string",
@@ -665,16 +666,23 @@ config_json = {
 Enforce that `material_type` matches the winner's classification:
 
 ```python
+VALID_TYPES = set(definition.taxonomy.keys())  # loaded from definition YAML
+
 if winner == "A":
     expected = v2_type
 elif winner == "B":
     expected = v3_type
 else:
-    expected = None  # "neither" — any valid material_type OK
+    expected = None  # "neither" — material_type must still be in taxonomy
 
 if expected and material_type != expected:
     # Log warning, use the winner's type (not the LLM's confused answer)
     material_type = expected
+
+if material_type not in VALID_TYPES:
+    # LLM invented a type not in taxonomy — log and skip
+    stats["tiebreaker_invalid"] += 1
+    continue
 ```
 
 #### 4h: Output

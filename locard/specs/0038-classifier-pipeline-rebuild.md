@@ -400,7 +400,8 @@ Explain your reasoning in under 200 characters.
       },
       "material_type": {
         "type": "string",
-        "description": "The correct material_type. Must match winner's type unless winner is 'neither'."
+        "enum": ["annual_report", "impact_report", "financial_report", "donor_newsletter", "program_brochure", "other_collateral", "not_relevant"],
+        "description": "The correct material_type. Must match winner's type unless winner is 'neither'. Constrained to the taxonomy to prevent invented types."
       },
       "reasoning": {
         "type": "string",
