@@ -601,11 +601,24 @@ projects:
     dependencies: [0035]
     tags: [classifier, pipeline, quality, reliability]
     notes: "Motivated by discovering the v3 classifier never used multi-page context (Spec 0035), accepted a --workers flag it ignored, logged nothing during runs, and had no way to target by state/EIN. 133 results from test run all used first_page_text fallback."
+
+  - id: "0039"
+    title: "SSM Parameter Type Optimization (KMS Cost Reduction)"
+    summary: "Convert non-sensitive SSM parameters (rds-endpoint, rds-port, rds-database, rds-schema) from SecureString to String type, eliminating unnecessary KMS Decrypt calls. Every process startup currently makes 5+ KMS calls for config values that aren't secrets. With 22+ concurrent crawlers plus Django workers, this generates ~17K KMS requests/month approaching the 20K free tier limit."
+    status: conceived
+    priority: medium
+    files:
+      spec: null
+      plan: null
+      review: null
+    dependencies: []
+    tags: [infrastructure, cost-optimization, ssm, kms, ops]
+    notes: "Discovered 2026-05-12: AWS KMS budget alert triggered at 17K/20K free tier requests. Root cause: every process startup calls get_secret() with WithDecryption=True for 5+ SSM SecureString params (rds-endpoint, rds-port, rds-database, rds-schema, plus API keys). lru_cache helps within a process but each new crawler/command/Django worker starts cold. Non-sensitive params (hostname, port, db name, schema) should be String type (no KMS). Actual secrets (API keys, django-secret-key) stay SecureString."
 ```
 
 ## Next Available Number
 
-**0039** - Reserve this number for your next project
+**0040** - Reserve this number for your next project
 
 ---
 
