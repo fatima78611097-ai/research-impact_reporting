@@ -1,6 +1,6 @@
 # Spec 0038: Classifier Pipeline Rebuild
 
-**Status**: Draft (with Codex review + red team)
+**Status**: Approved
 **Author**: Architect
 **Date**: 2026-05-11
 **Dependencies**: 0035 (multi-page extraction), 0025 (definition-driven classifier)
