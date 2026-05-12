@@ -48,14 +48,13 @@ Keep all existing args. Add new ones:
 ```python
 parser.add_argument("--state", type=str, default=None, help="Two-letter state code")
 parser.add_argument("--ein", type=str, default=None, help="EIN (e.g., 13-1234567)")
-parser.add_argument("--org-id", type=int, default=None, help="nonprofits_seed row ID")  
 parser.add_argument("--batch-size", type=int, default=200, help="Docs per batch")
 parser.add_argument("--allow-fallback", action="store_true", help="Allow first_page_text fallback")
 parser.add_argument("--min-text-len", type=int, default=100, help="Minimum pages_text length")
 parser.add_argument("--quiet", action="store_true", help="Suppress per-batch progress")
 ```
 
-Note: `--org-id` maps to `nonprofits_seed` internal ID (if one exists). Check if `nonprofits_seed` has a serial PK. If not, drop `--org-id` and use `--ein` only, which is the natural key.
+`nonprofits_seed` uses `ein` as PK (no serial ID), so `--org-id` is dropped. `--ein` is the natural key.
 
 #### 2b: Query Construction
 
@@ -297,9 +296,11 @@ def _run(self, engine, **options):
         self._print_summary(stats, distribution, start_time)
 ```
 
-#### 2e: Rate Limiting, Backoff, and Failure Halt
+#### 2e: Rate Limiting, Backoff, Failure Halt, and Write Serialization
 
-The `_classify_one` method handles per-doc retries. A global throttle and consecutive-failure halt are managed in the main loop.
+**Architectural invariant: all DB writes happen on the main thread only.** `_write_result`, `_write_error`, and `_checkpoint` are never called from worker threads. Workers return results; the main thread writes them. This satisfies AC16 (serialized writes) and avoids connection pool exhaustion.
+
+**Per-doc retries (in worker thread):**
 
 ```python
 def _classify_one(self, client, definition, row):
@@ -315,12 +316,37 @@ def _classify_one(self, client, definition, row):
             base_delay = 2 ** (attempt + 1)  # 2, 4, 8, 16
             jitter = base_delay * 0.25 * (2 * random.random() - 1)  # ±25%
             time.sleep(base_delay + jitter)
+            rate_limit_lock.acquire()
+            rate_limit_times.append(time.monotonic())
+            rate_limit_lock.release()
         except Exception:
             if attempt == max_retries - 1:
                 return None
             time.sleep(2 ** (attempt + 1))
+```
 
-# In the main loop, after collecting results from a batch:
+**Global throttle (thread-safe):**
+
+```python
+rate_limit_lock = threading.Lock()
+rate_limit_times = deque(maxlen=20)
+
+# In main loop, before submitting next batch:
+with rate_limit_lock:
+    recent_429s = sum(1 for t in rate_limit_times 
+                      if time.monotonic() - t < 10)
+if recent_429s >= 3:
+    self.stdout.write("[throttle] 3+ rate limits in 10s, pausing 30s")
+    time.sleep(30)
+```
+
+The throttle pauses new batch submissions only. Workers already in-flight continue their own retry backoff independently.
+
+**Consecutive-failure halt:**
+
+"20 consecutive failures" means 20 consecutive completed LLM results (in completion order) that are errors. Rule matches and quality-gate skips do NOT reset the counter (they're not LLM results). Only successful LLM classifications reset it to 0.
+
+```python
 consecutive_failures = 0
 for fut in as_completed(futures):
     ...
@@ -338,19 +364,6 @@ for fut in as_completed(futures):
             )
             shutdown.set()
             break
-
-# Global throttle: track 429 timestamps across workers
-rate_limit_times = deque(maxlen=20)  # thread-safe via GIL for append/len
-
-# Inside _classify_one, on 429:
-rate_limit_times.append(time.monotonic())
-
-# In main loop, before submitting next batch:
-recent_429s = sum(1 for t in rate_limit_times 
-                  if time.monotonic() - t < 10)
-if recent_429s >= 3:
-    self.stdout.write("[throttle] 3+ rate limits in 10s, pausing 30s")
-    time.sleep(30)
 ```
 
 #### 2f: Progress Reporting
@@ -391,6 +404,22 @@ def _print_progress(self, batch_num, stats, total, batch_times):
 
 #### 2g: Resume Validation and Checkpoint Semantics
 
+**Run tag uniqueness:**
+
+```python
+# Before creating a new run, check for existing completed runs
+existing = engine.execute(text(f"""
+    SELECT id, finished_at FROM {_SCHEMA}.classification_runs
+    WHERE run_tag = :tag
+"""), {"tag": run_tag}).fetchall()
+
+if not resume:
+    completed = [r for r in existing if r["finished_at"] is not None]
+    if completed:
+        self.stderr.write(f"ERROR: Run tag '{run_tag}' already exists (completed). Use a different tag.")
+        return
+```
+
 **Resume validation:**
 
 ```python
@@ -426,21 +455,18 @@ config_json = {
 }
 ```
 
-**Durable cursor rule:** The checkpoint cursor is the highest `content_sha256` for which a `classification_results` row has been durably written (committed). The cursor is NOT advanced speculatively for in-flight work. This means:
+**Batch-boundary cursor model:** The cursor advances to the max SHA of the **fetched batch** only after ALL docs in that batch are resolved (classified, skipped, or errored). This prevents out-of-order completion from skipping unprocessed docs on resume.
 
 ```python
-def _checkpoint(self, engine, run_id, cursor, stats):
-    """Write cursor = highest SHA that has a committed result row."""
-    with engine.begin() as conn:
-        conn.execute(text(f"""
-            UPDATE {_SCHEMA}.classification_runs 
-            SET config_json = jsonb_set(config_json, '{{cursor}}', to_jsonb(:cursor::text)),
-                config_json = jsonb_set(config_json, '{{stats}}', :stats::jsonb)
-            WHERE id = :run_id
-        """), {"run_id": run_id, "cursor": cursor, "stats": json.dumps(dict(stats))})
+# After fetching a batch:
+batch_max_sha = rows[-1]["content_sha256"]  # last row in ORDER BY sha ASC
+
+# After ALL futures for this batch are resolved:
+# (success, error, skip — every doc in the batch has a result)
+self._checkpoint(engine, run_id, batch_max_sha, stats)
 ```
 
-`cursor` is updated after each successful `_write_result` call, tracking `max(content_sha256)` of written rows.
+The `LEFT JOIN ... IS NULL` on `classification_results` provides idempotency: if a batch is re-fetched on resume, already-written results are skipped.
 
 **SIGINT drain semantics:**
 
@@ -449,27 +475,34 @@ def _handle_sigint(signum, frame):
     shutdown.set()  # (1) stop submitting new work
 
 # In the main loop, after shutdown.set():
-# (2) Drain completed futures (don't cancel them — their results are valid)
-for fut in as_completed(futures, timeout=30):
+# (2) Wait for all in-flight futures to complete (30s timeout)
+done, not_done = wait(list(futures.keys()), timeout=30)
+
+# (3) Write results for completed futures
+for fut in done:
     row = futures[fut]
     try:
         result = fut.result()
         if result and not result.error:
             self._write_result(...)
-            # Update cursor to this SHA
     except Exception:
-        pass
+        self._write_error(...)
 
-# (3) Cancel remaining in-flight futures
-for fut in futures:
-    if not fut.done():
-        fut.cancel()
+# (4) Cancel remaining futures
+for fut in not_done:
+    fut.cancel()
 
-# (4) Checkpoint with the highest durably written cursor
-self._checkpoint(engine, run_id, last_durable_cursor, stats)
+# (5) Checkpoint decision:
+if not not_done:
+    # Entire batch completed — safe to advance cursor
+    self._checkpoint(engine, run_id, batch_max_sha, stats)
+else:
+    # Partial batch — do NOT advance cursor. 
+    # Re-fetch on resume; LEFT JOIN skips already-written.
+    self._checkpoint(engine, run_id, previous_cursor, stats)
 
-# (5) Print partial summary
-self.stdout.write(f"\nInterrupted. Checkpointed at {last_durable_cursor[:12]}...")
+# (6) Print partial summary
+self.stdout.write(f"\nInterrupted. Resume with --resume to continue.")
 self._print_summary(stats, distribution, start_time)
 ```
 
@@ -627,7 +660,24 @@ config_json = {
 
 `classified_by = f"tiebreaker:{model_name}"`
 
-#### 4g: Output
+#### 4g: Winner/material_type Validation
+
+Enforce that `material_type` matches the winner's classification:
+
+```python
+if winner == "A":
+    expected = v2_type
+elif winner == "B":
+    expected = v3_type
+else:
+    expected = None  # "neither" — any valid material_type OK
+
+if expected and material_type != expected:
+    # Log warning, use the winner's type (not the LLM's confused answer)
+    material_type = expected
+```
+
+#### 4h: Output
 
 Print winner distribution and resolved classification distribution per spec.
 
@@ -676,6 +726,13 @@ Print winner distribution and resolved classification distribution per spec.
 19. **Comparison error exclusion test**: Create v3 error rows (`classified_by='llm:error'`), run comparison, verify they're excluded and reported separately
 20. **Comparison v2 unclassified test**: Create docs where `corpus.material_type IS NULL`, verify reported as "v2 unclassified" and excluded from agreement/disagreement calculations
 
+#### Edge case tests:
+
+21. **Zero extraction coverage test**: No `classification_context` rows match the filter. Verify command prints clear error and exits (no processing).
+22. **Run tag uniqueness test**: Create completed run with tag `v3.2`, try creating new run with same tag — verify error. Verify `--resume` finds the incomplete run correctly.
+23. **Tiebreaker re-run test**: Run `resolve_disagreements` twice for the same parent tag — verify second run errors with "Tiebreaker already exists" message.
+24. **Resume cursor safety test**: With `--workers 4`, interrupt mid-batch where a higher SHA completed before a lower SHA. Resume and verify the lower SHA is re-processed (not skipped).
+
 ### Step 6: Commit and PR
 
 1. Commit Step 1 (confidence schema change) separately — small, testable
@@ -701,6 +758,6 @@ Print winner distribution and resolved classification distribution per spec.
 | Risk | Mitigation |
 |------|------------|
 | DeepSeek client SSM lookup per instantiation | Create clients once at startup, one per worker |
-| `nonprofits_seed` doesn't have a serial PK for `--org-id` | Use `--ein` as the natural key; drop `--org-id` from CLI if no PK exists |
 | Existing compare_classifications.py logic may be tangled with confidence | Read carefully before modifying; may be simpler to rewrite comparison section |
 | Tiebreaker prompt quality | Test on 10-20 known disagreements before full run |
+| Out-of-order future completion could skip docs on resume | Batch-boundary cursor model — cursor only advances after entire batch completes |

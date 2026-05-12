@@ -38,13 +38,13 @@ The multi-page extraction infrastructure (Spec 0035 Phase 1) works correctly. Th
 
 2. **Real-time progress reporting**: Continuous stdout output showing documents processed, throughput (docs/sec, docs/min), elapsed time, ETA, batch number, error counts, and classification distribution as it builds.
 
-3. **Structured filtering**: First-class `--state`, `--ein`, `--org-id` flags that filter via `corpus.source_org_ein` → `nonprofits_seed`. Each document has exactly one `source_org_ein` (no many-to-many dedup needed). The `--where` raw SQL option remains for power users but the common cases have proper flags.
+3. **Structured filtering**: First-class `--state` and `--ein` flags that filter via `corpus.source_org_ein` → `nonprofits_seed`. Each document has exactly one `source_org_ein` (no many-to-many dedup needed). The `--where` raw SQL option remains for power users but the common cases have proper flags.
 
 4. **Actual concurrent workers**: LLM calls run in parallel via ThreadPoolExecutor. The `--workers` flag controls concurrency and defaults to 4. Each worker processes one document at a time.
 
 5. **Quality gates**: Minimum `pages_text` length threshold (configurable, default 100 chars). Documents below threshold are logged and skipped — not silently classified as `other_collateral`.
 
-6. **Validation comparison**: Built-in `--compare` mode that compares v3 results against the existing `corpus.material_type` Haiku v2 classifications.
+6. **Validation comparison**: Standalone `compare_classifications` command that compares v3 results against the existing `corpus.material_type` Haiku v2 classifications. This is a separate command (not an inline `--compare` flag on `reclassify_corpus`) because comparison is a distinct workflow step run after classification completes.
 
 7. **Drop confidence scores**: LLM self-reported confidence is poorly calibrated and wastes output tokens. Remove `confidence` from the tool schema's required fields. The real validation signal comes from v2/v3 agreement and the tiebreaker pass, not a self-assessed number.
 
@@ -71,9 +71,6 @@ python3 manage.py reclassify_corpus --run-tag v3.2-TX --state TX
 
 # Filter by EIN (single org, ad-hoc testing)
 python3 manage.py reclassify_corpus --run-tag test-ein --ein 13-1234567
-
-# Filter by org ID
-python3 manage.py reclassify_corpus --run-tag test-org --org-id 42
 
 # Sample (random N docs that HAVE extraction context)
 python3 manage.py reclassify_corpus --run-tag v3.2-sample --sample 500
@@ -105,7 +102,6 @@ python3 manage.py compare_classifications --run-tag v3.2 --state TX
 | `--run-tag` | str | required | Unique tag for this classification run |
 | `--state` | str | None | Two-letter state code (via `corpus.source_org_ein` → `nonprofits_seed.state`) |
 | `--ein` | str | None | EIN (e.g., "13-1234567", direct match on `corpus.source_org_ein`) |
-| `--org-id` | int | None | `nonprofits_seed.id` |
 | `--where` | str | None | Additional SQL WHERE predicate (operator-only, see Safety below) |
 | `--sample` | int | None | Random sample size |
 | `--workers` | int | 4 | Concurrent LLM workers |
@@ -195,11 +191,6 @@ AND c.source_org_ein IN (
 
 -- --ein 13-1234567 (direct match)
 AND c.source_org_ein = :ein
-
--- --org-id 42 (lookup EIN from nonprofits_seed)
-AND c.source_org_ein = (
-    SELECT ein FROM lava_corpus.nonprofits_seed WHERE id = :org_id
-)
 ```
 
 The `corpus.source_org_ein` column is indexed (`idx_corpus_ein`). `nonprofits_seed.ein` is the primary natural key with an existing index.
@@ -314,7 +305,7 @@ Dry run (v3.2-TX, state=TX):
   Estimated time (4 workers):  ~11 minutes  (heuristic: doc_count / 12 docs/sec)
 ```
 
-Cost and time estimates are rough heuristics based on observed averages (~1,200 input tokens/doc at DeepSeek pricing, ~3 docs/sec/worker). They are labeled as estimates. If no historical data exists for the selected backend, estimates are omitted with "estimate unavailable."
+Cost and time estimates are static heuristics hardcoded per known backend (~1,200 input tokens/doc at DeepSeek pricing, ~3 docs/sec/worker). They are labeled as estimates. For unknown backends (not in the hardcoded table), estimates are omitted with "estimate unavailable."
 
 ### Comparison Command
 
@@ -443,7 +434,7 @@ Tiebreaker results (v3.2-tiebreaker):
 - Token spend is targeted at the ~2K uncertain docs, not the ~6K that already agree
 - The tiebreaker model sees both candidates AND 5 pages of text — it has maximum context for a decision
 - Presenting both options as candidates reduces the chance of a completely novel (wrong) answer
-- Rule-matched disagreements are excluded from tiebreaker — those are deterministic and correct by design (990 patterns)
+- Rule-matched disagreements are excluded from tiebreaker — those are deterministic and excluded by default (990 patterns)
 - The tiebreaker result becomes the final classification for disagreement docs
 
 **Cost:** ~2K docs × ~1,500 tokens × Haiku pricing ≈ $0.75. Negligible compared to the ~$24 primary run.
@@ -523,8 +514,7 @@ No schema changes required. All tables from Spec 0035 are already created and co
 ### Filtering
 - AC5: `--state TX` filters to docs whose `source_org_ein` matches a Texas org in `nonprofits_seed`.
 - AC6: `--ein 13-1234567` filters to docs with `source_org_ein = :ein` (direct match).
-- AC7: `--org-id 42` filters to docs whose `source_org_ein` matches the EIN of `nonprofits_seed.id = 42`.
-- AC8: Filters are combinable (e.g., `--state TX --sample 100` = random 100 from Texas).
+- AC7: Filters are combinable (e.g., `--state TX --sample 100` = random 100 from Texas).
 
 ### Progress Reporting
 - AC10: Startup prints configuration summary including eligible doc count, extraction coverage, filter details.
@@ -549,7 +539,7 @@ No schema changes required. All tables from Spec 0035 are already created and co
 - AC25: `resolve_disagreements` command processes LLM disagreements from a comparison run.
 - AC26: Tiebreaker prompt presents both candidate classifications and 5-page text.
 - AC27: Uses a different LLM backend than the primary run (default: haiku).
-- AC28: Rule-matched disagreements are excluded from tiebreaker (deterministic, correct by design).
+- AC28: Rule-matched disagreements are excluded from tiebreaker (deterministic, excluded by default).
 - AC29: Results stored in `classification_results` with `classified_by='tiebreaker:{model}'`.
 - AC30: Output shows winner distribution (A/B/neither) and resolved classification distribution.
 
@@ -594,17 +584,34 @@ The 4-worker concurrency should reduce wall-clock time by roughly 3-4x vs single
 
 ## Resumability & Checkpointing
 
-Checkpoint state lives in `classification_runs.config_json.cursor` (the last processed `content_sha256`). An incomplete run is identified by `finished_at IS NULL`.
+Checkpoint state lives in `classification_runs.config_json.cursor` (the last fully-completed batch boundary). An incomplete run is identified by `finished_at IS NULL`.
 
 **Resume rules:**
 - `--resume` finds the most recent run with matching `run_tag` where `finished_at IS NULL`
-- The cursor is a `content_sha256` value; batches are ordered by `content_sha256 ASC` (deterministic, resumable)
+- Batches are ordered by `content_sha256 ASC` (deterministic, resumable)
 - Already-classified rows (in `classification_results` for this `run_id`) are skipped via the existing `LEFT JOIN ... IS NULL` on `cr`
 - Filters (`--state`, `--ein`, `--where`) are stored in `config_json` at run creation. On `--resume`, the command reads stored filters and uses them — it does NOT accept new filter flags. If the operator passes different filters on resume, the command prints an error and exits.
 - `--sample` runs are NOT resumable. `--resume` with a `--sample` run prints an error. Random sampling is inherently non-deterministic and intended for quick tests, not long production runs.
-- **Cursor interaction**: The `WHERE c.content_sha256 > :cursor` filter applies in the main query alongside all other filters. Since each doc has exactly one `source_org_ein` (no many-to-many), there are no duplicates to worry about. The keyset pagination is straightforward: `WHERE c.content_sha256 > :cursor AND <filters> ORDER BY c.content_sha256 LIMIT :batch_size`.
 
-**Checkpoint frequency:** After every batch (same as current). On Ctrl+C (SIGINT), a signal handler triggers one final checkpoint before exit.
+**Cursor safety (batch-boundary model):**
+
+The cursor is NOT advanced to the max SHA of any individual result. Instead, it advances to the max SHA of the **fetched batch** only after ALL docs in that batch have been durably written (classified, skipped, or errored). This prevents out-of-order completion from skipping unprocessed docs:
+
+1. Fetch batch N (200 docs ordered by SHA). Note `batch_max_sha = max(batch SHAs)`.
+2. Process all docs in the batch (rule + LLM + skip). Write results to DB.
+3. After ALL futures for batch N are resolved (success or failure), checkpoint `cursor = batch_max_sha`.
+4. On SIGINT: drain in-flight futures for the current batch (30s timeout). If all complete, checkpoint. If not, do NOT advance cursor — the partial batch will be re-fetched on resume. The `LEFT JOIN ... IS NULL` skips already-written results, so re-processing is idempotent.
+
+This is safe because: the cursor only advances when the entire batch is complete, and the `LEFT JOIN ... IS NULL` on `classification_results` ensures already-processed docs within a re-fetched batch are skipped.
+
+**Checkpoint frequency:** After every fully-completed batch. On Ctrl+C, only checkpoint if the current batch fully completed; otherwise keep the previous cursor.
+
+## `run_tag` Uniqueness
+
+- `run_tag` is unique per `classification_runs` row. Creating a new run with an existing `run_tag` (where `finished_at IS NOT NULL`) produces an error: "Run tag 'X' already exists (completed). Use a different tag or delete the existing run."
+- `--resume` finds the most recent run with matching `run_tag` where `finished_at IS NULL`. If multiple incomplete runs exist with the same tag (shouldn't happen normally), the most recent one is used.
+- `compare_classifications --run-tag X` resolves to the single completed run with that tag. If no completed run exists, it errors. If an incomplete run exists, it compares whatever results are available so far and notes: "Warning: run 'X' is still in progress."
+- `resolve_disagreements --run-tag X` can be run once per parent run. If a tiebreaker run already exists for the parent, it errors: "Tiebreaker already exists for 'X'. Delete tiebreaker run 'X-tiebreaker' to re-run."
 
 ## `--where` Safety
 
@@ -655,6 +662,7 @@ When a document fails LLM classification after 4 retries:
 
 ## Progress Metric Definitions
 
+- **Total eligible (progress denominator)**: The count of docs that will be fetched for evaluation. In default mode: docs with `classification_context` rows where `text_length >= min_text_len`, minus already-classified rows for this run. In `--allow-fallback` mode: all matching PDFs minus already-classified. This is the denominator for percentage and ETA calculations. The startup summary shows the broader breakdown (total PDFs, with context, below gate, excluded) separately.
 - **Throughput (docs/sec)**: Rolling average over the last 5 batches. Includes ALL docs processed in those batches (rule-matched + LLM-classified + skipped + errors). This is "documents evaluated per second", not "LLM calls per second."
 - **ETA**: `(total_eligible - total_processed) / rolling_throughput`. Displayed as "ETA Xm" or "ETA Xh Ym" for longer runs. Shows "ETA --" if fewer than 2 batches have completed (insufficient data for estimate).
 - **Elapsed**: Wall-clock time from first batch start (excludes startup count query time).
