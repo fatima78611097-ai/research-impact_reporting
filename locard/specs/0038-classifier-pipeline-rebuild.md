@@ -38,7 +38,7 @@ The multi-page extraction infrastructure (Spec 0035 Phase 1) works correctly. Th
 
 2. **Real-time progress reporting**: Continuous stdout output showing documents processed, throughput (docs/sec, docs/min), elapsed time, ETA, batch number, error counts, and classification distribution as it builds.
 
-3. **Structured filtering**: First-class `--state`, `--ein`, `--org-id` flags that filter via joins to `org_seed`/`org_provenance`. The `--where` raw SQL option remains for power users but the common cases have proper flags.
+3. **Structured filtering**: First-class `--state`, `--ein`, `--org-id` flags that filter via `corpus.source_org_ein` → `nonprofits_seed`. Each document has exactly one `source_org_ein` (no many-to-many dedup needed). The `--where` raw SQL option remains for power users but the common cases have proper flags.
 
 4. **Actual concurrent workers**: LLM calls run in parallel via ThreadPoolExecutor. The `--workers` flag controls concurrency and defaults to 4. Each worker processes one document at a time.
 
@@ -103,9 +103,9 @@ python3 manage.py compare_classifications --run-tag v3.2 --state TX
 | Argument | Type | Default | Description |
 |---|---|---|---|
 | `--run-tag` | str | required | Unique tag for this classification run |
-| `--state` | str | None | Two-letter state code (joins to `org_seed.state`) |
-| `--ein` | str | None | EIN (e.g., "13-1234567") |
-| `--org-id` | int | None | org_seed.id |
+| `--state` | str | None | Two-letter state code (via `corpus.source_org_ein` → `nonprofits_seed.state`) |
+| `--ein` | str | None | EIN (e.g., "13-1234567", direct match on `corpus.source_org_ein`) |
+| `--org-id` | int | None | `nonprofits_seed.id` |
 | `--where` | str | None | Additional SQL WHERE predicate (operator-only, see Safety below) |
 | `--sample` | int | None | Random sample size |
 | `--workers` | int | 4 | Concurrent LLM workers |
@@ -128,11 +128,11 @@ python3 manage.py compare_classifications --run-tag v3.2 --state TX
                     └─────────┬───────────┘
                               │ INNER JOIN (default)
                               │ LEFT JOIN  (--allow-fallback)
-┌──────────┐     ┌────────────▼────────────┐
-│ org_seed │────▶│   _fetch_batch()         │
-│ (state,  │     │   Filters: state/ein/org │
-│  ein)    │     └────────────┬─────────────┘
-└──────────┘                  │
+┌──────────────┐  ┌────────────▼────────────┐
+│nonprofits_   │─▶│   _fetch_batch()         │
+│seed (state,  │  │   Filters: state/ein/org │
+│ ein)         │  └────────────┬─────────────┘
+└──────────────┘                  │
                               ▼
                     ┌─────────────────────┐
                     │  Quality Gate        │
@@ -185,30 +185,24 @@ will be classified using first_page_text only. Results may be poor.
 
 #### State/EIN/Org Filtering
 
-State and EIN filters join through `org_provenance` to reach `org_seed`:
+Each document has exactly one `source_org_ein` in the `corpus` table. Filters use this column directly — no many-to-many join, no deduplication needed:
 
 ```sql
--- --state TX
-INNER JOIN lava_corpus.org_provenance op
-    ON op.content_sha256 = c.content_sha256
-INNER JOIN lava_corpus.org_seed os
-    ON os.id = op.org_id
-WHERE os.state = :state
+-- --state TX (subquery on nonprofits_seed)
+AND c.source_org_ein IN (
+    SELECT ein FROM lava_corpus.nonprofits_seed WHERE state = :state
+)
 
--- --ein 13-1234567
-INNER JOIN lava_corpus.org_provenance op
-    ON op.content_sha256 = c.content_sha256
-INNER JOIN lava_corpus.org_seed os
-    ON os.id = op.org_id
-WHERE os.ein = :ein
+-- --ein 13-1234567 (direct match)
+AND c.source_org_ein = :ein
 
--- --org-id 42
-INNER JOIN lava_corpus.org_provenance op
-    ON op.content_sha256 = c.content_sha256
-WHERE op.org_id = :org_id
+-- --org-id 42 (lookup EIN from nonprofits_seed)
+AND c.source_org_ein = (
+    SELECT ein FROM lava_corpus.nonprofits_seed WHERE id = :org_id
+)
 ```
 
-Note: one document can belong to multiple orgs (many-to-many via `org_provenance`). The query wraps the filtered result in a `SELECT DISTINCT c.content_sha256` subquery before the main fetch, so all counts (eligible, dry-run, progress total, ETA denominator) reflect deduplicated document counts, not row counts. The deduplication happens in SQL, not Python.
+The `corpus.source_org_ein` column is indexed (`idx_corpus_ein`). `nonprofits_seed.ein` is the primary natural key with an existing index.
 
 ### Progress Reporting
 
@@ -527,11 +521,10 @@ No schema changes required. All tables from Spec 0035 are already created and co
 - AC4: Quality gate skips docs where `pages_text` length < `--min-text-len` (default 100). Skipped docs are counted and reported.
 
 ### Filtering
-- AC5: `--state TX` filters to docs belonging to Texas orgs via `org_provenance` → `org_seed`.
-- AC6: `--ein 13-1234567` filters to docs belonging to a specific org.
-- AC7: `--org-id 42` filters to docs linked to a specific org_seed row.
+- AC5: `--state TX` filters to docs whose `source_org_ein` matches a Texas org in `nonprofits_seed`.
+- AC6: `--ein 13-1234567` filters to docs with `source_org_ein = :ein` (direct match).
+- AC7: `--org-id 42` filters to docs whose `source_org_ein` matches the EIN of `nonprofits_seed.id = 42`.
 - AC8: Filters are combinable (e.g., `--state TX --sample 100` = random 100 from Texas).
-- AC9: Duplicate SHA256s from many-to-many org relationships are deduplicated.
 
 ### Progress Reporting
 - AC10: Startup prints configuration summary including eligible doc count, extraction coverage, filter details.
@@ -596,7 +589,7 @@ The 4-worker concurrency should reduce wall-clock time by roughly 3-4x vs single
 |---|---|
 | Extraction not yet run for full corpus | Startup summary reports extraction coverage %. If coverage is 0% (no `classification_context` rows match the filter), the command prints an error and exits — there's nothing to classify. Otherwise it proceeds with whatever coverage exists and reports excluded doc count. |
 | Thread pool overwhelms DeepSeek rate limits | Exponential backoff handles 429s. Default 4 workers is conservative. |
-| org_provenance join is slow on 186K docs | Query uses existing indexes. State filter narrows the scan. |
+| State subquery on nonprofits_seed could be slow | `source_org_ein` is indexed (`idx_corpus_ein`); `nonprofits_seed.ein` is indexed. Subquery is small (~112K seeds). |
 | Comparison misleading if Haiku v2 was also wrong | Comparison is informational — human spot-check is the real validation. |
 
 ## Resumability & Checkpointing
@@ -609,7 +602,7 @@ Checkpoint state lives in `classification_runs.config_json.cursor` (the last pro
 - Already-classified rows (in `classification_results` for this `run_id`) are skipped via the existing `LEFT JOIN ... IS NULL` on `cr`
 - Filters (`--state`, `--ein`, `--where`) are stored in `config_json` at run creation. On `--resume`, the command reads stored filters and uses them — it does NOT accept new filter flags. If the operator passes different filters on resume, the command prints an error and exits.
 - `--sample` runs are NOT resumable. `--resume` with a `--sample` run prints an error. Random sampling is inherently non-deterministic and intended for quick tests, not long production runs.
-- **Cursor and dedup interaction**: The `WHERE c.content_sha256 > :cursor` filter applies INSIDE the deduplicated subquery, not outside it. The query shape for resume with filters is: `SELECT DISTINCT c.content_sha256 FROM corpus c INNER JOIN ... WHERE c.content_sha256 > :cursor AND <filters> ORDER BY c.content_sha256 LIMIT :batch_size`. This ensures no duplicates or skips regardless of the many-to-many join cardinality.
+- **Cursor interaction**: The `WHERE c.content_sha256 > :cursor` filter applies in the main query alongside all other filters. Since each doc has exactly one `source_org_ein` (no many-to-many), there are no duplicates to worry about. The keyset pagination is straightforward: `WHERE c.content_sha256 > :cursor AND <filters> ORDER BY c.content_sha256 LIMIT :batch_size`.
 
 **Checkpoint frequency:** After every batch (same as current). On Ctrl+C (SIGINT), a signal handler triggers one final checkpoint before exit.
 
@@ -674,8 +667,8 @@ When a document fails LLM classification after 4 retries:
 - Verify that `--workers 4` results in 4 concurrent LLM calls (mock the LLM client with a delayed response, assert 4 calls are in-flight simultaneously)
 - Verify that database writes are serialized (no concurrent write conflicts)
 
-**Deduplication:**
-- Create test data with one document linked to 3 orgs in the same state. Verify `--state` filter classifies it exactly once.
+**State filter:**
+- Create test data with docs from different states. Verify `--state TX` only classifies Texas docs (matching `source_org_ein` → `nonprofits_seed.state`).
 
 **Resume:**
 - Start a run, interrupt after 2 batches, resume. Verify no duplicate classifications, correct final count.

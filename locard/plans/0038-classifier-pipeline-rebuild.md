@@ -5,15 +5,9 @@
 
 ## Pre-Implementation Notes
 
-### Schema Discovery: Simpler Join Path
+### Schema: Direct Join Path
 
-The spec assumed doc-to-org linkage via a many-to-many `org_provenance` table. In reality, the join is direct:
-
-```
-corpus.source_org_ein → nonprofits_seed.ein (indexed: idx_corpus_ein)
-```
-
-Each document has exactly one `source_org_ein`. No deduplication needed. This simplifies the query construction and eliminates the `SELECT DISTINCT` subquery the spec described.
+The `corpus` table has a direct `source_org_ein` column — each document belongs to exactly one org. Filtering uses `corpus.source_org_ein → nonprofits_seed.ein` (indexed as `idx_corpus_ein`). No many-to-many join, no deduplication needed. The spec has been amended to reflect this.
 
 ### Existing Code to Preserve/Modify
 
@@ -122,14 +116,67 @@ def _build_query(self, run_id, cursor, sample, where_clause,
     return sql, params
 ```
 
-#### 2c: Startup Summary
+#### 2c: Startup Summary and Dry Run
 
-Before processing, run a count query with the same filters to get:
-- Total eligible docs (with context or with fallback)
-- Docs excluded (no context, when not using fallback)
-- Extraction coverage percentage
+Before processing, run count queries with the same filters:
 
-Print the configuration block per spec.
+```python
+def _count_eligible(self, engine, state, ein, org_id, where_clause, 
+                    allow_fallback, min_text_len, run_id):
+    # Count 1: Total PDFs matching filters (regardless of context)
+    total_pdfs = self._count_query(engine, join_type="LEFT", 
+                                    min_text_len=None, ...)
+    
+    # Count 2: PDFs with extraction context + quality gate
+    with_context = self._count_query(engine, join_type="INNER",
+                                      min_text_len=min_text_len, ...)
+    
+    # Count 3: PDFs with context but below quality gate  
+    below_gate = self._count_query(engine, join_type="INNER",
+                                    min_text_len=None, ...) - with_context
+    
+    without_context = total_pdfs - (with_context + below_gate)
+    coverage = (with_context + below_gate) / total_pdfs * 100 if total_pdfs else 0
+    
+    return {
+        "total_pdfs": total_pdfs,
+        "with_context": with_context,
+        "below_gate": below_gate,
+        "without_context": without_context,
+        "coverage": coverage,
+    }
+```
+
+Print the configuration block per spec. If `--dry-run`, print the extended breakdown and exit:
+
+```python
+if dry_run:
+    already_classified = self._count_already_classified(engine, run_id)
+    would_process = counts["with_context"] - already_classified
+    
+    self.stdout.write(f"Dry run ({run_tag}" + filter_desc + "):")
+    self.stdout.write(f"  Total eligible PDFs:           {counts['total_pdfs']:,}")
+    self.stdout.write(f"  With extraction context:       {counts['with_context'] + counts['below_gate']:,} ({counts['coverage']:.1f}%)")
+    self.stdout.write(f"  Without context (excluded):    {counts['without_context']:,}")
+    self.stdout.write(f"  Context text >= {min_text_len} chars:     {counts['with_context']:,}")
+    self.stdout.write(f"  Context text < {min_text_len} chars:        {counts['below_gate']:,}")
+    self.stdout.write(f"")
+    self.stdout.write(f"  Already classified in this run: {already_classified:,}")
+    self.stdout.write(f"  Would process: {would_process:,}")
+    
+    # Cost/time estimates (heuristic, labeled as estimates)
+    cost_per_doc = {"deepseek": 0.00019, "haiku": 0.00025, "claude": 0.003}
+    if backend in cost_per_doc:
+        est_cost = would_process * cost_per_doc[backend]
+        docs_per_sec_per_worker = 3.0
+        est_secs = would_process / (docs_per_sec_per_worker * workers)
+        self.stdout.write(f"")
+        self.stdout.write(f"  Estimated cost ({backend}): ~${est_cost:.2f}")
+        self.stdout.write(f"  Estimated time ({workers} workers): ~{_format_duration(est_secs)}")
+    else:
+        self.stdout.write(f"  Estimated cost/time: unavailable for {backend}")
+    return
+```
 
 #### 2d: Worker Pool and Main Loop
 
@@ -177,11 +224,15 @@ def _run(self, engine, **options):
                     
                     pages_text = row["pages_text"] or ""
                     first_page_text = row["first_page_text"] or ""
-                    eval_text = pages_text or first_page_text
+                    has_context = bool(pages_text)
+                    eval_text = pages_text if has_context else first_page_text
                     
-                    # Quality gate (for fallback docs not caught by SQL)
+                    # Quality gate with separate skip counters
                     if len(eval_text.strip()) < min_text_len:
-                        stats["skipped_short"] += 1
+                        if has_context:
+                            stats["skip_ctx"] += 1
+                        else:
+                            stats["skip_fp"] += 1
                         stats["total"] += 1
                         continue
                     
@@ -246,7 +297,63 @@ def _run(self, engine, **options):
         self._print_summary(stats, distribution, start_time)
 ```
 
-#### 2e: Progress Reporting
+#### 2e: Rate Limiting, Backoff, and Failure Halt
+
+The `_classify_one` method handles per-doc retries. A global throttle and consecutive-failure halt are managed in the main loop.
+
+```python
+def _classify_one(self, client, definition, row):
+    """Called in worker thread. Retries with exponential backoff + jitter."""
+    max_retries = 4
+    for attempt in range(max_retries):
+        try:
+            result = classify_first_page_v3(client, definition, row)
+            return result
+        except RateLimitError:
+            if attempt == max_retries - 1:
+                return None  # will become llm:error
+            base_delay = 2 ** (attempt + 1)  # 2, 4, 8, 16
+            jitter = base_delay * 0.25 * (2 * random.random() - 1)  # ±25%
+            time.sleep(base_delay + jitter)
+        except Exception:
+            if attempt == max_retries - 1:
+                return None
+            time.sleep(2 ** (attempt + 1))
+
+# In the main loop, after collecting results from a batch:
+consecutive_failures = 0
+for fut in as_completed(futures):
+    ...
+    if result and not result.error:
+        consecutive_failures = 0
+        ...
+    else:
+        consecutive_failures += 1
+        stats["llm_errors"] += 1
+        if consecutive_failures >= 20:
+            self.stderr.write(
+                f"HALT: 20 consecutive LLM failures. "
+                f"Last error: {last_error}\n"
+                f"Run --resume to continue after fixing the issue."
+            )
+            shutdown.set()
+            break
+
+# Global throttle: track 429 timestamps across workers
+rate_limit_times = deque(maxlen=20)  # thread-safe via GIL for append/len
+
+# Inside _classify_one, on 429:
+rate_limit_times.append(time.monotonic())
+
+# In main loop, before submitting next batch:
+recent_429s = sum(1 for t in rate_limit_times 
+                  if time.monotonic() - t < 10)
+if recent_429s >= 3:
+    self.stdout.write("[throttle] 3+ rate limits in 10s, pausing 30s")
+    time.sleep(30)
+```
+
+#### 2f: Progress Reporting
 
 ```python
 def _print_progress(self, batch_num, stats, total, batch_times):
@@ -270,22 +377,27 @@ def _print_progress(self, batch_num, stats, total, batch_times):
     else:
         eta = "--"
     
+    skip_str = f"skip(ctx):{stats.get('skip_ctx',0)} skip(fp):{stats.get('skip_fp',0)}" if allow_fallback else f"skip:{stats.get('skip_ctx',0)}"
     self.stdout.write(
         f"[{now}] Batch {batch_num} | "
         f"{processed:,}/{total:,} ({pct:.1f}%) | "
         f"{throughput:.1f} docs/sec | ETA {eta} | "
         f"rules:{stats.get('rule_matched',0)} "
         f"llm:{stats.get('llm_classified',0)} "
-        f"skip:{stats.get('skipped_short',0)} "
+        f"{skip_str} "
         f"err:{stats.get('llm_errors',0)}"
     )
 ```
 
-#### 2f: Resume Validation
+#### 2g: Resume Validation and Checkpoint Semantics
 
-On `--resume`, read `config_json` from the existing run. Compare stored filters against provided filters:
+**Resume validation:**
 
 ```python
+if resume and sample:
+    self.stderr.write("ERROR: --sample runs cannot be resumed.")
+    return
+
 if resume:
     stored = config.get("filters", {})
     provided = {"state": state, "ein": ein, "where": where_clause}
@@ -294,9 +406,13 @@ if resume:
                          f"  Original: {stored}\n  Provided: {provided}\n"
                          f"Resume uses the original filters. Remove conflicting flags.")
         return
+    # Restore filters from config
+    state = stored.get("state")
+    ein = stored.get("ein")
+    where_clause = stored.get("where")
 ```
 
-Store filters in `config_json` at run creation:
+**Run config stored at creation:**
 
 ```python
 config_json = {
@@ -310,12 +426,51 @@ config_json = {
 }
 ```
 
-#### 2g: Init Run with Sample Guard
+**Durable cursor rule:** The checkpoint cursor is the highest `content_sha256` for which a `classification_results` row has been durably written (committed). The cursor is NOT advanced speculatively for in-flight work. This means:
 
 ```python
-if resume and sample:
-    self.stderr.write("ERROR: --sample runs cannot be resumed.")
-    return
+def _checkpoint(self, engine, run_id, cursor, stats):
+    """Write cursor = highest SHA that has a committed result row."""
+    with engine.begin() as conn:
+        conn.execute(text(f"""
+            UPDATE {_SCHEMA}.classification_runs 
+            SET config_json = jsonb_set(config_json, '{{cursor}}', to_jsonb(:cursor::text)),
+                config_json = jsonb_set(config_json, '{{stats}}', :stats::jsonb)
+            WHERE id = :run_id
+        """), {"run_id": run_id, "cursor": cursor, "stats": json.dumps(dict(stats))})
+```
+
+`cursor` is updated after each successful `_write_result` call, tracking `max(content_sha256)` of written rows.
+
+**SIGINT drain semantics:**
+
+```python
+def _handle_sigint(signum, frame):
+    shutdown.set()  # (1) stop submitting new work
+
+# In the main loop, after shutdown.set():
+# (2) Drain completed futures (don't cancel them — their results are valid)
+for fut in as_completed(futures, timeout=30):
+    row = futures[fut]
+    try:
+        result = fut.result()
+        if result and not result.error:
+            self._write_result(...)
+            # Update cursor to this SHA
+    except Exception:
+        pass
+
+# (3) Cancel remaining in-flight futures
+for fut in futures:
+    if not fut.done():
+        fut.cancel()
+
+# (4) Checkpoint with the highest durably written cursor
+self._checkpoint(engine, run_id, last_durable_cursor, stats)
+
+# (5) Print partial summary
+self.stdout.write(f"\nInterrupted. Checkpointed at {last_durable_cursor[:12]}...")
+self._print_summary(stats, distribution, start_time)
 ```
 
 ### Step 3: Update `compare_classifications.py`
@@ -324,11 +479,40 @@ if resume and sample:
 
 Modifications to existing command:
 
-1. **Remove confidence comparison metrics** — drop the avg confidence, confidence distribution, and confidence threshold sections
-2. **Add tiebreaker candidate count** — at the end of comparison output, print: `Tiebreaker candidates: N (use resolve_disagreements --run-tag TAG to resolve)`
+1. **Remove confidence comparison metrics** — drop avg confidence, confidence distribution, and confidence threshold sections
+2. **Add tiebreaker candidate count** — print: `Tiebreaker candidates: N (use resolve_disagreements --run-tag TAG to resolve)`
 3. **Add `--state` filter** — join through `corpus.source_org_ein → nonprofits_seed.ein` for scoped comparison
-4. **Keep `--show-reasoning`** — already exists, just ensure it works with the new flow
-5. **Add breakdown by `classified_by` source** — rule-matched vs LLM disagreements
+4. **Add breakdown by `classified_by` source** — rule-matched vs LLM disagreements
+5. **Exclude v3 error rows** — `classified_by = 'llm:error'` rows are excluded from comparison and reported separately: `v3 errors (excluded): N`
+6. **Report v2 unclassified** — docs where `corpus.material_type IS NULL` are counted and excluded: `v2 unclassified (excluded): N`
+7. **Cap `--show-reasoning`** — default limit 50 disagreements. Add `--limit N` flag to override:
+
+```python
+parser.add_argument("--show-reasoning", action="store_true")
+parser.add_argument("--limit", type=int, default=50, help="Max disagreements to show with --show-reasoning")
+```
+
+**Comparison query structure:**
+
+```sql
+SELECT cr.content_sha256, cr.material_type AS v3_type, cr.classified_by,
+       cr.reasoning AS v3_reasoning,
+       c.material_type AS v2_type, c.reasoning AS v2_reasoning
+FROM lava_corpus.classification_results cr
+JOIN lava_corpus.classification_runs runs ON runs.id = cr.run_id
+JOIN lava_corpus.corpus c ON c.content_sha256 = cr.content_sha256
+WHERE runs.run_tag = :run_tag
+  AND cr.classified_by != 'llm:error'     -- exclude errors
+  -- Optional state filter:
+  AND (:state IS NULL OR c.source_org_ein IN (
+      SELECT ein FROM lava_corpus.nonprofits_seed WHERE state = :state
+  ))
+```
+
+Then in Python:
+- Partition into: v2_null (unclassified), agree (v2==v3), disagree (v2!=v3)
+- Within disagree, partition by `classified_by LIKE 'rule:%'` vs LLM
+- Tiebreaker candidates = LLM disagreements only
 
 ### Step 4: Create `resolve_disagreements.py`
 
@@ -411,7 +595,25 @@ TIEBREAKER_TOOL = {
 }
 ```
 
-#### 4e: Store Results
+#### 4e: Backend Enforcement (AC27)
+
+Before processing, read the parent run's config to check the backend used:
+
+```python
+parent_run = self._get_run(engine, run_tag)
+parent_backend = parent_run["config_json"].get("backend", "unknown")
+
+if backend == parent_backend:
+    self.stderr.write(
+        f"ERROR: Tiebreaker backend '{backend}' is the same as the primary run.\n"
+        f"  The tiebreaker must use a DIFFERENT model to provide an independent vote.\n"
+        f"  Primary run used: {parent_backend}\n"
+        f"  Suggestion: --backend haiku (if primary was deepseek)\n"
+    )
+    return
+```
+
+#### 4f: Store Results
 
 Write tiebreaker results to `classification_results` with a new run_tag (e.g., `{original_tag}-tiebreaker`):
 
@@ -425,7 +627,7 @@ config_json = {
 
 `classified_by = f"tiebreaker:{model_name}"`
 
-#### 4f: Output
+#### 4g: Output
 
 Print winner distribution and resolved classification distribution per spec.
 
@@ -433,20 +635,46 @@ Print winner distribution and resolved classification distribution per spec.
 
 **File**: `lavandula/dashboard/pipeline/tests/test_reclassify_corpus.py` (new or append to existing)
 
-Test cases per spec's Testing Strategy section:
+#### Core classification tests:
 
-1. **Concurrency test**: Mock LLM client with `time.sleep(0.5)`, submit 4 docs with `--workers 4`, assert all 4 are in-flight simultaneously
-2. **Quality gate test**: Create doc with 50-char pages_text, verify skipped (not classified as other_collateral)
-3. **State filter test**: Create docs for TX and NY orgs, run with `--state TX`, verify only TX docs classified
-4. **EIN filter test**: Single EIN, verify only that org's docs
-5. **Resume test**: Run 2 batches, interrupt, resume, verify no duplicates
-6. **Resume filter mismatch test**: Start with `--state TX`, resume with `--state NY`, verify error
-7. **Sample + resume test**: Verify error on `--sample --resume`
-8. **INNER JOIN test**: Default mode excludes docs without classification_context
-9. **Fallback test**: `--allow-fallback` includes docs without context, uses first_page_text
-10. **SIGINT test**: Send SIGINT during batch, verify checkpoint written
-11. **Mixed failure test**: Some futures succeed, some fail, verify stats consistent
-12. **Tiebreaker test**: Create disagreement data, run resolve_disagreements, verify results
+1. **Concurrency test**: Mock LLM client with `time.sleep(0.5)`, submit 4 docs with `--workers 4`, assert all 4 are in-flight simultaneously (use a threading barrier or counter)
+2. **Serialized DB writes test**: With `--workers 4`, verify all writes go through a single connection (mock the engine, assert no concurrent `_write_result` calls)
+3. **Quality gate test**: Create doc with 50-char pages_text, verify skipped (not classified as `other_collateral`)
+4. **INNER JOIN test**: Default mode excludes docs without `classification_context`
+5. **Fallback test**: `--allow-fallback` includes docs without context, uses `first_page_text`, separate `skip(fp)` counter incremented
+
+#### Filter tests:
+
+6. **State filter test**: Create docs for TX and NY orgs via `source_org_ein`, run with `--state TX`, verify only TX docs classified
+7. **EIN filter test**: Single EIN, verify only that org's docs
+8. **Org-ID filter test**: Filter by `nonprofits_seed.id`, verify correct docs
+
+#### Resume tests:
+
+9. **Resume test**: Run 2 batches, interrupt, resume, verify no duplicates and correct final count
+10. **Resume filter mismatch test**: Start with `--state TX`, resume with `--state NY`, verify error
+11. **Sample + resume test**: Verify error on `--sample --resume`
+
+#### Interrupt and failure tests:
+
+12. **SIGINT test**: Send SIGINT during a batch, verify: checkpoint written, completed futures drained, cursor points to highest durable SHA
+13. **Mixed failure test**: Some futures succeed, some fail. Verify: stats internally consistent (`total = llm_classified + llm_errors + skip_ctx + skip_fp + rule_matched`), error rows written with `classified_by='llm:error'`
+14. **20 consecutive failures halt**: Mock LLM to fail 20 times in a row, verify command halts with clear error message and checkpoint
+15. **Global throttle test**: Mock LLM to return 429 three times within 10s, verify main thread pauses before next batch submission
+
+#### Dry-run test:
+
+16. **Dry-run output test**: Create test data with known counts, run `--dry-run`, verify output includes: eligible count, extraction coverage, quality gate breakdown, estimated cost/time (or "unavailable" for unknown backends)
+
+#### Tiebreaker tests:
+
+17. **Tiebreaker test**: Create disagreement data, run `resolve_disagreements`, verify results stored with `classified_by='tiebreaker:{model}'`
+18. **Tiebreaker backend enforcement test**: Set parent run backend to `haiku`, run tiebreaker with `--backend haiku`, verify error. Run with `--backend deepseek`, verify success.
+
+#### Comparison tests:
+
+19. **Comparison error exclusion test**: Create v3 error rows (`classified_by='llm:error'`), run comparison, verify they're excluded and reported separately
+20. **Comparison v2 unclassified test**: Create docs where `corpus.material_type IS NULL`, verify reported as "v2 unclassified" and excluded from agreement/disagreement calculations
 
 ### Step 6: Commit and PR
 
