@@ -1,14 +1,17 @@
-"""Compare old vs new classifications from a reclassification run (Spec 0035).
+"""Compare v3 classification results against corpus v2 classifications (Spec 0038).
 
 Usage:
-    python3 manage.py compare_classifications --run-tag v3.1
-    python3 manage.py compare_classifications --run-tag v3.1 --show-reasoning
+    python3 manage.py compare_classifications --run-tag v3.2
+    python3 manage.py compare_classifications --run-tag v3.2 --state TX
+    python3 manage.py compare_classifications --run-tag v3.2 --show-reasoning
+    python3 manage.py compare_classifications --run-tag v3.2 --show-reasoning --limit 100
 """
 from __future__ import annotations
 
 import json
 import logging
 import re
+from collections import defaultdict
 
 from django.core.management.base import BaseCommand
 from sqlalchemy import text
@@ -22,159 +25,156 @@ _CONTROL_CHAR_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 
 
 class Command(BaseCommand):
-    help = "Compare old vs new classifications from a reclassification run"
+    help = "Compare v3 classification results against corpus v2 classifications"
 
     def add_arguments(self, parser):
         parser.add_argument("--run-tag", required=True, help="Run tag to compare")
+        parser.add_argument("--state", type=str, default=None, help="Two-letter state code")
         parser.add_argument("--show-reasoning", action="store_true",
-                            help="Include reasoning in output")
+                            help="Show v2/v3 reasoning side-by-side for disagreements")
+        parser.add_argument("--limit", type=int, default=50,
+                            help="Max disagreements to show with --show-reasoning")
 
     def handle(self, *args, **options):
         engine = make_app_engine()
         run_tag = options["run_tag"]
+        state = options["state"]
         show_reasoning = options["show_reasoning"]
+        limit = options["limit"]
 
-        run_id = self._get_run_id(engine, run_tag)
-        if run_id is None:
+        run_info = self._get_run(engine, run_tag)
+        if run_info is None:
             self.stderr.write(f"Run tag {run_tag!r} not found")
             return
 
-        self._print_summary(engine, run_id, run_tag)
-        self._print_migration_matrix(engine, run_id)
-        self._print_confidence_comparison(engine, run_id)
-        self._print_classified_by_breakdown(engine, run_id)
-        self._print_suppression_audit(engine, run_id, run_tag)
+        run_id = run_info["id"]
+        is_incomplete = run_info["finished_at"] is None
+        if is_incomplete:
+            self.stderr.write(f"Warning: run '{run_tag}' is still in progress.")
 
-        if show_reasoning:
-            self._print_reasoning_samples(engine, run_id)
+        rows = self._fetch_comparison(engine, run_id, state)
 
-    def _get_run_id(self, engine, run_tag):
-        with engine.connect() as conn:
-            row = conn.execute(text(
-                f"SELECT id FROM {_SCHEMA}.classification_runs WHERE run_tag = :tag"
-            ), {"tag": run_tag}).fetchone()
-            return row[0] if row else None
+        v2_null = []
+        v3_errors = []
+        agree = []
+        disagree_rule = []
+        disagree_llm = []
 
-    def _print_summary(self, engine, run_id, run_tag):
-        with engine.connect() as conn:
-            total = conn.execute(text(
-                f"SELECT COUNT(*) FROM {_SCHEMA}.classification_results WHERE run_id = :rid"
-            ), {"rid": run_id}).scalar()
+        for row in rows:
+            if row["classified_by"] == "llm:error":
+                v3_errors.append(row)
+                continue
+            if row["v2_type"] is None:
+                v2_null.append(row)
+                continue
+            if row["v3_type"] == row["v2_type"]:
+                agree.append(row)
+            else:
+                if row["classified_by"].startswith("rule:"):
+                    disagree_rule.append(row)
+                else:
+                    disagree_llm.append(row)
 
-            rule_count = conn.execute(text(
-                f"SELECT COUNT(*) FROM {_SCHEMA}.classification_results "
-                f"WHERE run_id = :rid AND classified_by LIKE 'rule:%'"
-            ), {"rid": run_id}).scalar()
+        total_compared = len(agree) + len(disagree_rule) + len(disagree_llm)
+        total_disagree = len(disagree_rule) + len(disagree_llm)
 
-            llm_count = conn.execute(text(
-                f"SELECT COUNT(*) FROM {_SCHEMA}.classification_results "
-                f"WHERE run_id = :rid AND classified_by LIKE 'llm:%'"
-            ), {"rid": run_id}).scalar()
+        self.stdout.write(f"\nClassification Comparison: {run_tag} vs corpus (Haiku v2)")
+        filter_str = f" (state={state})" if state else ""
+        self.stdout.write(f"  Docs compared: {total_compared:,}{filter_str}")
+        self.stdout.write("")
 
-        self.stdout.write(f"\n=== Classification Comparison: {run_tag} ===\n")
-        self.stdout.write(f"Total: {total}")
-        self.stdout.write(f"Rule-classified: {rule_count} ({rule_count/total*100:.1f}%)" if total else "Rule-classified: 0")
-        self.stdout.write(f"LLM-classified: {llm_count} ({llm_count/total*100:.1f}%)" if total else "LLM-classified: 0")
-
-    def _print_migration_matrix(self, engine, run_id):
-        sql = (
-            f"SELECT c.material_type AS old_type, cr.material_type AS new_type, COUNT(*) AS cnt "
-            f"FROM {_SCHEMA}.classification_results cr "
-            f"JOIN {_SCHEMA}.corpus c ON c.content_sha256 = cr.content_sha256 "
-            f"WHERE cr.run_id = :rid "
-            f"  AND c.material_type IS DISTINCT FROM cr.material_type "
-            f"GROUP BY c.material_type, cr.material_type "
-            f"ORDER BY cnt DESC "
-            f"LIMIT 50"
-        )
-        with engine.connect() as conn:
-            rows = conn.execute(text(sql), {"rid": run_id}).fetchall()
-
-        if rows:
-            self.stdout.write(f"\nChanges from current classification:")
-            for old_type, new_type, cnt in rows:
-                old_display = old_type or "(null)"
-                new_display = new_type or "(null)"
-                self.stdout.write(f"  {old_display:30s} → {new_display:30s}  {cnt:>6d}")
+        if total_compared > 0:
+            self.stdout.write(f"  Agreement: {len(agree):,} ({len(agree)/total_compared*100:.1f}%)")
+            self.stdout.write(f"  Disagreement: {total_disagree:,} ({total_disagree/total_compared*100:.1f}%)")
         else:
-            self.stdout.write("\nNo classification changes detected.")
+            self.stdout.write(f"  Agreement: 0")
+            self.stdout.write(f"  Disagreement: 0")
 
-    def _print_confidence_comparison(self, engine, run_id):
-        sql = (
-            f"SELECT "
-            f"  AVG(c.classification_confidence) AS avg_old, "
-            f"  AVG(cr.confidence) AS avg_new, "
-            f"  SUM(CASE WHEN c.classification_confidence < 0.8 THEN 1 ELSE 0 END) AS low_old, "
-            f"  SUM(CASE WHEN cr.confidence < 0.8 THEN 1 ELSE 0 END) AS low_new "
-            f"FROM {_SCHEMA}.classification_results cr "
-            f"JOIN {_SCHEMA}.corpus c ON c.content_sha256 = cr.content_sha256 "
-            f"WHERE cr.run_id = :rid"
-        )
-        with engine.connect() as conn:
-            row = conn.execute(text(sql), {"rid": run_id}).fetchone()
+        if v2_null:
+            self.stdout.write(f"  v2 unclassified (excluded): {len(v2_null):,}")
+        if v3_errors:
+            self.stdout.write(f"  v3 errors (excluded): {len(v3_errors):,}")
+        self.stdout.write("")
 
-        if row:
-            avg_old = row[0] or 0
-            avg_new = row[1] or 0
-            low_old = row[2] or 0
-            low_new = row[3] or 0
-            self.stdout.write(f"\nConfidence comparison:")
-            self.stdout.write(f"  Avg confidence (old): {avg_old:.3f}")
-            self.stdout.write(f"  Avg confidence (new): {avg_new:.3f}")
-            self.stdout.write(f"  Docs with confidence < 0.8 (old): {low_old:>6d}")
-            self.stdout.write(f"  Docs with confidence < 0.8 (new): {low_new:>6d}")
+        # Top disagreements (v2 -> v3)
+        if total_disagree > 0:
+            change_counts = defaultdict(int)
+            all_disagree = disagree_rule + disagree_llm
+            for row in all_disagree:
+                key = (row["v2_type"] or "(null)", row["v3_type"] or "(null)")
+                change_counts[key] += 1
 
-    def _print_classified_by_breakdown(self, engine, run_id):
-        sql = (
-            f"SELECT classified_by, COUNT(*) "
-            f"FROM {_SCHEMA}.classification_results "
-            f"WHERE run_id = :rid "
-            f"GROUP BY classified_by ORDER BY COUNT(*) DESC"
-        )
-        with engine.connect() as conn:
-            rows = conn.execute(text(sql), {"rid": run_id}).fetchall()
+            self.stdout.write(f"  Top disagreements (v2 -> v3):")
+            for (old, new), cnt in sorted(change_counts.items(), key=lambda x: -x[1])[:20]:
+                self.stdout.write(f"    {old:30s} -> {new:30s}  {cnt:>6,}")
+            self.stdout.write("")
 
-        if rows:
-            self.stdout.write(f"\nBreakdown by classified_by:")
-            for cb, cnt in rows:
-                self.stdout.write(f"  {cb or '(null)':40s}  {cnt:>6d}")
+            # By classification source
+            self.stdout.write(f"  By classification source:")
+            self.stdout.write(f"    Rule-matched disagreements:  {len(disagree_rule):,}")
+            self.stdout.write(f"    LLM disagreements:           {len(disagree_llm):,}")
+            self.stdout.write("")
 
-    def _print_suppression_audit(self, engine, run_id, run_tag):
+            self.stdout.write(f"  Tiebreaker candidates: {len(disagree_llm):,} (use resolve_disagreements --run-tag {run_tag} to resolve)")
+
+        if show_reasoning and total_disagree > 0:
+            self._print_reasoning(disagree_rule + disagree_llm, limit)
+
+    def _get_run(self, engine, run_tag):
         with engine.connect() as conn:
             row = conn.execute(text(
-                f"SELECT stats_json FROM {_SCHEMA}.classification_runs "
-                f"WHERE id = :rid"
-            ), {"rid": run_id}).fetchone()
+                f"SELECT id, finished_at FROM {_SCHEMA}.classification_runs "
+                f"WHERE run_tag = :tag ORDER BY started_at DESC LIMIT 1"
+            ), {"tag": run_tag}).fetchone()
+            if row is None:
+                return None
+            return {"id": row[0], "finished_at": row[1]}
 
-        if row and row[0]:
-            stats = row[0] if isinstance(row[0], dict) else json.loads(row[0])
-            disagreements = stats.get("suppression_sample_disagreements", 0)
-            warnings = stats.get("per_domain_suppression_warnings", [])
-            self.stdout.write(f"\nSuppression audit:")
-            self.stdout.write(f"  Disagreements: {disagreements}")
-            if warnings:
-                self.stdout.write("  Domain warnings:")
-                for w in warnings:
-                    self.stdout.write(f"    {w}")
-
-    def _print_reasoning_samples(self, engine, run_id):
+    def _fetch_comparison(self, engine, run_id, state):
         sql = (
-            f"SELECT cr.content_sha256, c.material_type, cr.material_type, "
-            f"  cr.reasoning, cr.classified_by "
+            f"SELECT cr.content_sha256, cr.material_type AS v3_type, cr.classified_by, "
+            f"  cr.reasoning AS v3_reasoning, "
+            f"  c.material_type AS v2_type, c.reasoning AS v2_reasoning "
             f"FROM {_SCHEMA}.classification_results cr "
+            f"JOIN {_SCHEMA}.classification_runs runs ON runs.id = cr.run_id "
             f"JOIN {_SCHEMA}.corpus c ON c.content_sha256 = cr.content_sha256 "
-            f"WHERE cr.run_id = :rid "
-            f"  AND c.material_type IS DISTINCT FROM cr.material_type "
-            f"ORDER BY random() LIMIT 20"
+            f"WHERE runs.id = :run_id"
         )
-        with engine.connect() as conn:
-            rows = conn.execute(text(sql), {"rid": run_id}).fetchall()
+        params = {"run_id": run_id}
 
-        if rows:
-            self.stdout.write(f"\nReasoning samples (changed classifications):")
-            for sha, old_mt, new_mt, reasoning, cb in rows:
-                clean_reasoning = _CONTROL_CHAR_RE.sub("", reasoning or "")
-                self.stdout.write(
-                    f"  {sha[:12]} {old_mt or '(null)':20s} → {new_mt or '(null)':20s} "
-                    f"[{cb}] {clean_reasoning[:120]}"
-                )
+        if state:
+            sql += (
+                f" AND c.source_org_ein IN "
+                f"(SELECT ein FROM {_SCHEMA}.nonprofits_seed WHERE state = :state)"
+            )
+            params["state"] = state
+
+        with engine.connect() as conn:
+            rows = conn.execute(text(sql), params).fetchall()
+
+        return [
+            {
+                "content_sha256": r[0],
+                "v3_type": r[1],
+                "classified_by": r[2] or "",
+                "v3_reasoning": r[3] or "",
+                "v2_type": r[4],
+                "v2_reasoning": r[5] or "",
+            }
+            for r in rows
+        ]
+
+    def _print_reasoning(self, disagreements, limit):
+        self.stdout.write(f"\nReasoning samples (disagreements, limit={limit}):")
+        for row in disagreements[:limit]:
+            sha = row["content_sha256"][:12]
+            v2r = _CONTROL_CHAR_RE.sub("", row["v2_reasoning"])[:120]
+            v3r = _CONTROL_CHAR_RE.sub("", row["v3_reasoning"])[:120]
+            self.stdout.write(
+                f"  {sha} {row['v2_type'] or '(null)':20s} -> {row['v3_type'] or '(null)':20s} "
+                f"[{row['classified_by']}]"
+            )
+            if v2r:
+                self.stdout.write(f"    v2: {v2r}")
+            if v3r:
+                self.stdout.write(f"    v3: {v3r}")
