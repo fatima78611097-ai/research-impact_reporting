@@ -411,7 +411,7 @@ def _build_tool_schema(
 ) -> dict:
     """Build OpenAI-compatible function-calling schema from definition."""
     properties: dict = {}
-    required = ["confidence", "reasoning"]
+    required = ["reasoning"]
 
     if "material_type" in output_columns:
         properties["material_type"] = {
