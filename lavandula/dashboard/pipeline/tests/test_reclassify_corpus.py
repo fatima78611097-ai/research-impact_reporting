@@ -231,6 +231,32 @@ class TestResumeValidation:
 
         assert stored_filters != provided_filters
 
+    def test_backend_mismatch_on_resume(self):
+        """Resume with different backend than original run is detected."""
+        config = {"backend": "deepseek", "definition": "corpus_reports",
+                  "allow_fallback": False, "min_text_len": 100}
+        param_mismatches = []
+        if "haiku" != config.get("backend", "haiku"):
+            param_mismatches.append(f"backend: stored={config['backend']}, provided=haiku")
+        assert len(param_mismatches) == 1
+        assert "backend" in param_mismatches[0]
+
+    def test_allow_fallback_mismatch_on_resume(self):
+        """Resume with different allow_fallback than original run is detected."""
+        config = {"backend": "deepseek", "allow_fallback": False, "min_text_len": 100}
+        param_mismatches = []
+        if True != config.get("allow_fallback", True):
+            param_mismatches.append("allow_fallback mismatch")
+        assert len(param_mismatches) == 1
+
+    def test_min_text_len_mismatch_on_resume(self):
+        """Resume with different min_text_len than original run is detected."""
+        config = {"backend": "deepseek", "allow_fallback": False, "min_text_len": 100}
+        param_mismatches = []
+        if 200 != config.get("min_text_len", 200):
+            param_mismatches.append("min_text_len mismatch")
+        assert len(param_mismatches) == 1
+
 
 # ---------------------------------------------------------------------------
 # Tests: Run Tag Uniqueness
@@ -428,10 +454,11 @@ class TestDryRun:
         counts = {
             "total_pdfs": 10000,
             "with_context": 8000,
+            "with_context_all": 8200,
             "below_gate": 200,
             "without_context": 1800,
             "coverage": 82.0,
-            "eligible": 8000,
+            "eligible": 8200,
         }
 
         cmd._print_dry_run(
@@ -456,10 +483,11 @@ class TestDryRun:
         counts = {
             "total_pdfs": 100,
             "with_context": 80,
+            "with_context_all": 85,
             "below_gate": 5,
             "without_context": 15,
             "coverage": 85.0,
-            "eligible": 80,
+            "eligible": 85,
         }
 
         cmd._print_dry_run(

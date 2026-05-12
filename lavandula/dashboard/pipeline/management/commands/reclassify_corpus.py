@@ -178,6 +178,9 @@ class Command(BaseCommand):
             state = stored_config.get("filters", {}).get("state")
             ein = stored_config.get("filters", {}).get("ein")
             where_clause = stored_config.get("filters", {}).get("where")
+            backend = stored_config.get("backend", backend)
+            allow_fallback = stored_config.get("allow_fallback", allow_fallback)
+            min_text_len = stored_config.get("min_text_len", min_text_len)
         else:
             state = options["state"]
             ein = options["ein"]
@@ -508,10 +511,11 @@ class Command(BaseCommand):
         without_context = total_pdfs - with_context_all
         coverage = (with_context_all / total_pdfs * 100) if total_pdfs else 0
 
-        eligible = with_context if not allow_fallback else total_pdfs
+        eligible = with_context_all if not allow_fallback else total_pdfs
         return {
             "total_pdfs": total_pdfs,
             "with_context": with_context,
+            "with_context_all": with_context_all,
             "below_gate": below_gate,
             "without_context": without_context,
             "coverage": coverage,
@@ -590,11 +594,10 @@ class Command(BaseCommand):
                         config = json.loads(config)
                     cursor = config.get("cursor")
 
-                    # Validate filters match
+                    # Validate execution parameters match stored config
                     stored_filters = config.get("filters", {})
                     provided_filters = {"state": state, "ein": ein, "where": where_clause}
                     if stored_filters != provided_filters:
-                        # Allow resume with no filter flags (use stored)
                         if any(v is not None for v in provided_filters.values()):
                             self.stderr.write(
                                 f"ERROR: Filters changed since original run.\n"
@@ -603,6 +606,23 @@ class Command(BaseCommand):
                                 f"Resume uses the original filters. Remove conflicting flags."
                             )
                             return None, None, None
+
+                    param_mismatches = []
+                    if backend != config.get("backend", backend):
+                        param_mismatches.append(f"backend: stored={config['backend']}, provided={backend}")
+                    if definition.name != config.get("definition", definition.name):
+                        param_mismatches.append(f"definition: stored={config['definition']}, provided={definition.name}")
+                    if allow_fallback != config.get("allow_fallback", allow_fallback):
+                        param_mismatches.append(f"allow_fallback: stored={config['allow_fallback']}, provided={allow_fallback}")
+                    if min_text_len != config.get("min_text_len", min_text_len):
+                        param_mismatches.append(f"min_text_len: stored={config['min_text_len']}, provided={min_text_len}")
+                    if param_mismatches:
+                        self.stderr.write(
+                            f"ERROR: Execution parameters changed since original run.\n"
+                            + "".join(f"  {m}\n" for m in param_mismatches)
+                            + "Resume uses the original parameters. Remove conflicting flags."
+                        )
+                        return None, None, None
 
                     if config.get("sample"):
                         self.stderr.write("ERROR: --sample runs cannot be resumed.")
@@ -667,7 +687,8 @@ class Command(BaseCommand):
         sql = (
             f"SELECT c.content_sha256, c.first_page_text, c.source_url_redacted, "
             f"  c.file_size_bytes, c.pdf_creator, c.source_org_ein, "
-            f"  cc.pages_text, cc.pages_extracted, cc.total_pages "
+            f"  cc.pages_text, cc.pages_extracted, cc.total_pages, "
+            f"  cc.text_length "
             f"FROM {_SCHEMA}.corpus c "
             f"{join_type} JOIN {_SCHEMA}.classification_context cc "
             f"  ON cc.content_sha256 = c.content_sha256 "
@@ -677,10 +698,6 @@ class Command(BaseCommand):
             f"  AND cr.content_sha256 IS NULL"
         )
         params = {"run_id": run_id, "batch_size": batch_size}
-
-        if not allow_fallback:
-            sql += " AND cc.text_length >= :min_text_len"
-            params["min_text_len"] = min_text_len
 
         if state:
             sql += f" AND c.source_org_ein IN (SELECT ein FROM {_SCHEMA}.nonprofits_seed WHERE state = :state)"
@@ -715,6 +732,7 @@ class Command(BaseCommand):
                 "source_org_ein": r[5] or "",
                 "pages_text": r[6] or "",
                 "total_pages": r[8],
+                "text_length": r[9],
             }
             for r in rows
         ]
