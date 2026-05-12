@@ -52,7 +52,7 @@ CLASSIFIER_TOOL = {
                 "description": "Short (<=300 char) rationale.",
             },
         },
-        "required": ["classification", "confidence", "reasoning"],
+        "required": ["classification", "reasoning"],
     },
 }
 
@@ -138,16 +138,17 @@ def _parse_tool_use(resp: Any) -> dict[str, Any] | None:
     return None
 
 
-def _validate_tool_input(data: dict[str, Any]) -> tuple[str, float, str]:
+def _validate_tool_input(data: dict[str, Any]) -> tuple[str, float | None, str]:
     cls = data.get("classification")
     if cls not in CLASSIFICATIONS:
         raise ClassifierError(f"classification {cls!r} not in enum")
     conf = data.get("confidence")
-    if not isinstance(conf, (int, float)):
-        raise ClassifierError(f"confidence not numeric: {conf!r}")
-    confidence = float(conf)
-    if not (0.0 <= confidence <= 1.0):
-        raise ClassifierError(f"confidence {confidence} out of [0,1]")
+    if conf is not None and isinstance(conf, (int, float)):
+        confidence = float(conf)
+        if not (0.0 <= confidence <= 1.0):
+            confidence = None
+    else:
+        confidence = None
     reasoning = data.get("reasoning") or ""
     if not isinstance(reasoning, str):
         reasoning = str(reasoning)
@@ -278,7 +279,7 @@ CLASSIFIER_TOOL_V2 = {
                 "description": "Short (<=300 char) rationale.",
             },
         },
-        "required": ["material_type", "confidence", "reasoning"],
+        "required": ["material_type", "reasoning"],
     },
 }
 
@@ -368,11 +369,12 @@ def _validate_tool_input_v2(
     mg = taxonomy.derive_group(mt)
 
     conf = data.get("confidence")
-    if not isinstance(conf, (int, float)):
-        raise ClassifierError(f"confidence not numeric: {conf!r}")
-    confidence = float(conf)
-    if not (0.0 <= confidence <= 1.0):
-        raise ClassifierError(f"confidence {confidence} out of [0,1]")
+    if conf is not None and isinstance(conf, (int, float)):
+        confidence = float(conf)
+        if not (0.0 <= confidence <= 1.0):
+            confidence = None
+    else:
+        confidence = None
 
     reasoning = data.get("reasoning") or ""
     if not isinstance(reasoning, str):
@@ -689,17 +691,12 @@ def classify_first_page_v3(
         return _error_result(err, resp)
 
     conf = tool_data.get("confidence")
-    if not isinstance(conf, (int, float)):
-        err = f"confidence not numeric: {conf!r}"
-        if raise_on_error:
-            raise ClassifierError(err)
-        return _error_result(err, resp)
-    confidence = float(conf)
-    if not (0.0 <= confidence <= 1.0):
-        err = f"confidence {confidence} out of [0,1]"
-        if raise_on_error:
-            raise ClassifierError(err)
-        return _error_result(err, resp)
+    if conf is not None and isinstance(conf, (int, float)):
+        confidence = float(conf)
+        if not (0.0 <= confidence <= 1.0):
+            confidence = None
+    else:
+        confidence = None
 
     reasoning = tool_data.get("reasoning") or ""
     if not isinstance(reasoning, str):

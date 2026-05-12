@@ -175,17 +175,17 @@ projects:
     notes: "Spec approved 2026-04-21 after 2 review rounds + red-team (2 CRITICAL fixed: SSRF + indirect prompt injection). Plan approved 2026-04-21 after 1 review round + red-team (tag breakout HIGH fixed). Builder spawned 2026-04-21. PR #1 merged 2026-04-21 after 8 review rounds. Precision gate (≥80% on TX 100-org dataset) deferred — must run before --resolver llm used on production seeds."
 
   - id: "0006"
-    title: "Pipeline Status Dashboard"
+    title: "Pipeline Status Dashboard (abandoned)"
     summary: "Read-only web dashboard exposing live state of seeds, resolver, crawl, classify across all SQLite DBs. Shows counts by state/NTEE/revenue band, resolver status breakdown, crawl progress, classification mix, and any running background jobs. Auto-refresh every 10s. Port 4350, FastAPI + SQLAlchemy for forward compatibility with RDS migration."
-    status: conceived
+    status: abandoned
     priority: high
     files:
       spec: locard/specs/0006-pipeline-status-dashboard.md
       plan: null
       review: null
     dependencies: []
-    tags: [dashboard, observability, infrastructure]
-    notes: "Prioritized 2026-04-22 to eliminate architect pings for status. Not yet specified."
+    tags: [dashboard, observability, infrastructure, abandoned]
+    notes: "Abandoned 2026-05-11. Superseded by 0019 (Django Pipeline Dashboard)."
 
   - id: "0007"
     title: "S3-Backed PDF Archive"
@@ -214,56 +214,56 @@ projects:
     notes: "Spec + plan approved 2026-04-22 (red-team APPROVE, 0 CRITICAL, 0 HIGH). 25 ACs. Key security: agents run with WebSearch+WebFetch only (no Bash/Read/Write), per-agent subprocess timeout, 2MB output cap, json.dumps() for input generation."
 
   - id: "0009"
-    title: "Address Verification Pass"
+    title: "Address Verification Pass (abandoned)"
     summary: "Second-pass agent fetches the chosen homepage (and about/contact pages) for each resolved org and confirms the street address matches. Detects wrong-state same-name collisions (Columbus TX hospital vs Columbus NE) that the URL-discovery pass misses."
-    status: conceived
+    status: abandoned
     priority: high
     files:
       spec: locard/specs/0009-address-verification.md
       plan: null
       review: null
     dependencies: ["0008"]
-    tags: [resolver, verification, agents, data-quality]
-    notes: "Gap identified 2026-04-21 during Haiku agent eval — search snippets alone can't disambiguate same-name orgs in different states."
+    tags: [resolver, verification, agents, data-quality, abandoned]
+    notes: "Abandoned 2026-05-11. National resolve complete (89K orgs); Layer 1 corpus assembly done — focus shifting to vocabulary extraction and analysis layers."
 
   - id: "0010"
-    title: "Tiered Model Strategy"
+    title: "Tiered Model Strategy (abandoned)"
     summary: "Default URL-resolution agents to Haiku for the easy 80%. Route only low-confidence / null / ambiguous results to Opus for a second look. Optional cross-model voting (Haiku + Qwen API) flags disagreements for manual review. Keeps per-org cost low while preserving accuracy."
-    status: conceived
+    status: abandoned
     priority: medium
     files:
       spec: locard/specs/0010-tiered-model-strategy.md
       plan: null
       review: null
     dependencies: ["0008"]
-    tags: [resolver, cost-optimization, routing]
-    notes: "Depends on 0008 (batch runner). Quantitative data from 2026-04-21 run: Haiku matched Opus on 90/100 TX orgs — strong evidence Haiku-first is viable."
+    tags: [resolver, cost-optimization, routing, abandoned]
+    notes: "Abandoned 2026-05-11. Gemma self-hosted resolver (0018) made agent-based tiering moot. National resolve complete."
 
   - id: "0011"
-    title: "Operational Controls"
+    title: "Operational Controls (abandoned)"
     summary: "Hard budget cap per batch run (orgs + tokens). EIN cache so re-runs use cached agent results unless explicitly invalidated. Runtime warnings when approaching quota limits."
-    status: conceived
+    status: abandoned
     priority: medium
     files:
       spec: locard/specs/0011-operational-controls.md
       plan: null
       review: null
     dependencies: ["0008"]
-    tags: [operations, cost-control, caching]
-    notes: "Protects Claude subscription budget across weekly batches."
+    tags: [operations, cost-control, caching, abandoned]
+    notes: "Abandoned 2026-05-11. Agent batch runner (0008) superseded by Gemma pipeline (0018). Budget controls for agent-based resolution no longer needed."
 
   - id: "0012"
-    title: "Agent Runner Abstraction"
+    title: "Agent Runner Abstraction (abandoned)"
     summary: "Pluggable interface so Claude Code agents, OpenAI Swarm, or local models can be swapped as the URL-resolution backend without rewriting the pipeline. Stable input/output contract; backends register via entry-point or config."
-    status: conceived
+    status: abandoned
     priority: low
     files:
       spec: locard/specs/0012-agent-runner-abstraction.md
       plan: null
       review: null
     dependencies: ["0008", "0010"]
-    tags: [architecture, future-proofing]
-    notes: "Do after 0008+0010 give concrete contracts to abstract. Premature now."
+    tags: [architecture, future-proofing, abandoned]
+    notes: "Abandoned 2026-05-11. Agent-based resolution replaced by Gemma pipeline (0018). Abstraction over a retired approach has no value."
 
   - id: "0013"
     title: "SQLite → PostgreSQL (RDS) Dual-Write Migration"
@@ -279,43 +279,43 @@ projects:
     notes: "Timing: start in parallel with 0006 (dashboard). Option A (dual-write) chosen 2026-04-22 over clean-cutover and sync-job alternatives because corpus build is continuous (no natural cutoff) and extraction-app (0014) needs to begin before corpus is 'complete.' Crawler writes stay fast on SQLite; RDS receives every write via async queue. After 2-4 weeks of proven dual-write stability, reads flip to RDS and SQLite writes eventually retire. All new specs (0006+) must use SQLAlchemy so dual-write is a config change, not a rewrite. Marked integrated 2026-04-23 by human."
 
   - id: "0014"
-    title: "PDF Full-Page Text Extraction for Training"
+    title: "PDF Full-Page Text Extraction for Training (abandoned)"
     summary: "Reads PDFs from s3://bucket/pdfs/, runs full-document text extraction (pypdf + OCR fallback via Tesseract or equivalent for scanned docs), produces structured JSON per PDF at s3://bucket/extractions/v1/. Output feeds the interview-training model pipeline. Versioned prefix (v1/) so future extractions don't clobber prior runs."
-    status: conceived
+    status: abandoned
     priority: medium
     files:
       spec: locard/specs/0014-pdf-extraction-training.md
       plan: null
       review: null
     dependencies: ["0007", "0013"]
-    tags: [extraction, training-data, future-app]
-    notes: "Follow-on app. Depends on 0007 for S3 PDF archive and 0013 for RDS. Structured extraction output must preserve sha256 lineage from source PDF."
+    tags: [extraction, training-data, future-app, abandoned]
+    notes: "Abandoned 2026-05-11. Extraction approach will be revisited as part of vocabulary extraction pipeline (Layer 2) — likely with different scope and tooling than originally conceived."
 
   - id: "0015"
-    title: "Report Gallery UI"
+    title: "Report Gallery UI (abandoned)"
     summary: "Web gallery app for browsing the corpus. Reads metadata from RDS (org name, year, state, NTEE, classification), displays thumbnails from s3://bucket/thumbnails/, full PDFs via presigned S3 URLs. Supports search/filter. Multi-user, read-only, private (auth required)."
-    status: conceived
+    status: abandoned
     priority: medium
     files:
       spec: locard/specs/0015-report-gallery.md
       plan: null
       review: null
     dependencies: ["0007", "0013", "0016"]
-    tags: [gallery, ui, future-app]
-    notes: "Follow-on app. Depends on 0013 (RDS for multi-user reads), 0007 (S3 pdfs), 0016 (thumbnails)."
+    tags: [gallery, ui, future-app, abandoned]
+    notes: "Abandoned 2026-05-11. Corpus browsing may resurface as part of the lexicon/interviewer product but will be scoped differently."
 
   - id: "0016"
-    title: "PDF Thumbnail Generator"
+    title: "PDF Thumbnail Generator (abandoned)"
     summary: "Batch job that reads PDFs from s3://bucket/pdfs/, renders the first page as a JPEG, uploads to s3://bucket/thumbnails/{sha256}.jpg. Runs either post-crawl or on-demand via lambda. Feeds the gallery UI (0015)."
-    status: conceived
+    status: abandoned
     priority: low
     files:
       spec: locard/specs/0016-pdf-thumbnail-generator.md
       plan: null
       review: null
     dependencies: ["0007"]
-    tags: [rendering, gallery-support, future-app]
-    notes: "Needed by 0015 but independent of it. Could run as a Lambda triggered by S3 PUT events."
+    tags: [rendering, gallery-support, future-app, abandoned]
+    notes: "Abandoned 2026-05-11 alongside 0015 (Report Gallery UI)."
 
   - id: "0017"
     title: "Retire SQLite — Use PostgreSQL Directly"
@@ -346,7 +346,7 @@ projects:
   - id: "0019"
     title: "Pipeline Dashboard & Control Center (Django)"
     summary: "Django web app serving as operations cockpit: real-time pipeline progress (seed, resolver, crawler, classifier), process controls (start/stop/configure with model selection), and foundation for future report interviewer. Replaces read-only 0006 concept. Supersedes 0006."
-    status: committed
+    status: integrated
     priority: high
     files:
       spec: locard/specs/0019-pipeline-dashboard.md
@@ -354,7 +354,7 @@ projects:
       review: null
     dependencies: ["0013", "0017"]
     tags: [dashboard, django, operations, interviewer-foundation]
-    notes: "Supersedes 0006 (read-only FastAPI dashboard, never specced). Scope: Phase 1 = pipeline dashboard + controls, Phase 2 = report data extraction viewer, Phase 3 = interviewer MVP. Spec approved 2026-04-26 after 4 review rounds. Plan approved 2026-04-27 after 2 review rounds. PR #19 merged 2026-04-27. 99 tests, 51 files, +3876 lines. Needs infra setup before deploy: lava_dashboard schema, dashboard DB role, SSM creds."
+    notes: "Supersedes 0006 (read-only FastAPI dashboard, never specced). Scope: Phase 1 = pipeline dashboard + controls, Phase 2 = report data extraction viewer, Phase 3 = interviewer MVP. Spec approved 2026-04-26 after 4 review rounds. Plan approved 2026-04-27 after 2 review rounds. PR #19 merged 2026-04-27. 99 tests, 51 files, +3876 lines. Marked integrated 2026-05-11."
 
   - id: "0020"
     title: "Data-driven crawler taxonomy & precision improvements"
@@ -394,7 +394,6 @@ projects:
     dependencies: ["0021"]
     tags: [crawler, fallback, wayback, cloudflare, national-scale, data-recovery]
     notes: "Motivated by Spec 0021 100-org validation 2026-04-25 finding: 17% transient failure rate, with 5/5 sampled failures showing Cloudflare bot-challenge responses. Wayback CDX fallback recovers ~77% of blocked orgs. PR #17 merged 2026-04-25 after builder + architect review. 3 production bugs fixed post-merge (commit d8c744b 2026-04-26): CHECK constraint migration 006, _pick_discovered_via wayback preservation, wayback-cdx body-cap registration. 100-org validation: 95% coverage (up from 83%), 17 Wayback recoveries / 22 attempts, 707 PDFs total. Migrations 004-006 applied to RDS. 500-org validation in progress 2026-04-26."
-```
 
   - id: "0023"
     title: "Classifier Expansion - Full Taxonomy Labels"
@@ -412,7 +411,7 @@ projects:
   - id: "0024"
     title: "Rename reports table to corpus"
     summary: "Rename lava_impact.reports to lava_impact.corpus and lava_impact.reports_public to lava_impact.corpus_public across RDS, pipeline code, dashboard, and tests. Python module lavandula/reports/ and user-facing URL paths remain unchanged."
-    status: committed
+    status: integrated
     priority: medium
     files:
       spec: locard/specs/0024-rename-reports-to-corpus.md
@@ -420,12 +419,12 @@ projects:
       review: null
     dependencies: ["0017", "0019"]
     tags: [database, naming, migration, cleanup]
-    notes: "Requested 2026-04-27. Single operator on DB, controlled migration window. Plan approved 2026-04-27. PR #20 merged 2026-04-27. Awaiting operator: RDS migration via PGAdmin."
+    notes: "Requested 2026-04-27. Single operator on DB, controlled migration window. Plan approved 2026-04-27. PR #20 merged 2026-04-27. Marked integrated 2026-05-11."
 
   - id: "0025"
     title: "Definition-Driven Classifier"
     summary: "Decouple classifier behavior from code via swappable definition files. Each definition file specifies categories, descriptions, examples, and counter-examples that the classifier prompt consumes at runtime. Enables PM-level taxonomy iteration without code changes and reuse of the classifier engine for different document types (corpus PDFs, scraped HTML, etc.)."
-    status: committed
+    status: integrated
     priority: high
     files:
       spec: locard/specs/0025-definition-driven-classifier.md
@@ -433,12 +432,12 @@ projects:
       review: null
     dependencies: ["0023"]
     tags: [classifier, taxonomy, data-quality, architecture]
-    notes: "Motivated by 2026-04-28 analysis: 30%+ junk rate in corpus, 'other' bucket contains misclassified real reports (endowment reports, financial statements, research reports). Current classifier prompt has zero category definitions — LLM guesses what 'annual' vs 'impact' vs 'other' means. Spec 0023 added material_type columns but the V1 prompt was never replaced. Builder spawned 2026-04-29. PR #21 merged 2026-04-29."
+    notes: "Motivated by 2026-04-28 analysis: 30%+ junk rate in corpus, 'other' bucket contains misclassified real reports (endowment reports, financial statements, research reports). Current classifier prompt has zero category definitions — LLM guesses what 'annual' vs 'impact' vs 'other' means. Spec 0023 added material_type columns but the V1 prompt was never replaced. Builder spawned 2026-04-29. PR #21 merged 2026-04-29. Marked integrated 2026-05-11."
 
   - id: "0026"
     title: "990 Leadership & Contractor Intelligence"
     summary: "Extract named individuals (officers, directors, key employees, top contractors) from IRS 990 XML filings (TEOS bulk download) into a people table keyed by EIN+object_id. Enables pre-call briefings with CEO tenure, board composition, compensation levels, and existing vendor relationships."
-    status: committed
+    status: integrated
     priority: high
     files:
       spec: locard/specs/0026-990-leadership-intelligence.md
@@ -446,12 +445,12 @@ projects:
       review: null
     dependencies: ["0001"]
     tags: [data-acquisition, enrichment, nonprofit, lavandula-sales, 990]
-    notes: "Motivated by 2026-04-30 conversation about 990 Part VII data for prospect intelligence. Source: IRS TEOS bulk XML (not frozen AWS S3 bucket). Table name: people. Spec completed 2026-04-30 after 2 consultation rounds (spec-review + red-team, both Codex + Claude). 54 ACs. PR #22 merged 2026-04-30. Awaiting operator: migration 010 via PGAdmin + live validation."
+    notes: "Motivated by 2026-04-30 conversation about 990 Part VII data for prospect intelligence. Source: IRS TEOS bulk XML (not frozen AWS S3 bucket). Table name: people. Spec completed 2026-04-30 after 2 consultation rounds (spec-review + red-team, both Codex + Claude). 54 ACs. PR #22 merged 2026-04-30. Marked integrated 2026-05-11."
 
   - id: "0027"
     title: "990 Dashboard: Org Detail View & Pipeline Controls"
     summary: "Enhance the dashboard org detail page with 990 leadership data (officers, directors, compensation, Schedule J) and add two pipeline control forms for TEOS Index Download and 990 XML Parse/Import."
-    status: committed
+    status: integrated
     priority: high
     files:
       spec: locard/specs/0027-990-dashboard-org-detail.md
@@ -459,7 +458,7 @@ projects:
       review: null
     dependencies: ["0019", "0026"]
     tags: [dashboard, django, ui, 990, pipeline-controls]
-    notes: "Spec approved 2026-05-01. Plan approved 2026-05-01 after Codex + Claude plan-review + red-team. PR #23 merged 2026-05-01 after 2 integration review rounds (Codex + Claude). 47 ACs, 19 files, 74 tests. Awaiting operator: Django migration + live validation."
+    notes: "Spec approved 2026-05-01. Plan approved 2026-05-01 after Codex + Claude plan-review + red-team. PR #23 merged 2026-05-01 after 2 integration review rounds (Codex + Claude). 47 ACs, 19 files, 74 tests. Marked integrated 2026-05-11."
 
   - id: "0028"
     title: "Contractor Intelligence Resolver"
@@ -503,7 +502,7 @@ projects:
   - id: "0031"
     title: "Serpex Search Adapter with Multi-Engine & Phone Enrichment"
     summary: "Replace direct Brave Search API calls with Serpex proxy, adding a search adapter with configurable engine selection (brave, google, bing) and multi-engine mode that merges/dedupes candidates for higher recall. Includes phone number enrichment pass that extracts org phone numbers from search snippets and website contact pages. 6-17x cost reduction vs Brave direct."
-    status: committed
+    status: integrated
     priority: high
     files:
       spec: locard/specs/0031-serpex-search-adapter.md
@@ -511,12 +510,12 @@ projects:
       review: null
     dependencies: ["0018"]
     tags: [resolver, search, cost-optimization, serpex, multi-engine]
-    notes: "Motivated by experiment 0001: Serpex matched Brave on easy cases (90% overlap), slightly outperformed on hard cases (5 wins vs 2 losses in manual review of 15 zero-overlap samples). Multi-engine mode addresses the 47% zero-overlap on hard cases — different engines surface different candidates."
+    notes: "Motivated by experiment 0001: Serpex matched Brave on easy cases (90% overlap), slightly outperformed on hard cases (5 wins vs 2 losses in manual review of 15 zero-overlap samples). Multi-engine mode addresses the 47% zero-overlap on hard cases — different engines surface different candidates. Marked integrated 2026-05-11."
 
   - id: "0032"
     title: "Dashboard & Phase Pages for National Ingest Tracking"
     summary: "Overhaul the main dashboard into a national ingest tracker with state-by-state pipeline progress grid, and enhance resolver/classifier phase pages with recent jobs, running job config, and per-state stats — matching the seeder page pattern."
-    status: committed
+    status: integrated
     priority: high
     files:
       spec: locard/specs/0032-dashboard-national-ingest.md
@@ -524,7 +523,7 @@ projects:
       review: null
     dependencies: []
     tags: [dashboard, ui, operations, national-ingest]
-    notes: "Motivated by upcoming full US ingest. Current dashboard shows only aggregates — need per-state pipeline stage visibility to track what's done and what's not across 50 states. PR #27 merged 2026-05-03. 10 files, +502/-197. Awaiting operator: visual verification on live dashboard."
+    notes: "Motivated by upcoming full US ingest. Current dashboard shows only aggregates — need per-state pipeline stage visibility to track what's done and what's not across 50 states. PR #27 merged 2026-05-03. 10 files, +502/-197. Marked integrated 2026-05-11."
 
   - id: "0033"
     title: "Multi-Host Job Distribution & Remote Workers"
@@ -581,7 +580,7 @@ projects:
   - id: "0037"
     title: "Rename RDS Roles to Project-Prefixed Names"
     summary: "Rename app_user1/ro_user1 to research_app/research_ro on shared RDS so a second project can coexist without role-name collisions. SSM keys (rds-app-user, rds-ro-user) stay stable; only values change."
-    status: implementing
+    status: integrated
     priority: medium
     files:
       spec: locard/specs/0037-rds-role-rename.md
@@ -589,11 +588,37 @@ projects:
       review: null
     dependencies: []
     tags: [rds, iam, multi-tenant, ops]
-    notes: "Motivated by adding a second project to the shared RDS instance. Prefix decision: research (operator-confirmed 2026-05-10). Spec + plan approved 2026-05-11. Builder spawned to handle Phases 1-3 (source-tree edits, runbook+helper scripts, scratch-DB validation). Phase 4 (live cutover) is operator-only. Schemas keep lava_* names (already namespaced)."
+    notes: "Motivated by adding a second project (flipbook hosting) to the shared RDS instance. Prefix decision: research (operator-confirmed 2026-05-10). Cutover completed 2026-05-11: roles renamed in PgAdmin, SSM updated, IAM policy updated (dbuser: format, not dbuser/), services restarted and verified. Also: cloud1 split to own instance profile, stale rds-schema SSM corrected, RDS deletion protection enabled."
+  - id: "0038"
+    title: "Classifier Pipeline Rebuild"
+    summary: "Ground-up rewrite of reclassify_corpus: require extraction context (no silent fallback), real progress logging, state/EIN/org filtering, actual concurrent workers, quality gates. Replace the broken v3 pipeline with something trustworthy."
+    status: implementing
+    priority: high
+    files:
+      spec: locard/specs/0038-classifier-pipeline-rebuild.md
+      plan: locard/plans/0038-classifier-pipeline-rebuild.md
+      review: null
+    dependencies: [0035]
+    tags: [classifier, pipeline, quality, reliability]
+    notes: "Motivated by discovering the v3 classifier never used multi-page context (Spec 0035), accepted a --workers flag it ignored, logged nothing during runs, and had no way to target by state/EIN. 133 results from test run all used first_page_text fallback."
+
+  - id: "0039"
+    title: "SSM Parameter Type Optimization (KMS Cost Reduction)"
+    summary: "Convert non-sensitive SSM parameters (rds-endpoint, rds-port, rds-database, rds-schema) from SecureString to String type, eliminating unnecessary KMS Decrypt calls. Every process startup currently makes 5+ KMS calls for config values that aren't secrets. With 22+ concurrent crawlers plus Django workers, this generates ~17K KMS requests/month approaching the 20K free tier limit."
+    status: conceived
+    priority: medium
+    files:
+      spec: null
+      plan: null
+      review: null
+    dependencies: []
+    tags: [infrastructure, cost-optimization, ssm, kms, ops]
+    notes: "Discovered 2026-05-12: AWS KMS budget alert triggered at 17K/20K free tier requests. Root cause: every process startup calls get_secret() with WithDecryption=True for 5+ SSM SecureString params (rds-endpoint, rds-port, rds-database, rds-schema, plus API keys). lru_cache helps within a process but each new crawler/command/Django worker starts cold. Non-sensitive params (hostname, port, db name, schema) should be String type (no KMS). Actual secrets (API keys, django-secret-key) stay SecureString."
+```
 
 ## Next Available Number
 
-**0038** - Reserve this number for your next project
+**0040** - Reserve this number for your next project
 
 ---
 
