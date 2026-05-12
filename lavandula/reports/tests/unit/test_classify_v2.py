@@ -70,7 +70,7 @@ def test_tool_v2_schema_structure():
     assert "confidence" in props
     assert "reasoning" in props
     assert CLASSIFIER_TOOL_V2["input_schema"]["required"] == [
-        "material_type", "confidence", "reasoning"
+        "material_type", "reasoning"
     ]
 
 
@@ -261,8 +261,8 @@ def test_confidence_out_of_range_high(taxonomy):
         "confidence": 1.5,
         "reasoning": "test",
     }
-    with pytest.raises(ClassifierError, match="out of"):
-        _validate_tool_input_v2(data, taxonomy)
+    mt, mg, et, conf, reasoning = _validate_tool_input_v2(data, taxonomy)
+    assert conf is None
 
 
 def test_confidence_out_of_range_low(taxonomy):
@@ -271,8 +271,8 @@ def test_confidence_out_of_range_low(taxonomy):
         "confidence": -0.1,
         "reasoning": "test",
     }
-    with pytest.raises(ClassifierError, match="out of"):
-        _validate_tool_input_v2(data, taxonomy)
+    mt, mg, et, conf, reasoning = _validate_tool_input_v2(data, taxonomy)
+    assert conf is None
 
 
 def test_confidence_not_numeric(taxonomy):
@@ -281,8 +281,8 @@ def test_confidence_not_numeric(taxonomy):
         "confidence": "high",
         "reasoning": "test",
     }
-    with pytest.raises(ClassifierError, match="not numeric"):
-        _validate_tool_input_v2(data, taxonomy)
+    mt, mg, et, conf, reasoning = _validate_tool_input_v2(data, taxonomy)
+    assert conf is None
 
 
 # --- AC19: runtime guard — error result on invalid types ---

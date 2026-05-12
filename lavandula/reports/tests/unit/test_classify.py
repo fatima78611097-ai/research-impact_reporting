@@ -94,12 +94,12 @@ def test_ac16_1_invalid_enum_value_rejected():
 
 def test_ac16_1_confidence_clamped_to_unit_interval():
     from lavandula.reports.classify import classify_first_page
-    from lavandula.reports.classify import ClassifierError
     stub = _make_stub(
         {"classification": "annual", "confidence": 1.5, "reasoning": "x"}
     )
-    with pytest.raises((ClassifierError, ValueError)):
-        classify_first_page(first_page_text="...", client=stub)
+    result = classify_first_page(first_page_text="...", client=stub)
+    assert result.classification == "annual"
+    assert result.classification_confidence is None
 
 
 @pytest.mark.parametrize(
