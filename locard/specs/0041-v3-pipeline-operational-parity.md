@@ -221,6 +221,14 @@ For each item, the builder should manually verify on the running dashboard:
 4. Let an extract-context complete, then queue reclassify with `depends_on` set to the completed job — confirm it's accepted
 5. Run the management commands directly with `--job-id` and verify stats appear in the Job's `config_json`
 
+## Security Assumptions
+
+This system is single-operator (one authenticated user: `ronp`). All views use `LoginRequiredMixin`. There is no multi-user authorization model, no role-based access control, and no need for one. If the system ever scales to multiple operators with different privilege levels, job cancellation and queue controls would need per-user or per-role authorization. Until then, `LoginRequiredMixin` is the authorization boundary.
+
+The `next` parameter on `JobCancelView` is validated to be a relative URL (starts with `/`, not `//`) to prevent open redirect. No other redirect parameters are introduced.
+
+`config_json` contains job arguments (state codes, run tags, flags) and stats counters. It does not contain credentials, API keys, or secrets. Job arguments are validated by `param_validators.py` before being stored. The dashboard displays `config_json` contents; this is intentional and expected.
+
 ## Consultation Log
 
 ### Round 1: Spec Review (2026-05-13)
@@ -236,3 +244,10 @@ For each item, the builder should manually verify on the running dashboard:
 - Stats flush error handling underspecified → **Noted but not adopted**: single-operator system, daemon threads are fire-and-forget, swallowed exceptions are logged by the helper. Over-specifying this adds complexity without operator value.
 - AuthZ on cancel button → **Noted but not adopted**: `JobCancelView` already has `LoginRequiredMixin`. This is a single-operator system. There's one user.
 - Regression verification scope → **Noted but not adopted**: shared codepaths (`_depends_on.html`, `JobCancelView`, `check_phase_conflict`) are identified in Traps to Avoid. Specifying a formal regression test matrix for a system with no runnable tests is performative.
+
+### Round 2: Red Team Security Review (2026-05-13)
+
+**Gemini (red team)**: REQUEST_CHANGES (HIGH confidence)
+- HIGH: Job cancellation lacks granular authorization → **Documented in Security Assumptions**: single-operator system, `LoginRequiredMixin` is the authorization boundary. No RBAC needed for one user.
+- MEDIUM: `config_json` could leak sensitive data → **Documented in Security Assumptions**: config_json contains only validated job arguments and stats, never credentials or secrets.
+- LOW: Test infrastructure gap is a long-term risk → **Acknowledged**: already tracked as audit finding C3, separate from this spec.
