@@ -259,6 +259,19 @@ Tests use Django's test client and the existing test database pattern:
 
 ## Consultation Log
 
+### Round 2: Red Team Security Review (2026-05-13)
+
+**Gemini**: REQUEST_CHANGES. 0 CRITICAL, 1 HIGH, 1 MEDIUM, 1 LOW.
+
+1. **HIGH — DoS via HTMX polling**: Authenticated user could bypass 5s client-side interval and flood the endpoint.
+   - **Disposition**: Accepted risk. This is a single-operator internal dashboard. All existing HTMX partials (`dashboard_stats`, `classifier_v3_status`) use the same 5s polling pattern with no server-side rate limiting. Adding rate limiting to this one endpoint while leaving others unprotected would be inconsistent. If this becomes a concern system-wide, it should be addressed as a cross-cutting infrastructure change, not per-endpoint.
+
+2. **MEDIUM — RBAC clarity**: Should operator-only permissions gate this data?
+   - **Disposition**: Not applicable. This is a single-operator system (one user). `LoginRequiredMixin` is sufficient. Matches all existing dashboard endpoints.
+
+3. **LOW — Logging/alerting for failed jobs and slow queries**: Add alerts for grid query exceeding 3s.
+   - **Disposition**: Out of scope. The watchdog system (Spec 0036) already handles job failure alerting via SES. Query performance monitoring is an infrastructure concern, not a per-feature requirement.
+
 ### Round 1: Spec Review (2026-05-13)
 
 **Gemini**: APPROVE (HIGH confidence). No key issues.
