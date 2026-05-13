@@ -37,6 +37,26 @@ The classifier v3 pipeline has none of this. Running a national-scale reclassifi
 - Adding automated pipeline orchestration (e.g., auto-chain extract-context → reclassify → compare → promote)
 - Changing the classifier v3 dashboard page layout beyond what's needed for job queue integration
 
+## Security Context
+
+This is a **single-operator system** behind Django's `LoginRequiredMixin` authentication. The sole operator (ronp) is the only user with dashboard access. There is no multi-user, multi-tenant, or public-facing access. All job creation endpoints require authentication.
+
+Despite the single-operator context, the spec enforces defense-in-depth:
+- Server-side phase validation (allowlist)
+- Parameter validation via `COMMAND_MAP` regex patterns and type checks
+- Host validation against registered workers
+- `select_for_update()` for race-condition-safe conflict detection
+- CSRF protection via Django middleware on all POST endpoints
+- **`--where` parameter excluded from dashboard forms** (see below)
+
+### `--where` Parameter (SQL Injection Mitigation)
+
+The `reclassify` management command accepts a `--where` flag that is raw-interpolated into SQL via f-string (`filter_sql += f" AND ({where_clause})"`). This is intentionally a power-user escape hatch for ad-hoc CLI filtering.
+
+**This parameter MUST NOT be exposed through the dashboard job queue form.** The `where` key must be removed from the `COMMAND_MAP` entry for `reclassify` and from the `ReclassifyForm` class. If an operator needs a custom WHERE clause, they use the CLI directly — not the web form. The COMMAND_MAP `reclassify` entry and the StageDefinition for `reclassify` in `STAGE_REGISTRY` must both omit the `where` parameter.
+
+This does not fix the underlying SQL injection in the CLI command itself (that's out of scope — Spec 0038's code), but it removes the web-accessible attack surface.
+
 ## Current State
 
 ### What exists today
@@ -108,7 +128,9 @@ No Django migration needed — `PHASE_CHOICES` is a validation-only constraint, 
         "state": ParamSpec(type="state_code", cli_flag="--state"),
         "ein": ParamSpec(type="string", cli_flag="--ein", pattern=r"^\d{2}-\d{7}$"),
         "sample": ParamSpec(type="integer", cli_flag="--sample", min_value=1, max_value=999999),
-        "where": ParamSpec(type="string", cli_flag="--where"),
+        # NOTE: --where is deliberately EXCLUDED from the job queue form.
+        # It is raw-interpolated into SQL in reclassify_corpus.py and must
+        # remain CLI-only. See Security section.
         "dry_run": ParamSpec(type="boolean", cli_flag="--dry-run"),
         "backend": ParamSpec(type="choice", cli_flag="--backend",
                              choices=["deepseek", "claude", "gemini", "codex"]),
@@ -298,7 +320,7 @@ Handles POST from the classifier v3 dashboard forms. Instead of calling `start_p
 1. **Validates `phase`** against a server-side allowlist (`_V3_PHASES`). Rejects any phase not in the set — prevents a crafted POST from targeting an unintended stage.
 2. Validates the form (reusing existing form classes, looked up by phase from a strict mapping)
 3. Extracts `host` from POST data (worker selector, defaulting to current hostname). Host is validated by `_maybe_validate_host()` inside `create_v3_job()`.
-4. Extracts optional `depends_on` from POST data. Validated: must reference an existing pending/scheduled/running job, or is ignored.
+4. Extracts optional `depends_on` from POST data. **Validated strictly**: must reference an existing pending/scheduled/running job. Rejects with error if the referenced job doesn't exist or is in a terminal state.
 5. Calls `create_v3_job(phase, config, host, depends_on)`
 6. Redirects to classifier_v3 with success/error message
 
@@ -307,7 +329,8 @@ Handles POST from the classifier v3 dashboard forms. Instead of calling `start_p
 - Selected host offline/stale: "Host {host} is {status}"
 - Duplicate job conflict: "Active {phase} job already exists for {state}: Job #{id}"
 - Invalid form data: Django form validation errors displayed
-- `depends_on` references a terminal/nonexistent job: silently ignored (treated as no dependency)
+- `depends_on` references a nonexistent job: "Dependency job #{id} not found"
+- `depends_on` references a terminal job (completed/failed/cancelled): "Dependency job #{id} is {status} — cannot depend on a terminal job"
 
 #### 3c. Update ClassifierV3View context
 
