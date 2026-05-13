@@ -158,10 +158,11 @@ No Django migration needed — `PHASE_CHOICES` is a validation-only constraint, 
     parameters={
         "run_tag": ParamSpec(required=True, type="string", cli_flag="--run-tag",
                              pattern=r"^[a-zA-Z0-9][a-zA-Z0-9_-]*$"),
+        "state": ParamSpec(type="state_code", cli_flag="--state"),
         "show_reasoning": ParamSpec(type="boolean", cli_flag="--show-reasoning"),
     },
     predecessors=["reclassify"],
-    conflict_group="global",
+    conflict_group="per-state",
     provenance_column=None,
     retry_policy=RetryPolicy(max_attempts=1),
     resource_class="light",
@@ -183,7 +184,7 @@ No Django migration needed — `PHASE_CHOICES` is a validation-only constraint, 
                                 pattern=r"^[a-z][a-z0-9_]*$"),
     },
     predecessors=["compare-classify"],
-    conflict_group="global",
+    conflict_group="per-state",
     provenance_column=None,
     retry_policy=RetryPolicy(max_attempts=2, auto_retry=True, retryable_exit_codes=(1, 3)),
     resource_class="medium",
@@ -195,19 +196,27 @@ No Django migration needed — `PHASE_CHOICES` is a validation-only constraint, 
     parameters={
         "run_tag": ParamSpec(required=True, type="string", cli_flag="--run-tag",
                              pattern=r"^[a-zA-Z0-9][a-zA-Z0-9_-]*$"),
+        "state": ParamSpec(type="state_code", cli_flag="--state"),
         "confirm": ParamSpec(type="boolean", cli_flag="--confirm"),
     },
     predecessors=["resolve-disagree"],
-    conflict_group="global",
+    conflict_group="per-state",
     provenance_column=None,
     retry_policy=RetryPolicy(max_attempts=1),
     resource_class="light",
 ),
 ```
 
-**Conflict group rationale:**
-- `extract-context` and `reclassify`: `per-state` — these are the long-running, state-scoped operations. Multiple states can run simultaneously; same state cannot.
-- `compare-classify`, `resolve-disagree`, `promote-classify`: `global` — these are **globally exclusive** (not merely run_tag-scoped). Reason: `compare_classifications` reads all `classification_results` for a given `run_id`, `promote_classification_run` writes directly to the `corpus` table's `material_type`/`material_group`/`classification` columns. Concurrent promotes or a promote during a compare would produce inconsistent reads or lost writes. Global singleton is the correct model even if they technically operate on a single run_tag — the underlying tables are shared. Only one of these three phases may be active (pending, scheduled, or running) at a time.
+**Conflict group rationale — all phases `per-state`:**
+
+All 5 v3 phases use `per-state` conflict isolation. Multiple states can run simultaneously for any phase; the same phase + same state cannot have two active jobs.
+
+- `extract-context` and `reclassify`: Long-running, state-scoped operations. State isolation is natural — each state's orgs are independent.
+- `compare-classify`: Already supports `--state` filtering via `nonprofits_seed` join. Different states read/write disjoint `classification_results` rows.
+- `resolve-disagree`: Already supports `--state` filtering. Same disjoint-rows reasoning.
+- `promote-classify`: Needs `--state` flag added to `promote_classification_run.py` (prerequisite code change). Promotion updates `corpus` rows via JOIN on `classification_results` → `nonprofits_seed` — each state's documents belong to a single state, so per-state promotion touches disjoint rows. This is safe for concurrent execution across states.
+
+**Prerequisite**: `promote_classification_run.py` currently has no `--state` parameter. The implementation must add `--state` filtering using the same `nonprofits_seed` join pattern that `compare_classifications.py` already uses.
 
 ### Phase 2: Orchestrator Job Creation
 
@@ -215,31 +224,18 @@ No Django migration needed — `PHASE_CHOICES` is a validation-only constraint, 
 
 ```python
 _PER_STATE_PHASES = {"resolve", "classify", "enrich-phone", "seed", "crawl",
-                     "extract-context", "reclassify"}
+                     "extract-context", "reclassify", "compare-classify",
+                     "resolve-disagree", "promote-classify"}
 ```
 
-#### 2b. Classifier v3 conflict group for global phases
-
-Add a new conflict group set for the run-tag-scoped phases:
-
-```python
-_CLASSIFY_V3_GLOBAL_PHASES = {"compare-classify", "resolve-disagree", "promote-classify"}
-```
-
-These need their own conflict check: only one of these global phases can run at a time (they share the same classification_runs/classification_results tables).
-
-#### 2c. Add `create_v3_job()` factory function
+#### 2b. Add `create_v3_job()` factory function
 
 A single generic function handles all 5 v3 phases, since the pattern is identical:
 
 ```python
 def create_v3_job(phase: str, config_overrides: dict, host: str,
                   depends_on: Job | None = None) -> Job:
-    """Create a classifier v3 job.
-
-    Per-state phases (extract-context, reclassify) use state isolation.
-    Global phases (compare-classify, resolve-disagree, promote-classify) are singleton.
-    """
+    """Create a classifier v3 job. All 5 phases use per-state isolation."""
     _maybe_validate_host(host)
     V3_PHASES = {"extract-context", "reclassify", "compare-classify",
                  "resolve-disagree", "promote-classify"}
@@ -249,25 +245,18 @@ def create_v3_job(phase: str, config_overrides: dict, host: str,
     state = config_overrides.get("state") or None
 
     with transaction.atomic():
-        if phase in _PER_STATE_PHASES:
-            # Per-state conflict: block same phase + same state
-            qs = Job.objects.select_for_update().filter(
-                phase=phase, status__in=["pending", "scheduled", "running"],
-            )
-            if state:
-                qs = qs.filter(state_code=state)
-            else:
-                qs = qs.filter(state_code__isnull=True)
+        # Per-state conflict: block same phase + same state
+        qs = Job.objects.select_for_update().filter(
+            phase=phase, status__in=["pending", "scheduled", "running"],
+        )
+        if state:
+            qs = qs.filter(state_code=state)
         else:
-            # Global conflict: block any active job in the global v3 group
-            qs = Job.objects.select_for_update().filter(
-                phase__in=_CLASSIFY_V3_GLOBAL_PHASES,
-                status__in=["pending", "scheduled", "running"],
-            )
+            qs = qs.filter(state_code__isnull=True)
 
         existing = qs.first()
         if existing:
-            label = existing.state_code or "global"
+            label = existing.state_code or "nationwide"
             raise DuplicateJobError(
                 f"Active {existing.phase} job already exists for {label}: "
                 f"Job #{existing.pk}"
@@ -286,22 +275,9 @@ def create_v3_job(phase: str, config_overrides: dict, host: str,
             raise DuplicateJobError(f"Duplicate {phase} job (constraint violation)")
 ```
 
-#### 2d. Update `get_eligible_jobs()` conflict logic
+#### 2c. Update `get_eligible_jobs()` conflict logic
 
-The existing `get_eligible_jobs()` already handles `_PER_STATE_PHASES` and globally-blocked phases. Adding v3 per-state phases to `_PER_STATE_PHASES` covers extract-context and reclassify. The global v3 phases (compare-classify, resolve-disagree, promote-classify) are already handled by the generic "not in `_PER_STATE_PHASES` → global block" logic.
-
-One refinement: add `_CLASSIFY_V3_GLOBAL_PHASES` mutual exclusion to `check_phase_conflict()`:
-
-```python
-def check_phase_conflict(phase: str, state_code: str | None = None) -> bool:
-    # existing per-state logic...
-    # Add: if phase is in _CLASSIFY_V3_GLOBAL_PHASES, check all 3
-    if phase in _CLASSIFY_V3_GLOBAL_PHASES:
-        if Job.objects.filter(phase__in=_CLASSIFY_V3_GLOBAL_PHASES,
-                              status="running").exists():
-            return True
-    # ...
-```
+All 5 v3 phases are in `_PER_STATE_PHASES`, so the existing per-state conflict logic in `get_eligible_jobs()` and `check_phase_conflict()` handles them automatically — no special-case code needed. The standard behavior: for each pending job, check if another job with the same phase and same `state_code` is already running. If so, skip it; otherwise it's eligible.
 
 ### Phase 3: Dashboard Integration
 
@@ -349,7 +325,7 @@ for phase in _V3_PHASES:
     ctx[phase.replace("-", "_") + "_recent"] = recent
 ```
 
-**Multi-running display**: Per-state phases (extract-context, reclassify) can have multiple running jobs simultaneously — one per state. The dashboard must show **all** running jobs for these phases, not just `.first()`. Display as a list grouped by state code, each with its own progress bar, elapsed time, and host label. Global phases (compare, resolve-disagree, promote) show at most one running job.
+**Multi-running display**: All v3 phases use per-state isolation and can have multiple running jobs simultaneously — one per state. The dashboard must show **all** running jobs for each phase, not just `.first()`. Display as a list grouped by state code, each with its own progress bar, elapsed time, and host label.
 
 #### 3d. Update ClassifierV3StatusPartial
 
@@ -427,13 +403,13 @@ The `PipelineProcess` model is **not removed** but is no longer used by v3 views
 4. Each StageDefinition has correct `conflict_group`, `resource_class`, `retry_policy`, and `predecessors`
 
 ### Orchestrator (Phase 2)
-5. `extract-context` and `reclassify` are in `_PER_STATE_PHASES`
+5. All 5 v3 phases are in `_PER_STATE_PHASES`
 6. `create_v3_job()` creates pending jobs for all 5 phases
 7. `create_v3_job()` rejects duplicate per-state jobs (same phase + same state active)
-8. `create_v3_job()` rejects when any `_CLASSIFY_V3_GLOBAL_PHASES` job is active (for global phases)
+8. `create_v3_job()` allows different states for the same phase concurrently
 9. `create_v3_job()` validates host against active workers
-10. `check_phase_conflict()` returns True when a global v3 phase conflicts with another global v3 phase
-11. `get_eligible_jobs()` correctly handles v3 per-state and global conflict groups
+10. `check_phase_conflict()` handles v3 phases using standard per-state logic
+11. `get_eligible_jobs()` correctly dispatches v3 jobs with per-state conflict isolation
 12. `build_argv()` produces correct command lines for all 5 v3 phases (already works via existing COMMAND_MAP)
 
 ### Dashboard (Phase 3)
@@ -447,9 +423,10 @@ The `PipelineProcess` model is **not removed** but is no longer used by v3 views
 
 ### Integration (Phase 4)
 20. State-isolated jobs: Can queue extract-context for TX and CA simultaneously — both dispatch and run concurrently
-21. Global conflict: Cannot queue compare-classify while resolve-disagree is running
-22. Multi-host: Can target a reclassify job at cloud1 while extract-context runs on cloud2
-23. Dependency chain: Can queue reclassify with depends_on pointing to an extract-context job — reclassify waits until extract-context completes
+21. State-isolated jobs: Can queue compare-classify for TX and CA simultaneously — both run concurrently on disjoint data
+22. Per-state conflict: Cannot queue two promote-classify jobs for the same state
+23. Multi-host: Can target a reclassify job at cloud1 while extract-context runs on cloud2
+24. Dependency chain: Can queue reclassify with depends_on pointing to an extract-context job — reclassify waits until extract-context completes
 
 ### Backward Compatibility (Phase 5)
 24. Existing PipelineProcess rows remain in DB but are no longer polled by v3 views
@@ -458,8 +435,8 @@ The `PipelineProcess` model is **not removed** but is no longer used by v3 views
 
 ## Traps to Avoid
 
-1. **Don't change the management commands**: The underlying `reclassify_corpus`, `extract_classification_context`, etc. commands are already correct (Spec 0038). This spec only changes how they're dispatched.
-2. **Don't add new conflict groups to `validate_registry()`**: The existing `per-state` and `global` values are sufficient. The `_CLASSIFY_V3_GLOBAL_PHASES` mutual exclusion is handled in the orchestrator, not the registry validator.
+1. **Don't change management commands unnecessarily**: The underlying commands are correct (Spec 0038). The one exception is `promote_classification_run.py`, which needs a `--state` flag added to support per-state isolation. All other commands already have `--state` support.
+2. **Don't add new conflict groups to `validate_registry()`**: The existing `per-state` and `global` values are sufficient. All v3 phases use the standard `per-state` conflict model.
 3. **Don't forget the `--run-tag` coupling**: When queuing reclassify → compare → resolve-disagree → promote as a dependency chain, all jobs must share the same `run_tag` config value. The UI should make this clear (perhaps pre-fill from the upstream job's config).
 4. **Don't break the scheduler daemon**: The scheduler already calls `get_eligible_jobs()` and `build_argv()`. New phases just work if conflict groups are correct.
 5. **PipelineProcess ghost processes**: Before switching the v3 page from PipelineProcess to Job queries, clean up stale PipelineProcess rows using the PID-liveness-checked script (Phase 5b). A running PipelineProcess would still be checked by `check_phase_conflict()` — clear them.
@@ -468,12 +445,12 @@ The `PipelineProcess` model is **not removed** but is no longer used by v3 views
 
 ## Testing Requirements
 
-- **Unit tests**: `create_v3_job()` conflict detection for per-state and global phases, parameter validation, host validation
+- **Unit tests**: `create_v3_job()` per-state conflict detection for all 5 phases, parameter validation, host validation
 - **Unit tests**: `create_v3_job()` rejects when `scheduled` job exists (not just `pending`/`running`)
+- **Unit tests**: `create_v3_job()` allows same phase for different states concurrently (e.g., promote-classify TX + CA)
 - **Unit tests**: `create_v3_job()` concurrent enqueue race (two threads creating same phase+state simultaneously — one succeeds, one raises `DuplicateJobError`)
 - **Unit tests**: `STAGE_REGISTRY` validation passes, all entries have correct types
-- **Unit tests**: `get_eligible_jobs()` returns v3 jobs when eligible, excludes when conflicted
-- **Unit tests**: `get_eligible_jobs()` excludes compare-classify when resolve-disagree is running (cross-phase global exclusion)
+- **Unit tests**: `get_eligible_jobs()` returns v3 jobs when eligible, excludes when same phase+state conflicted
 - **Unit tests**: `ClassifierV3JobCreateView` rejects POST with phase not in `_V3_PHASES`
 - **Unit tests**: `ClassifierV3JobCreateView` rejects POST with invalid `depends_on` (nonexistent, terminal)
 - **Integration tests**: Full form POST → job creation → job appears in list
