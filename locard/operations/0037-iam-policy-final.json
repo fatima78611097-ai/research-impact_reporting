@@ -6,8 +6,8 @@
       "Effect": "Allow",
       "Action": "rds-db:connect",
       "Resource": [
-        "arn:aws:rds-db:us-east-1:ACCT:dbuser/DB-RES-ID/research_app",
-        "arn:aws:rds-db:us-east-1:ACCT:dbuser/DB-RES-ID/research_ro"
+        "arn:aws:rds-db:us-east-1:ACCT:dbuser:DB-RES-ID/research_app",
+        "arn:aws:rds-db:us-east-1:ACCT:dbuser:DB-RES-ID/research_ro"
       ]
     }
   ]
