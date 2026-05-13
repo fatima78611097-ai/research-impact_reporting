@@ -8,6 +8,9 @@
 <!-- Auto-polling status block -->
 <div hx-get="{% url 'classifier_v3_status' %}" hx-trigger="load, every 5s" hx-swap="innerHTML"></div>
 
+<!-- State progress grid -->
+<div hx-get="{% url 'classifier_v3_state_grid' %}" hx-trigger="load, every 5s" hx-swap="innerHTML"></div>
+
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
   <!-- Step 1: Extract Context -->

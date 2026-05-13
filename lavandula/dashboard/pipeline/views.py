@@ -3,7 +3,7 @@ import socket
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import models
-from django.db.models import Count, Q
+from django.db.models import Count, Max, Q
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
@@ -836,6 +836,118 @@ class ClassifierV3StatusPartial(HtmxLoginRequiredMixin, TemplateView):
         ctx["steps"] = steps
         ctx["runs"] = runs
         ctx["recent_logs"] = _scan_v3_logs(limit=10)
+        return ctx
+
+
+_PHASE_LIST = [
+    ("extract-context", "extracted", True),
+    ("reclassify", "reclassified", True),
+    ("compare-classify", None, False),
+    ("resolve-disagree", None, False),
+    ("promote-classify", "promoted", True),
+]
+
+
+def _v3_state_grid():
+    from django.db import connections
+
+    with connections["pipeline"].cursor() as cur:
+        cur.execute("""
+            SELECT
+                s.state,
+                COUNT(DISTINCT c.content_sha256) AS total_docs,
+                COUNT(DISTINCT cc.content_sha256) AS extracted,
+                COUNT(DISTINCT cr.content_sha256) AS reclassified,
+                COUNT(DISTINCT CASE WHEN c.v3_material_type IS NOT NULL
+                      THEN c.content_sha256 END) AS promoted
+            FROM nonprofits_seed s
+            LEFT JOIN corpus c
+                ON s.ein = c.source_org_ein AND c.content_type = 'application/pdf'
+            LEFT JOIN classification_context cc
+                ON c.content_sha256 = cc.content_sha256
+            LEFT JOIN classification_results cr
+                ON c.content_sha256 = cr.content_sha256
+                AND cr.run_id = (SELECT MAX(id) FROM classification_runs
+                                 WHERE finished_at IS NOT NULL)
+            GROUP BY s.state
+            ORDER BY s.state
+        """)
+        columns = [col[0] for col in cur.description]
+        state_rows = [dict(zip(columns, row)) for row in cur.fetchall()]
+
+    latest_per_phase_state = (
+        Job.objects
+        .filter(phase__in=_V3_PHASES)
+        .exclude(status__in=["pending", "cancelled"])
+        .values("phase", "state_code")
+        .annotate(latest_id=Max("id"))
+    )
+    job_ids = [e["latest_id"] for e in latest_per_phase_state]
+    jobs = Job.objects.filter(pk__in=job_ids).values("id", "phase", "state_code", "status")
+
+    state_job_map = {}
+    nationwide_job_map = {}
+    for j in jobs:
+        if j["state_code"] is None:
+            nationwide_job_map[j["phase"]] = j["status"]
+        else:
+            state_job_map[(j["phase"], j["state_code"])] = j["status"]
+
+    for state_row in state_rows:
+        cells = []
+        for phase, doc_key, is_pct in _PHASE_LIST:
+            state_specific = state_job_map.get((phase, state_row["state"]))
+            nationwide = nationwide_job_map.get(phase)
+            job_status = state_specific if state_specific is not None else nationwide
+
+            if job_status == "running":
+                cells.append({"status": "running"})
+            elif job_status == "failed":
+                cells.append({"status": "failed"})
+            elif is_pct:
+                total = state_row["total_docs"]
+                done = state_row.get(doc_key, 0)
+                if total == 0:
+                    cells.append({"status": "none"})
+                else:
+                    pct = round(done / total * 100)
+                    if pct >= 100:
+                        cells.append({"status": "complete", "pct": 100})
+                    elif pct > 0:
+                        cells.append({"status": "partial", "pct": pct})
+                    else:
+                        cells.append({"status": "none"})
+            else:
+                if job_status == "completed":
+                    cells.append({"status": "complete"})
+                else:
+                    cells.append({"status": "none"})
+        state_row["cells"] = cells
+
+    def _action_score(row):
+        statuses = [c["status"] for c in row["cells"]]
+        if "failed" in statuses:
+            return 0
+        if "running" in statuses:
+            return 1
+        has_progress = any(s in ("complete", "partial") for s in statuses)
+        has_none = any(s == "none" for s in statuses)
+        if has_progress and has_none:
+            return 2
+        if has_progress:
+            return 3
+        return 4
+
+    state_rows.sort(key=lambda r: (_action_score(r), -r["total_docs"]))
+    return {"grid_rows": state_rows}
+
+
+class ClassifierV3StateGridPartial(HtmxLoginRequiredMixin, TemplateView):
+    template_name = "pipeline/partials/classifier_v3_state_grid.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx.update(_v3_state_grid())
         return ctx
 
 

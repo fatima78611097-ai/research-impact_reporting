@@ -15,7 +15,9 @@ _UNMANAGED_TABLES = [
             resolver_confidence REAL,
             resolver_method TEXT,
             resolver_reason TEXT,
-            resolver_updated_at TEXT
+            resolver_updated_at TEXT,
+            phone TEXT,
+            phone_source TEXT
         )
     """,
     """
@@ -31,7 +33,9 @@ _UNMANAGED_TABLES = [
             file_size_bytes INTEGER NOT NULL,
             page_count INTEGER,
             report_year INTEGER,
-            first_page_text TEXT
+            first_page_text TEXT,
+            content_type TEXT,
+            v3_material_type TEXT
         )
     """,
     """
@@ -90,6 +94,28 @@ _UNMANAGED_TABLES = [
             is_former INTEGER DEFAULT 0,
             extracted_at TEXT,
             run_id TEXT
+        )
+    """,
+    """
+        CREATE TABLE IF NOT EXISTS classification_context (
+            content_sha256 TEXT PRIMARY KEY,
+            extraction_method TEXT
+        )
+    """,
+    """
+        CREATE TABLE IF NOT EXISTS classification_runs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            run_tag TEXT,
+            started_at TEXT,
+            finished_at TEXT
+        )
+    """,
+    """
+        CREATE TABLE IF NOT EXISTS classification_results (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            content_sha256 TEXT NOT NULL,
+            run_id INTEGER NOT NULL,
+            material_type TEXT
         )
     """,
 ]
