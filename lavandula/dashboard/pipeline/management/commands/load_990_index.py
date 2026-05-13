@@ -138,6 +138,8 @@ class Command(BaseCommand):
             default=None,
             help="Only insert/update rows matching this EIN",
         )
+        parser.add_argument("--job-id", type=int, default=None,
+                            help="Existing Job row (set by orchestrator)")
 
     def handle(self, *args, **options):
         current_year = datetime.date.today().year
@@ -162,14 +164,18 @@ class Command(BaseCommand):
 
         engine = make_app_engine()
 
-        job = Job.objects.create(
-            phase="990-index",
-            status="running",
-            host=platform.node(),
-            pid=os.getpid(),
-            started_at=timezone.now(),
-            config_json={"years": years, "ein": ein_filter},
-        )
+        orchestrator_job_id = options.get("job_id")
+        if orchestrator_job_id:
+            job = Job.objects.get(pk=orchestrator_job_id)
+        else:
+            job = Job.objects.create(
+                phase="990-index",
+                status="running",
+                host=platform.node(),
+                pid=os.getpid(),
+                started_at=timezone.now(),
+                config_json={"years": years, "ein": ein_filter},
+            )
 
         lock_conn = engine.connect()
         lock_conn.execute(

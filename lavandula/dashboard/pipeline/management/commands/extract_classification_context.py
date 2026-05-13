@@ -12,6 +12,7 @@ import hashlib
 import logging
 import os
 import queue
+import socket
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -51,6 +52,8 @@ class Command(BaseCommand):
                             help="Concurrent S3 download threads")
         parser.add_argument("--extract-workers", type=int, default=4,
                             help="Concurrent extraction workers")
+        parser.add_argument("--job-id", type=int, default=None,
+                            help="Existing Job row (set by orchestrator)")
 
     def handle(self, *args, **options):
         engine = make_app_engine()
@@ -61,6 +64,7 @@ class Command(BaseCommand):
 
         state = options.get("state")
         ein = options.get("ein")
+        self._orchestrator_job_id = options.get("job_id")
 
         self._lock_conn = engine.connect()
         try:
@@ -355,6 +359,8 @@ class Command(BaseCommand):
                 ), row)
 
     def _create_job(self, engine, *, state=None, ein=None):
+        if self._orchestrator_job_id:
+            return self._orchestrator_job_id
         from pipeline.models import Job
         config = {}
         if state:
@@ -366,6 +372,8 @@ class Command(BaseCommand):
             status="running",
             config_json=config,
             started_at=timezone.now(),
+            host=socket.gethostname(),
+            pid=os.getpid(),
         )
         return job.id
 

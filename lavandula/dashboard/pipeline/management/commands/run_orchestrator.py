@@ -244,6 +244,8 @@ class Command(BaseCommand):
             create_job_event(job, "failed", {"reason": f"Command build error: {exc}"})
             return
 
+        argv += ["--job-id", str(job.pk)]
+
         state_label = job.state_code or "global"
         ts = timezone.now().strftime("%Y%m%d_%H%M%S")
         log_path = LOG_DIR / f"{job.phase}_{state_label}_{ts}_{job.pk}.log"
