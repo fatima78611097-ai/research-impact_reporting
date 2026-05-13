@@ -205,7 +205,10 @@ class Command(BaseCommand):
 
         for job, worker in placements:
             if worker.hostname != self.hostname:
-                continue
+                if job.host == self.hostname:
+                    pass  # honour the user's explicit host choice
+                else:
+                    continue
 
             if check_phase_conflict(job.phase, job.state_code):
                 reason = f"Phase conflict: {job.phase} already running"
