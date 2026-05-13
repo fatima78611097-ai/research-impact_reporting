@@ -40,7 +40,11 @@ ORDER BY s.state
 
 Use `connections["default"]` (not `connections["pipeline"]`) — this query hits `lava_corpus` schema tables directly, same as `_dashboard_stats()`.
 
-**Query 2** — ORM query for job status:
+**Query 2** — ORM query for job status.
+
+The authoritative job per `(phase, state_code)` is the one with the highest `id`. Django's auto-incrementing PK is monotonically increasing and always matches `created_at` ordering (both set at INSERT time), so `Max("id")` is equivalent to "most recent by created_at" but avoids ties. The spec says `created_at DESC`; `Max("id")` is the correct implementation.
+
+Build two maps: one for state-specific jobs, one for nationwide jobs:
 
 ```python
 from django.db.models import Max
@@ -54,10 +58,22 @@ latest_per_phase_state = (
 )
 job_ids = [e["latest_id"] for e in latest_per_phase_state]
 jobs = Job.objects.filter(pk__in=job_ids).values("id", "phase", "state_code", "status")
-job_map = {(j["phase"], j["state_code"]): j["status"] for j in jobs}
+
+# Separate state-specific and nationwide
+state_job_map = {}   # (phase, state_code) -> status, where state_code is NOT None
+nationwide_job_map = {}  # phase -> status
+for j in jobs:
+    if j["state_code"] is None:
+        nationwide_job_map[j["phase"]] = j["status"]
+    else:
+        state_job_map[(j["phase"], j["state_code"])] = j["status"]
 ```
 
-**Merge logic** — For each state row from Query 1:
+**Merge logic** — Explicit precedence: state-specific job always wins over nationwide.
+
+For each state row, resolve each cell in two steps:
+1. **Select authoritative status**: Use state-specific if it exists, else nationwide, else None.
+2. **Map to cell status** using the spec's precedence rules.
 
 ```python
 PHASE_LIST = [
@@ -71,14 +87,16 @@ PHASE_LIST = [
 for state_row in state_rows:
     cells = []
     for phase, doc_key, is_pct in PHASE_LIST:
-        # Check state-specific job first, then nationwide fallback
-        job_status = job_map.get((phase, state_row["state"]))
-        nationwide_status = job_map.get((phase, None))
-        effective_status = job_status or nationwide_status
+        # Step 1: Select authoritative job status
+        # State-specific ALWAYS overrides nationwide, regardless of creation time
+        state_specific = state_job_map.get((phase, state_row["state"]))
+        nationwide = nationwide_job_map.get(phase)
+        job_status = state_specific if state_specific is not None else nationwide
 
-        if effective_status == "running":
+        # Step 2: Map to cell status (precedence: running > failed > complete > partial > none)
+        if job_status == "running":
             cells.append({"status": "running"})
-        elif job_status == "failed" or (job_status is None and nationwide_status == "failed"):
+        elif job_status == "failed":
             cells.append({"status": "failed"})
         elif is_pct:
             total = state_row["total_docs"]
@@ -94,8 +112,8 @@ for state_row in state_rows:
                 else:
                     cells.append({"status": "none"})
         else:
-            # Job-based step
-            if effective_status == "completed":
+            # Job-based step: only complete or none
+            if job_status == "completed":
                 cells.append({"status": "complete"})
             else:
                 cells.append({"status": "none"})
@@ -215,22 +233,45 @@ Add immediately after the existing status auto-polling div (line 9):
 
 **File**: `lavandula/dashboard/pipeline/tests/test_v3_state_grid.py` (new)
 
-Use Django's `TestCase` with the test database. Tests need to create `NonprofitSeed` and `Job` model instances. For raw SQL tables (`classification_context`, `classification_results`, `classification_runs`, `corpus`), use Django's cursor to insert test rows directly.
+### Test data strategy
 
-### Test cases (from spec):
+The test database uses the same `lava_corpus` schema as production (created by Django migrations + RDS migration SQL). Tests follow the existing pattern in `test_v3_job_queue.py`:
 
-1. `test_zero_doc_state` — Seed state with no corpus → all cells `none`
-2. `test_partial_extraction` — 10 PDFs, 5 context rows → extract `50%`
-3. `test_complete_extraction` — All PDFs have context → extract `100%`
-4. `test_running_job_overlay` — Running job overrides percentage → `running`
-5. `test_failed_job_overlay` — Failed job → `failed`
-6. `test_nationwide_fallback` — Running nationwide job, no state-specific → `running`
+- **ORM-managed tables** (`NonprofitSeed`, `Job`): Create via Django ORM
+- **Raw SQL tables** (`corpus`, `classification_context`, `classification_results`, `classification_runs`): Insert via `connections["default"].cursor()` with explicit `lava_corpus.` schema prefix, cleaned up in `tearDown`
+
+Each test calls `_v3_state_grid()` directly (unit-testing the helper) rather than hitting the HTTP endpoint, except test 13 which verifies the HTMX partial. This avoids auth boilerplate and focuses on logic.
+
+### Test cases:
+
+1. `test_zero_doc_state` — Seed a state with no corpus rows → all 5 cells `none`
+2. `test_partial_extraction` — 10 PDFs, 5 context rows → extract shows `50%`, others `none`
+3. `test_complete_extraction` — All PDFs have context rows → extract shows `100%`
+4. `test_running_job_overlay` — Running job for extract-context + state → cell shows `running` regardless of percentage
+5. `test_failed_job_overlay` — Failed job for reclassify + state → cell shows `failed`
+6. `test_nationwide_fallback` — Running nationwide job, no state-specific job → all states show `running`
 7. `test_state_specific_overrides_nationwide` — State completed + nationwide running → state shows `complete`
-8. `test_job_based_steps_no_partial` — Compare/Resolve never show `partial`
-9. `test_sorting_actionability` — Failed states sort first
-10. `test_htmx_partial_response` — GET returns HTML fragment, not full page
+8. `test_job_based_steps_no_partial` — Compare/Resolve with completed job show `complete`, without show `none`, never `partial`
+9. `test_sorting_actionability` — Create states: one with failed job, one running, one partial, one complete, one not started → verify sort order 0,1,2,3,4
+10. `test_row_count_matches_states` — Seed 3 states (2 with docs, 1 without) → grid has exactly 3 rows, zero-doc state appears
+11. `test_multiple_seeds_same_state` — 5 seed orgs in same state, each with 2 PDFs → total_docs = 10, not 5
+12. `test_in_progress_run_ignored` — Create a finished run (id=1) and an unfinished run (id=2) → reclassify uses run 1 only
+13. `test_htmx_partial_response` — Authenticated GET to `/dashboard/classifier-v3/state-grid/` returns 200, HTML fragment (no `<html>` tag), contains `<table>`
+14. `test_pdf_only_denominator` — Seed state with 5 PDF + 3 non-PDF corpus rows → total_docs = 5
 
-Each test uses Django's test client to GET `/dashboard/classifier-v3/state-grid/` and inspects the response HTML. For data setup, tests insert directly into `lava_corpus.*` tables via cursor.
+### Performance verification (AC11)
+
+After deployment, manually time the grid query on production:
+
+```python
+import time
+t0 = time.monotonic()
+result = _v3_state_grid()
+elapsed = time.monotonic() - t0
+print(f"Grid query: {elapsed:.2f}s")
+```
+
+If elapsed exceeds 3 seconds, investigate the EXPLAIN ANALYZE output. Likely fix: the existing PKs and indexes are sufficient, but if `classification_context` or `classification_results` grow past ~500K rows, the Postgres planner may benefit from `ANALYZE` on those tables.
 
 ## File Summary
 
@@ -240,23 +281,23 @@ Each test uses Django's test client to GET `/dashboard/classifier-v3/state-grid/
 | `pipeline/urls.py` | Modify | +1 (URL pattern) |
 | `pipeline/templates/pipeline/classifier_v3.html` | Modify | +2 (HTMX div) |
 | `pipeline/templates/pipeline/partials/classifier_v3_state_grid.html` | New | ~40 |
-| `pipeline/tests/test_v3_state_grid.py` | New | ~150 |
+| `pipeline/tests/test_v3_state_grid.py` | New | ~200 |
 
-Total: ~270 lines, 3 modified files, 2 new files.
+Total: ~320 lines, 3 modified files, 2 new files.
 
 ## Acceptance Criteria Mapping
 
 | AC | Phase | How verified |
 |----|-------|-------------|
-| AC1 (grid with all states + 5 cols) | Phase 1+2 | Test 1 (zero-doc state appears) |
+| AC1 (grid with all states + 5 cols) | Phase 1+2 | Tests 1, 10 (zero-doc state + row count) |
 | AC2 (percentage vs icon) | Phase 2 | Tests 2-3 (percentage), Test 8 (icon) |
 | AC3 (precedence) | Phase 1 | Tests 4-5 (running/failed override) |
 | AC4 (state-specific > nationwide) | Phase 1 | Tests 6-7 |
-| AC5 (HTMX auto-refresh) | Phase 2 | Test 10 |
+| AC5 (HTMX auto-refresh) | Phase 2 | Test 13 |
 | AC6 (actionability sort) | Phase 1 | Test 9 |
 | AC7 (no new tables) | Phase 1 | Code review |
-| AC8 (PDF-only denominator) | Phase 1 | Test 2 (verify non-PDF excluded) |
-| AC9 (latest finished run) | Phase 1 | Implicit in SQL |
+| AC8 (PDF-only denominator) | Phase 1 | Test 14 (non-PDF excluded) |
+| AC9 (latest finished run) | Phase 1 | Test 12 (in-progress run ignored) |
 | AC10 (extract includes failed:*) | Phase 1 | Test 3 variant |
-| AC11 (< 3s query) | Phase 1 | Manual verification |
+| AC11 (< 3s query) | Phase 1 | Manual timing on production |
 | AC12 (no regression) | Phase 2+3 | Manual + existing tests pass |
