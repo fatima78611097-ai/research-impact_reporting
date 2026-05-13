@@ -15,7 +15,7 @@ The 6 changes have no dependencies on each other. Order them by risk (lowest-ris
 
 **File:** `lavandula/dashboard/pipeline/views.py`
 
-Revert the uncommitted changes in `ClassifierV3JobCreateView.post()`:
+Surgically remove only the `run_now` and `_launch_immediately` additions from `ClassifierV3JobCreateView`. Do NOT use `git checkout` or `git restore` on the whole file — there are other uncommitted changes (stats from triage) that must be preserved.
 
 1. Remove `run_now = request.POST.get("action") == "run_now"` (line 873)
 2. Remove the `if run_now and not depends_on:` / `else:` branching (lines 880-884)
@@ -331,7 +331,71 @@ The existing `_merge_stats` and `stats_flusher` in `extract_classification_conte
 2. Check `Job.objects.get(pk=N).config_json["stats"]` shows `processed` and `failed` counts
 3. Verify the dashboard status partial shows the stats for running jobs
 
-## Step 7: Commit and verify
+## Step 7: Add tests
+
+**Risk:** Low. Tests cannot run yet (DB infrastructure blocker), but should be written now so they're ready when the infrastructure is fixed.
+
+**File:** `lavandula/dashboard/pipeline/tests/test_v3_job_queue.py` (append to existing file)
+
+Add tests for the 3 logic changes in this spec:
+
+### 7a. `check_phase_conflict` with `scheduled` status
+
+```python
+def test_check_phase_conflict_includes_scheduled(self):
+    """Scheduled jobs should trigger conflict detection."""
+    Job.objects.create(phase="crawl", status="scheduled", host="test")
+    self.assertTrue(check_phase_conflict("crawl"))
+
+def test_check_phase_conflict_scheduled_per_state(self):
+    """Per-state scheduled jobs should only conflict with same state."""
+    Job.objects.create(phase="extract-context", status="scheduled", state_code="TX", host="test")
+    self.assertTrue(check_phase_conflict("extract-context", "TX"))
+    self.assertFalse(check_phase_conflict("extract-context", "CA"))
+```
+
+### 7b. `depends_on` allowing completed jobs
+
+```python
+def test_v3_job_create_allows_completed_dependency(self):
+    """Completed jobs should be valid dependency targets."""
+    dep = Job.objects.create(phase="extract-context", status="completed", host="test")
+    # Should not raise — completed is a valid dependency
+    job = create_v3_job("reclassify", {"run_tag": "test"}, "test", depends_on=dep)
+    self.assertEqual(job.depends_on, dep)
+
+def test_v3_job_create_rejects_failed_dependency(self):
+    """Failed jobs should still be rejected as dependency targets."""
+    dep = Job.objects.create(phase="extract-context", status="failed", host="test")
+    # The view rejects failed deps; create_v3_job itself doesn't check terminal status,
+    # so this test validates the view-layer check
+```
+
+### 7c. `JobCancelView` redirect with `next` parameter
+
+```python
+def test_cancel_view_redirects_to_next(self):
+    """Cancel should redirect to ?next URL when provided."""
+    job = Job.objects.create(phase="extract-context", status="running", host="test")
+    response = self.client.post(f"/pipeline/jobs/{job.pk}/cancel/?next=/pipeline/classifier-v3/")
+    self.assertRedirects(response, "/pipeline/classifier-v3/")
+
+def test_cancel_view_rejects_absolute_next(self):
+    """Cancel should ignore absolute URLs in next parameter."""
+    job = Job.objects.create(phase="extract-context", status="running", host="test")
+    response = self.client.post(f"/pipeline/jobs/{job.pk}/cancel/?next=https://evil.com/")
+    self.assertRedirects(response, f"/pipeline/jobs/{job.pk}/")
+
+def test_cancel_view_rejects_protocol_relative_next(self):
+    """Cancel should ignore protocol-relative URLs in next parameter."""
+    job = Job.objects.create(phase="extract-context", status="running", host="test")
+    response = self.client.post(f"/pipeline/jobs/{job.pk}/cancel/?next=//evil.com/")
+    self.assertRedirects(response, f"/pipeline/jobs/{job.pk}/")
+```
+
+These tests follow the patterns in the existing `test_v3_job_queue.py`. They cannot run until the test DB infrastructure is fixed, but they document the expected behavior and will catch regressions once tests are enabled.
+
+## Step 8: Commit and verify
 
 1. Run `python3 lavandula/dashboard/manage.py check` to confirm no Django errors
 2. Restart gunicorn/dashboard
