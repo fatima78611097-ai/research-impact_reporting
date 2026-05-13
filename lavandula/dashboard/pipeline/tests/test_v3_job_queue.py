@@ -324,9 +324,37 @@ class ClassifierV3JobCreateViewTest(TestCase):
         self.assertEqual(resp.status_code, 302)
         self.assertEqual(Job.objects.filter(phase="extract-context").count(), 0)
 
-    def test_terminal_depends_on_rejected(self):
+    def test_completed_depends_on_accepted(self):
         dep = Job.objects.create(
             phase="extract-context", status="completed", host="localhost",
+        )
+        resp = self.client.post(reverse("classifier_v3_job_create"), {
+            "phase": "reclassify",
+            "run_tag": "test1",
+            "backend": "deepseek",
+            "depends_on": str(dep.pk),
+        })
+        self.assertEqual(resp.status_code, 302)
+        job = Job.objects.filter(phase="reclassify").first()
+        self.assertIsNotNone(job)
+        self.assertEqual(job.depends_on, dep)
+
+    def test_failed_depends_on_rejected(self):
+        dep = Job.objects.create(
+            phase="extract-context", status="failed", host="localhost",
+        )
+        resp = self.client.post(reverse("classifier_v3_job_create"), {
+            "phase": "reclassify",
+            "run_tag": "test1",
+            "backend": "deepseek",
+            "depends_on": str(dep.pk),
+        })
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(Job.objects.filter(phase="reclassify").count(), 0)
+
+    def test_cancelled_depends_on_rejected(self):
+        dep = Job.objects.create(
+            phase="extract-context", status="cancelled", host="localhost",
         )
         resp = self.client.post(reverse("classifier_v3_job_create"), {
             "phase": "reclassify",
@@ -435,3 +463,83 @@ class CleanupV3PipelineProcessesTest(TestCase):
         call_command("cleanup_v3_pipeline_processes")
         proc.refresh_from_db()
         self.assertEqual(proc.status, "stopped")
+
+
+# ---------------------------------------------------------------------------
+# Spec 0041: check_phase_conflict with scheduled status
+# ---------------------------------------------------------------------------
+
+from pipeline.orchestrator import check_phase_conflict
+
+
+class CheckPhaseConflictScheduledTest(TestCase):
+    def test_scheduled_triggers_conflict(self):
+        Job.objects.create(phase="crawl", status="scheduled", host="localhost")
+        self.assertTrue(check_phase_conflict("crawl"))
+
+    def test_scheduled_per_state_same_state(self):
+        Job.objects.create(
+            phase="extract-context", status="scheduled",
+            state_code="TX", host="localhost",
+        )
+        self.assertTrue(check_phase_conflict("extract-context", "TX"))
+
+    def test_scheduled_per_state_different_state(self):
+        Job.objects.create(
+            phase="extract-context", status="scheduled",
+            state_code="TX", host="localhost",
+        )
+        self.assertFalse(check_phase_conflict("extract-context", "CA"))
+
+    def test_no_conflict_when_only_completed(self):
+        Job.objects.create(phase="crawl", status="completed", host="localhost")
+        self.assertFalse(check_phase_conflict("crawl"))
+
+
+# ---------------------------------------------------------------------------
+# Spec 0041: JobCancelView redirect with next parameter
+# ---------------------------------------------------------------------------
+
+class JobCancelViewRedirectTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("testuser", password="testpassword1234")
+        self.client = Client()
+        self.client.login(username="testuser", password="testpassword1234")
+
+    def test_cancel_redirects_to_next(self):
+        job = Job.objects.create(
+            phase="extract-context", status="pending", host="localhost",
+        )
+        resp = self.client.post(
+            f"/pipeline/jobs/{job.pk}/cancel/?next=/pipeline/classifier-v3/"
+        )
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp.url, "/pipeline/classifier-v3/")
+
+    def test_cancel_rejects_absolute_next(self):
+        job = Job.objects.create(
+            phase="extract-context", status="pending", host="localhost",
+        )
+        resp = self.client.post(
+            f"/pipeline/jobs/{job.pk}/cancel/?next=https://evil.com/"
+        )
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn(f"/pipeline/jobs/{job.pk}/", resp.url)
+
+    def test_cancel_rejects_protocol_relative_next(self):
+        job = Job.objects.create(
+            phase="extract-context", status="pending", host="localhost",
+        )
+        resp = self.client.post(
+            f"/pipeline/jobs/{job.pk}/cancel/?next=//evil.com/"
+        )
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn(f"/pipeline/jobs/{job.pk}/", resp.url)
+
+    def test_cancel_without_next_goes_to_job_detail(self):
+        job = Job.objects.create(
+            phase="extract-context", status="pending", host="localhost",
+        )
+        resp = self.client.post(f"/pipeline/jobs/{job.pk}/cancel/")
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn(f"/pipeline/jobs/{job.pk}/", resp.url)
