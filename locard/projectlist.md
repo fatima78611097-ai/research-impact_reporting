@@ -618,11 +618,11 @@ projects:
   - id: "0041"
     title: "Classifier V3 Pipeline — Operational Parity"
     summary: "Fix 6 gaps left by Spec 0040 builder: add dependency chaining dropdown, cancel button, progress stats for all 5 stages, allow completed dependencies, fix check_phase_conflict scheduled status bug, delete dead _launch_immediately code."
-    status: conceived
+    status: specified
     priority: high
     files:
       spec: locard/specs/0041-v3-pipeline-operational-parity.md
-      plan: null
+      plan: locard/plans/0041-v3-pipeline-operational-parity.md
       review: null
     dependencies: ["0040"]
     tags: [classifier, pipeline, job-queue, operations, bugfix]
