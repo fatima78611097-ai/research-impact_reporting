@@ -19,7 +19,10 @@ class TestStageRegistry(SimpleTestCase):
         self.assertEqual(errors, [], f"Registry validation errors: {errors}")
 
     def test_all_existing_stages_registered(self):
-        expected = {"seed", "resolve", "crawl", "classify", "990-index", "990-parse", "enrich-phone"}
+        expected = {
+            "seed", "resolve", "crawl", "classify", "990-index", "990-parse", "enrich-phone",
+            "extract-context", "reclassify", "compare-classify", "resolve-disagree", "promote-classify",
+        }
         self.assertEqual(set(STAGE_REGISTRY.keys()), expected)
 
     def test_stage_names_match_keys(self):

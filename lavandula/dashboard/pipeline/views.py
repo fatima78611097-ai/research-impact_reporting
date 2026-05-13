@@ -47,6 +47,7 @@ from .orchestrator import (
     create_phone_enrich_job,
     create_resolve_job,
     create_state_jobs,
+    create_v3_job,
     retry_job,
 )
 from .process_manager import check_process, read_log_tail, start_process, stop_process
@@ -115,9 +116,9 @@ _CONFIG_ALLOWLIST = {
     "990-parse": ["filing_year", "limit"],
     "extract-context": ["state", "ein", "limit", "reextract"],
     "reclassify": ["run_tag", "backend", "state", "ein", "sample", "definition", "dry_run", "allow_fallback"],
-    "compare-classify": ["run_tag"],
+    "compare-classify": ["run_tag", "state"],
     "resolve-disagree": ["run_tag", "backend", "state", "sample", "dry_run"],
-    "promote-classify": ["run_tag", "confirm"],
+    "promote-classify": ["run_tag", "state", "confirm"],
 }
 
 
@@ -733,11 +734,23 @@ class ClassifierV3View(LoginRequiredMixin, TemplateView):
         ctx["compare_form"] = CompareClassifyForm()
         ctx["resolve_form"] = ResolveDisagreementsForm()
         ctx["promote_form"] = PromoteClassifyForm()
+
         for phase in _V3_PHASES:
-            try:
-                ctx[phase.replace("-", "_") + "_process"] = check_process(phase)
-            except PipelineProcess.DoesNotExist:
-                pass
+            key = phase.replace("-", "_")
+            running = list(Job.objects.filter(phase=phase, status="running").order_by("state_code"))
+            _annotate_running_jobs(running)
+            _annotate_host_display(running)
+            pending_count = Job.objects.filter(phase=phase, status="pending").count()
+            recent = _annotate_recent_jobs(
+                Job.objects.filter(phase=phase).order_by("-created_at")[:5]
+            )
+            _annotate_host_display(recent)
+            ctx[f"{key}_running"] = running
+            ctx[f"{key}_pending_count"] = pending_count
+            ctx[f"{key}_recent"] = recent
+
+        ctx["worker_choices"] = _get_worker_choices()
+        ctx["dependency_choices"] = _get_dependency_choices()
         ctx["recent_logs"] = _scan_v3_logs()
         return ctx
 
@@ -774,31 +787,20 @@ class ClassifierV3StatusPartial(HtmxLoginRequiredMixin, TemplateView):
             ("resolve-disagree", "Resolve"),
             ("promote-classify", "Promote"),
         ]:
-            try:
-                p = check_process(phase)
-                started = p.started_at
-                if started:
-                    delta = int((timezone.now() - started).total_seconds())
-                    if delta < 60:
-                        elapsed = f"{delta}s"
-                    elif delta < 3600:
-                        elapsed = f"{delta // 60}m {delta % 60}s"
-                    else:
-                        elapsed = f"{delta // 3600}h {(delta % 3600) // 60}m"
-                else:
-                    elapsed = None
-                steps.append({
-                    "phase": phase, "label": label,
-                    "status": p.status, "started_at": started,
-                    "elapsed": elapsed,
-                    "config": p.config_json or {},
-                })
-            except PipelineProcess.DoesNotExist:
-                steps.append({
-                    "phase": phase, "label": label,
-                    "status": "never_run", "started_at": None,
-                    "elapsed": None, "config": {},
-                })
+            running = list(Job.objects.filter(phase=phase, status="running").order_by("state_code"))
+            _annotate_running_jobs(running)
+            _annotate_host_display(running)
+            pending_count = Job.objects.filter(phase=phase, status="pending").count()
+            last_completed = Job.objects.filter(
+                phase=phase, status__in=["completed", "failed"]
+            ).order_by("-finished_at").first()
+            steps.append({
+                "phase": phase, "label": label,
+                "running": running,
+                "pending_count": pending_count,
+                "last_completed": last_completed,
+                "last_duration": _job_duration(last_completed) if last_completed else None,
+            })
 
         runs = []
         with connections["default"].cursor() as cur:
@@ -821,27 +823,73 @@ class ClassifierV3StatusPartial(HtmxLoginRequiredMixin, TemplateView):
         return ctx
 
 
+class ClassifierV3JobCreateView(LoginRequiredMixin, View):
+    _FORM_MAP = {
+        "extract-context": "ExtractContextForm",
+        "reclassify": "ReclassifyForm",
+        "compare-classify": "CompareClassifyForm",
+        "resolve-disagree": "ResolveDisagreementsForm",
+        "promote-classify": "PromoteClassifyForm",
+    }
+
+    def post(self, request):
+        phase = request.POST.get("phase", "")
+        if phase not in _V3_PHASES:
+            messages.error(request, f"Invalid phase: {phase}")
+            return redirect("classifier_v3")
+
+        from . import forms
+        form_cls = getattr(forms, self._FORM_MAP[phase])
+        form = form_cls(request.POST)
+        if not form.is_valid():
+            messages.error(request, f"Invalid form: {form.errors.as_text()}")
+            return redirect("classifier_v3")
+
+        config = {k: v for k, v in form.cleaned_data.items() if v not in (None, "", False)}
+        host = request.POST.get("host") or _get_hostname()
+
+        depends_on = None
+        depends_on_raw = request.POST.get("depends_on", "").strip()
+        if depends_on_raw:
+            try:
+                dep_id = int(depends_on_raw)
+                dep_job = Job.objects.get(pk=dep_id)
+            except (ValueError, Job.DoesNotExist):
+                messages.error(request, f"Dependency job #{depends_on_raw} not found")
+                return redirect("classifier_v3")
+            if dep_job.status in Job.TERMINAL_STATUSES:
+                messages.error(
+                    request,
+                    f"Dependency job #{dep_id} is {dep_job.status} "
+                    f"— cannot depend on a terminal job",
+                )
+                return redirect("classifier_v3")
+            depends_on = dep_job
+
+        try:
+            job = create_v3_job(phase, config, host, depends_on=depends_on)
+            _log_audit(request, "queue_v3", phase, config)
+            state_label = config.get("state") or "nationwide"
+            messages.success(request, f"Queued {phase} job #{job.pk} for {state_label}")
+        except DuplicateJobError as e:
+            messages.error(request, str(e))
+        except InvalidParameterError as e:
+            messages.error(request, str(e))
+
+        return redirect("classifier_v3")
+
+
 class ProcessStartView(LoginRequiredMixin, View):
     def post(self, request, phase):
         form_map = {
             "resolve": "ResolverForm",
             "crawl": "CrawlerForm",
             "classify": "ClassifierForm",
-            "extract-context": "ExtractContextForm",
-            "reclassify": "ReclassifyForm",
-            "compare-classify": "CompareClassifyForm",
-            "resolve-disagree": "ResolveDisagreementsForm",
-            "promote-classify": "PromoteClassifyForm",
         }
         redirect_map = {
             "resolve": "resolver",
             "crawl": "crawler",
             "classify": "classifier",
-            "extract-context": "classifier_v3",
-            "reclassify": "classifier_v3",
-            "compare-classify": "classifier_v3",
-            "resolve-disagree": "classifier_v3",
-            "promote-classify": "classifier_v3",
         }
         if phase not in form_map:
             messages.error(request, f"Unknown phase: {phase}")
@@ -871,11 +919,6 @@ class ProcessStopView(LoginRequiredMixin, View):
             "resolve": "resolver",
             "crawl": "crawler",
             "classify": "classifier",
-            "extract-context": "classifier_v3",
-            "reclassify": "classifier_v3",
-            "compare-classify": "classifier_v3",
-            "resolve-disagree": "classifier_v3",
-            "promote-classify": "classifier_v3",
         }
         try:
             stop_process(phase)

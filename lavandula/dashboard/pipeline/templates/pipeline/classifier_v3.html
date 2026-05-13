@@ -15,26 +15,61 @@
     <div class="flex items-center gap-2 mb-3">
       <span class="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-0.5 rounded">Step 1</span>
       <h2 class="text-sm font-semibold text-gray-700 uppercase">Extract Context</h2>
-      {% if extract_context_process and extract_context_process.status == "running" %}
+      {% if extract_context_running %}
       <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse ml-auto"></span>
       {% endif %}
     </div>
     <p class="text-xs text-gray-500 mb-3">Extract multi-page text from PDFs into classification_context table.</p>
-    <form method="post" action="{% url 'process_start' 'extract-context' %}">
+
+    {% if extract_context_running %}
+    <div class="mb-3 space-y-1">
+      {% for job in extract_context_running %}
+      <div class="text-xs bg-blue-50 rounded p-2">
+        <span class="font-mono">Job #{{ job.pk }}</span>
+        <span class="text-gray-500">{{ job.state_code|default:"nationwide" }}</span>
+        <span class="text-gray-400">{{ job.elapsed }}</span>
+        {% if job.host_display_name %}<span class="text-gray-400">@ {{ job.host_display_name }}</span>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if extract_context_pending_count %}
+    <div class="text-xs text-amber-600 mb-2">{{ extract_context_pending_count }} pending</div>
+    {% endif %}
+
+    <form method="post" action="{% url 'classifier_v3_job_create' %}">
       {% csrf_token %}
+      <input type="hidden" name="phase" value="extract-context">
       {% for field in extract_form %}
       <div class="mb-3">
         <label class="block text-xs font-medium text-gray-600 mb-1">{{ field.label }}</label>
         {{ field }}
       </div>
       {% endfor %}
-      <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded text-sm hover:bg-blue-700">Run Extract</button>
+      {% if worker_choices|length > 1 %}
+      <div class="mb-3">
+        <label class="block text-xs font-medium text-gray-600 mb-1">Host</label>
+        <select name="host" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+          {% for w in worker_choices %}
+          <option value="{{ w.hostname }}" {% if w.selected %}selected{% endif %} {% if w.disabled %}disabled{% endif %}>{{ w.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded text-sm hover:bg-blue-700">Queue Job</button>
     </form>
-    {% if extract_context_process and extract_context_process.status == "running" %}
-    <form method="post" action="{% url 'process_stop' 'extract-context' %}" class="mt-2">
-      {% csrf_token %}
-      <button type="submit" class="w-full bg-red-600 text-white py-2 rounded text-sm hover:bg-red-700">Stop</button>
-    </form>
+
+    {% if extract_context_recent %}
+    <div class="mt-3 text-xs text-gray-500">
+      <div class="font-medium mb-1">Recent:</div>
+      {% for job in extract_context_recent %}
+      <div class="flex justify-between"><span>
+        <a href="{% url 'job_detail' job.pk %}" class="text-blue-600 hover:underline">#{{ job.pk }}</a>
+        {{ job.state_code|default:"all" }} — {{ job.status }}</span>
+        <span>{{ job.duration_display|default:"—" }}</span>
+      </div>
+      {% endfor %}
+    </div>
     {% endif %}
   </div>
 
@@ -43,26 +78,61 @@
     <div class="flex items-center gap-2 mb-3">
       <span class="bg-indigo-100 text-indigo-700 text-xs font-bold px-2 py-0.5 rounded">Step 2</span>
       <h2 class="text-sm font-semibold text-gray-700 uppercase">Reclassify Corpus</h2>
-      {% if reclassify_process and reclassify_process.status == "running" %}
+      {% if reclassify_running %}
       <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse ml-auto"></span>
       {% endif %}
     </div>
     <p class="text-xs text-gray-500 mb-3">Run classification with a tagged run for A/B comparison.</p>
-    <form method="post" action="{% url 'process_start' 'reclassify' %}">
+
+    {% if reclassify_running %}
+    <div class="mb-3 space-y-1">
+      {% for job in reclassify_running %}
+      <div class="text-xs bg-indigo-50 rounded p-2">
+        <span class="font-mono">Job #{{ job.pk }}</span>
+        <span class="text-gray-500">{{ job.state_code|default:"nationwide" }}</span>
+        <span class="text-gray-400">{{ job.elapsed }}</span>
+        {% if job.host_display_name %}<span class="text-gray-400">@ {{ job.host_display_name }}</span>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if reclassify_pending_count %}
+    <div class="text-xs text-amber-600 mb-2">{{ reclassify_pending_count }} pending</div>
+    {% endif %}
+
+    <form method="post" action="{% url 'classifier_v3_job_create' %}">
       {% csrf_token %}
+      <input type="hidden" name="phase" value="reclassify">
       {% for field in reclassify_form %}
       <div class="mb-3">
         <label class="block text-xs font-medium text-gray-600 mb-1">{{ field.label }}</label>
         {{ field }}
       </div>
       {% endfor %}
-      <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded text-sm hover:bg-indigo-700">Run Reclassify</button>
+      {% if worker_choices|length > 1 %}
+      <div class="mb-3">
+        <label class="block text-xs font-medium text-gray-600 mb-1">Host</label>
+        <select name="host" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+          {% for w in worker_choices %}
+          <option value="{{ w.hostname }}" {% if w.selected %}selected{% endif %} {% if w.disabled %}disabled{% endif %}>{{ w.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded text-sm hover:bg-indigo-700">Queue Job</button>
     </form>
-    {% if reclassify_process and reclassify_process.status == "running" %}
-    <form method="post" action="{% url 'process_stop' 'reclassify' %}" class="mt-2">
-      {% csrf_token %}
-      <button type="submit" class="w-full bg-red-600 text-white py-2 rounded text-sm hover:bg-red-700">Stop</button>
-    </form>
+
+    {% if reclassify_recent %}
+    <div class="mt-3 text-xs text-gray-500">
+      <div class="font-medium mb-1">Recent:</div>
+      {% for job in reclassify_recent %}
+      <div class="flex justify-between"><span>
+        <a href="{% url 'job_detail' job.pk %}" class="text-blue-600 hover:underline">#{{ job.pk }}</a>
+        {{ job.state_code|default:"all" }} — {{ job.status }}</span>
+        <span>{{ job.duration_display|default:"—" }}</span>
+      </div>
+      {% endfor %}
+    </div>
     {% endif %}
   </div>
 
@@ -71,26 +141,60 @@
     <div class="flex items-center gap-2 mb-3">
       <span class="bg-amber-100 text-amber-700 text-xs font-bold px-2 py-0.5 rounded">Step 3</span>
       <h2 class="text-sm font-semibold text-gray-700 uppercase">Compare Classifications</h2>
-      {% if compare_classify_process and compare_classify_process.status == "running" %}
+      {% if compare_classify_running %}
       <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse ml-auto"></span>
       {% endif %}
     </div>
     <p class="text-xs text-gray-500 mb-3">Compare a run's results against current v2 classifications.</p>
-    <form method="post" action="{% url 'process_start' 'compare-classify' %}">
+
+    {% if compare_classify_running %}
+    <div class="mb-3 space-y-1">
+      {% for job in compare_classify_running %}
+      <div class="text-xs bg-amber-50 rounded p-2">
+        <span class="font-mono">Job #{{ job.pk }}</span>
+        <span class="text-gray-500">{{ job.state_code|default:"nationwide" }}</span>
+        <span class="text-gray-400">{{ job.elapsed }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if compare_classify_pending_count %}
+    <div class="text-xs text-amber-600 mb-2">{{ compare_classify_pending_count }} pending</div>
+    {% endif %}
+
+    <form method="post" action="{% url 'classifier_v3_job_create' %}">
       {% csrf_token %}
+      <input type="hidden" name="phase" value="compare-classify">
       {% for field in compare_form %}
       <div class="mb-3">
         <label class="block text-xs font-medium text-gray-600 mb-1">{{ field.label }}</label>
         {{ field }}
       </div>
       {% endfor %}
-      <button type="submit" class="w-full bg-amber-600 text-white py-2 rounded text-sm hover:bg-amber-700">Run Compare</button>
+      {% if worker_choices|length > 1 %}
+      <div class="mb-3">
+        <label class="block text-xs font-medium text-gray-600 mb-1">Host</label>
+        <select name="host" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+          {% for w in worker_choices %}
+          <option value="{{ w.hostname }}" {% if w.selected %}selected{% endif %} {% if w.disabled %}disabled{% endif %}>{{ w.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      <button type="submit" class="w-full bg-amber-600 text-white py-2 rounded text-sm hover:bg-amber-700">Queue Job</button>
     </form>
-    {% if compare_classify_process and compare_classify_process.status == "running" %}
-    <form method="post" action="{% url 'process_stop' 'compare-classify' %}" class="mt-2">
-      {% csrf_token %}
-      <button type="submit" class="w-full bg-red-600 text-white py-2 rounded text-sm hover:bg-red-700">Stop</button>
-    </form>
+
+    {% if compare_classify_recent %}
+    <div class="mt-3 text-xs text-gray-500">
+      <div class="font-medium mb-1">Recent:</div>
+      {% for job in compare_classify_recent %}
+      <div class="flex justify-between"><span>
+        <a href="{% url 'job_detail' job.pk %}" class="text-blue-600 hover:underline">#{{ job.pk }}</a>
+        {{ job.state_code|default:"all" }} — {{ job.status }}</span>
+        <span>{{ job.duration_display|default:"—" }}</span>
+      </div>
+      {% endfor %}
+    </div>
     {% endif %}
   </div>
 
@@ -99,26 +203,61 @@
     <div class="flex items-center gap-2 mb-3">
       <span class="bg-purple-100 text-purple-700 text-xs font-bold px-2 py-0.5 rounded">Step 4</span>
       <h2 class="text-sm font-semibold text-gray-700 uppercase">Resolve Disagreements</h2>
-      {% if resolve_disagree_process and resolve_disagree_process.status == "running" %}
+      {% if resolve_disagree_running %}
       <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse ml-auto"></span>
       {% endif %}
     </div>
     <p class="text-xs text-gray-500 mb-3">Tiebreaker pass: send v2/v3 disagreements to a different LLM for resolution.</p>
-    <form method="post" action="{% url 'process_start' 'resolve-disagree' %}">
+
+    {% if resolve_disagree_running %}
+    <div class="mb-3 space-y-1">
+      {% for job in resolve_disagree_running %}
+      <div class="text-xs bg-purple-50 rounded p-2">
+        <span class="font-mono">Job #{{ job.pk }}</span>
+        <span class="text-gray-500">{{ job.state_code|default:"nationwide" }}</span>
+        <span class="text-gray-400">{{ job.elapsed }}</span>
+        {% if job.host_display_name %}<span class="text-gray-400">@ {{ job.host_display_name }}</span>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if resolve_disagree_pending_count %}
+    <div class="text-xs text-amber-600 mb-2">{{ resolve_disagree_pending_count }} pending</div>
+    {% endif %}
+
+    <form method="post" action="{% url 'classifier_v3_job_create' %}">
       {% csrf_token %}
+      <input type="hidden" name="phase" value="resolve-disagree">
       {% for field in resolve_form %}
       <div class="mb-3">
         <label class="block text-xs font-medium text-gray-600 mb-1">{{ field.label }}</label>
         {{ field }}
       </div>
       {% endfor %}
-      <button type="submit" class="w-full bg-purple-600 text-white py-2 rounded text-sm hover:bg-purple-700">Run Resolve</button>
+      {% if worker_choices|length > 1 %}
+      <div class="mb-3">
+        <label class="block text-xs font-medium text-gray-600 mb-1">Host</label>
+        <select name="host" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+          {% for w in worker_choices %}
+          <option value="{{ w.hostname }}" {% if w.selected %}selected{% endif %} {% if w.disabled %}disabled{% endif %}>{{ w.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      <button type="submit" class="w-full bg-purple-600 text-white py-2 rounded text-sm hover:bg-purple-700">Queue Job</button>
     </form>
-    {% if resolve_disagree_process and resolve_disagree_process.status == "running" %}
-    <form method="post" action="{% url 'process_stop' 'resolve-disagree' %}" class="mt-2">
-      {% csrf_token %}
-      <button type="submit" class="w-full bg-red-600 text-white py-2 rounded text-sm hover:bg-red-700">Stop</button>
-    </form>
+
+    {% if resolve_disagree_recent %}
+    <div class="mt-3 text-xs text-gray-500">
+      <div class="font-medium mb-1">Recent:</div>
+      {% for job in resolve_disagree_recent %}
+      <div class="flex justify-between"><span>
+        <a href="{% url 'job_detail' job.pk %}" class="text-blue-600 hover:underline">#{{ job.pk }}</a>
+        {{ job.state_code|default:"all" }} — {{ job.status }}</span>
+        <span>{{ job.duration_display|default:"—" }}</span>
+      </div>
+      {% endfor %}
+    </div>
     {% endif %}
   </div>
 
@@ -127,26 +266,60 @@
     <div class="flex items-center gap-2 mb-3">
       <span class="bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded">Step 5</span>
       <h2 class="text-sm font-semibold text-gray-700 uppercase">Promote Run</h2>
-      {% if promote_classify_process and promote_classify_process.status == "running" %}
+      {% if promote_classify_running %}
       <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse ml-auto"></span>
       {% endif %}
     </div>
     <p class="text-xs text-gray-500 mb-3">Promote a run's results to the v3 columns on corpus.</p>
-    <form method="post" action="{% url 'process_start' 'promote-classify' %}">
+
+    {% if promote_classify_running %}
+    <div class="mb-3 space-y-1">
+      {% for job in promote_classify_running %}
+      <div class="text-xs bg-green-50 rounded p-2">
+        <span class="font-mono">Job #{{ job.pk }}</span>
+        <span class="text-gray-500">{{ job.state_code|default:"nationwide" }}</span>
+        <span class="text-gray-400">{{ job.elapsed }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if promote_classify_pending_count %}
+    <div class="text-xs text-amber-600 mb-2">{{ promote_classify_pending_count }} pending</div>
+    {% endif %}
+
+    <form method="post" action="{% url 'classifier_v3_job_create' %}">
       {% csrf_token %}
+      <input type="hidden" name="phase" value="promote-classify">
       {% for field in promote_form %}
       <div class="mb-3">
         <label class="block text-xs font-medium text-gray-600 mb-1">{{ field.label }}</label>
         {{ field }}
       </div>
       {% endfor %}
-      <button type="submit" class="w-full bg-green-600 text-white py-2 rounded text-sm hover:bg-green-700">Promote Run</button>
+      {% if worker_choices|length > 1 %}
+      <div class="mb-3">
+        <label class="block text-xs font-medium text-gray-600 mb-1">Host</label>
+        <select name="host" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+          {% for w in worker_choices %}
+          <option value="{{ w.hostname }}" {% if w.selected %}selected{% endif %} {% if w.disabled %}disabled{% endif %}>{{ w.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      <button type="submit" class="w-full bg-green-600 text-white py-2 rounded text-sm hover:bg-green-700">Queue Job</button>
     </form>
-    {% if promote_classify_process and promote_classify_process.status == "running" %}
-    <form method="post" action="{% url 'process_stop' 'promote-classify' %}" class="mt-2">
-      {% csrf_token %}
-      <button type="submit" class="w-full bg-red-600 text-white py-2 rounded text-sm hover:bg-red-700">Stop</button>
-    </form>
+
+    {% if promote_classify_recent %}
+    <div class="mt-3 text-xs text-gray-500">
+      <div class="font-medium mb-1">Recent:</div>
+      {% for job in promote_classify_recent %}
+      <div class="flex justify-between"><span>
+        <a href="{% url 'job_detail' job.pk %}" class="text-blue-600 hover:underline">#{{ job.pk }}</a>
+        {{ job.state_code|default:"all" }} — {{ job.status }}</span>
+        <span>{{ job.duration_display|default:"—" }}</span>
+      </div>
+      {% endfor %}
+    </div>
     {% endif %}
   </div>
 </div>

@@ -30,6 +30,7 @@ urlpatterns = [
     # Classifier v3 Pipeline
     path("classifier-v3/", views.ClassifierV3View.as_view(), name="classifier_v3"),
     path("classifier-v3/status/", views.ClassifierV3StatusPartial.as_view(), name="classifier_v3_status"),
+    path("classifier-v3/queue/", views.ClassifierV3JobCreateView.as_view(), name="classifier_v3_job_create"),
     path("classifier-v3/log/<str:filename>/", views.ProcessLogPartial.as_view(), name="process_log_partial"),
 
     # Phone Enrichment

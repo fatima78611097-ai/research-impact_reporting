@@ -4,26 +4,36 @@
   <div class="bg-white rounded-lg shadow p-3">
     <div class="flex items-center justify-between">
       <span class="text-xs font-semibold text-gray-500 uppercase">{{ step.label }}</span>
-      {% if step.status == "running" %}
+      {% if step.running %}
       <span class="flex items-center gap-1 text-xs">
         <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-        <span class="text-blue-700">Running</span>
+        <span class="text-blue-700">{{ step.running|length }} running</span>
       </span>
-      {% elif step.status == "stopped" %}
-      <span class="text-xs text-gray-500">Idle</span>
-      {% elif step.status == "error" %}
-      <span class="text-xs text-red-600">Error</span>
+      {% elif step.pending_count %}
+      <span class="text-xs text-amber-600">{{ step.pending_count }} pending</span>
+      {% elif step.last_completed and step.last_completed.status == "failed" %}
+      <span class="text-xs text-red-600">Failed</span>
+      {% elif step.last_completed and step.last_completed.status == "completed" %}
+      <span class="text-xs text-green-600">Done</span>
       {% else %}
-      <span class="text-xs text-gray-400">—</span>
+      <span class="text-xs text-gray-400">&mdash;</span>
       {% endif %}
     </div>
-    {% if step.status == "running" %}
-    <div class="text-xs text-gray-500 mt-1">{{ step.elapsed }} elapsed</div>
-    {% if step.config.run_tag %}
-    <div class="text-xs text-gray-600 mt-1 font-mono truncate" title="{{ step.config.run_tag }}">tag: {{ step.config.run_tag }}</div>
+    {% if step.running %}
+    {% for job in step.running %}
+    <div class="text-xs text-gray-500 mt-1">
+      <span class="font-mono">#{{ job.pk }}</span> {{ job.state_code|default:"all" }} {{ job.elapsed }}
+      {% if job.host_display_name %}<span class="text-gray-400">@ {{ job.host_display_name }}</span>{% endif %}
+    </div>
+    {% if job.config_display %}
+    <div class="text-xs text-gray-600 mt-0.5 font-mono truncate" title="{{ job.config_display|join:', ' }}">{{ job.config_display|join:", " }}</div>
     {% endif %}
-    {% elif step.started_at %}
-    <div class="text-xs text-gray-500 mt-1">last: {{ step.started_at|naturaltime }}</div>
+    {% endfor %}
+    {% elif step.last_completed %}
+    <div class="text-xs text-gray-500 mt-1">
+      last: {{ step.last_completed.finished_at|naturaltime }}
+      {% if step.last_duration %}({{ step.last_duration }}){% endif %}
+    </div>
     {% endif %}
   </div>
   {% endfor %}
@@ -44,7 +54,7 @@
         <td class="py-1 text-xs text-gray-500">{{ r.started_at|naturaltime }}</td>
         <td class="py-1 text-xs">
           {% if r.finished_at %}
-          <span class="text-green-700">✓ {{ r.finished_at|naturaltime }}</span>
+          <span class="text-green-700">{{ r.finished_at|naturaltime }}</span>
           {% else %}
           <span class="text-blue-700">in progress</span>
           {% endif %}
@@ -59,7 +69,7 @@
 
 {% if recent_logs %}
 <div class="bg-white rounded-lg shadow p-4">
-  <h3 class="text-sm font-semibold text-gray-700 mb-2">Recent v3 Runs (logs)</h3>
+  <h3 class="text-sm font-semibold text-gray-700 mb-2">Historical Logs (pre-migration)</h3>
   <table class="w-full text-sm">
     <thead><tr class="text-left text-gray-500 text-xs border-b">
       <th class="pb-1">Phase</th><th class="pb-1">Started</th><th class="pb-1">Size</th><th class="pb-1">Log</th>
