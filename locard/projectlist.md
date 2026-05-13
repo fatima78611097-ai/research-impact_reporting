@@ -642,9 +642,22 @@ projects:
     notes: "Discovered 2026-05-12: AWS KMS budget alert triggered at 17K/20K free tier requests. Verified 2026-05-14: all 6 non-sensitive RDS params (rds-endpoint, rds-port, rds-database, rds-schema, rds-app-user, rds-ro-user) are already String type. Only actual secrets remain SecureString. No code or infra changes needed — problem was already resolved. Only borderline item: rds-dashboard-user is SecureString (username, not password) but impact is trivial."
 ```
 
+  - id: "0042"
+    title: "Classifier V3 State Progress Grid"
+    summary: "Add a state × step progress matrix to the classifier v3 dashboard page showing per-state completion across all 5 pipeline steps (extract, reclassify, compare, resolve, promote). Same live-query pattern as the crawler/resolver state grids, adapted for the v3 pipeline's sequential multi-step structure."
+    status: conceived
+    priority: high
+    files:
+      spec: locard/specs/0042-classifier-v3-state-progress.md
+      plan: null
+      review: null
+    dependencies: ["0040", "0041"]
+    tags: [dashboard, ui, classifier, operations, national-scale]
+    notes: "Motivated by observation that v3 pipeline has 5 sequential steps per state but no per-state visibility. Current v3 page shows global step status only. Crawler/resolver pages have state grids but they're single-axis (one process). V3 needs a matrix view."
+
 ## Next Available Number
 
-**0042** - Reserve this number for your next project
+**0043** - Reserve this number for your next project
 
 ---
 
