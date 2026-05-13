@@ -328,6 +328,8 @@ Keep the `classification_runs` query (lines 803-820) — it's independent metada
 
 #### 5e. Remove v3 phases from `ProcessStartView` (line 824-865)
 
+**Rejection behavior:** After removing v3 entries from `form_map`, a POST to `/process/reclassify/start/` hits the existing `if phase not in form_map` guard (line 846), which returns `messages.error(request, f"Unknown phase: {phase}")` and redirects to `dashboard`. This is the standard error path already coded in the view — no new code needed.
+
 Remove from `form_map` (line 826-835):
 ```
 "extract-context": "ExtractContextForm",
@@ -388,7 +390,7 @@ For each phase card:
 - Replace the `start_process` form action with POST to `{% url 'classifier_v3_job_create' %}`
 - Add hidden `<input name="phase" value="extract-context">` (etc.)
 - Add host selector dropdown using `worker_choices` context variable
-- Add optional `depends_on` selector
+- Add optional `depends_on` selector — when a dependency is selected, JavaScript pre-fills `run_tag` from the selected job's config (read from a `data-config` attribute on the option element) to enforce consistency. Server-side `create_v3_job()` validates the match regardless.
 - Change button text from "Start" to "Queue Job"
 - Show running jobs list (with state code, elapsed, host, progress) instead of PipelineProcess status
 - Show pending count badge
@@ -466,10 +468,19 @@ Include this in the PR description under "Post-deploy steps."
 
 23. **`test_promote_with_state_filter`** — `promote_classification_run --state TX` only updates TX orgs
 
+#### Concurrent / race tests:
+
+24. **`test_create_v3_job_concurrent_race`** — Two threads call `create_v3_job()` for same phase+state simultaneously. One succeeds, one raises `DuplicateJobError`. Uses `threading.Thread` + `transaction.atomic()` + `select_for_update()` serialization.
+
+#### Migration tests:
+
+25. **`test_pipeline_process_cleanup_dead_pid`** — Create a `PipelineProcess` row with a dead PID → cleanup script marks stopped
+26. **`test_pipeline_process_cleanup_alive_pid`** — Create a `PipelineProcess` row with the current process PID → cleanup script leaves it alone and warns
+
 #### Integration tests:
 
-24. **`test_cancel_v3_job_cascades`** — Cancel extract-context job → dependent reclassify also cancelled
-25. **`test_retry_v3_job`** — Retry failed v3 job → new job with `retry_of` and incremented `attempt_number`
+27. **`test_cancel_v3_job_cascades`** — Cancel extract-context job → dependent reclassify also cancelled
+28. **`test_retry_v3_job`** — Retry failed v3 job → new job with `retry_of` and incremented `attempt_number`
 
 ---
 
