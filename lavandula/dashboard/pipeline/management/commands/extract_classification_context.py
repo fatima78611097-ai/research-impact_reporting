@@ -134,6 +134,18 @@ class Command(BaseCommand):
         )
         watchdog.start_thread()
 
+        stats_stop = threading.Event()
+
+        def stats_flusher():
+            while not stats_stop.wait(10):
+                try:
+                    self._update_job(engine, job_id, stats)
+                except Exception:
+                    pass
+
+        stats_thread = threading.Thread(target=stats_flusher, daemon=True)
+        stats_thread.start()
+
         def extraction_consumer():
             while True:
                 item = work_queue.get()
@@ -177,7 +189,6 @@ class Command(BaseCommand):
         last_cursor = ""
         remaining = limit
         total_queued = 0
-        last_stats_flush = time.monotonic()
 
         try:
             while True:
@@ -300,10 +311,6 @@ class Command(BaseCommand):
                 if remaining is not None:
                     remaining -= len(rows)
 
-                now = time.monotonic()
-                if now - last_stats_flush >= 10:
-                    self._update_job(engine, job_id, stats)
-                    last_stats_flush = now
                 total_queued += len(rows)
 
                 if len(rows) < page_limit:
@@ -314,6 +321,9 @@ class Command(BaseCommand):
                 work_queue.put(None)
             for t in extract_threads:
                 t.join(timeout=60)
+
+            stats_stop.set()
+            stats_thread.join(timeout=5)
 
             watchdog.stop()
             if watchdog._thread is not None:
