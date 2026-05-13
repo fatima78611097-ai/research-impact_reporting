@@ -349,6 +349,8 @@ class Command(BaseCommand):
             return
         with engine.begin() as conn:
             for row in rows:
+                if row.get("pages_text"):
+                    row["pages_text"] = row["pages_text"].replace("\x00", "")
                 conn.execute(text(
                     f"INSERT INTO {_SCHEMA}.classification_context "
                     f"(content_sha256, pages_text, pages_extracted, total_pages, "
