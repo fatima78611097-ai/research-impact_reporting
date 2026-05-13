@@ -24,10 +24,9 @@
     <div class="text-xs text-gray-500 mt-1">
       <span class="font-mono">#{{ job.pk }}</span> {{ job.state_code|default:"all" }} {{ job.elapsed }}
       {% if job.host_display_name %}<span class="text-gray-400">@ {{ job.host_display_name }}</span>{% endif %}
+      {% if job.stats_processed %}<span class="text-blue-600 ml-1">{{ job.stats_processed }} processed</span>{% endif %}
+      {% if job.stats_failed %}<span class="text-red-600 ml-1">{{ job.stats_failed }} failed</span>{% endif %}
     </div>
-    {% if job.config_display %}
-    <div class="text-xs text-gray-600 mt-0.5 font-mono truncate" title="{{ job.config_display|join:', ' }}">{{ job.config_display|join:", " }}</div>
-    {% endif %}
     {% endfor %}
     {% elif step.last_completed %}
     <div class="text-xs text-gray-500 mt-1">

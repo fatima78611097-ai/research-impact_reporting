@@ -144,6 +144,10 @@ def _annotate_running_jobs(jobs):
             job.elapsed = f"{mins}m ago" if mins > 0 else "just started"
         else:
             job.elapsed = "pending"
+        stats = (job.config_json or {}).get("stats", {})
+        job.stats_processed = stats.get("processed", 0)
+        job.stats_extracted = stats.get("extracted", 0)
+        job.stats_failed = stats.get("failed", 0)
         annotated.append(job)
     return annotated
 

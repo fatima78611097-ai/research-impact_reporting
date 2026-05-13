@@ -29,6 +29,8 @@
         <span class="text-gray-500">{{ job.state_code|default:"nationwide" }}</span>
         <span class="text-gray-400">{{ job.elapsed }}</span>
         {% if job.host_display_name %}<span class="text-gray-400">@ {{ job.host_display_name }}</span>{% endif %}
+        {% if job.stats_processed %}<span class="text-blue-600 ml-1">{{ job.stats_processed }} processed</span>{% endif %}
+        {% if job.stats_failed %}<span class="text-red-600 ml-1">{{ job.stats_failed }} failed</span>{% endif %}
       </div>
       {% endfor %}
     </div>
