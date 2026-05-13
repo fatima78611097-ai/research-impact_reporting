@@ -185,7 +185,7 @@ No Django migration needed — `PHASE_CHOICES` is a validation-only constraint, 
 
 **Conflict group rationale:**
 - `extract-context` and `reclassify`: `per-state` — these are the long-running, state-scoped operations. Multiple states can run simultaneously; same state cannot.
-- `compare-classify`, `resolve-disagree`, `promote-classify`: `global` — these operate on a run_tag across all states. Only one instance at a time. (They're also short enough that this isn't a bottleneck.)
+- `compare-classify`, `resolve-disagree`, `promote-classify`: `global` — these are **globally exclusive** (not merely run_tag-scoped). Reason: `compare_classifications` reads all `classification_results` for a given `run_id`, `promote_classification_run` writes directly to the `corpus` table's `material_type`/`material_group`/`classification` columns. Concurrent promotes or a promote during a compare would produce inconsistent reads or lost writes. Global singleton is the correct model even if they technically operate on a single run_tag — the underlying tables are shared. Only one of these three phases may be active (pending, scheduled, or running) at a time.
 
 ### Phase 2: Orchestrator Job Creation
 
@@ -230,7 +230,7 @@ def create_v3_job(phase: str, config_overrides: dict, host: str,
         if phase in _PER_STATE_PHASES:
             # Per-state conflict: block same phase + same state
             qs = Job.objects.select_for_update().filter(
-                phase=phase, status__in=["pending", "running"],
+                phase=phase, status__in=["pending", "scheduled", "running"],
             )
             if state:
                 qs = qs.filter(state_code=state)
@@ -240,7 +240,7 @@ def create_v3_job(phase: str, config_overrides: dict, host: str,
             # Global conflict: block any active job in the global v3 group
             qs = Job.objects.select_for_update().filter(
                 phase__in=_CLASSIFY_V3_GLOBAL_PHASES,
-                status__in=["pending", "running"],
+                status__in=["pending", "scheduled", "running"],
             )
 
         existing = qs.first()
@@ -295,12 +295,19 @@ path("classifier-v3/queue/", views.ClassifierV3JobCreateView.as_view(),
 
 Handles POST from the classifier v3 dashboard forms. Instead of calling `start_process()`, creates a Job via `create_v3_job()`. The view:
 
-1. Validates the form (reusing existing form classes)
-2. Extracts `phase` from POST data (hidden field)
-3. Extracts `host` from POST data (worker selector, defaulting to current hostname)
-4. Extracts optional `depends_on` from POST data
+1. **Validates `phase`** against a server-side allowlist (`_V3_PHASES`). Rejects any phase not in the set — prevents a crafted POST from targeting an unintended stage.
+2. Validates the form (reusing existing form classes, looked up by phase from a strict mapping)
+3. Extracts `host` from POST data (worker selector, defaulting to current hostname). Host is validated by `_maybe_validate_host()` inside `create_v3_job()`.
+4. Extracts optional `depends_on` from POST data. Validated: must reference an existing pending/scheduled/running job, or is ignored.
 5. Calls `create_v3_job(phase, config, host, depends_on)`
 6. Redirects to classifier_v3 with success/error message
+
+**Error messages returned to the user:**
+- No active workers registered: "No workers available. Register a worker first."
+- Selected host offline/stale: "Host {host} is {status}"
+- Duplicate job conflict: "Active {phase} job already exists for {state}: Job #{id}"
+- Invalid form data: Django form validation errors displayed
+- `depends_on` references a terminal/nonexistent job: silently ignored (treated as no dependency)
 
 #### 3c. Update ClassifierV3View context
 
@@ -309,18 +316,22 @@ Replace `PipelineProcess` status polling with Job query:
 ```python
 # Instead of check_process(phase), query recent jobs per phase
 for phase in _V3_PHASES:
-    running = Job.objects.filter(phase=phase, status="running").first()
-    pending = Job.objects.filter(phase=phase, status="pending").count()
+    # Per-state phases can have MULTIPLE running jobs (one per state)
+    running = list(Job.objects.filter(phase=phase, status="running")
+                   .order_by("state_code"))
+    pending_count = Job.objects.filter(phase=phase, status="pending").count()
     recent = Job.objects.filter(phase=phase).order_by("-created_at")[:5]
     ctx[phase.replace("-", "_") + "_running"] = running
-    ctx[phase.replace("-", "_") + "_pending_count"] = pending
+    ctx[phase.replace("-", "_") + "_pending_count"] = pending_count
     ctx[phase.replace("-", "_") + "_recent"] = recent
 ```
+
+**Multi-running display**: Per-state phases (extract-context, reclassify) can have multiple running jobs simultaneously — one per state. The dashboard must show **all** running jobs for these phases, not just `.first()`. Display as a list grouped by state code, each with its own progress bar, elapsed time, and host label. Global phases (compare, resolve-disagree, promote) show at most one running job.
 
 #### 3d. Update ClassifierV3StatusPartial
 
 Same migration: show Job-based status instead of PipelineProcess. For each v3 step, show:
-- Current running job (if any) with progress, elapsed time, host
+- All currently running jobs (multiple for per-state phases) with progress, elapsed time, host, and state code
 - Pending job count
 - Most recent completed/failed job with exit code and duration
 
@@ -348,9 +359,41 @@ The scheduler daemon picks up pending jobs and transitions them to `scheduled` �
 
 ### Phase 5: Cleanup & Backward Compatibility
 
-- **PipelineProcess rows**: Leave existing v3 PipelineProcess rows in the DB. Mark any still-running rows as "stopped" during migration. Don't delete the rows — they provide historical reference.
-- **Log scanning**: `_scan_v3_logs()` function can remain for historical log browsing, but new jobs will use `Job.log_file` for their logs.
-- **Ad-hoc stop**: Add a "Cancel Job" button to each running v3 job card (reusing existing `JobCancelView`).
+#### 5a. Cancellation behavior
+
+Job cancellation for v3 phases uses the existing `cancel_job()` function (orchestrator.py), which:
+1. Sends SIGTERM to the process group
+2. Waits up to 10 seconds for graceful shutdown
+3. Sends SIGKILL if still alive
+4. Marks job as `cancelled`, sets `finished_at`
+5. Cascades cancellation to any dependent jobs
+
+The v3 management commands already handle SIGINT/SIGTERM gracefully — `reclassify_corpus` has a `_SIGINT_DRAIN_TIMEOUT` that completes in-flight LLM calls before exiting. Partial outputs (classification_results rows) are safe: they're idempotent writes keyed by (run_id, content_sha256). A cancelled-and-restarted run with `--resume` picks up where it left off.
+
+#### 5b. PipelineProcess cleanup
+
+**Before migration**: Verify PID liveness for any `running` PipelineProcess rows before marking stopped. Use the existing `_is_pid_alive_and_matches()` from `process_manager.py`. Only mark stopped if the PID is dead or doesn't match the expected command. If a real process is still running, either wait for it to finish or stop it explicitly via `stop_process()` first.
+
+```python
+# Migration script (not blind SQL UPDATE):
+for proc in PipelineProcess.objects.filter(
+    name__in=_V3_PHASES, status="running"
+):
+    if not proc.pid or not _is_pid_alive_and_matches(proc.pid, proc.name):
+        proc.status = "stopped"
+        proc.save(update_fields=["status"])
+    else:
+        log.warning("PipelineProcess %s PID %s still alive — stop manually first",
+                     proc.name, proc.pid)
+```
+
+#### 5c. Log history
+
+After migration, the v3 page has two log sources:
+- **Historical**: `_scan_v3_logs()` shows log files from PipelineProcess-era runs (pre-migration). These remain accessible via the existing `ProcessLogPartial` view. Displayed in a "Historical Logs" section at the bottom of the page.
+- **Current**: `Job.log_file` shows logs from Job-era runs. Displayed via the standard `JobLogPartial` view (already used by other pipeline pages).
+
+The `PipelineProcess` model is **not removed** but is no longer used by v3 views for status polling. It remains available for any future ad-hoc use cases. After this spec, no dashboard page creates v3 PipelineProcess rows.
 
 ## Acceptance Criteria
 
@@ -396,27 +439,32 @@ The scheduler daemon picks up pending jobs and transitions them to `scheduled` �
 2. **Don't add new conflict groups to `validate_registry()`**: The existing `per-state` and `global` values are sufficient. The `_CLASSIFY_V3_GLOBAL_PHASES` mutual exclusion is handled in the orchestrator, not the registry validator.
 3. **Don't forget the `--run-tag` coupling**: When queuing reclassify → compare → resolve-disagree → promote as a dependency chain, all jobs must share the same `run_tag` config value. The UI should make this clear (perhaps pre-fill from the upstream job's config).
 4. **Don't break the scheduler daemon**: The scheduler already calls `get_eligible_jobs()` and `build_argv()`. New phases just work if conflict groups are correct.
-5. **PipelineProcess ghost processes**: Before switching the v3 page from PipelineProcess to Job queries, mark any stale PipelineProcess rows as stopped. A running PipelineProcess would still be checked by `check_phase_conflict()` — clear them.
+5. **PipelineProcess ghost processes**: Before switching the v3 page from PipelineProcess to Job queries, clean up stale PipelineProcess rows using the PID-liveness-checked script (Phase 5b). A running PipelineProcess would still be checked by `check_phase_conflict()` — clear them.
+6. **Include `scheduled` in conflict checks**: The Job lifecycle has three active states: `pending`, `scheduled`, `running`. All conflict/duplicate checks must filter on all three. The existing `create_crawl_job()` etc. only check `pending`/`running` — this is a latent bug in the existing code, but v3 must get it right. Use `status__in=["pending", "scheduled", "running"]`.
+7. **Don't remove PipelineProcess from `check_phase_conflict()`**: Even after migration, `check_phase_conflict()` still checks PipelineProcess rows. Leave this check in place — it's a safety net if a stale row somehow exists.
 
 ## Testing Requirements
 
 - **Unit tests**: `create_v3_job()` conflict detection for per-state and global phases, parameter validation, host validation
+- **Unit tests**: `create_v3_job()` rejects when `scheduled` job exists (not just `pending`/`running`)
+- **Unit tests**: `create_v3_job()` concurrent enqueue race (two threads creating same phase+state simultaneously — one succeeds, one raises `DuplicateJobError`)
 - **Unit tests**: `STAGE_REGISTRY` validation passes, all entries have correct types
 - **Unit tests**: `get_eligible_jobs()` returns v3 jobs when eligible, excludes when conflicted
+- **Unit tests**: `get_eligible_jobs()` excludes compare-classify when resolve-disagree is running (cross-phase global exclusion)
+- **Unit tests**: `ClassifierV3JobCreateView` rejects POST with phase not in `_V3_PHASES`
+- **Unit tests**: `ClassifierV3JobCreateView` rejects POST with invalid `depends_on` (nonexistent, terminal)
 - **Integration tests**: Full form POST → job creation → job appears in list
-- **Integration tests**: Cancel and retry of v3 jobs
-- **Manual verification**: Queue TX and CA extract-context jobs simultaneously, verify both dispatch
+- **Integration tests**: Cancel running v3 job → SIGTERM sent → job marked cancelled → dependent jobs cascaded
+- **Integration tests**: Retry failed v3 job → new job created with correct `retry_of` and `attempt_number`
+- **Migration tests**: PipelineProcess cleanup script only marks stopped when PID is dead (not blindly)
+- **Manual verification**: Queue TX and CA extract-context jobs simultaneously, verify both dispatch on separate hosts
 
 ## Migration Path
 
-1. Deploy code changes
-2. Run Django migration (if any — PHASE_CHOICES doesn't require one)
-3. Mark any stale PipelineProcess rows as stopped:
-   ```sql
-   UPDATE pipeline_processes SET status = 'stopped'
-   WHERE name IN ('extract-context', 'reclassify', 'compare-classify',
-                   'resolve-disagree', 'promote-classify')
-   AND status = 'running';
-   ```
-4. Restart gunicorn
-5. Verify v3 job creation via dashboard
+1. **Pre-migration check**: Verify no v3 PipelineProcess rows are actively running. If any are alive, wait or stop them manually via `stop_process()`.
+2. Deploy code changes
+3. Run PipelineProcess cleanup (Phase 5b script — PID-liveness-checked, not blind SQL)
+4. Run Django migration (if any — PHASE_CHOICES doesn't require one, but review for any template/static changes)
+5. Restart gunicorn
+6. Verify v3 job creation via dashboard: queue one extract-context job, confirm it appears in `/jobs/` list
+7. Verify ProcessStartView rejects v3 phase names (POST to `/process/reclassify/start/` returns error)
