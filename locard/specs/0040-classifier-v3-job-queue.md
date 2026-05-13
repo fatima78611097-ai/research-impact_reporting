@@ -165,7 +165,7 @@ No Django migration needed — `PHASE_CHOICES` is a validation-only constraint, 
     conflict_group="per-state",
     provenance_column=None,
     retry_policy=RetryPolicy(max_attempts=1),
-    resource_class="light",
+    resource_class="light",  # read-only comparison, no LLM calls, completes in seconds even for large runs
 ),
 "resolve-disagree": StageDefinition(
     name="resolve-disagree",
@@ -203,7 +203,7 @@ No Django migration needed — `PHASE_CHOICES` is a validation-only constraint, 
     conflict_group="per-state",
     provenance_column=None,
     retry_policy=RetryPolicy(max_attempts=1),
-    resource_class="light",
+    resource_class="light",  # single SQL UPDATE, no iteration — completes in seconds
 ),
 ```
 
@@ -217,6 +217,20 @@ All 5 v3 phases use `per-state` conflict isolation. Multiple states can run simu
 - `promote-classify`: Needs `--state` flag added to `promote_classification_run.py` (prerequisite code change). Promotion updates `corpus` rows via JOIN on `classification_results` → `nonprofits_seed` — each state's documents belong to a single state, so per-state promotion touches disjoint rows. This is safe for concurrent execution across states.
 
 **Prerequisite**: `promote_classification_run.py` currently has no `--state` parameter. The implementation must add `--state` filtering using the same `nonprofits_seed` join pattern that `compare_classifications.py` already uses.
+
+**Nationwide vs. per-state mutual exclusion**: A job with no `--state` (nationwide) and a job with `--state=TX` for the same phase are **not** in conflict — they have different `state_code` values (`NULL` vs. `TX`). Nationwide jobs touch all rows; per-state jobs touch a subset. This means a nationwide reclassify and a TX-only reclassify can coexist. This is acceptable because: (1) reclassify writes are keyed by `(run_id, content_sha256)` and are idempotent, (2) different run_tags produce disjoint result sets, and (3) the operator is the sole user and understands the overlap. If this becomes problematic, a future spec can add cross-state conflict detection.
+
+#### 1c. Add `--state` flag to `promote_classification_run.py`
+
+The `promote_classification_run` command currently operates on an entire run_tag with no state filter. Add a `--state` argument that filters the promotion to a single state using the same pattern as `compare_classifications.py`:
+
+```python
+# In the SQL query, add an optional JOIN + WHERE:
+# JOIN nonprofits_seed ns ON cr.ein = ns.ein
+# WHERE ns.state = :state
+```
+
+This is a small, self-contained change to the management command. It does not alter behavior when `--state` is omitted (nationwide promotion still works as before).
 
 ### Phase 2: Orchestrator Job Creation
 
@@ -243,6 +257,15 @@ def create_v3_job(phase: str, config_overrides: dict, host: str,
         raise InvalidParameterError(f"Not a v3 phase: {phase}")
 
     state = config_overrides.get("state") or None
+
+    # Enforce run_tag consistency across dependency chains
+    if depends_on and "run_tag" in config_overrides:
+        parent_tag = (depends_on.config_json or {}).get("run_tag")
+        if parent_tag and parent_tag != config_overrides["run_tag"]:
+            raise InvalidParameterError(
+                f"run_tag mismatch: job uses '{config_overrides['run_tag']}' "
+                f"but depends on Job #{depends_on.pk} which uses '{parent_tag}'"
+            )
 
     with transaction.atomic():
         # Per-state conflict: block same phase + same state
@@ -344,14 +367,14 @@ Each phase card gets:
 
 #### 3f. Remove PipelineProcess dependency for v3 phases
 
-The `ProcessStartView` and `ProcessStopView` should no longer handle v3 phases. Remove v3 entries from the `form_map` and `redirect_map` dicts in both views. The process start/stop URLs stay for any remaining ad-hoc phases, but v3 routes through the job queue exclusively.
+The `ProcessStartView` and `ProcessStopView` should no longer handle v3 phases. Remove v3 entries from the `form_map` and `redirect_map` dicts in both views. The process start/stop URLs stay for any remaining ad-hoc phases, but v3 routes through the job queue exclusively. There are no external callers (scripts, cron, automation) that hit these URLs — only the dashboard forms, which are being updated to use the job queue endpoint.
 
 ### Phase 4: Job Scheduler Integration
 
 The existing job scheduler (`scheduler.py` `score_placement()` and `get_eligible_jobs()`) already handles new phases automatically as long as:
 
 1. The phase is in `COMMAND_MAP` (already true)
-2. The phase has conflict group logic in `check_phase_conflict()` (Phase 2d)
+2. The phase has conflict group logic in `check_phase_conflict()` (Phase 2c)
 3. The phase is in `_PER_STATE_PHASES` if per-state (Phase 2a)
 
 The scheduler daemon picks up pending jobs and transitions them to `scheduled` → `running`. No scheduler changes needed beyond the conflict group updates.
@@ -368,6 +391,8 @@ Job cancellation for v3 phases uses the existing `cancel_job()` function (orches
 5. Cascades cancellation to any dependent jobs
 
 The v3 management commands already handle SIGINT/SIGTERM gracefully — `reclassify_corpus` has a `_SIGINT_DRAIN_TIMEOUT` that completes in-flight LLM calls before exiting. Partial outputs (classification_results rows) are safe: they're idempotent writes keyed by (run_id, content_sha256). A cancelled-and-restarted run with `--resume` picks up where it left off.
+
+**Cascade-cancel behavior**: Cancelling an upstream job (e.g., extract-context) cancels the entire downstream dependency chain (reclassify → compare → resolve → promote). This is the correct behavior for v3 chains: downstream phases depend on the upstream output, so running them after cancellation would produce incomplete results. To retry, the operator queues a fresh chain from the cancelled phase onward. This matches the existing `cancel_job()` semantics used by all other pipeline phases.
 
 #### 5b. PipelineProcess cleanup
 
@@ -392,7 +417,7 @@ After migration, the v3 page has two log sources:
 - **Historical**: `_scan_v3_logs()` shows log files from PipelineProcess-era runs (pre-migration). These remain accessible via the existing `ProcessLogPartial` view. Displayed in a "Historical Logs" section at the bottom of the page.
 - **Current**: `Job.log_file` shows logs from Job-era runs. Displayed via the standard `JobLogPartial` view (already used by other pipeline pages).
 
-The `PipelineProcess` model is **not removed** but is no longer used by v3 views for status polling. It remains available for any future ad-hoc use cases. After this spec, no dashboard page creates v3 PipelineProcess rows.
+The `PipelineProcess` model is **not removed** — it is still used by `check_phase_conflict()` as a safety net (Trap #7), and may be used by future ad-hoc pipeline stages that don't need the full Job queue. Removal is deferred until all pipeline phases use the Job model and `check_phase_conflict()` no longer references it. After this spec, no dashboard page creates v3 PipelineProcess rows.
 
 ## Acceptance Criteria
 
@@ -429,15 +454,15 @@ The `PipelineProcess` model is **not removed** but is no longer used by v3 views
 24. Dependency chain: Can queue reclassify with depends_on pointing to an extract-context job — reclassify waits until extract-context completes
 
 ### Backward Compatibility (Phase 5)
-24. Existing PipelineProcess rows remain in DB but are no longer polled by v3 views
-25. Historical v3 log files remain accessible via log viewer
-26. Job creation uses the same form fields and validation as the current PipelineProcess forms
+25. Existing PipelineProcess rows remain in DB but are no longer polled by v3 views
+26. Historical v3 log files remain accessible via log viewer
+27. Job creation uses the same form fields and validation as the current PipelineProcess forms
 
 ## Traps to Avoid
 
 1. **Don't change management commands unnecessarily**: The underlying commands are correct (Spec 0038). The one exception is `promote_classification_run.py`, which needs a `--state` flag added to support per-state isolation. All other commands already have `--state` support.
 2. **Don't add new conflict groups to `validate_registry()`**: The existing `per-state` and `global` values are sufficient. All v3 phases use the standard `per-state` conflict model.
-3. **Don't forget the `--run-tag` coupling**: When queuing reclassify → compare → resolve-disagree → promote as a dependency chain, all jobs must share the same `run_tag` config value. The UI should make this clear (perhaps pre-fill from the upstream job's config).
+3. **`--run-tag` consistency is enforced server-side**: `create_v3_job()` validates that when `depends_on` is set, the `run_tag` matches the predecessor's `run_tag`. A mismatched `run_tag` raises `InvalidParameterError`. The UI should also pre-fill `run_tag` from the upstream job's config for convenience, but the server-side check is the guard.
 4. **Don't break the scheduler daemon**: The scheduler already calls `get_eligible_jobs()` and `build_argv()`. New phases just work if conflict groups are correct.
 5. **PipelineProcess ghost processes**: Before switching the v3 page from PipelineProcess to Job queries, clean up stale PipelineProcess rows using the PID-liveness-checked script (Phase 5b). A running PipelineProcess would still be checked by `check_phase_conflict()` — clear them.
 6. **Include `scheduled` in conflict checks**: The Job lifecycle has three active states: `pending`, `scheduled`, `running`. All conflict/duplicate checks must filter on all three. The existing `create_crawl_job()` etc. only check `pending`/`running` — this is a latent bug in the existing code, but v3 must get it right. Use `status__in=["pending", "scheduled", "running"]`.
@@ -453,6 +478,8 @@ The `PipelineProcess` model is **not removed** but is no longer used by v3 views
 - **Unit tests**: `get_eligible_jobs()` returns v3 jobs when eligible, excludes when same phase+state conflicted
 - **Unit tests**: `ClassifierV3JobCreateView` rejects POST with phase not in `_V3_PHASES`
 - **Unit tests**: `ClassifierV3JobCreateView` rejects POST with invalid `depends_on` (nonexistent, terminal)
+- **Unit tests**: `create_v3_job()` rejects `run_tag` mismatch when `depends_on` is set
+- **Unit tests**: Nationwide job (no state) and per-state job (e.g., TX) for the same phase can coexist (no conflict)
 - **Integration tests**: Full form POST → job creation → job appears in list
 - **Integration tests**: Cancel running v3 job → SIGTERM sent → job marked cancelled → dependent jobs cascaded
 - **Integration tests**: Retry failed v3 job → new job created with correct `retry_of` and `attempt_number`
