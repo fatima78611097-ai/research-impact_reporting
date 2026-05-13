@@ -605,7 +605,7 @@ projects:
   - id: "0040"
     title: "Classifier V3 Job Queue Integration"
     summary: "Migrate classifier v3 pipeline (extract-context, reclassify, compare, resolve-disagree, promote) from ad-hoc PipelineProcess to the Job queue system. Adds StageDefinition entries, state-isolated job creation, run-vs-queue choice, and job queue visibility in the dashboard — matching the pattern used by seed/resolve/crawl."
-    status: specified
+    status: implementing
     priority: high
     files:
       spec: locard/specs/0040-classifier-v3-job-queue.md
