@@ -75,7 +75,7 @@
       <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse ml-auto"></span>
       {% endif %}
     </div>
-    <p class="text-xs text-gray-500 mb-3">Compare a run's results against current classifications.</p>
+    <p class="text-xs text-gray-500 mb-3">Compare a run's results against current v2 classifications.</p>
     <form method="post" action="{% url 'process_start' 'compare-classify' %}">
       {% csrf_token %}
       {% for field in compare_form %}
@@ -94,10 +94,38 @@
     {% endif %}
   </div>
 
-  <!-- Step 4: Promote -->
+  <!-- Step 4: Resolve Disagreements -->
   <div class="bg-white rounded-lg shadow p-5">
     <div class="flex items-center gap-2 mb-3">
-      <span class="bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded">Step 4</span>
+      <span class="bg-purple-100 text-purple-700 text-xs font-bold px-2 py-0.5 rounded">Step 4</span>
+      <h2 class="text-sm font-semibold text-gray-700 uppercase">Resolve Disagreements</h2>
+      {% if resolve_disagree_process and resolve_disagree_process.status == "running" %}
+      <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse ml-auto"></span>
+      {% endif %}
+    </div>
+    <p class="text-xs text-gray-500 mb-3">Tiebreaker pass: send v2/v3 disagreements to a different LLM for resolution.</p>
+    <form method="post" action="{% url 'process_start' 'resolve-disagree' %}">
+      {% csrf_token %}
+      {% for field in resolve_form %}
+      <div class="mb-3">
+        <label class="block text-xs font-medium text-gray-600 mb-1">{{ field.label }}</label>
+        {{ field }}
+      </div>
+      {% endfor %}
+      <button type="submit" class="w-full bg-purple-600 text-white py-2 rounded text-sm hover:bg-purple-700">Run Resolve</button>
+    </form>
+    {% if resolve_disagree_process and resolve_disagree_process.status == "running" %}
+    <form method="post" action="{% url 'process_stop' 'resolve-disagree' %}" class="mt-2">
+      {% csrf_token %}
+      <button type="submit" class="w-full bg-red-600 text-white py-2 rounded text-sm hover:bg-red-700">Stop</button>
+    </form>
+    {% endif %}
+  </div>
+
+  <!-- Step 5: Promote -->
+  <div class="bg-white rounded-lg shadow p-5">
+    <div class="flex items-center gap-2 mb-3">
+      <span class="bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded">Step 5</span>
       <h2 class="text-sm font-semibold text-gray-700 uppercase">Promote Run</h2>
       {% if promote_classify_process and promote_classify_process.status == "running" %}
       <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse ml-auto"></span>

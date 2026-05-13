@@ -113,9 +113,10 @@ _CONFIG_ALLOWLIST = {
     "enrich-phone": ["state", "search_engines", "limit"],
     "990-index": ["filing_year"],
     "990-parse": ["filing_year", "limit"],
-    "extract-context": ["limit", "reextract"],
-    "reclassify": ["run_tag", "backend", "sample", "definition", "dry_run"],
+    "extract-context": ["state", "ein", "limit", "reextract"],
+    "reclassify": ["run_tag", "backend", "state", "ein", "sample", "definition", "dry_run", "allow_fallback"],
     "compare-classify": ["run_tag"],
+    "resolve-disagree": ["run_tag", "backend", "state", "sample", "dry_run"],
     "promote-classify": ["run_tag", "confirm"],
 }
 
@@ -688,7 +689,7 @@ class ClassifierView(LoginRequiredMixin, TemplateView):
         return ctx
 
 
-_V3_PHASES = ("extract-context", "reclassify", "compare-classify", "promote-classify")
+_V3_PHASES = ("extract-context", "reclassify", "compare-classify", "resolve-disagree", "promote-classify")
 
 
 def _scan_v3_logs(limit=20):
@@ -725,10 +726,12 @@ class ClassifierV3View(LoginRequiredMixin, TemplateView):
             ExtractContextForm,
             PromoteClassifyForm,
             ReclassifyForm,
+            ResolveDisagreementsForm,
         )
         ctx["extract_form"] = ExtractContextForm()
         ctx["reclassify_form"] = ReclassifyForm()
         ctx["compare_form"] = CompareClassifyForm()
+        ctx["resolve_form"] = ResolveDisagreementsForm()
         ctx["promote_form"] = PromoteClassifyForm()
         for phase in _V3_PHASES:
             try:
@@ -768,6 +771,7 @@ class ClassifierV3StatusPartial(HtmxLoginRequiredMixin, TemplateView):
             ("extract-context", "Extract Context"),
             ("reclassify", "Reclassify"),
             ("compare-classify", "Compare"),
+            ("resolve-disagree", "Resolve"),
             ("promote-classify", "Promote"),
         ]:
             try:
@@ -826,6 +830,7 @@ class ProcessStartView(LoginRequiredMixin, View):
             "extract-context": "ExtractContextForm",
             "reclassify": "ReclassifyForm",
             "compare-classify": "CompareClassifyForm",
+            "resolve-disagree": "ResolveDisagreementsForm",
             "promote-classify": "PromoteClassifyForm",
         }
         redirect_map = {
@@ -835,6 +840,7 @@ class ProcessStartView(LoginRequiredMixin, View):
             "extract-context": "classifier_v3",
             "reclassify": "classifier_v3",
             "compare-classify": "classifier_v3",
+            "resolve-disagree": "classifier_v3",
             "promote-classify": "classifier_v3",
         }
         if phase not in form_map:
@@ -868,6 +874,7 @@ class ProcessStopView(LoginRequiredMixin, View):
             "extract-context": "classifier_v3",
             "reclassify": "classifier_v3",
             "compare-classify": "classifier_v3",
+            "resolve-disagree": "classifier_v3",
             "promote-classify": "classifier_v3",
         }
         try:

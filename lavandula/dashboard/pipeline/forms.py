@@ -273,13 +273,18 @@ class PhoneEnrichForm(forms.Form):
 
 BACKEND_CHOICES = [
     ("deepseek", "DeepSeek"),
-    ("haiku", "Haiku"),
+    ("claude", "Claude (Haiku)"),
     ("gemini", "Gemini"),
-    ("claude", "Claude"),
+    ("codex", "Codex"),
 ]
 
 
 class ExtractContextForm(forms.Form):
+    state = forms.ChoiceField(choices=[("", "All states")] + STATE_CHOICES, required=False,
+        widget=forms.Select(attrs={"class": _SELECT}), label="State filter")
+    ein = forms.CharField(max_length=20, required=False,
+        widget=forms.TextInput(attrs={"class": _SELECT, "placeholder": "e.g. 13-1234567"}),
+        label="Single EIN")
     limit = forms.IntegerField(required=False, min_value=1, max_value=999999,
         widget=forms.NumberInput(attrs={"class": _SELECT}))
     reextract = forms.BooleanField(required=False, label="Re-extract existing")
@@ -297,12 +302,37 @@ class ReclassifyForm(forms.Form):
         widget=forms.Select(attrs={"class": _SELECT}))
     definition = forms.ChoiceField(choices=_get_definition_choices, initial="corpus_reports",
         widget=forms.Select(attrs={"class": _SELECT}), label="Definition", required=False)
+    state = forms.ChoiceField(choices=[("", "All states")] + STATE_CHOICES, required=False,
+        widget=forms.Select(attrs={"class": _SELECT}), label="State filter")
+    ein = forms.CharField(max_length=20, required=False,
+        widget=forms.TextInput(attrs={"class": _SELECT, "placeholder": "e.g. 13-1234567"}),
+        label="Single EIN")
+    sample = forms.IntegerField(required=False, min_value=1, max_value=999999,
+        widget=forms.NumberInput(attrs={"class": _SELECT}), label="Sample size")
+    workers = forms.IntegerField(initial=4, required=False, min_value=1, max_value=32,
+        widget=forms.NumberInput(attrs={"class": _SELECT}))
+    allow_fallback = forms.BooleanField(required=False, label="Allow fallback text")
+    min_text_len = forms.IntegerField(initial=1000, required=False, min_value=0, max_value=10000,
+        widget=forms.NumberInput(attrs={"class": _SELECT}), label="Min text length")
+    dry_run = forms.BooleanField(required=False, label="Dry run")
+    resume = forms.BooleanField(required=False, label="Resume")
+
+
+class ResolveDisagreementsForm(forms.Form):
+    run_tag = forms.CharField(max_length=100,
+        widget=forms.TextInput(attrs={"class": _SELECT, "placeholder": "Run tag with disagreements"}),
+        label="Run tag")
+    backend = forms.ChoiceField(choices=BACKEND_CHOICES, initial="claude",
+        widget=forms.Select(attrs={"class": _SELECT}), label="Tiebreaker backend")
+    definition = forms.ChoiceField(choices=_get_definition_choices, initial="corpus_reports",
+        widget=forms.Select(attrs={"class": _SELECT}), label="Definition", required=False)
+    state = forms.ChoiceField(choices=[("", "All states")] + STATE_CHOICES, required=False,
+        widget=forms.Select(attrs={"class": _SELECT}), label="State filter")
     sample = forms.IntegerField(required=False, min_value=1, max_value=999999,
         widget=forms.NumberInput(attrs={"class": _SELECT}), label="Sample size")
     workers = forms.IntegerField(initial=4, required=False, min_value=1, max_value=32,
         widget=forms.NumberInput(attrs={"class": _SELECT}))
     dry_run = forms.BooleanField(required=False, label="Dry run")
-    resume = forms.BooleanField(required=False, label="Resume")
 
 
 class CompareClassifyForm(forms.Form):

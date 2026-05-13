@@ -33,7 +33,7 @@ summarize a full year of activity.
 "Endowment Report FY24", "Report to the Community",
 "President's Report 2024", "A Year of Impact"
 
-**Not this**: IRS Form 990 (→ not_relevant), single financial statement
+**Not this**: IRS Form 990 (→ irs_form_990), single financial statement
 (→ financial_report), research/white paper (→ other_collateral),
 impact report focused on a single program (→ impact_report),
 CEO annual letter without org-wide data (→ annual_letter)
@@ -55,14 +55,15 @@ Year in review publication — a narrative or visual recap of the year,
 typically lighter than a formal annual report.
 
 ### financial_report
-Audited financial statements, independent auditor reports, IRS Form 990,
+Audited financial statements, independent auditor reports,
 Char-500, or standalone financial summaries.
 
-**Examples**: "Audited Financial Statements FY2024", "Form 990",
+**Examples**: "Audited Financial Statements FY2024",
 "Independent Auditor's Report", "Financial Summary",
 "Consolidated Financial Statements", "Char-500"
 
 **Not this**: Annual report with a financial section (→ annual_report),
+IRS Form 990 (→ irs_form_990),
 budget document (→ not_relevant), grant financial report (→ impact_report)
 
 ### community_benefit_report
@@ -355,19 +356,33 @@ Nonprofit material that doesn't fit any specific type above.
 Use this for legitimate nonprofit collateral that falls outside
 the defined categories.
 
-**Not this**: Non-nonprofit material (→ not_relevant)
+**Not this**: Non-nonprofit material (→ not_relevant),
+IRS Form 990 (→ irs_form_990)
+
+### irs_form_990
+IRS Form 990, 990-EZ, 990-PF, or 990-N filed by a nonprofit.
+These are public tax filings, not nonprofit-produced collateral,
+but are a distinct recognizable document type in the corpus.
+
+**Examples**: "Form 990", "Return of Organization Exempt From
+Income Tax", "990-EZ", "990-PF"
+
+**Not this**: Audited financial statements (→ financial_report),
+grant financial report (→ impact_report),
+budget document (→ not_relevant)
 
 ### not_relevant
-The PDF is not nonprofit collateral. Examples: IRS tax forms,
-maps, menus, syllabi, job postings, course catalogs, legal
-documents, government forms, commercial marketing materials.
+The PDF is not nonprofit collateral. Examples: maps, menus,
+syllabi, job postings, course catalogs, legal documents,
+government forms, commercial marketing materials.
 
-**Examples**: Form 990, campus map, restaurant menu, course
-catalog, job application, policy manual
+**Examples**: campus map, restaurant menu, course catalog,
+job application, policy manual, property rental catalog
 
 **Not this**: Nonprofit report of any kind (→ reports group),
 nonprofit brochure (→ program_brochure or campaign type),
-nonprofit newsletter (→ periodic group)
+nonprofit newsletter (→ periodic group),
+IRS Form 990 (→ irs_form_990)
 
 # Guidelines
 
@@ -378,7 +393,7 @@ nonprofit newsletter (→ periodic group)
 - event_type is ONLY for documents explicitly tied to a named fundraising event (e.g., "2025 Spring Gala", "Annual Golf Classic"). Set event_type to null for generic materials or when the event name/type cannot be determined.
 - If unsure, pick the best fit and report confidence below 0.8.
 - For documents that could be either annual_report or impact_report: if it covers the whole organization for a fiscal year, use annual_report. If it focuses on specific programs or outcomes, use impact_report.
-- For documents that could be either financial_report or not_relevant: standalone financial statements and 990s are financial_report. Budget worksheets, grant applications, and tax filing instructions are not_relevant.
+- For documents that could be either financial_report or not_relevant: standalone financial statements are financial_report. IRS Form 990s are irs_form_990. Budget worksheets, grant applications, and tax filing instructions are not_relevant.
 
 # Event Types
 

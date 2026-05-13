@@ -612,7 +612,7 @@ material_types:
     tier: web
     description: "Catch-all"
 
-  - id: not_relevant
+  - id: irs_form_990
     group: other
     tier: web
     filename_signals:
@@ -624,7 +624,12 @@ material_types:
       - "internal revenue service"
       - "OMB No. 1545-0047"
       - "department of the treasury"
-    description: "Not nonprofit collateral (IRS tax forms, maps, menus, etc.)"
+    description: "IRS Form 990 public tax filing"
+
+  - id: not_relevant
+    group: other
+    tier: web
+    description: "Not nonprofit collateral (maps, menus, syllabi, job postings, etc.)"
 
 
 # ---------------------------------------------------------------------------

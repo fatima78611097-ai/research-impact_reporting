@@ -41,6 +41,10 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("--limit", type=int, default=None,
                             help="Max PDFs to process")
+        parser.add_argument("--state", type=str, default=None,
+                            help="Two-letter state code (e.g. TX)")
+        parser.add_argument("--ein", type=str, default=None,
+                            help="Single EIN (e.g. 13-1234567)")
         parser.add_argument("--reextract", action="store_true",
                             help="Force re-extraction of all rows")
         parser.add_argument("--download-workers", type=int, default=8,
@@ -54,6 +58,9 @@ class Command(BaseCommand):
         reextract = options["reextract"]
         download_workers = options["download_workers"]
         extract_workers = options["extract_workers"]
+
+        state = options.get("state")
+        ein = options.get("ein")
 
         self._lock_conn = engine.connect()
         try:
@@ -69,7 +76,8 @@ class Command(BaseCommand):
 
             self._run(engine, limit=limit, reextract=reextract,
                       download_workers=download_workers,
-                      extract_workers=extract_workers)
+                      extract_workers=extract_workers,
+                      state=state, ein=ein)
         finally:
             try:
                 self._lock_conn.execute(
@@ -82,10 +90,11 @@ class Command(BaseCommand):
             finally:
                 self._lock_conn.close()
 
-    def _run(self, engine, *, limit, reextract, download_workers, extract_workers):
+    def _run(self, engine, *, limit, reextract, download_workers, extract_workers,
+             state=None, ein=None):
         archive = S3Archive(_BUCKET, _PREFIX)
 
-        job_id = self._create_job(engine)
+        job_id = self._create_job(engine, state=state, ein=ein)
         stats = {
             "processed": 0, "extracted": 0, "skipped_oversized": 0,
             "skipped_missing": 0, "sha_mismatch": 0, "failed": 0,
@@ -94,13 +103,15 @@ class Command(BaseCommand):
             return self._run_inner(engine, archive, job_id, stats,
                                    limit=limit, reextract=reextract,
                                    download_workers=download_workers,
-                                   extract_workers=extract_workers)
+                                   extract_workers=extract_workers,
+                                   state=state, ein=ein)
         except BaseException:
             self._fail_job(engine, job_id, stats)
             raise
 
     def _run_inner(self, engine, archive, job_id, stats, *,
-                   limit, reextract, download_workers, extract_workers):
+                   limit, reextract, download_workers, extract_workers,
+                   state=None, ein=None):
 
         work_queue: queue.Queue = queue.Queue(maxsize=extract_workers * 2)
         result_lock = threading.Lock()
@@ -171,12 +182,23 @@ class Command(BaseCommand):
                     if page_limit <= 0:
                         break
 
+                filter_sql = ""
+                params = {"cursor": last_cursor, "page_limit": page_limit}
+                if state:
+                    filter_sql += (f" AND c.source_org_ein IN "
+                                   f"(SELECT ein FROM {_SCHEMA}.nonprofits_seed WHERE state = :state)")
+                    params["state"] = state
+                if ein:
+                    filter_sql += " AND c.source_org_ein = :ein"
+                    params["ein"] = ein
+
                 if reextract:
                     sql = (
                         f"SELECT c.content_sha256, c.file_size_bytes "
                         f"FROM {_SCHEMA}.corpus c "
                         f"WHERE c.content_type = 'application/pdf' "
-                        f"  AND c.content_sha256 > :cursor "
+                        f"  AND c.content_sha256 > :cursor"
+                        f"{filter_sql} "
                         f"ORDER BY c.content_sha256 LIMIT :page_limit"
                     )
                 else:
@@ -187,13 +209,14 @@ class Command(BaseCommand):
                         f"  ON cc.content_sha256 = c.content_sha256 "
                         f"WHERE c.content_type = 'application/pdf' "
                         f"  AND cc.content_sha256 IS NULL "
-                        f"  AND c.content_sha256 > :cursor "
+                        f"  AND c.content_sha256 > :cursor"
+                        f"{filter_sql} "
                         f"ORDER BY c.content_sha256 LIMIT :page_limit"
                     )
 
                 with engine.connect() as conn:
                     rows = conn.execute(
-                        text(sql), {"cursor": last_cursor, "page_limit": page_limit}
+                        text(sql), params
                     ).fetchall()
 
                 if not rows:
@@ -331,12 +354,17 @@ class Command(BaseCommand):
                     f"ON CONFLICT (content_sha256) DO NOTHING"
                 ), row)
 
-    def _create_job(self, engine):
+    def _create_job(self, engine, *, state=None, ein=None):
         from pipeline.models import Job
+        config = {}
+        if state:
+            config["state"] = state
+        if ein:
+            config["ein"] = ein
         job = Job.objects.create(
             phase="extract-context",
             status="running",
-            config_json={},
+            config_json=config,
             started_at=timezone.now(),
         )
         return job.id

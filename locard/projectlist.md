@@ -592,7 +592,7 @@ projects:
   - id: "0038"
     title: "Classifier Pipeline Rebuild"
     summary: "Ground-up rewrite of reclassify_corpus: require extraction context (no silent fallback), real progress logging, state/EIN/org filtering, actual concurrent workers, quality gates. Replace the broken v3 pipeline with something trustworthy."
-    status: implementing
+    status: committed
     priority: high
     files:
       spec: locard/specs/0038-classifier-pipeline-rebuild.md
@@ -600,7 +600,7 @@ projects:
       review: null
     dependencies: [0035]
     tags: [classifier, pipeline, quality, reliability]
-    notes: "Motivated by discovering the v3 classifier never used multi-page context (Spec 0035), accepted a --workers flag it ignored, logged nothing during runs, and had no way to target by state/EIN. 133 results from test run all used first_page_text fallback."
+    notes: "Motivated by discovering the v3 classifier never used multi-page context (Spec 0035), accepted a --workers flag it ignored, logged nothing during runs, and had no way to target by state/EIN. 133 results from test run all used first_page_text fallback. PR #33 merged 2026-05-12. 11 files, +3270/-474, 61 tests. Awaiting operator: test with --dry-run --state TX, then single-EIN smoke test."
 
   - id: "0039"
     title: "SSM Parameter Type Optimization (KMS Cost Reduction)"

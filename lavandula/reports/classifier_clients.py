@@ -244,9 +244,24 @@ class SubscriptionCLIClient:
         stdout = getattr(result, "stdout", "") or ""
         stderr = getattr(result, "stderr", "") or ""
         if returncode != 0:
+            # Claude CLI returns JSON on exit code 1 for refusals/errors
+            if stdout.strip():
+                try:
+                    resp = json.loads(stdout)
+                    if resp.get("stop_reason") == "refusal":
+                        raise ClassifierCLIError(
+                            f"{self._cli} refused: {sanitize(resp.get('result', ''))[:200]}"
+                        )
+                    if resp.get("is_error"):
+                        raise ClassifierCLIError(
+                            f"{self._cli} error: {sanitize(resp.get('result', ''))[:200]}"
+                        )
+                except json.JSONDecodeError:
+                    pass
             raise ClassifierCLIError(
                 f"{self._cli} CLI returned {returncode}: "
-                f"stderr={sanitize(stderr)[:200]}"
+                f"stderr={sanitize(stderr)[:200]} "
+                f"stdout={sanitize(stdout)[:200]}"
             )
         if not stdout.strip():
             raise ClassifierCLIError(f"{self._cli} CLI returned empty stdout")

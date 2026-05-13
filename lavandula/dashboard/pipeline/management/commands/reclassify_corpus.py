@@ -71,7 +71,7 @@ class Command(BaseCommand):
         parser.add_argument("--sample", type=int, default=None, help="Random sample size")
         parser.add_argument("--where", type=str, default=None, help="Additional WHERE clause")
         parser.add_argument("--dry-run", action="store_true", help="Show counts without classifying")
-        parser.add_argument("--backend", choices=["deepseek", "haiku", "gemini", "claude"],
+        parser.add_argument("--backend", choices=["deepseek", "claude", "gemini", "codex"],
                             default="deepseek", help="LLM backend")
         parser.add_argument("--workers", type=int, default=4, help="Concurrent LLM workers")
         parser.add_argument("--batch-size", type=int, default=200, help="Docs per database fetch")
@@ -79,7 +79,7 @@ class Command(BaseCommand):
         parser.add_argument("--definition", type=str, default=None, help="Classifier definition name")
         parser.add_argument("--allow-fallback", action="store_true",
                             help="Allow first_page_text when no extraction context")
-        parser.add_argument("--min-text-len", type=int, default=100,
+        parser.add_argument("--min-text-len", type=int, default=1000,
                             help="Minimum pages_text length to classify")
         parser.add_argument("--quiet", action="store_true",
                             help="Suppress per-batch progress (keep start/end summary)")
@@ -271,6 +271,13 @@ class Command(BaseCommand):
                             else:
                                 stats["skip_fp"] += 1
                             stats["total"] += 1
+                            self._write_result(
+                                engine, run_id, row["content_sha256"],
+                                material_type=None, material_group=None,
+                                event_type=None, confidence=None,
+                                reasoning=f"Skipped: text length {len(eval_text.strip())} < {min_text_len}",
+                                classified_by="skip:short_text",
+                            )
                             continue
 
                         # Rule prefilter (fast, main thread)
@@ -461,7 +468,11 @@ class Command(BaseCommand):
                         continue
                     return None
                 return result
-            except Exception:
+            except Exception as exc:
+                if "refused" in str(exc):
+                    log.warning("LLM refused content for sha=%s, skipping",
+                                row.get("content_sha256", "?")[:12])
+                    return None
                 log.exception("LLM classification exception (attempt %d)", attempt + 1)
                 if attempt < _MAX_DOC_RETRIES - 1:
                     base_delay = _RETRY_BASE_DELAYS[min(attempt, len(_RETRY_BASE_DELAYS) - 1)]
