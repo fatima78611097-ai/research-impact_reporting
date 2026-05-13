@@ -177,6 +177,7 @@ class Command(BaseCommand):
         last_cursor = ""
         remaining = limit
         total_queued = 0
+        last_stats_flush = time.monotonic()
 
         try:
             while True:
@@ -299,7 +300,10 @@ class Command(BaseCommand):
                 if remaining is not None:
                     remaining -= len(rows)
 
-                self._update_job(engine, job_id, stats)
+                now = time.monotonic()
+                if now - last_stats_flush >= 10:
+                    self._update_job(engine, job_id, stats)
+                    last_stats_flush = now
                 total_queued += len(rows)
 
                 if len(rows) < page_limit:
@@ -379,19 +383,25 @@ class Command(BaseCommand):
         )
         return job.id
 
+    def _merge_stats(self, job_id, stats):
+        from pipeline.models import Job
+        job = Job.objects.get(pk=job_id)
+        cfg = job.config_json or {}
+        cfg["stats"] = dict(stats)
+        Job.objects.filter(pk=job_id).update(config_json=cfg)
+
     def _update_job(self, engine, job_id, stats):
         try:
-            from pipeline.models import Job
-            Job.objects.filter(id=job_id).update(config_json={"stats": stats})
+            self._merge_stats(job_id, stats)
         except Exception:
             log.exception("Failed to update job %d", job_id)
 
     def _finish_job(self, engine, job_id, stats):
         try:
             from pipeline.models import Job
-            Job.objects.filter(id=job_id).update(
+            self._merge_stats(job_id, stats)
+            Job.objects.filter(pk=job_id).update(
                 status="completed",
-                config_json={"stats": stats},
                 finished_at=timezone.now(),
             )
         except Exception:
@@ -400,9 +410,9 @@ class Command(BaseCommand):
     def _fail_job(self, engine, job_id, stats):
         try:
             from pipeline.models import Job
-            Job.objects.filter(id=job_id, status="running").update(
+            self._merge_stats(job_id, stats)
+            Job.objects.filter(pk=job_id, status="running").update(
                 status="failed",
-                config_json={"stats": stats},
                 finished_at=timezone.now(),
             )
         except Exception:
