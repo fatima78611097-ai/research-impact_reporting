@@ -605,7 +605,7 @@ projects:
   - id: "0039"
     title: "SSM Parameter Type Optimization (KMS Cost Reduction)"
     summary: "Convert non-sensitive SSM parameters (rds-endpoint, rds-port, rds-database, rds-schema) from SecureString to String type, eliminating unnecessary KMS Decrypt calls. Every process startup currently makes 5+ KMS calls for config values that aren't secrets. With 22+ concurrent crawlers plus Django workers, this generates ~17K KMS requests/month approaching the 20K free tier limit."
-    status: conceived
+    status: integrated
     priority: medium
     files:
       spec: null
@@ -613,7 +613,7 @@ projects:
       review: null
     dependencies: []
     tags: [infrastructure, cost-optimization, ssm, kms, ops]
-    notes: "Discovered 2026-05-12: AWS KMS budget alert triggered at 17K/20K free tier requests. Root cause: every process startup calls get_secret() with WithDecryption=True for 5+ SSM SecureString params (rds-endpoint, rds-port, rds-database, rds-schema, plus API keys). lru_cache helps within a process but each new crawler/command/Django worker starts cold. Non-sensitive params (hostname, port, db name, schema) should be String type (no KMS). Actual secrets (API keys, django-secret-key) stay SecureString."
+    notes: "Discovered 2026-05-12: AWS KMS budget alert triggered at 17K/20K free tier requests. Verified 2026-05-14: all 6 non-sensitive RDS params (rds-endpoint, rds-port, rds-database, rds-schema, rds-app-user, rds-ro-user) are already String type. Only actual secrets remain SecureString. No code or infra changes needed — problem was already resolved. Only borderline item: rds-dashboard-user is SecureString (username, not password) but impact is trivial."
 ```
 
 ## Next Available Number
