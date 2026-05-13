@@ -35,6 +35,12 @@ _PAGE_SIZE = 500
 _MAX_PDF_BYTES = 100 * 1024 * 1024  # 100 MB
 _ADVISORY_LOCK_KEY_PREFIX = "extract-context"
 
+import re
+_SANITIZE_RE = re.compile(r"[\x00\ud800-\udfff]")
+
+def _sanitize_text(text: str) -> str:
+    return _SANITIZE_RE.sub("", text)
+
 
 class Command(BaseCommand):
     help = "Extract pages 1-5 from S3 PDFs into classification_context"
@@ -366,7 +372,7 @@ class Command(BaseCommand):
         with engine.begin() as conn:
             for row in rows:
                 if row.get("pages_text"):
-                    row["pages_text"] = row["pages_text"].replace("\x00", "")
+                    row["pages_text"] = _sanitize_text(row["pages_text"])
                 conn.execute(text(
                     f"INSERT INTO {_SCHEMA}.classification_context "
                     f"(content_sha256, pages_text, pages_extracted, total_pages, "
