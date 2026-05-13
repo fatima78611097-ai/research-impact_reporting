@@ -279,7 +279,7 @@ class Command(BaseCommand):
                             else:
                                 stats["skip_fp"] += 1
                             stats["total"] += 1
-                        dashboard_stats["processed"] += 1
+                            dashboard_stats["processed"] += 1
                             self._write_result(
                                 engine, run_id, row["content_sha256"],
                                 material_type=None, material_group=None,
@@ -312,7 +312,7 @@ class Command(BaseCommand):
                             )
                             stats["rule_matched"] += 1
                             stats["total"] += 1
-                        dashboard_stats["processed"] += 1
+                            dashboard_stats["processed"] += 1
                             distribution[rule_match.material_type] += 1
                             continue
 
@@ -404,9 +404,9 @@ class Command(BaseCommand):
                                 else:
                                     self._write_error(engine, run_id, row["content_sha256"])
                                     stats["llm_errors"] += 1
-                            dashboard_stats["failed"] += 1
+                                    dashboard_stats["failed"] += 1
                                 stats["total"] += 1
-                        dashboard_stats["processed"] += 1
+                                dashboard_stats["processed"] += 1
 
                             for fut in not_done:
                                 fut.cancel()
