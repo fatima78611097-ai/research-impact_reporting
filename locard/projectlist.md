@@ -618,7 +618,7 @@ projects:
   - id: "0041"
     title: "Classifier V3 Pipeline — Operational Parity"
     summary: "Fix 6 gaps left by Spec 0040 builder: add dependency chaining dropdown, cancel button, progress stats for all 5 stages, allow completed dependencies, fix check_phase_conflict scheduled status bug, delete dead _launch_immediately code."
-    status: implementing
+    status: committed
     priority: high
     files:
       spec: locard/specs/0041-v3-pipeline-operational-parity.md
@@ -626,7 +626,7 @@ projects:
       review: null
     dependencies: ["0040"]
     tags: [classifier, pipeline, job-queue, operations, bugfix]
-    notes: "Motivated by audit finding that 0040 delivered correct data model but regressed operator experience. Pre-0040 PipelineProcess UI had run/stop buttons that worked. Post-0040, no dependency chaining, no stop button, no progress stats for 4/5 stages. Triage patched visibility for extract-context only. This spec brings v3 to parity with crawler/resolver/classifier pages. Builder spawned 2026-05-13."
+    notes: "Motivated by audit finding that 0040 delivered correct data model but regressed operator experience. PR #35 merged 2026-05-13. 9 files, +283/-39. _launch_immediately dead code cleaned from working tree post-merge. Awaiting operator: restart gunicorn, verify dashboard."
 
   - id: "0039"
     title: "SSM Parameter Type Optimization (KMS Cost Reduction)"
