@@ -615,6 +615,19 @@ projects:
     tags: [classifier, pipeline, job-queue, multi-host, operations]
     notes: "Motivated by classifier v3 running as ad-hoc PipelineProcess while all other stages use the Job queue. No queue visibility, no state isolation, no multi-host dispatch. User needs to run multiple state-isolated classifier jobs simultaneously for national-scale reclassification."
 
+  - id: "0041"
+    title: "Classifier V3 Pipeline — Operational Parity"
+    summary: "Fix 6 gaps left by Spec 0040 builder: add dependency chaining dropdown, cancel button, progress stats for all 5 stages, allow completed dependencies, fix check_phase_conflict scheduled status bug, delete dead _launch_immediately code."
+    status: implementing
+    priority: high
+    files:
+      spec: locard/specs/0041-v3-pipeline-operational-parity.md
+      plan: locard/plans/0041-v3-pipeline-operational-parity.md
+      review: null
+    dependencies: ["0040"]
+    tags: [classifier, pipeline, job-queue, operations, bugfix]
+    notes: "Motivated by audit finding that 0040 delivered correct data model but regressed operator experience. Pre-0040 PipelineProcess UI had run/stop buttons that worked. Post-0040, no dependency chaining, no stop button, no progress stats for 4/5 stages. Triage patched visibility for extract-context only. This spec brings v3 to parity with crawler/resolver/classifier pages. Builder spawned 2026-05-13."
+
   - id: "0039"
     title: "SSM Parameter Type Optimization (KMS Cost Reduction)"
     summary: "Convert non-sensitive SSM parameters (rds-endpoint, rds-port, rds-database, rds-schema) from SecureString to String type, eliminating unnecessary KMS Decrypt calls. Every process startup currently makes 5+ KMS calls for config values that aren't secrets. With 22+ concurrent crawlers plus Django workers, this generates ~17K KMS requests/month approaching the 20K free tier limit."
@@ -631,7 +644,7 @@ projects:
 
 ## Next Available Number
 
-**0041** - Reserve this number for your next project
+**0042** - Reserve this number for your next project
 
 ---
 

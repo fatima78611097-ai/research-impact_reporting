@@ -24,13 +24,19 @@
     {% if extract_context_running %}
     <div class="mb-3 space-y-1">
       {% for job in extract_context_running %}
-      <div class="text-xs bg-blue-50 rounded p-2">
-        <span class="font-mono">Job #{{ job.pk }}</span>
-        <span class="text-gray-500">{{ job.state_code|default:"nationwide" }}</span>
-        <span class="text-gray-400">{{ job.elapsed }}</span>
-        {% if job.host_display_name %}<span class="text-gray-400">@ {{ job.host_display_name }}</span>{% endif %}
-        {% if job.stats_processed %}<span class="text-blue-600 ml-1">{{ job.stats_processed }} processed</span>{% endif %}
-        {% if job.stats_failed %}<span class="text-red-600 ml-1">{{ job.stats_failed }} failed</span>{% endif %}
+      <div class="text-xs bg-blue-50 rounded p-2 flex items-center justify-between">
+        <span>
+          <span class="font-mono">Job #{{ job.pk }}</span>
+          <span class="text-gray-500">{{ job.state_code|default:"nationwide" }}</span>
+          <span class="text-gray-400">{{ job.elapsed }}</span>
+          {% if job.host_display_name %}<span class="text-gray-400">@ {{ job.host_display_name }}</span>{% endif %}
+          {% if job.stats_processed %}<span class="text-blue-600 ml-1">{{ job.stats_processed }} processed</span>{% endif %}
+          {% if job.stats_failed %}<span class="text-red-600 ml-1">{{ job.stats_failed }} failed</span>{% endif %}
+        </span>
+        <form method="post" action="{% url 'job_cancel' job.pk %}?next={% url 'classifier_v3' %}" class="inline ml-2">
+          {% csrf_token %}
+          <button type="submit" class="text-red-600 hover:text-red-800 text-xs" title="Cancel job #{{ job.pk }}">Cancel</button>
+        </form>
       </div>
       {% endfor %}
     </div>
@@ -58,6 +64,7 @@
         </select>
       </div>
       {% endif %}
+      {% include "pipeline/partials/_depends_on.html" %}
       <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded text-sm hover:bg-blue-700">Queue Job</button>
     </form>
 
@@ -89,11 +96,19 @@
     {% if reclassify_running %}
     <div class="mb-3 space-y-1">
       {% for job in reclassify_running %}
-      <div class="text-xs bg-indigo-50 rounded p-2">
-        <span class="font-mono">Job #{{ job.pk }}</span>
-        <span class="text-gray-500">{{ job.state_code|default:"nationwide" }}</span>
-        <span class="text-gray-400">{{ job.elapsed }}</span>
-        {% if job.host_display_name %}<span class="text-gray-400">@ {{ job.host_display_name }}</span>{% endif %}
+      <div class="text-xs bg-indigo-50 rounded p-2 flex items-center justify-between">
+        <span>
+          <span class="font-mono">Job #{{ job.pk }}</span>
+          <span class="text-gray-500">{{ job.state_code|default:"nationwide" }}</span>
+          <span class="text-gray-400">{{ job.elapsed }}</span>
+          {% if job.host_display_name %}<span class="text-gray-400">@ {{ job.host_display_name }}</span>{% endif %}
+          {% if job.stats_processed %}<span class="text-indigo-600 ml-1">{{ job.stats_processed }} processed</span>{% endif %}
+          {% if job.stats_failed %}<span class="text-red-600 ml-1">{{ job.stats_failed }} failed</span>{% endif %}
+        </span>
+        <form method="post" action="{% url 'job_cancel' job.pk %}?next={% url 'classifier_v3' %}" class="inline ml-2">
+          {% csrf_token %}
+          <button type="submit" class="text-red-600 hover:text-red-800 text-xs" title="Cancel job #{{ job.pk }}">Cancel</button>
+        </form>
       </div>
       {% endfor %}
     </div>
@@ -121,6 +136,7 @@
         </select>
       </div>
       {% endif %}
+      {% include "pipeline/partials/_depends_on.html" %}
       <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded text-sm hover:bg-indigo-700">Queue Job</button>
     </form>
 
@@ -152,10 +168,18 @@
     {% if compare_classify_running %}
     <div class="mb-3 space-y-1">
       {% for job in compare_classify_running %}
-      <div class="text-xs bg-amber-50 rounded p-2">
-        <span class="font-mono">Job #{{ job.pk }}</span>
-        <span class="text-gray-500">{{ job.state_code|default:"nationwide" }}</span>
-        <span class="text-gray-400">{{ job.elapsed }}</span>
+      <div class="text-xs bg-amber-50 rounded p-2 flex items-center justify-between">
+        <span>
+          <span class="font-mono">Job #{{ job.pk }}</span>
+          <span class="text-gray-500">{{ job.state_code|default:"nationwide" }}</span>
+          <span class="text-gray-400">{{ job.elapsed }}</span>
+          {% if job.stats_processed %}<span class="text-amber-600 ml-1">{{ job.stats_processed }} processed</span>{% endif %}
+          {% if job.stats_failed %}<span class="text-red-600 ml-1">{{ job.stats_failed }} failed</span>{% endif %}
+        </span>
+        <form method="post" action="{% url 'job_cancel' job.pk %}?next={% url 'classifier_v3' %}" class="inline ml-2">
+          {% csrf_token %}
+          <button type="submit" class="text-red-600 hover:text-red-800 text-xs" title="Cancel job #{{ job.pk }}">Cancel</button>
+        </form>
       </div>
       {% endfor %}
     </div>
@@ -183,6 +207,7 @@
         </select>
       </div>
       {% endif %}
+      {% include "pipeline/partials/_depends_on.html" %}
       <button type="submit" class="w-full bg-amber-600 text-white py-2 rounded text-sm hover:bg-amber-700">Queue Job</button>
     </form>
 
@@ -214,11 +239,19 @@
     {% if resolve_disagree_running %}
     <div class="mb-3 space-y-1">
       {% for job in resolve_disagree_running %}
-      <div class="text-xs bg-purple-50 rounded p-2">
-        <span class="font-mono">Job #{{ job.pk }}</span>
-        <span class="text-gray-500">{{ job.state_code|default:"nationwide" }}</span>
-        <span class="text-gray-400">{{ job.elapsed }}</span>
-        {% if job.host_display_name %}<span class="text-gray-400">@ {{ job.host_display_name }}</span>{% endif %}
+      <div class="text-xs bg-purple-50 rounded p-2 flex items-center justify-between">
+        <span>
+          <span class="font-mono">Job #{{ job.pk }}</span>
+          <span class="text-gray-500">{{ job.state_code|default:"nationwide" }}</span>
+          <span class="text-gray-400">{{ job.elapsed }}</span>
+          {% if job.host_display_name %}<span class="text-gray-400">@ {{ job.host_display_name }}</span>{% endif %}
+          {% if job.stats_processed %}<span class="text-purple-600 ml-1">{{ job.stats_processed }} processed</span>{% endif %}
+          {% if job.stats_failed %}<span class="text-red-600 ml-1">{{ job.stats_failed }} failed</span>{% endif %}
+        </span>
+        <form method="post" action="{% url 'job_cancel' job.pk %}?next={% url 'classifier_v3' %}" class="inline ml-2">
+          {% csrf_token %}
+          <button type="submit" class="text-red-600 hover:text-red-800 text-xs" title="Cancel job #{{ job.pk }}">Cancel</button>
+        </form>
       </div>
       {% endfor %}
     </div>
@@ -246,6 +279,7 @@
         </select>
       </div>
       {% endif %}
+      {% include "pipeline/partials/_depends_on.html" %}
       <button type="submit" class="w-full bg-purple-600 text-white py-2 rounded text-sm hover:bg-purple-700">Queue Job</button>
     </form>
 
@@ -277,10 +311,18 @@
     {% if promote_classify_running %}
     <div class="mb-3 space-y-1">
       {% for job in promote_classify_running %}
-      <div class="text-xs bg-green-50 rounded p-2">
-        <span class="font-mono">Job #{{ job.pk }}</span>
-        <span class="text-gray-500">{{ job.state_code|default:"nationwide" }}</span>
-        <span class="text-gray-400">{{ job.elapsed }}</span>
+      <div class="text-xs bg-green-50 rounded p-2 flex items-center justify-between">
+        <span>
+          <span class="font-mono">Job #{{ job.pk }}</span>
+          <span class="text-gray-500">{{ job.state_code|default:"nationwide" }}</span>
+          <span class="text-gray-400">{{ job.elapsed }}</span>
+          {% if job.stats_processed %}<span class="text-green-600 ml-1">{{ job.stats_processed }} processed</span>{% endif %}
+          {% if job.stats_failed %}<span class="text-red-600 ml-1">{{ job.stats_failed }} failed</span>{% endif %}
+        </span>
+        <form method="post" action="{% url 'job_cancel' job.pk %}?next={% url 'classifier_v3' %}" class="inline ml-2">
+          {% csrf_token %}
+          <button type="submit" class="text-red-600 hover:text-red-800 text-xs" title="Cancel job #{{ job.pk }}">Cancel</button>
+        </form>
       </div>
       {% endfor %}
     </div>
@@ -308,6 +350,7 @@
         </select>
       </div>
       {% endif %}
+      {% include "pipeline/partials/_depends_on.html" %}
       <button type="submit" class="w-full bg-green-600 text-white py-2 rounded text-sm hover:bg-green-700">Queue Job</button>
     </form>
 

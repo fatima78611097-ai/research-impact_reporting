@@ -88,8 +88,13 @@ def _resolve_depends_on(request):
 
 
 def _get_dependency_choices(phase=None):
-    """Return running/pending jobs suitable as dependency targets."""
-    qs = Job.objects.filter(status__in=["running", "pending"]).select_related("depends_on").order_by("-created_at")
+    """Return running/pending/recently-completed jobs suitable as dependency targets."""
+    from datetime import timedelta
+    cutoff = timezone.now() - timedelta(hours=24)
+    qs = Job.objects.filter(
+        Q(status__in=["running", "pending"]) |
+        Q(status="completed", finished_at__gte=cutoff)
+    ).select_related("depends_on").order_by("-created_at")
     if phase:
         qs = qs.filter(phase=phase)
     choices = []
@@ -98,7 +103,11 @@ def _get_dependency_choices(phase=None):
     )
     for j in qs[:20]:
         host_label = worker_names.get(j.host) or j.host.split("-")[-1]
-        choices.append((j.pk, f"#{j.pk} {j.phase} {j.state_code or 'global'} [{j.status}] @ {host_label}"))
+        status_display = j.status
+        if j.status == "completed" and j.finished_at:
+            mins_ago = int((timezone.now() - j.finished_at).total_seconds() // 60)
+            status_display = f"done {mins_ago}m ago"
+        choices.append((j.pk, f"#{j.pk} {j.phase} {j.state_code or 'global'} [{status_display}] @ {host_label}"))
     return choices
 
 
@@ -480,6 +489,9 @@ class JobCancelView(LoginRequiredMixin, View):
         cancel_job(job)
         _log_audit(request, "job_cancel", job.phase, {"job_id": job.pk})
         messages.success(request, f"Cancelled job #{job.pk}")
+        next_url = request.GET.get("next", "")
+        if next_url and next_url.startswith("/") and not next_url.startswith("//"):
+            return redirect(next_url)
         return redirect("job_detail", pk=pk)
 
 
@@ -861,11 +873,11 @@ class ClassifierV3JobCreateView(LoginRequiredMixin, View):
             except (ValueError, Job.DoesNotExist):
                 messages.error(request, f"Dependency job #{depends_on_raw} not found")
                 return redirect("classifier_v3")
-            if dep_job.status in Job.TERMINAL_STATUSES:
+            if dep_job.status in ("failed", "cancelled"):
                 messages.error(
                     request,
                     f"Dependency job #{dep_id} is {dep_job.status} "
-                    f"— cannot depend on a terminal job",
+                    f"— cannot depend on a failed or cancelled job",
                 )
                 return redirect("classifier_v3")
             depends_on = dep_job

@@ -32,6 +32,8 @@ class Command(BaseCommand):
                             help="Limit promotion to a single state (2-letter code)")
         parser.add_argument("--confirm", action="store_true",
                             help="Required safety flag to confirm promotion")
+        parser.add_argument("--job-id", type=int, default=None,
+                            help="Job ID for dashboard stats")
 
     def handle(self, *args, **options):
         run_tag = options["run_tag"]
@@ -136,6 +138,11 @@ class Command(BaseCommand):
                   AND cr.content_sha256 = c.content_sha256
                   {state_where}
             """), {"run_id": run_id, "state": state})
+
+        job_id = options.get("job_id")
+        if job_id:
+            from pipeline.job_stats import merge_stats
+            merge_stats(job_id, {"processed": result_count, "failed": 0})
 
         # Log promotion
         notes = (

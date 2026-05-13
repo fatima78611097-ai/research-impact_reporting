@@ -83,6 +83,8 @@ class Command(BaseCommand):
                             help="Minimum pages_text length to classify")
         parser.add_argument("--quiet", action="store_true",
                             help="Suppress per-batch progress (keep start/end summary)")
+        parser.add_argument("--job-id", type=int, default=None,
+                            help="Job ID for dashboard stats")
 
     def handle(self, *args, **options):
         engine = make_app_engine()
@@ -222,6 +224,12 @@ class Command(BaseCommand):
         )
         watchdog.start_thread()
 
+        # --- Dashboard stats ---
+        job_id = options.get("job_id")
+        from pipeline.job_stats import start_stats_flusher
+        dashboard_stats = {"processed": 0, "failed": 0}
+        stats_stop = start_stats_flusher(job_id, dashboard_stats)
+
         # --- Rate limit tracking ---
         rate_limit_lock = threading.Lock()
         rate_limit_times = deque(maxlen=20)
@@ -271,6 +279,7 @@ class Command(BaseCommand):
                             else:
                                 stats["skip_fp"] += 1
                             stats["total"] += 1
+                            dashboard_stats["processed"] += 1
                             self._write_result(
                                 engine, run_id, row["content_sha256"],
                                 material_type=None, material_group=None,
@@ -303,6 +312,7 @@ class Command(BaseCommand):
                             )
                             stats["rule_matched"] += 1
                             stats["total"] += 1
+                            dashboard_stats["processed"] += 1
                             distribution[rule_match.material_type] += 1
                             continue
 
@@ -344,6 +354,7 @@ class Command(BaseCommand):
                         else:
                             self._write_error(engine, run_id, row["content_sha256"])
                             stats["llm_errors"] += 1
+                            dashboard_stats["failed"] += 1
                             consecutive_failures += 1
                             if consecutive_failures >= _MAX_CONSECUTIVE_FAILURES:
                                 self.stderr.write(
@@ -353,6 +364,7 @@ class Command(BaseCommand):
                                 shutdown.set()
                                 break
                         stats["total"] += 1
+                        dashboard_stats["processed"] += 1
 
                     # Clean up active_futures
                     active_futures = [f for f in active_futures if not f.done()]
@@ -392,7 +404,9 @@ class Command(BaseCommand):
                                 else:
                                     self._write_error(engine, run_id, row["content_sha256"])
                                     stats["llm_errors"] += 1
+                                    dashboard_stats["failed"] += 1
                                 stats["total"] += 1
+                                dashboard_stats["processed"] += 1
 
                             for fut in not_done:
                                 fut.cancel()
@@ -417,10 +431,14 @@ class Command(BaseCommand):
                         break
 
         finally:
+            stats_stop.set()
             watchdog.stop()
             if watchdog._thread is not None:
                 watchdog._thread.join(timeout=2)
             signal.signal(signal.SIGINT, original_handler)
+            if job_id:
+                from pipeline.job_stats import merge_stats
+                merge_stats(job_id, dashboard_stats)
 
         if shutdown.is_set():
             self.stdout.write(f"\nInterrupted. Resume with --resume to continue.")
