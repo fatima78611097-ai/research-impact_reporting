@@ -31,6 +31,12 @@ Files to modify for forms (1):
 |---|------|--------|
 | 9 | `lavandula/dashboard/pipeline/forms.py` | Add `state` field to `CompareClassifyForm` and `PromoteClassifyForm`, remove `where` from `ReclassifyForm` if present |
 
+Files to create (1):
+
+| # | File | Purpose |
+|---|------|---------|
+| 10 | `lavandula/dashboard/pipeline/management/commands/cleanup_v3_pipeline_processes.py` | One-time PipelineProcess cleanup command |
+
 Test files to create (1):
 
 | # | File | Purpose |
@@ -56,31 +62,22 @@ No Django migrations required — `PHASE_CHOICES` is Python-level validation onl
 parser.add_argument("--state", help="Limit promotion to a single state (2-letter code)")
 ```
 
-2. In `handle()`, after getting `run_id`, add state filter to both UPDATE queries. The pattern follows `compare_classifications.py`:
-```sql
--- Add JOIN + WHERE to both UPDATE statements:
-FROM lava_corpus.classification_results cr
-JOIN lava_corpus.nonprofits_seed ns ON cr.ein = ns.ein  -- NEW
-WHERE cr.run_id = :run_id
-  AND cr.content_sha256 = c.content_sha256
-  AND (:state IS NULL OR ns.state = :state)             -- NEW
-```
-
-Wait — `classification_results` has a `content_sha256` column but not `ein`. The join path is: `classification_results.content_sha256` → `corpus.content_sha256` → `corpus.source_org_ein` → `nonprofits_seed.ein`. Since the UPDATE already joins `corpus c` and `classification_results cr` on `content_sha256`, add the seed join via `corpus.source_org_ein`:
+2. In `handle()`, after getting `run_id`, add state filter to both UPDATE queries using a JOIN, matching the pattern from `compare_classifications.py`. The join path is: `corpus.source_org_ein` → `nonprofits_seed.ein`:
 
 ```sql
--- v3 columns update:
+-- v3 columns update (add JOIN on nonprofits_seed):
 UPDATE lava_corpus.corpus c SET
     v3_material_type = cr.material_type, ...
 FROM lava_corpus.classification_results cr
+JOIN lava_corpus.nonprofits_seed ns ON c.source_org_ein = ns.ein
 WHERE cr.run_id = :run_id
   AND cr.content_sha256 = c.content_sha256
-  AND (:state::text IS NULL OR c.source_org_ein IN (
-      SELECT ein FROM lava_corpus.nonprofits_seed WHERE state = :state
-  ))
+  AND (:state::text IS NULL OR ns.state = :state)
 ```
 
-The subquery approach is cleaner than a three-way join in an UPDATE. `nonprofits_seed` has an index on `state`. The subquery is executed once per UPDATE, not per row.
+When `--state` is NULL, the JOIN still executes but the WHERE clause passes all rows — behavior is unchanged. The JOIN is preferred over a subquery to stay consistent with the proven pattern in `compare_classifications.py`.
+
+Apply the same JOIN pattern to both UPDATE statements (v3 columns and canonical columns).
 
 3. Pass `state` parameter to both `conn.execute()` calls:
 ```python
@@ -91,11 +88,12 @@ state = options.get("state")
 
 4. Update result count query to also filter by state (for accurate reporting):
 ```python
-count_sql = "SELECT COUNT(*) FROM lava_corpus.classification_results WHERE run_id = :rid"
-params = {"rid": run_id}
-if state:
-    count_sql += " AND content_sha256 IN (SELECT content_sha256 FROM lava_corpus.corpus WHERE source_org_ein IN (SELECT ein FROM lava_corpus.nonprofits_seed WHERE state = :state))"
-    params["state"] = state
+count_sql = """
+    SELECT COUNT(*) FROM lava_corpus.classification_results cr
+    JOIN lava_corpus.corpus c ON cr.content_sha256 = c.content_sha256
+    JOIN lava_corpus.nonprofits_seed ns ON c.source_org_ein = ns.ein
+    WHERE cr.run_id = :rid AND (:state::text IS NULL OR ns.state = :state)
+"""
 ```
 
 5. Update the log output to include state when provided.
@@ -175,7 +173,47 @@ Add after `create_phone_enrich_job()` (after line 532). Implementation from the 
 - `status__in=["pending", "scheduled", "running"]` (includes `scheduled` — Trap #6)
 - `IntegrityError` fallback
 
-Copy the function from the spec verbatim.
+Copy the function from the spec, with one addition: **predecessor phase and state compatibility validation** for `depends_on`.
+
+Add after the `run_tag` mismatch check:
+
+```python
+# Validate predecessor phase is allowed
+if depends_on:
+    _V3_PREDECESSORS = {
+        "extract-context": set(),  # no v3 predecessor (depends on crawl, which is not v3)
+        "reclassify": {"extract-context"},
+        "compare-classify": {"reclassify"},
+        "resolve-disagree": {"compare-classify"},
+        "promote-classify": {"resolve-disagree"},
+    }
+    allowed = _V3_PREDECESSORS.get(phase, set())
+    if depends_on.phase not in allowed:
+        raise InvalidParameterError(
+            f"{phase} cannot depend on {depends_on.phase} "
+            f"(allowed predecessors: {allowed or 'none'})"
+        )
+    # State compatibility: downstream state must match upstream state,
+    # OR upstream is nationwide (None) and downstream narrows to a state.
+    # Reject: downstream nationwide depending on upstream per-state.
+    upstream_state = depends_on.state_code
+    if upstream_state and not state:
+        raise InvalidParameterError(
+            f"Nationwide {phase} cannot depend on state-scoped "
+            f"{depends_on.phase} (state={upstream_state})"
+        )
+    if upstream_state and state and upstream_state != state:
+        raise InvalidParameterError(
+            f"State mismatch: {phase} targets {state} but depends on "
+            f"{depends_on.phase} which targets {upstream_state}"
+        )
+```
+
+**State compatibility rules:**
+- Same state → OK (TX depends on TX)
+- Downstream per-state depends on upstream nationwide → OK (TX reclassify depends on nationwide extract-context)
+- Downstream nationwide depends on upstream per-state → REJECTED (nationwide compare depends on TX reclassify)
+- Downstream state differs from upstream state → REJECTED (CA reclassify depends on TX extract-context)
 
 ---
 
@@ -302,6 +340,8 @@ ctx["dependency_choices"] = _get_dependency_choices()
 
 Keep `ctx["recent_logs"] = _scan_v3_logs()` for historical log display.
 
+**Query count note:** This issues ~15 queries (3 per phase × 5 phases). Acceptable for 5 phases on a single-operator dashboard. The status partial is polled every 5s via HTMX — if performance becomes an issue, consolidate to 3 aggregate queries (all running, all pending counts, all recent) with Python-side grouping. Not worth the complexity now.
+
 #### 5d. Update `ClassifierV3StatusPartial.get_context_data()` (line 763-821)
 
 Replace the `check_process(phase)` loop (lines 770-801) with Job-based status:
@@ -409,26 +449,32 @@ Update the status partial to render the new `steps` format:
 
 ---
 
-### Step 8: PipelineProcess Cleanup Script
+### Step 8: PipelineProcess Cleanup Management Command
 
-This is a one-time cleanup, not code that ships in the PR. Add as a management command or inline script in the PR description:
+**File:** `lavandula/dashboard/pipeline/management/commands/cleanup_v3_pipeline_processes.py`
+
+Ship as a Django management command (not a PR-description snippet) so it's repeatable and testable:
 
 ```python
-# Run AFTER deploying the code changes:
-from lavandula.dashboard.pipeline.models import PipelineProcess
-from lavandula.dashboard.pipeline.process_manager import _is_pid_alive_and_matches
+class Command(BaseCommand):
+    help = "Clean up stale PipelineProcess rows for v3 phases migrated to Job queue"
 
-_V3_PHASES = ("extract-context", "reclassify", "compare-classify", "resolve-disagree", "promote-classify")
-for proc in PipelineProcess.objects.filter(name__in=_V3_PHASES, status="running"):
-    if not proc.pid or not _is_pid_alive_and_matches(proc.pid, proc.name):
-        proc.status = "stopped"
-        proc.save(update_fields=["status"])
-        print(f"Marked {proc.name} as stopped (PID {proc.pid} dead)")
-    else:
-        print(f"WARNING: {proc.name} PID {proc.pid} still alive — stop manually")
+    def handle(self, *args, **options):
+        from lavandula.dashboard.pipeline.process_manager import _is_pid_alive_and_matches
+        _V3_PHASES = ("extract-context", "reclassify", "compare-classify",
+                      "resolve-disagree", "promote-classify")
+        for proc in PipelineProcess.objects.filter(name__in=_V3_PHASES, status="running"):
+            if not proc.pid or not _is_pid_alive_and_matches(proc.pid, proc.name):
+                proc.status = "stopped"
+                proc.save(update_fields=["status"])
+                self.stdout.write(f"Marked {proc.name} as stopped (PID {proc.pid} dead)")
+            else:
+                self.stderr.write(
+                    f"WARNING: {proc.name} PID {proc.pid} still alive — stop manually"
+                )
 ```
 
-Include this in the PR description under "Post-deploy steps."
+**Deployment:** Run `python3 lavandula/dashboard/manage.py cleanup_v3_pipeline_processes` after deploying the code changes and restarting gunicorn. Safe to run multiple times (idempotent).
 
 ---
 
@@ -464,23 +510,32 @@ Include this in the PR description under "Post-deploy steps."
 21. **`test_classifier_v3_job_create_duplicate`** — POST returns error when duplicate exists
 22. **`test_process_start_rejects_v3`** — POST to `/process/reclassify/start/` returns error (phase removed from form_map)
 
-#### Management command test:
+#### Dependency validation tests:
 
-23. **`test_promote_with_state_filter`** — `promote_classification_run --state TX` only updates TX orgs
+23. **`test_create_v3_job_invalid_predecessor_phase`** — reclassify cannot depend on compare-classify (wrong predecessor)
+24. **`test_create_v3_job_valid_predecessor_phase`** — reclassify can depend on extract-context (correct predecessor)
+25. **`test_create_v3_job_nationwide_depends_on_per_state_rejected`** — Nationwide compare cannot depend on TX-only reclassify
+26. **`test_create_v3_job_per_state_depends_on_nationwide_ok`** — TX reclassify can depend on nationwide extract-context
+27. **`test_create_v3_job_state_mismatch_rejected`** — CA reclassify cannot depend on TX extract-context
+
+#### Management command tests:
+
+28. **`test_promote_with_state_filter`** — `promote_classification_run --state TX` only updates TX orgs
+29. **`test_promote_without_state_unchanged`** — `promote_classification_run` without `--state` promotes all orgs (backward compat)
 
 #### Concurrent / race tests:
 
-24. **`test_create_v3_job_concurrent_race`** — Two threads call `create_v3_job()` for same phase+state simultaneously. One succeeds, one raises `DuplicateJobError`. Uses `threading.Thread` + `transaction.atomic()` + `select_for_update()` serialization.
+30. **`test_create_v3_job_concurrent_race`** — Two threads call `create_v3_job()` for same phase+state simultaneously. One succeeds, one raises `DuplicateJobError`. Uses `threading.Thread` + `transaction.atomic()` + `select_for_update()` serialization.
 
 #### Migration tests:
 
-25. **`test_pipeline_process_cleanup_dead_pid`** — Create a `PipelineProcess` row with a dead PID → cleanup script marks stopped
-26. **`test_pipeline_process_cleanup_alive_pid`** — Create a `PipelineProcess` row with the current process PID → cleanup script leaves it alone and warns
+31. **`test_pipeline_process_cleanup_dead_pid`** — Create a `PipelineProcess` row with a dead PID → cleanup command marks stopped
+32. **`test_pipeline_process_cleanup_alive_pid`** — Create a `PipelineProcess` row with the current process PID → cleanup command leaves it alone and warns
 
 #### Integration tests:
 
-27. **`test_cancel_v3_job_cascades`** — Cancel extract-context job → dependent reclassify also cancelled
-28. **`test_retry_v3_job`** — Retry failed v3 job → new job with `retry_of` and incremented `attempt_number`
+33. **`test_cancel_v3_job_cascades`** — Cancel extract-context job → dependent reclassify also cancelled
+34. **`test_retry_v3_job`** — Retry failed v3 job → new job with `retry_of` and incremented `attempt_number`
 
 ---
 
@@ -503,3 +558,5 @@ Include this in the PR description under "Post-deploy steps."
 | `promote_classification_run --state` JOIN is slow | `nonprofits_seed.state` is indexed; subquery runs once per UPDATE |
 | Stale PipelineProcess rows confuse `check_phase_conflict()` | Cleanup script (Step 8) runs post-deploy; `check_phase_conflict()` still checks PipelineProcess as safety net |
 | Existing v3 bookmarks to `/process/<phase>/start/` break | Single operator, no external callers — removed phases return error with clear message |
+| Invalid dependency chains (wrong predecessor, cross-state) | `create_v3_job()` validates predecessor phase and state compatibility server-side |
+| Cleanup command skipped during deployment | Command is idempotent and repeatable; included in deployment checklist with explicit step number |
