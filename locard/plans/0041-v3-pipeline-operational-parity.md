@@ -405,3 +405,18 @@ These tests follow the patterns in the existing `test_v3_job_queue.py`. They can
    - Stats visible for extract-context (already working) and for a manually-launched reclassify with `--job-id`
    - Completed dependency accepted
 4. Spot-check other pipeline pages (crawler, resolver) to confirm no regressions
+
+## Consultation Log
+
+### Round 1: Plan Review (2026-05-13)
+
+**Gemini**: APPROVE (HIGH confidence) — no issues.
+
+**Codex (GPT-5.4)**: REQUEST_CHANGES (HIGH confidence)
+- Step 1 "revert" language ambiguous in dirty worktree → **Fixed**: clarified to "surgically remove"
+- Missing tests from spec requirement → **Fixed**: added Step 7 with 7 test cases covering scheduled conflict, completed deps, and next-parameter redirect
+
+### Round 2: Red Team Security Review (2026-05-13)
+
+**Gemini (red team)**: REQUEST_CHANGES (0 CRITICAL, 0 HIGH)
+- MEDIUM: `config_json` content policy lacks enforcement → **Already documented** in spec Security Assumptions. Job arguments are validated by `param_validators.py`. No credentials or secrets flow through `config_json`.
