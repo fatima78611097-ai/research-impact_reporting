@@ -645,11 +645,11 @@ projects:
   - id: "0042"
     title: "Classifier V3 State Progress Grid"
     summary: "Add a state × step progress matrix to the classifier v3 dashboard page showing per-state completion across all 5 pipeline steps (extract, reclassify, compare, resolve, promote). Same live-query pattern as the crawler/resolver state grids, adapted for the v3 pipeline's sequential multi-step structure."
-    status: specified
+    status: implementing
     priority: high
     files:
       spec: locard/specs/0042-classifier-v3-state-progress.md
-      plan: null
+      plan: locard/plans/0042-classifier-v3-state-progress.md
       review: null
     dependencies: ["0040", "0041"]
     tags: [dashboard, ui, classifier, operations, national-scale]
