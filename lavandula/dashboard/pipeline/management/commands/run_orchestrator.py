@@ -26,7 +26,11 @@ logger = logging.getLogger("pipeline.orchestrator")
 POLL_INTERVAL = 10
 HEARTBEAT_STALE_THRESHOLD = 300
 HEARTBEAT_OFFLINE_THRESHOLD = 1800
-ADVISORY_LOCK_ID = 34001
+ADVISORY_LOCK_BASE = 34001
+
+
+def _host_lock_id(hostname: str) -> int:
+    return ADVISORY_LOCK_BASE + (hash(hostname) % 10000)
 
 
 class Command(BaseCommand):
@@ -43,7 +47,7 @@ class Command(BaseCommand):
 
         if not self._acquire_advisory_lock():
             self.stderr.write(
-                "Another orchestrator instance is running (advisory lock held). Exiting."
+                f"Another orchestrator is already running on {self.hostname} (advisory lock held). Exiting."
             )
             sys.exit(1)
 
@@ -70,8 +74,9 @@ class Command(BaseCommand):
     def _acquire_advisory_lock(self) -> bool:
         if connection.vendor != "postgresql":
             return True
+        lock_id = _host_lock_id(self.hostname)
         with connection.cursor() as cur:
-            cur.execute("SELECT pg_try_advisory_lock(%s)", [ADVISORY_LOCK_ID])
+            cur.execute("SELECT pg_try_advisory_lock(%s)", [lock_id])
             row = cur.fetchone()
             return row[0] if row else False
 
