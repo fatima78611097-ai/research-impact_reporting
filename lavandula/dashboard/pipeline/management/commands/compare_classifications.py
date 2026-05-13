@@ -34,6 +34,8 @@ class Command(BaseCommand):
                             help="Show v2/v3 reasoning side-by-side for disagreements")
         parser.add_argument("--limit", type=int, default=50,
                             help="Max disagreements to show with --show-reasoning")
+        parser.add_argument("--job-id", type=int, default=None,
+                            help="Job ID for dashboard stats")
 
     def handle(self, *args, **options):
         engine = make_app_engine()
@@ -77,6 +79,14 @@ class Command(BaseCommand):
 
         total_compared = len(agree) + len(disagree_rule) + len(disagree_llm)
         total_disagree = len(disagree_rule) + len(disagree_llm)
+
+        job_id = options.get("job_id")
+        if job_id:
+            from pipeline.job_stats import merge_stats
+            merge_stats(job_id, {
+                "processed": total_compared,
+                "failed": len(v3_errors),
+            })
 
         self.stdout.write(f"\nClassification Comparison: {run_tag} vs corpus (Haiku v2)")
         filter_str = f" (state={state})" if state else ""

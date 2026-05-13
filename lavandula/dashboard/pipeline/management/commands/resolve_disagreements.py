@@ -74,6 +74,8 @@ class Command(BaseCommand):
         parser.add_argument("--dry-run", action="store_true", help="Show counts without resolving")
         parser.add_argument("--sample", type=int, default=None, help="Sample N disagreements")
         parser.add_argument("--definition", type=str, default=None, help="Classifier definition name")
+        parser.add_argument("--job-id", type=int, default=None,
+                            help="Job ID for dashboard stats")
 
     def handle(self, *args, **options):
         engine = make_app_engine()
@@ -167,6 +169,11 @@ class Command(BaseCommand):
         distribution = defaultdict(int)
         start_time = time.monotonic()
 
+        job_id = options.get("job_id")
+        from pipeline.job_stats import start_stats_flusher
+        dashboard_stats = {"processed": 0, "failed": 0}
+        stats_stop = start_stats_flusher(job_id, dashboard_stats)
+
         with ThreadPoolExecutor(max_workers=workers) as pool:
             futures = {}
             for i, row in enumerate(disagreements):
@@ -183,10 +190,12 @@ class Command(BaseCommand):
                 except Exception:
                     log.exception("Tiebreaker exception for sha=%s", row["content_sha256"][:12])
                     stats["errors"] += 1
+                    dashboard_stats["failed"] += 1
                     continue
 
                 if result is None:
                     stats["errors"] += 1
+                    dashboard_stats["failed"] += 1
                     continue
 
                 winner = result.get("winner")
@@ -208,6 +217,7 @@ class Command(BaseCommand):
                     log.warning("Tiebreaker invented type %r, skipping sha=%s",
                                 material_type, row["content_sha256"][:12])
                     stats["invalid"] += 1
+                    dashboard_stats["failed"] += 1
                     continue
 
                 cat = definition.get_category(material_type)
@@ -229,7 +239,13 @@ class Command(BaseCommand):
                     stats["winner_neither"] += 1
 
                 stats["resolved"] += 1
+                dashboard_stats["processed"] += 1
                 distribution[material_type] += 1
+
+        stats_stop.set()
+        if job_id:
+            from pipeline.job_stats import merge_stats
+            merge_stats(job_id, dashboard_stats)
 
         # Finalize
         elapsed = time.monotonic() - start_time
