@@ -53,7 +53,9 @@ These are not new features. They are gaps between what 0040 was supposed to deli
 
 Add `{% include "pipeline/partials/_depends_on.html" %}` inside each of the 5 form elements, before the submit button. The partial already exists and renders a `<select name="depends_on">` dropdown populated from `dependency_choices` in the template context.
 
-The context variable `dependency_choices` is already passed by `ClassifierV3View.get_context_data()` (views.py:757). No view changes needed.
+The context variable `dependency_choices` is already passed by `ClassifierV3View.get_context_data()` (views.py:757).
+
+**View change needed:** `_get_dependency_choices()` currently filters to `status__in=["running", "pending"]`. This must be expanded to include `"completed"` so operators can chain after finished jobs (e.g., queue reclassify after a completed extract-context). The dropdown should show running, pending, and recently-completed jobs (completed within the last 24 hours, to avoid an unbounded list).
 
 ### 2. Template: Add cancel button to running v3 jobs
 
@@ -69,7 +71,13 @@ For each running job displayed in a step card, add a small cancel form that post
 </form>
 ```
 
-The `JobCancelView` (views.py:477) already handles this — it calls `cancel_job()` which sends SIGTERM, waits, escalates to SIGKILL, and cascades to dependents. The view currently redirects to `job_detail`; it should redirect back to the referrer or `classifier_v3` when the job is a v3 phase. Modify `JobCancelView` to check `request.META.get("HTTP_REFERER")` and redirect to `classifier_v3` if the cancelled job's phase is in `_V3_PHASES`.
+The `JobCancelView` (views.py:477) already handles this — it calls `cancel_job()` which sends SIGTERM, waits, escalates to SIGKILL, and cascades to dependents. The view currently redirects to `job_detail`; modify it to accept an optional `next` query parameter and redirect there instead. The cancel form should include a hidden `next` field:
+
+```html
+<form method="post" action="{% url 'job_cancel' job.pk %}?next={% url 'classifier_v3' %}" class="inline">
+```
+
+Do NOT use `HTTP_REFERER` for redirect — it can be missing, forged, or cross-origin. The `next` parameter is explicit, predictable, and already a Django convention. The `JobCancelView` should validate that `next` is a relative URL (starts with `/`) before redirecting, falling back to `job_detail` if absent or invalid.
 
 ### 3. Management commands: Add `--job-id` and stats flushing
 
@@ -171,7 +179,7 @@ Restore the original builder code which unconditionally shows "Queued {phase} jo
 
 ## Acceptance Criteria
 
-1. Each of the 5 v3 step cards on `/pipeline/classifier-v3/` has a "Queue after job" dropdown showing running and pending jobs
+1. Each of the 5 v3 step cards on `/pipeline/classifier-v3/` has a "Queue after job" dropdown showing running, pending, and recently-completed jobs
 2. Each running v3 job on the pipeline page has a "Cancel" button that stops the process
 3. All 5 v3 management commands accept `--job-id` and report `processed`/`failed` counts visible on the dashboard within 10 seconds of progress
 4. An operator can queue reclassify with `depends_on` set to a completed extract-context job without error
@@ -183,7 +191,7 @@ Restore the original builder code which unconditionally shows "Queued {phase} jo
 
 1. **Don't modify the `_depends_on.html` partial** — it's shared by 3 other pages. If you need v3-specific behavior, add a new partial or conditionally render.
 
-2. **Don't change `JobCancelView` signature** — it's already used by the job detail page. Only change where it redirects, and only for v3 phases.
+2. **Don't change `JobCancelView` signature** — it's already used by the job detail page. The `next` parameter is additive; the existing job_detail redirect is the fallback when `next` is absent.
 
 3. **Stats merge is not atomic** — `_merge_stats()` does read-then-write on `config_json`. Two concurrent flushers for the same job could clobber each other. This is fine because each job has exactly one process, so exactly one flusher. Don't "fix" this with a lock.
 
@@ -192,6 +200,16 @@ Restore the original builder code which unconditionally shows "Queued {phase} jo
 5. **Don't add stats flushing to the view layer** — the view reads stats from `config_json`, the management command writes them. The 5-second HTMX poll and 10-second flush interval mean stats lag by at most 15 seconds. That's fine.
 
 6. **Keep `reclassify_corpus.py`'s `--where` parameter** — the CLI still accepts it for direct command-line use. The STAGE_REGISTRY and web form correctly exclude it. Don't remove `--where` from the management command itself.
+
+7. **Validate the `next` parameter on `JobCancelView`** — only redirect to relative URLs (must start with `/`). Reject absolute URLs, protocol-relative URLs (`//evil.com`), and missing values. This prevents open redirect. Use `django.utils.http.url_has_allowed_host_and_scheme()` or a simple `startswith("/")` check.
+
+8. **`_get_dependency_choices` change affects all pages** — expanding it to include completed jobs will also show completed jobs in the crawler/resolver/classifier dependency dropdowns. This is acceptable — those pages already allow completed dependencies at the view layer. But be aware of the shared impact.
+
+## Testing Constraints
+
+The 45 existing tests (`test_v3_job_queue.py`) cannot run — Django's test runner needs `CREATE DATABASE` permission that the RDS app user doesn't have, and no SQLite test settings exist. This is a separate infrastructure issue (audit finding C3).
+
+Given this constraint, verification is manual against the live dashboard. The builder should add tests for the new logic (conflict check with `scheduled`, `depends_on` allowing `completed`, `next`-parameter redirect) but expect them to be validated when the test infrastructure is fixed, not as part of this spec.
 
 ## Verification Plan
 
@@ -202,3 +220,19 @@ For each item, the builder should manually verify on the running dashboard:
 3. Queue an extract-context job with `--state=RI` (small state), watch stats counters update on the dashboard while it runs
 4. Let an extract-context complete, then queue reclassify with `depends_on` set to the completed job — confirm it's accepted
 5. Run the management commands directly with `--job-id` and verify stats appear in the Job's `config_json`
+
+## Consultation Log
+
+### Round 1: Spec Review (2026-05-13)
+
+**Gemini**: COMMENT (HIGH confidence)
+- Suggested using `next` parameter instead of `HTTP_REFERER` for cancel redirect → **Adopted**
+- Noted `check_phase_conflict` verification hard to test manually → **Acknowledged in Testing Constraints**
+
+**Codex (GPT-5.4)**: REQUEST_CHANGES (HIGH confidence)
+- Cancel redirect via `HTTP_REFERER` is unsafe → **Adopted**: switched to `next` query parameter with relative-URL validation
+- AC1 says "running and pending" but AC4 requires completed deps → **Fixed**: expanded `_get_dependency_choices` to include recently-completed, updated AC1
+- Testing strategy too weak → **Acknowledged**: added Testing Constraints section explaining DB infrastructure blocker
+- Stats flush error handling underspecified → **Noted but not adopted**: single-operator system, daemon threads are fire-and-forget, swallowed exceptions are logged by the helper. Over-specifying this adds complexity without operator value.
+- AuthZ on cancel button → **Noted but not adopted**: `JobCancelView` already has `LoginRequiredMixin`. This is a single-operator system. There's one user.
+- Regression verification scope → **Noted but not adopted**: shared codepaths (`_depends_on.html`, `JobCancelView`, `check_phase_conflict`) are identified in Traps to Avoid. Specifying a formal regression test matrix for a system with no runnable tests is performative.
