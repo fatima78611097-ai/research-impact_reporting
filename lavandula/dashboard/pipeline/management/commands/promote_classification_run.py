@@ -28,11 +28,14 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--run-tag", required=True, help="Run tag to promote")
+        parser.add_argument("--state", type=str, default=None,
+                            help="Limit promotion to a single state (2-letter code)")
         parser.add_argument("--confirm", action="store_true",
                             help="Required safety flag to confirm promotion")
 
     def handle(self, *args, **options):
         run_tag = options["run_tag"]
+        state = options["state"]
         confirm = options["confirm"]
 
         if not confirm:
@@ -65,14 +68,31 @@ class Command(BaseCommand):
         uid = os.getuid()
         ts = timezone.now().isoformat()
 
-        with engine.connect() as conn:
-            result_count = conn.execute(text(
-                f"SELECT COUNT(*) FROM {_SCHEMA}.classification_results WHERE run_id = :rid"
-            ), {"rid": run_id}).scalar()
+        if state:
+            count_sql = (
+                f"SELECT COUNT(*) FROM {_SCHEMA}.classification_results cr "
+                f"JOIN {_SCHEMA}.corpus c ON cr.content_sha256 = c.content_sha256 "
+                f"JOIN {_SCHEMA}.nonprofits_seed ns ON c.source_org_ein = ns.ein "
+                f"WHERE cr.run_id = :rid AND ns.state = :state"
+            )
+            count_params = {"rid": run_id, "state": state}
+        else:
+            count_sql = f"SELECT COUNT(*) FROM {_SCHEMA}.classification_results WHERE run_id = :rid"
+            count_params = {"rid": run_id}
 
-        self.stdout.write(f"Promoting run {run_tag!r} ({result_count} results)...")
+        with engine.connect() as conn:
+            result_count = conn.execute(text(count_sql), count_params).scalar()
+
+        state_label = f" (state={state})" if state else ""
+        self.stdout.write(f"Promoting run {run_tag!r} ({result_count} results){state_label}...")
 
         # Update v3_* columns on corpus
+        state_join = ""
+        state_where = ""
+        if state:
+            state_join = f"JOIN {_SCHEMA}.nonprofits_seed ns ON c.source_org_ein = ns.ein"
+            state_where = "AND ns.state = :state"
+
         with engine.begin() as conn:
             conn.execute(text(f"""
                 UPDATE {_SCHEMA}.corpus c SET
@@ -83,9 +103,11 @@ class Command(BaseCommand):
                     v3_run_tag = :run_tag,
                     v3_classified_by = cr.classified_by
                 FROM {_SCHEMA}.classification_results cr
+                {state_join}
                 WHERE cr.run_id = :run_id
                   AND cr.content_sha256 = c.content_sha256
-            """), {"run_id": run_id, "run_tag": run_tag})
+                  {state_where}
+            """), {"run_id": run_id, "run_tag": run_tag, "state": state})
 
         # Update canonical columns from classification_results (bulk)
         from lavandula.reports.taxonomy import _MATERIAL_TYPE_TO_LEGACY
@@ -109,9 +131,11 @@ class Command(BaseCommand):
                         ELSE cr.classified_by
                     END
                 FROM {_SCHEMA}.classification_results cr
+                {state_join}
                 WHERE cr.run_id = :run_id
                   AND cr.content_sha256 = c.content_sha256
-            """), {"run_id": run_id})
+                  {state_where}
+            """), {"run_id": run_id, "state": state})
 
         # Log promotion
         notes = (

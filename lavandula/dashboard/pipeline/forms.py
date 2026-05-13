@@ -339,6 +339,8 @@ class CompareClassifyForm(forms.Form):
     run_tag = forms.CharField(max_length=100,
         widget=forms.TextInput(attrs={"class": _SELECT, "placeholder": "Run tag to compare"}),
         label="Run tag")
+    state = forms.ChoiceField(choices=[("", "All states")] + STATE_CHOICES, required=False,
+        widget=forms.Select(attrs={"class": _SELECT}), label="State filter")
     show_reasoning = forms.BooleanField(required=False, label="Show reasoning")
 
 
@@ -346,4 +348,6 @@ class PromoteClassifyForm(forms.Form):
     run_tag = forms.CharField(max_length=100,
         widget=forms.TextInput(attrs={"class": _SELECT, "placeholder": "Run tag to promote"}),
         label="Run tag")
+    state = forms.ChoiceField(choices=[("", "All states")] + STATE_CHOICES, required=False,
+        widget=forms.Select(attrs={"class": _SELECT}), label="State filter")
     confirm = forms.BooleanField(required=False, label="Confirm promotion")

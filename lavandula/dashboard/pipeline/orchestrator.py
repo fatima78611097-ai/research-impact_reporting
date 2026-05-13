@@ -125,7 +125,6 @@ COMMAND_MAP: dict[str, dict[str, Any]] = {
             "state": {"type": "text", "pattern": r"^[A-Z]{2}$", "flag": "--state"},
             "ein": {"type": "text", "pattern": r"^\d{2}-\d{7}$", "flag": "--ein"},
             "sample": {"type": "int", "min": 1, "max": 999999, "flag": "--sample"},
-            "where": {"type": "text", "flag": "--where"},
             "dry_run": {"type": "bool", "flag": "--dry-run"},
             "backend": {"type": "choice", "choices": ["deepseek", "claude", "gemini", "codex"], "flag": "--backend"},
             "workers": {"type": "int", "min": 1, "max": 32, "flag": "--workers"},
@@ -153,6 +152,7 @@ COMMAND_MAP: dict[str, dict[str, Any]] = {
         "cmd": ["python3", "lavandula/dashboard/manage.py", "compare_classifications"],
         "params": {
             "run_tag": {"type": "text", "pattern": r"^[a-zA-Z0-9][a-zA-Z0-9_-]*$", "flag": "--run-tag"},
+            "state": {"type": "text", "pattern": r"^[A-Z]{2}$", "flag": "--state"},
             "show_reasoning": {"type": "bool", "flag": "--show-reasoning"},
         },
     },
@@ -160,6 +160,7 @@ COMMAND_MAP: dict[str, dict[str, Any]] = {
         "cmd": ["python3", "lavandula/dashboard/manage.py", "promote_classification_run"],
         "params": {
             "run_tag": {"type": "text", "pattern": r"^[a-zA-Z0-9][a-zA-Z0-9_-]*$", "flag": "--run-tag"},
+            "state": {"type": "text", "pattern": r"^[A-Z]{2}$", "flag": "--state"},
             "confirm": {"type": "bool", "flag": "--confirm"},
         },
     },
@@ -249,7 +250,9 @@ def build_argv(phase: str, config_json: dict) -> list[str]:
     return argv
 
 
-_PER_STATE_PHASES = {"resolve", "classify", "enrich-phone", "seed", "crawl"}
+_PER_STATE_PHASES = {"resolve", "classify", "enrich-phone", "seed", "crawl",
+                     "extract-context", "reclassify", "compare-classify",
+                     "resolve-disagree", "promote-classify"}
 
 
 def check_phase_conflict(phase: str, state_code: str | None = None) -> bool:
@@ -530,6 +533,91 @@ def create_phone_enrich_job(config_overrides: dict, host: str) -> Job:
             )
         except IntegrityError:
             raise DuplicateJobError("Duplicate phone enrich job (constraint violation)")
+
+
+_V3_PHASES = frozenset({
+    "extract-context", "reclassify", "compare-classify",
+    "resolve-disagree", "promote-classify",
+})
+
+_V3_PREDECESSORS = {
+    "extract-context": frozenset(),
+    "reclassify": frozenset({"extract-context"}),
+    "compare-classify": frozenset({"reclassify"}),
+    "resolve-disagree": frozenset({"compare-classify"}),
+    "promote-classify": frozenset({"resolve-disagree"}),
+}
+
+
+def create_v3_job(
+    phase: str,
+    config_overrides: dict,
+    host: str,
+    depends_on: Job | None = None,
+) -> Job:
+    """Create a classifier v3 job. All 5 phases use per-state isolation."""
+    _maybe_validate_host(host)
+    if phase not in _V3_PHASES:
+        raise InvalidParameterError(f"Not a v3 phase: {phase}")
+
+    state = config_overrides.get("state") or None
+
+    if depends_on:
+        parent_tag = (depends_on.config_json or {}).get("run_tag")
+        child_tag = config_overrides.get("run_tag")
+        if parent_tag and child_tag and parent_tag != child_tag:
+            raise InvalidParameterError(
+                f"run_tag mismatch: job uses '{child_tag}' "
+                f"but depends on Job #{depends_on.pk} which uses '{parent_tag}'"
+            )
+
+        allowed = _V3_PREDECESSORS.get(phase, frozenset())
+        if depends_on.phase not in allowed:
+            raise InvalidParameterError(
+                f"{phase} cannot depend on {depends_on.phase} "
+                f"(allowed predecessors: {allowed or 'none'})"
+            )
+
+        upstream_state = depends_on.state_code
+        if upstream_state and not state:
+            raise InvalidParameterError(
+                f"Nationwide {phase} cannot depend on state-scoped "
+                f"{depends_on.phase} (state={upstream_state})"
+            )
+        if upstream_state and state and upstream_state != state:
+            raise InvalidParameterError(
+                f"State mismatch: {phase} targets {state} but depends on "
+                f"{depends_on.phase} which targets {upstream_state}"
+            )
+
+    with transaction.atomic():
+        qs = Job.objects.select_for_update().filter(
+            phase=phase, status__in=["pending", "scheduled", "running"],
+        )
+        if state:
+            qs = qs.filter(state_code=state)
+        else:
+            qs = qs.filter(state_code__isnull=True)
+
+        existing = qs.first()
+        if existing:
+            label = existing.state_code or "nationwide"
+            raise DuplicateJobError(
+                f"Active {existing.phase} job already exists for {label}: "
+                f"Job #{existing.pk}"
+            )
+
+        try:
+            return Job.objects.create(
+                state_code=state,
+                phase=phase,
+                status="pending",
+                host=host,
+                config_json=config_overrides,
+                depends_on=depends_on,
+            )
+        except IntegrityError:
+            raise DuplicateJobError(f"Duplicate {phase} job (constraint violation)")
 
 
 def retry_job(job: Job) -> Job:

@@ -160,6 +160,11 @@ class Job(models.Model):
         ("990-index", "990 Index"),
         ("990-parse", "990 Parse"),
         ("enrich-phone", "Phone Enrich"),
+        ("extract-context", "Extract Context"),
+        ("reclassify", "Reclassify"),
+        ("compare-classify", "Compare Classify"),
+        ("resolve-disagree", "Resolve Disagreements"),
+        ("promote-classify", "Promote Classification"),
     ]
     STATUS_CHOICES = [
         ("pending", "Pending"),
