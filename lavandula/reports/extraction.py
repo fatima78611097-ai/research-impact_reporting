@@ -33,12 +33,17 @@ def extract_pages(pdf_bytes: bytes, max_pages: int = _MAX_PAGES) -> ExtractionRe
     except Exception as exc:
         exc_name = type(exc).__name__.lower()
         if "encrypt" in exc_name or "password" in str(exc).lower():
-            return ExtractionResult("", 0, None, "failed:encrypted", 0)
-        return ExtractionResult("", 0, None, "failed:corrupt", 0)
+            try:
+                reader = PdfReader(io.BytesIO(pdf_bytes), password="")
+            except Exception:
+                return ExtractionResult("", 0, None, "failed:encrypted", 0)
+        else:
+            return ExtractionResult("", 0, None, "failed:corrupt", 0)
 
     if reader.is_encrypted:
-        tp = len(reader.pages) if reader.pages else None
-        return ExtractionResult("", 0, tp, "failed:encrypted", 0)
+        if not reader.decrypt(""):
+            tp = len(reader.pages) if reader.pages else None
+            return ExtractionResult("", 0, tp, "failed:encrypted", 0)
 
     total_pages = len(reader.pages)
     pages_to_extract = min(max_pages, total_pages)
