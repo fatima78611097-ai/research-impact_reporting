@@ -602,6 +602,19 @@ projects:
     tags: [classifier, pipeline, quality, reliability]
     notes: "Motivated by discovering the v3 classifier never used multi-page context (Spec 0035), accepted a --workers flag it ignored, logged nothing during runs, and had no way to target by state/EIN. 133 results from test run all used first_page_text fallback. PR #33 merged 2026-05-12. 11 files, +3270/-474, 61 tests. Awaiting operator: test with --dry-run --state TX, then single-EIN smoke test."
 
+  - id: "0040"
+    title: "Classifier V3 Job Queue Integration"
+    summary: "Migrate classifier v3 pipeline (extract-context, reclassify, compare, resolve-disagree, promote) from ad-hoc PipelineProcess to the Job queue system. Adds StageDefinition entries, state-isolated job creation, run-vs-queue choice, and job queue visibility in the dashboard — matching the pattern used by seed/resolve/crawl."
+    status: conceived
+    priority: high
+    files:
+      spec: locard/specs/0040-classifier-v3-job-queue.md
+      plan: null
+      review: null
+    dependencies: ["0034", "0038"]
+    tags: [classifier, pipeline, job-queue, multi-host, operations]
+    notes: "Motivated by classifier v3 running as ad-hoc PipelineProcess while all other stages use the Job queue. No queue visibility, no state isolation, no multi-host dispatch. User needs to run multiple state-isolated classifier jobs simultaneously for national-scale reclassification."
+
   - id: "0039"
     title: "SSM Parameter Type Optimization (KMS Cost Reduction)"
     summary: "Convert non-sensitive SSM parameters (rds-endpoint, rds-port, rds-database, rds-schema) from SecureString to String type, eliminating unnecessary KMS Decrypt calls. Every process startup currently makes 5+ KMS calls for config values that aren't secrets. With 22+ concurrent crawlers plus Django workers, this generates ~17K KMS requests/month approaching the 20K free tier limit."
@@ -618,7 +631,7 @@ projects:
 
 ## Next Available Number
 
-**0040** - Reserve this number for your next project
+**0041** - Reserve this number for your next project
 
 ---
 
