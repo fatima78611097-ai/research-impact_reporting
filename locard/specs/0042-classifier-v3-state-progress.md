@@ -32,37 +32,84 @@ The crawler and resolver pages already have per-state progress grids (colored ba
 
 ## Technical Implementation
 
+### Step Semantics: Two Categories
+
+Steps fall into two categories with different progress models:
+
+**Percentage-based steps** (Extract, Reclassify, Promote): Progress is a ratio of docs processed ÷ total PDF docs in the state. These steps write per-doc results to tables, so completion is measurable at the document level.
+
+**Job-based steps** (Compare, Resolve): These steps operate on aggregates (comparing runs, resolving disagreements) and don't write per-doc completion markers. Their status is binary: a completed Job for the state means "done," otherwise "not done." The `partial` status does NOT apply to these steps — they show only `none`, `running`, `complete`, or `failed`.
+
+### Denominator: PDF Documents Only
+
+The denominator for percentage-based steps is **PDF documents in the state**: rows in `corpus` where `content_type = 'application/pdf'` joined to `nonprofits_seed` by `source_org_ein = ein`. This matches the extraction pipeline, which only processes PDFs.
+
 ### Data Sources
 
-Each cell's status is computed by joining `nonprofits_seed` (state) → `corpus` (docs per state) against the relevant step's output table:
+| Step | Category | "Done" signal |
+|------|----------|---------------|
+| **Extract** | Percentage | Row exists in `classification_context` (any `extraction_method`, including `failed:*` and `skipped:*`) |
+| **Reclassify** | Percentage | Row exists in `classification_results` for the latest **finished** run (`MAX(id) WHERE finished_at IS NOT NULL`) |
+| **Compare** | Job-based | Most recent `compare-classify` Job for this state has `status = 'completed'` |
+| **Resolve** | Job-based | Most recent `resolve-disagree` Job for this state has `status = 'completed'` |
+| **Promote** | Percentage | `corpus.v3_material_type IS NOT NULL` |
 
-| Step | "Done" signal | SQL join |
-|------|--------------|----------|
-| **Extract** | Row exists in `classification_context` | `corpus c JOIN classification_context cc ON c.content_sha256 = cc.content_sha256` |
-| **Reclassify** | Row exists in `classification_results` for the latest run | `corpus c JOIN classification_results cr ON c.content_sha256 = cr.content_sha256 WHERE cr.run_id = <latest>` |
-| **Compare** | Compare job completed for this state | `Job.objects.filter(phase='compare-classify', state_code=state, status='completed')` |
-| **Resolve** | Resolve job completed for this state | `Job.objects.filter(phase='resolve-disagree', state_code=state, status='completed')` |
-| **Promote** | `corpus.v3_material_type IS NOT NULL` | Direct column check on corpus |
+**Latest run rule**: Reclassify uses the most recent **finished** classification run globally. If a newer run is in progress, it is ignored — the grid shows what's been completed. States absent from the latest run show 0% reclassified.
 
-**Why Compare and Resolve use Job status instead of table data**: These steps produce analysis output (comparison reports, tiebreaker verdicts) but don't have a per-doc completion flag that maps cleanly to "state X is done." Job completion for the state is the correct signal — if the compare job for TX ran and completed, TX is compared.
+### Per-Cell Status Values and Precedence
 
-### Per-Cell Status Values
+Each cell resolves to exactly one status. The precedence order (highest priority first):
 
-Each cell has one of 5 states:
+```
+running > failed > complete > partial > none
+```
 
-| Status | Visual | Meaning |
-|--------|--------|---------|
-| `none` | Gray empty | 0% — step not started for this state |
-| `partial` | Yellow with percentage | 1-99% of docs processed |
-| `complete` | Green check | 100% (or step's job completed) |
-| `running` | Blue pulse | Job currently running for this state+step |
-| `failed` | Red X | Most recent job for this state+step failed |
+**Resolution rules for percentage-based steps** (Extract, Reclassify, Promote):
+1. If a Job is `running` for this state+step → `running` (blue pulse)
+2. Else if the most recent Job for this state+step is `failed` → `failed` (red)
+3. Else if percentage = 100% → `complete` (green, show "100%")
+4. Else if percentage > 0% → `partial` (yellow, show percentage)
+5. Else → `none` (gray dash)
 
-For steps 1 (Extract) and 5 (Promote), percentage = docs with context/promotion ÷ total docs in state. For steps 2-4, percentage is derived from classification_results count or job completion status.
+**Resolution rules for job-based steps** (Compare, Resolve):
+1. If a Job is `running` for this state+step → `running` (blue pulse)
+2. Else if the most recent Job for this state+step is `failed` → `failed` (red)
+3. Else if a completed Job exists for this state+step → `complete` (green check)
+4. Else → `none` (gray dash)
+
+### Nationwide Job Handling
+
+Jobs with `state_code = NULL` (nationwide) apply to all states. Precedence:
+
+- A **state-specific** Job always takes priority over a **nationwide** Job for the same step, regardless of creation time.
+- If no state-specific Job exists, the nationwide Job's status applies.
+
+Example: A nationwide extract job is `running`, but TX also has a state-specific extract job that `completed` → TX shows `complete`, all other states show `running`.
+
+### "Most Recent Job" Definition
+
+For each `(phase, state_code)` pair, the authoritative Job is selected by:
+1. Filter to `Job.objects.filter(phase=phase)` with matching `state_code` (exact match, not NULL)
+2. Order by `created_at DESC`
+3. Take the first row
+
+For nationwide overlay, separately query `Job.objects.filter(phase=phase, state_code__isnull=True).order_by("-created_at").first()`.
+
+### Cell Visual Contract
+
+Each cell renders as a **single compact element** — either a percentage or an icon, not both:
+
+| Status | Render | CSS classes |
+|--------|--------|-------------|
+| `none` | `—` | `text-gray-400` |
+| `partial` | `45%` | `text-yellow-600 bg-yellow-50` |
+| `complete` | `100%` (percentage steps) or `✓` (job steps) | `text-green-600 bg-green-50` |
+| `running` | `●` (with pulse animation) | `text-blue-500 animate-pulse` |
+| `failed` | `✗` | `text-red-600 bg-red-50` |
+
+Table cells use `text-xs font-mono text-center` for compact rendering. The full grid (6 columns × 51 rows) fits within 1280px width.
 
 ### SQL Query Strategy
-
-A single view function computes the full grid in **two queries** (same pattern as `_dashboard_stats()`):
 
 **Query 1: Doc-level progress** (steps 1, 2, 5)
 ```sql
@@ -74,7 +121,8 @@ SELECT
     COUNT(DISTINCT CASE WHEN c.v3_material_type IS NOT NULL
           THEN c.content_sha256 END) AS promoted
 FROM lava_corpus.nonprofits_seed s
-JOIN lava_corpus.corpus c ON s.ein = c.source_org_ein
+LEFT JOIN lava_corpus.corpus c
+    ON s.ein = c.source_org_ein AND c.content_type = 'application/pdf'
 LEFT JOIN lava_corpus.classification_context cc
     ON c.content_sha256 = cc.content_sha256
 LEFT JOIN lava_corpus.classification_results cr
@@ -82,59 +130,55 @@ LEFT JOIN lava_corpus.classification_results cr
     AND cr.run_id = (SELECT MAX(id) FROM lava_corpus.classification_runs
                      WHERE finished_at IS NOT NULL)
 GROUP BY s.state
+ORDER BY s.state
 ```
 
-**Query 2: Job-level status** (overlay running/failed/completed for all 5 steps)
+Note: Uses `LEFT JOIN` from `nonprofits_seed` to `corpus` so states with zero PDF docs still appear (all columns = 0).
+
+**Query 2: Job-level status** (all 5 steps)
 ```python
-jobs = Job.objects.filter(
-    phase__in=V3_PHASES,
-    status__in=["running", "completed", "failed"],
-).values("phase", "state_code", "status").order_by("-created_at")
+from django.db.models import Max
+
+latest_jobs = (
+    Job.objects
+    .filter(phase__in=V3_PHASES)
+    .exclude(status__in=["pending", "cancelled"])
+    .values("phase", "state_code")
+    .annotate(latest_id=Max("id"))
+)
+job_map = {}
+for entry in latest_jobs:
+    job = Job.objects.get(pk=entry["latest_id"])
+    key = (job.phase, job.state_code)  # state_code may be None for nationwide
+    job_map[key] = job.status
 ```
-
-Combine: for each state × step, the doc-level query gives the percentage, and the job query overlays running/failed status.
-
-### Template Structure
-
-The grid renders as an HTML table inside a new HTMX partial:
-
-```
-pipeline/partials/classifier_v3_state_grid.html
-```
-
-Layout:
-```
-┌───────┬──────────┬────────────┬─────────┬─────────┬─────────┐
-│ State │ Extract  │ Reclassify │ Compare │ Resolve │ Promote │
-├───────┼──────────┼────────────┼─────────┼─────────┼─────────┤
-│ TX    │ ██ 100%  │ ░░ 45%     │ —       │ —       │ —       │
-│ CA    │ ██ 100%  │ ●● running │ —       │ —       │ —       │
-│ NY    │ ░░ 12%   │ —          │ —       │ —       │ —       │
-│ FL    │ —        │ —          │ —       │ —       │ —       │
-│ ...   │          │            │         │         │         │
-└───────┴──────────┴────────────┴─────────┴─────────┴─────────┘
-```
-
-Each cell is a small colored badge:
-- **Gray dash** `—`: not started (0%)
-- **Yellow** `░░ 45%`: partial progress
-- **Green** `██ 100%` or `✓`: complete
-- **Blue pulse** `●● running`: job in progress
-- **Red** `✗ failed`: last job failed
 
 ### Sorting
 
-States sort by pipeline progress (most advanced first), then by doc count within the same progress level. This puts "states that need attention" at the top — states stuck partway through show before states not yet started.
+Sort goal: **states needing operator action first**, then fully complete states, then not-yet-started states.
 
-Sort key: `(max_completed_step DESC, total_docs DESC)`
+Sort key per state:
+1. **Primary**: Actionability score (states stuck mid-pipeline sort first)
+   - Has any `failed` cell → score 0 (highest priority — needs fixing)
+   - Has any `running` cell → score 1 (actively progressing)
+   - Has mix of `complete`/`partial` and `none` → score 2 (partially done, may need next step kicked off)
+   - All cells `complete` → score 3 (fully done)
+   - All cells `none` → score 4 (not started)
+2. **Secondary**: `total_docs DESC` (larger states first within same priority tier)
+
+### States with Zero Documents
+
+All 51 jurisdictions from `nonprofits_seed` appear in the grid, even if they have zero corpus documents. These states show `—` in every column and sort to the bottom (score 4). The `LEFT JOIN` from `nonprofits_seed` to `corpus` ensures they appear.
 
 ### Performance
 
-The existing dashboard queries (112K seed rows + 186K corpus rows) run in ~1.5 seconds from buffer cache. This grid adds one LEFT JOIN to `classification_context` (6K rows currently, growing to ~186K) and one LEFT JOIN to `classification_results` (2K rows currently, growing to ~186K). At full scale these are still small enough for sequential scans.
+**Measurement**: Server-side wall time for `_v3_state_grid()` (both queries combined), measured on the production RDS instance with warm buffer cache. Target: under 3 seconds.
 
-The grid query runs inside the HTMX partial, polled every 5 seconds. Since the partial is its own endpoint, the grid refresh doesn't re-render the forms.
+The existing dashboard queries on the same tables run in ~1.5 seconds. This query adds two LEFT JOINs to smaller tables (`classification_context`: ~186K rows at full scale, `classification_results`: ~186K rows at full scale). Expected time: 2-3 seconds at full scale.
 
-**Index note**: No new indexes needed at current scale. If `classification_context` grows past ~500K rows and the query exceeds 3 seconds, add `CREATE INDEX idx_cc_sha ON classification_context(content_sha256)` — but the PK already covers this.
+The grid runs inside its own HTMX partial endpoint, polled every 5 seconds. The partial response is small (~5KB of HTML for 51 rows).
+
+**Index note**: No new indexes needed. The PK on `classification_context(content_sha256)` and `classification_results(run_id, content_sha256)` cover the join conditions. At full scale, Postgres will still prefer sequential scans for a GROUP BY across all rows.
 
 ### View Changes
 
@@ -154,21 +198,39 @@ The grid query runs inside the HTMX partial, polled every 5 seconds. Since the p
 
 ### Modified Files
 
-- `pipeline/views.py` — add view class and helper function (~60 lines)
+- `pipeline/views.py` — add view class and helper function (~80 lines)
 - `pipeline/templates/pipeline/classifier_v3.html` — add HTMX div (~3 lines)
 - `dashboard/urls.py` (or `pipeline/urls.py` depending on routing) — add URL pattern (~1 line)
 
 ## Acceptance Criteria
 
-1. The classifier v3 page shows a state × step grid with 51 rows (all US states + DC) and 5 columns (extract, reclassify, compare, resolve, promote)
-2. Each cell displays one of: not started (gray), partial (yellow + percentage), complete (green), running (blue pulse), failed (red)
-3. The grid auto-refreshes every 5 seconds via HTMX without re-rendering the rest of the page
-4. States are sorted by pipeline progress (most advanced first), then by document count
-5. The grid is computed via live SQL queries against existing tables — no new database columns or tables
-6. Extract and Promote percentages are accurate: extracted docs ÷ total PDFs in state, promoted docs ÷ total PDFs in state
-7. Running/failed status reflects the most recent Job for each state × step combination
-8. The grid loads in under 3 seconds at current data scale (186K corpus, 112K seeds)
-9. No regression to existing v3 page functionality (step status bar, forms, job display, cancel buttons)
+1. The classifier v3 page shows a state × step grid with all states from `nonprofits_seed` (including states with zero docs) and 5 columns (extract, reclassify, compare, resolve, promote)
+2. Percentage-based cells (extract, reclassify, promote) show percentage text; job-based cells (compare, resolve) show icon only (check or X)
+3. Cell status precedence is `running > failed > complete > partial > none`
+4. State-specific jobs take priority over nationwide jobs for the same step
+5. The grid auto-refreshes every 5 seconds via HTMX without re-rendering the rest of the page
+6. States sort by actionability: failed first, then running, then partially done, then fully complete, then not started
+7. The grid is computed via live SQL queries against existing tables — no new database columns or tables
+8. The denominator for percentages is PDF documents only (`content_type = 'application/pdf'`)
+9. Reclassify percentage uses the latest **finished** classification run only; in-progress runs are ignored
+10. Extract counts include all `classification_context` rows regardless of `extraction_method` (including `failed:*` and `skipped:*`)
+11. Server-side query time for the grid is under 3 seconds on production with warm buffer cache
+12. No regression to existing v3 page functionality (step status bar, forms, job display, cancel buttons)
+
+## Testing Strategy
+
+Tests use Django's test client and the existing test database pattern:
+
+1. **Zero-doc state**: Seed a state with no corpus rows → all 5 columns show `none`
+2. **Partial extraction**: Seed a state with 10 PDFs, add 5 `classification_context` rows → extract shows `50%`, others show `none`
+3. **Complete extraction**: All PDFs in state have `classification_context` rows → extract shows `100%`
+4. **Running job overlay**: Create a running Job for `extract-context` + state → cell shows `running` regardless of percentage
+5. **Failed job overlay**: Create a failed Job for `reclassify` + state → cell shows `failed`
+6. **Nationwide job fallback**: Create a running nationwide Job, no state-specific Job → all states show `running` for that step
+7. **State-specific overrides nationwide**: State has a completed state-specific Job AND a running nationwide Job → state shows `complete`
+8. **Job-based steps**: Compare/Resolve show `complete` only when a completed Job exists, never `partial`
+9. **Sorting**: Create states with different progress levels → verify failed states sort first, not-started last
+10. **HTMX partial**: GET request to the grid URL returns valid HTML fragment (not full page)
 
 ## Traps to Avoid
 
@@ -180,9 +242,13 @@ The grid query runs inside the HTMX partial, polled every 5 seconds. Since the p
 
 4. **Don't assume step ordering from data alone**: A state could have promoted results from a previous run but no reclassify results from the current run. The grid should reflect the *latest* run's state, not historical completions.
 
-5. **Don't make the grid too wide**: 5 columns + state name must fit comfortably on a 1280px screen. Keep cell content minimal — percentage or icon, not both.
+5. **Don't make the grid too wide**: 5 columns + state name must fit comfortably on a 1280px screen. Keep cell content minimal — percentage or icon, not both (never both).
 
-6. **Don't forget nationwide jobs**: Jobs with `state_code = NULL` apply to all states. A running nationwide extract job means every state shows "running" in the extract column.
+6. **Don't forget nationwide jobs**: Jobs with `state_code = NULL` apply to all states. A running nationwide extract job means every state shows "running" in the extract column — unless that state has a more recent state-specific job.
+
+7. **Don't use `partial` for Compare/Resolve**: These are job-based steps. They are either done or not done. There is no meaningful partial state.
+
+8. **Don't INNER JOIN seed to corpus**: Use LEFT JOIN so states with zero corpus docs still appear in the grid. INNER JOIN would silently drop states.
 
 ## Security Considerations
 
@@ -190,3 +256,21 @@ The grid query runs inside the HTMX partial, polled every 5 seconds. Since the p
 - No new database writes
 - Uses existing `LoginRequiredMixin` authentication
 - HTMX partial uses existing `HtmxLoginRequiredMixin` pattern
+
+## Consultation Log
+
+### Round 1: Spec Review (2026-05-13)
+
+**Gemini**: APPROVE (HIGH confidence). No key issues.
+
+**Codex**: REQUEST_CHANGES (HIGH confidence). 10 findings:
+1. Compare/Resolve `partial` status undefined → **Fixed**: Split into percentage-based vs job-based step categories. Compare/Resolve never show `partial`.
+2. "Most recent Job" ambiguous → **Fixed**: Added explicit selection rules (filter by phase+state_code, order by created_at DESC, take first).
+3. Nationwide job precedence undefined → **Fixed**: Added precedence rule: state-specific always overrides nationwide.
+4. Denominator unclear (PDF only?) → **Fixed**: Explicitly defined as PDF documents only (`content_type = 'application/pdf'`).
+5. Latest run rule incomplete → **Fixed**: Clarified: latest **finished** run only, in-progress runs ignored.
+6. 51-row guarantee vs JOIN shape → **Fixed**: Changed to LEFT JOIN from nonprofits_seed to corpus; documented zero-doc state handling.
+7. Sorting contradicts stated goal → **Fixed**: Replaced sort with actionability-based scoring (failed first, not-started last).
+8. Performance claims loose → **Fixed**: Defined measurement boundary (server-side wall time, production, warm cache).
+9. Visual contract contradicts examples → **Fixed**: Explicit table of what each status renders (percentage OR icon, never both).
+10. Testing strategy missing → **Fixed**: Added 10 concrete test cases covering edge conditions.
