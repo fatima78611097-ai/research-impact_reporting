@@ -33,7 +33,7 @@ _BUCKET = "lavandula-nonprofit-collaterals"
 _PREFIX = "pdfs"
 _PAGE_SIZE = 500
 _MAX_PDF_BYTES = 100 * 1024 * 1024  # 100 MB
-_ADVISORY_LOCK_KEY = "extract-context"
+_ADVISORY_LOCK_KEY_PREFIX = "extract-context"
 
 
 class Command(BaseCommand):
@@ -66,16 +66,18 @@ class Command(BaseCommand):
         ein = options.get("ein")
         self._orchestrator_job_id = options.get("job_id")
 
+        lock_key = f"{_ADVISORY_LOCK_KEY_PREFIX}-{state}" if state else f"{_ADVISORY_LOCK_KEY_PREFIX}-global"
         self._lock_conn = engine.connect()
+        locked = False
         try:
             locked = self._lock_conn.execute(
                 text("SELECT pg_try_advisory_lock(hashtext(:key))"),
-                {"key": _ADVISORY_LOCK_KEY},
+                {"key": lock_key},
             ).scalar()
             self._lock_conn.commit()
             if not locked:
-                self.stderr.write("Another extraction is running (advisory lock held). Exiting.")
-                self._lock_conn.close()
+                scope = state or "nationwide"
+                self.stderr.write(f"Another extraction for {scope} is running (advisory lock held). Exiting.")
                 return
 
             self._run(engine, limit=limit, reextract=reextract,
@@ -83,16 +85,16 @@ class Command(BaseCommand):
                       extract_workers=extract_workers,
                       state=state, ein=ein)
         finally:
-            try:
-                self._lock_conn.execute(
-                    text("SELECT pg_advisory_unlock(hashtext(:key))"),
-                    {"key": _ADVISORY_LOCK_KEY},
-                )
-                self._lock_conn.commit()
-            except Exception:
-                log.exception("Failed to release advisory lock")
-            finally:
-                self._lock_conn.close()
+            if locked:
+                try:
+                    self._lock_conn.execute(
+                        text("SELECT pg_advisory_unlock(hashtext(:key))"),
+                        {"key": lock_key},
+                    )
+                    self._lock_conn.commit()
+                except Exception:
+                    log.exception("Failed to release advisory lock")
+            self._lock_conn.close()
 
     def _run(self, engine, *, limit, reextract, download_workers, extract_workers,
              state=None, ein=None):
