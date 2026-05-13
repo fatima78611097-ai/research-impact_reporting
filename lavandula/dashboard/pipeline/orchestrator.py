@@ -261,7 +261,7 @@ def check_phase_conflict(phase: str, state_code: str | None = None) -> bool:
     For per-state phases, only conflicts with the same state block.
     NULL state_code -> global conflict check.
     """
-    qs = Job.objects.filter(phase=phase, status="running")
+    qs = Job.objects.filter(phase=phase, status__in=["running", "scheduled"])
     if state_code and phase in _PER_STATE_PHASES:
         qs = qs.filter(state_code=state_code)
     if qs.exists():
@@ -311,7 +311,7 @@ def create_state_jobs(
             for phase in phases:
                 existing = (
                     Job.objects.select_for_update()
-                    .filter(state_code=sc, phase=phase, status__in=["pending", "running"])
+                    .filter(state_code=sc, phase=phase, status__in=["pending", "scheduled", "running"])
                     .first()
                 )
                 if existing:
@@ -353,7 +353,7 @@ def create_resolve_job(config_overrides: dict, host: str, depends_on: Job | None
     state = config_overrides.get("state")
     with transaction.atomic():
         qs = Job.objects.select_for_update().filter(
-            phase="resolve", status__in=["pending", "running"],
+            phase="resolve", status__in=["pending", "scheduled", "running"],
         )
         if state:
             qs = qs.filter(state_code=state)
@@ -387,7 +387,7 @@ def create_crawl_job(config_overrides: dict, host: str, depends_on: Job | None =
     state = config_overrides.get("state") or None
     with transaction.atomic():
         qs = Job.objects.select_for_update().filter(
-            phase="crawl", status__in=["pending", "running"],
+            phase="crawl", status__in=["pending", "scheduled", "running"],
         )
         if state:
             qs = qs.filter(state_code=state)
@@ -417,7 +417,7 @@ def create_classify_job(config_overrides: dict, host: str, depends_on: Job | Non
     state = config_overrides.get("state") or None
     with transaction.atomic():
         qs = Job.objects.select_for_update().filter(
-            phase="classify", status__in=["pending", "running"],
+            phase="classify", status__in=["pending", "scheduled", "running"],
         )
         if state:
             qs = qs.filter(state_code=state)
@@ -461,7 +461,7 @@ def create_990_index_job(config_overrides: dict, host: str) -> Job:
         _990_advisory_lock()
 
         existing = Job.objects.select_for_update().filter(
-            phase__in=_990_PHASES, status__in=["pending", "running"]
+            phase__in=_990_PHASES, status__in=["pending", "scheduled", "running"]
         ).first()
         if existing:
             raise DuplicateJobError(
@@ -489,7 +489,7 @@ def create_990_parse_job(config_overrides: dict, host: str) -> Job:
         _990_advisory_lock()
 
         existing = Job.objects.select_for_update().filter(
-            phase__in=_990_PHASES, status__in=["pending", "running"]
+            phase__in=_990_PHASES, status__in=["pending", "scheduled", "running"]
         ).first()
         if existing:
             raise DuplicateJobError(
@@ -515,7 +515,7 @@ def create_phone_enrich_job(config_overrides: dict, host: str) -> Job:
     with transaction.atomic():
         existing = (
             Job.objects.select_for_update()
-            .filter(phase="enrich-phone", status__in=["pending", "running"])
+            .filter(phase="enrich-phone", status__in=["pending", "scheduled", "running"])
             .first()
         )
         if existing:
