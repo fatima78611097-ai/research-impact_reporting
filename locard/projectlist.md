@@ -655,9 +655,22 @@ projects:
     tags: [dashboard, ui, classifier, operations, national-scale]
     notes: "Motivated by observation that v3 pipeline has 5 sequential steps per state but no per-state visibility. Current v3 page shows global step status only. Crawler/resolver pages have state grids but they're single-axis (one process). V3 needs a matrix view."
 
+  - id: "0043"
+    title: "Pipeline Control Panel"
+    summary: "Comprehensive control panel for managing pipeline operations: service lifecycle (start/stop/restart), job queue management (pause/resume, bulk cancel, retry), host management, and orphan lock cleanup. Designed to be separable from processing hosts for Layer 2 architecture."
+    status: conceived
+    priority: high
+    files:
+      spec: locard/specs/0043-pipeline-control-panel.md
+      plan: null
+      review: null
+    dependencies: ["0040"]
+    tags: [dashboard, operations, infrastructure, control-plane, layer-2]
+    notes: "Motivated by manual operational pain: restarting services via SSH, cleaning orphan advisory locks, cancelling stuck jobs one-by-one. Should support future separation of dashboard host from processing hosts."
+
 ## Next Available Number
 
-**0043** - Reserve this number for your next project
+**0044** - Reserve this number for your next project
 
 ---
 
