@@ -64,8 +64,12 @@ e.g., "American Red Cross — Annual Report (2023)"
 
 When year is unknown: `"American Red Cross — Annual Report"`
 When material_type is unknown: `"American Red Cross — Document (2023)"`
+When org name is unknown (missing org record): `"[EIN] — Annual Report (2023)"`
+When all metadata is null: `"Document"` with the source URL basename as subtitle
 
 The `source_url_redacted` basename can serve as a secondary identifier (e.g., `2023-Annual-Report.pdf`).
+
+**Material type label mapping:** Use `material_type.replace("_", " ").title()` for display (e.g., `annual_report` → `Annual Report`). This is a presentation-only transform — no lookup table needed.
 
 ## Technical Implementation
 
@@ -90,7 +94,7 @@ Add corpus documents to `OrgDetailView.get_context_data()`:
 ```python
 documents = Report.objects.filter(
     source_org_ein=self.object.ein
-).order_by("-report_year", "material_type")
+).order_by("-report_year", "material_type", "content_sha256")
 ctx["documents"] = documents
 ctx["document_count"] = documents.count()
 ```
@@ -164,16 +168,35 @@ The toolbar provides redundant download/print buttons for discoverability, plus 
 
 **Presigned URL expiry:** 15 minutes (up from the current 5 minutes for downloads) to allow reading time. The URL is embedded in the page at load time — if it expires, the user reloads the page.
 
-**Next/Previous navigation:** Query the corpus for documents belonging to the same org, ordered by `-report_year, material_type`, and provide links to adjacent documents. This enables browsing through an org's full document collection without returning to the org detail page.
+**Error handling:**
+- If `generate_presigned_url` raises (e.g., S3 object doesn't exist, credentials issue): catch `ClientError`, set `ctx["pdf_error"] = True`, and show a message in place of the iframe: "PDF not available. The file may have been removed from storage." with a fallback link to the report detail page.
+- If org record is missing (`NonprofitSeed.DoesNotExist`): `ctx["org"] = None`. Sidebar shows EIN only (no org name link). Display name falls back to `"[EIN] — Type (Year)"`.
+- Null metadata fields: each sidebar field shows "-" when null. Display name omits null components gracefully (see Document Display Name section).
+- Browser cannot render PDF inline (rare): the `<iframe>` fallback is browser-dependent. Below the iframe, show a small "Can't see the PDF?" link to the download URL.
 
-**Document search panel:** The sidebar includes a collapsible search/filter section below the metadata. This lets the user search across the full corpus without leaving the viewer:
+**Back navigation:** The viewer accepts an optional `return_to` query parameter. Navigation links from org detail, reports list, and report detail pass their URL as `return_to`. The Back button uses this value if present; otherwise falls back to the org detail page (if org exists) or the reports list.
 
-- Text input: search by org name (icontains)
-- Dropdown: filter by material_type
-- Dropdown: filter by state (derived from org's state)
-- Results appear as a compact list in the sidebar (org name, type, year) — clicking a result navigates to that document in the viewer
+**Next/Previous navigation:** Query the corpus for documents belonging to the same org, ordered by `-report_year, material_type, content_sha256` (deterministic tie-breaker), and provide links to adjacent documents. This enables browsing through an org's full document collection without returning to the org detail page. Next/prev links preserve the `return_to` parameter.
 
-This is loaded via HTMX partial (`/dashboard/reports/search/?q=...&material_type=...&state=...`) so it doesn't require a full page reload. The search partial returns up to 25 results, paginated.
+**Document search panel:** The sidebar includes a collapsible "Browse Corpus" section below the metadata. This lets the user search across the full corpus without leaving the viewer.
+
+**URL:** `/dashboard/reports/search/` → `DocumentSearchPartial` (HTMX partial, name: `report_search`)
+
+**Filters:**
+- `q` (text): search by org name via `NonprofitSeed.objects.filter(name__icontains=q)`, then `Report.objects.filter(source_org_ein__in=matching_eins)`
+- `material_type` (dropdown): filter by `Report.material_type` exact match
+- `state` (dropdown): filter by org state — `Report.objects.filter(source_org_ein__in=NonprofitSeed.objects.filter(state=state).values("ein"))`
+- `page` (int, default 1): pagination offset
+
+**Join strategy:** Filters that reference org metadata (name, state) use subqueries via `source_org_ein__in=NonprofitSeed.objects.filter(...).values("ein")`. This avoids cross-model joins on unmanaged tables and lets PostgreSQL optimize the subquery.
+
+**Results:** Ordered by `-report_year, material_type, content_sha256`. Each result shows org name (truncated to 30 chars), material type label, and year. Clicking navigates to that document in the viewer (full page load, preserving `return_to`).
+
+**Pagination:** 25 results per page. Show "Load more" link at bottom that fetches page N+1 via HTMX append. No total count displayed (avoids expensive COUNT on filtered corpus).
+
+**Empty state:** "No documents match your filters."
+
+**Auth:** `LoginRequiredMixin` on the partial view. Returns 403 for unauthenticated HTMX requests.
 
 The search panel makes the viewer a self-contained browsing tool — operators can jump between documents across orgs without leaving the page.
 
@@ -195,7 +218,7 @@ The search panel makes the viewer a self-contained browsing tool — operators c
 - AC5: Org detail page shows a "Documents (N)" section listing all corpus documents for the org
 - AC6: Each document row shows: derived display name, material type badge, year, page count, file size
 - AC7: Each document row links to the PDF viewer page
-- AC8: Documents are ordered by year (descending), then material type
+- AC8: Documents are ordered by year (descending), then material type, then SHA (deterministic)
 - AC9: If no documents exist for the org, show "No documents in corpus."
 
 ### Part 3: PDF Viewer
@@ -204,8 +227,8 @@ The search panel makes the viewer a self-contained browsing tool — operators c
 - AC12: Toolbar has Print button (triggers `window.print()` or iframe print)
 - AC13: Metadata sidebar shows: org name + EIN link, material type, year, page count, file size, source URL, confidence, archived date, SHA-256
 - AC14: "View Org" link navigates to the org detail page
-- AC15: Next/Previous document links navigate to adjacent docs for the same org
-- AC16: Back button returns to the referring page (org detail or reports list)
+- AC15: Next/Previous document links navigate to adjacent docs for the same org (deterministic order with SHA tie-breaker)
+- AC16: Back button uses `return_to` query param if present; falls back to org detail or reports list
 - AC17: Presigned URL has 15-minute expiry
 - AC18: Page requires authentication (LoginRequiredMixin)
 
@@ -215,29 +238,42 @@ The search panel makes the viewer a self-contained browsing tool — operators c
 - AC21: Search panel has material_type dropdown filter
 - AC22: Search panel has state dropdown filter
 - AC23: Search results load via HTMX without full page reload
-- AC24: Results show as compact list (org name, material type, year) — max 25 per page
+- AC24: Results show as compact list (org name, material type, year) — max 25 per page, "Load more" pagination
 - AC25: Clicking a search result navigates to that document in the viewer
+- AC26: Empty search results show "No documents match your filters."
+- AC27: Search endpoint requires authentication (403 for unauthenticated)
+
+### Error Handling
+- AC28: If S3 presign fails, viewer shows error message with link to report detail page
+- AC29: If org record is missing, sidebar shows EIN only (no broken link)
+- AC30: Null metadata fields display as "-" in sidebar
+- AC31: Below iframe, "Can't see the PDF?" fallback link to download URL
 
 ### Navigation
-- AC26: Report detail page has a "View PDF" button linking to the viewer
-- AC27: Reports list page has a view link per row linking to the viewer
-- AC28: Org detail document listing links to the viewer
+- AC32: Report detail page has a "View PDF" button linking to the viewer
+- AC33: Reports list page has a view link per row linking to the viewer
+- AC34: Org detail document listing links to the viewer
 
 ## Security Considerations
 
-- All views require authentication (LoginRequiredMixin)
+- All views require authentication (LoginRequiredMixin), including the HTMX search partial
 - S3 presigned URLs are time-limited (15 min) and scoped to a single object
 - Name search uses Django ORM `icontains` (parameterized query, no SQL injection)
-- PDF rendered in `<iframe>` with S3 origin — sandboxed by browser same-origin policy
+- PDF rendered in `<iframe>` with S3 presigned URL — browser isolates the cross-origin content. No explicit CSP changes needed since the iframe src is a signed AWS URL, not user-controlled
 - No user-supplied content rendered as HTML (XSS-safe)
+- `return_to` parameter: must be validated as a relative URL (starts with `/`) to prevent open-redirect attacks. Reject absolute URLs or URLs with `://`
+- `source_url_redacted` is displayed as plain text (not a clickable link) — safe for display; URL tokens are already stripped by the crawler
 
 ## Testing Requirements
 
-- Unit tests for name search filter (exact, partial, case-insensitive, combined with other filters)
-- Unit tests for document listing context (org with docs, org without docs, ordering)
-- Unit tests for viewer view (presigned URL generation, org lookup, next/prev navigation)
-- Unit tests for authentication enforcement on all new views
-- Integration: verify document listing links to viewer, viewer links back to org
+- Unit tests for name search filter (exact, partial, case-insensitive, combined with other filters, empty query)
+- Unit tests for document listing context (org with docs, org without docs, ordering with tie-breaker)
+- Unit tests for viewer view (presigned URL generation, org lookup, next/prev navigation, missing org, S3 error)
+- Unit tests for viewer search partial (name filter, material_type filter, state filter, combined filters, empty results, pagination, auth enforcement)
+- Unit tests for `return_to` validation (relative URL accepted, absolute URL rejected, missing param falls back)
+- Unit tests for null metadata display (null year, null material_type, null page_count)
+- Unit tests for authentication enforcement on all new views including HTMX partial
+- Integration: verify document listing links to viewer, viewer links back to org, search results navigate correctly
 
 ## Traps to Avoid
 
