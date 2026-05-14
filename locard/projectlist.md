@@ -463,28 +463,28 @@ projects:
   - id: "0028"
     title: "Contractor Intelligence Resolver"
     summary: "AI-powered enrichment pipeline that researches contractor names from the people table, generates structured descriptions (what the company does, size, relevance), and writes back to a contractor_description column. Same producer-consumer pattern as Spec 0018."
-    status: conceived
+    status: abandoned
     priority: medium
     files:
       spec: locard/specs/0028-contractor-intelligence-resolver.md
       plan: null
       review: null
     dependencies: ["0026"]
-    tags: [enrichment, ai, resolver, contractor, lavandula-sales]
-    notes: "Follow-on to Spec 0026. Enhances contractor entries in people table with AI-researched descriptions for sales intelligence."
+    tags: [enrichment, ai, resolver, contractor, lavandula-sales, abandoned]
+    notes: "Abandoned 2026-05-14. Deprioritized — focus shifting to document viewer and vocabulary extraction (Layer 2)."
 
   - id: "0029"
     title: "Retire Legacy Classification Column"
     summary: "Stop writing the lossy 5-value 'classification' column (derived from material_type_to_legacy mapping). Migrate all dashboard and pipeline references from 'classification' to 'material_type'/'material_group'. The classification column currently overwrites the LLM's granular material_type with a coarse bucket (e.g. financial_report → annual)."
-    status: conceived
+    status: abandoned
     priority: medium
     files:
       spec: locard/specs/0029-retire-legacy-classification.md
       plan: null
       review: null
     dependencies: ["0025"]
-    tags: [classifier, cleanup, data-quality, dashboard]
-    notes: "Identified 2026-05-01: gemma_client.py line 229 overwrites result['classification'] with material_type_to_legacy(mt), collapsing granular labels to 5 buckets. material_type column preserves the real data. Dashboard reports page already uses material_type; crawler/classifier views still show classification. Surfaces to clean: gemma_client.py, pipeline_classify.py log line, crawler.html, classifier.html, report_detail.html, taxonomy.py _MATERIAL_TYPE_TO_LEGACY dict."
+    tags: [classifier, cleanup, data-quality, dashboard, abandoned]
+    notes: "Abandoned 2026-05-14. Legacy classification column still written but material_type is the authoritative field. Low-impact cleanup deprioritized."
 
   - id: "0030"
     title: "990 Filing Index Automation & S3 Archive"
@@ -528,7 +528,7 @@ projects:
   - id: "0033"
     title: "Multi-Host Job Distribution & Remote Workers"
     summary: "Extend the existing host-aware job queue into a fully operational multi-host system: host registry with capability tags, dashboard UI for targeting remote hosts, orchestrator heartbeat/health monitoring, and automated work distribution across hosts for national-scale ingest."
-    status: committed
+    status: integrated
     priority: high
     files:
       spec: locard/specs/0033-multi-host-workers.md
@@ -567,7 +567,7 @@ projects:
   - id: "0036"
     title: "Pipeline Stall Watchdog"
     summary: "Generic deadlock/stall detection for producer-consumer pipelines. Monitors progress counters and detects when active workers stop completing work. Covers crawler, extract_classification_context, reclassify_corpus, and future Docling extraction."
-    status: committed
+    status: integrated
     priority: high
     files:
       spec: locard/specs/0036-pipeline-stall-watchdog.md
@@ -592,7 +592,7 @@ projects:
   - id: "0038"
     title: "Classifier Pipeline Rebuild"
     summary: "Ground-up rewrite of reclassify_corpus: require extraction context (no silent fallback), real progress logging, state/EIN/org filtering, actual concurrent workers, quality gates. Replace the broken v3 pipeline with something trustworthy."
-    status: committed
+    status: integrated
     priority: high
     files:
       spec: locard/specs/0038-classifier-pipeline-rebuild.md
@@ -605,7 +605,7 @@ projects:
   - id: "0040"
     title: "Classifier V3 Job Queue Integration"
     summary: "Migrate classifier v3 pipeline (extract-context, reclassify, compare, resolve-disagree, promote) from ad-hoc PipelineProcess to the Job queue system. Adds StageDefinition entries, state-isolated job creation, run-vs-queue choice, and job queue visibility in the dashboard — matching the pattern used by seed/resolve/crawl."
-    status: committed
+    status: integrated
     priority: high
     files:
       spec: locard/specs/0040-classifier-v3-job-queue.md
@@ -618,7 +618,7 @@ projects:
   - id: "0041"
     title: "Classifier V3 Pipeline — Operational Parity"
     summary: "Fix 6 gaps left by Spec 0040 builder: add dependency chaining dropdown, cancel button, progress stats for all 5 stages, allow completed dependencies, fix check_phase_conflict scheduled status bug, delete dead _launch_immediately code."
-    status: committed
+    status: integrated
     priority: high
     files:
       spec: locard/specs/0041-v3-pipeline-operational-parity.md
@@ -658,7 +658,7 @@ projects:
   - id: "0043"
     title: "Pipeline Control Panel"
     summary: "Comprehensive control panel for managing pipeline operations: service lifecycle (start/stop/restart), job queue management (pause/resume, bulk cancel, retry), host management, and orphan lock cleanup. Designed to be separable from processing hosts for Layer 2 architecture."
-    status: implementing
+    status: integrated
     priority: high
     files:
       spec: locard/specs/0043-pipeline-control-panel.md
@@ -668,9 +668,22 @@ projects:
     tags: [dashboard, operations, infrastructure, control-plane, layer-2]
     notes: "Motivated by manual operational pain: restarting services via SSH, cleaning orphan advisory locks, cancelling stuck jobs one-by-one. Should support future separation of dashboard host from processing hosts."
 
+  - id: "0044"
+    title: "Org Search, Document Listing & PDF Viewer"
+    summary: "Add name/keyword search to the org list page, list all corpus documents on the org detail page with human-readable names and classification labels, and build a standalone PDF viewer page with in-browser rendering, download, print, and metadata sidebar."
+    status: conceived
+    priority: high
+    files:
+      spec: locard/specs/0044-org-search-doc-viewer.md
+      plan: null
+      review: null
+    dependencies: ["0019"]
+    tags: [dashboard, ui, corpus, document-viewer, search]
+    notes: "Prerequisite for Layer 2 vocabulary extraction — need to browse and understand the corpus before building extraction pipelines."
+
 ## Next Available Number
 
-**0044** - Reserve this number for your next project
+**0045** - Reserve this number for your next project
 
 ---
 
