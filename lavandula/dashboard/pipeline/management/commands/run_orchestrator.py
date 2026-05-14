@@ -875,11 +875,18 @@ class Command(BaseCommand):
                 is_active=True
             ).values_list("ip_address", flat=True)
         )
-        running_host_ips = {str(ip) for ip in running_host_ips if ip}
+        from datetime import timedelta
+        active_worker_ips = set(
+            Worker.objects.filter(
+                is_active=True,
+                last_heartbeat__gte=timezone.now() - timedelta(seconds=60)
+            ).values_list("ip_address", flat=True)
+        )
+        protected_ips = {str(ip) for ip in running_host_ips if ip} | {str(ip) for ip in active_worker_ips if ip}
 
         orphans = []
         for pid, client_addr, state, backend_start in lock_rows:
-            if str(client_addr) not in running_host_ips:
+            if str(client_addr) not in protected_ips:
                 orphans.append(pid)
 
         if dry_run:
