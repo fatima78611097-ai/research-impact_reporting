@@ -178,7 +178,9 @@ Executes `cancel_job()` for each matching job (which cascades to dependents). Sh
 4. If YES — skip (this connection likely belongs to an active job process on that host)
 5. If NO — safe to terminate (orphaned connection from a dead process)
 
-This is conservative: it protects ALL connections from a host that has ANY running job, even if the specific connection is unrelated. This prevents the WI/VA incident. The trade-off is that orphaned locks on hosts with running jobs won't be cleaned up until all jobs on that host finish — acceptable for a manual cleanup tool.
+This is conservative: it protects ALL connections from a host that has ANY running job, even if the specific connection is unrelated. This prevents the WI/VA incident. The trade-off is that orphaned locks on hosts with running jobs won't be cleaned up until all jobs on that host finish.
+
+**Lock accumulation risk**: In theory, orphaned locks could accumulate if a host always has at least one running job. In practice, this is bounded: advisory locks are session-level and released when the DB connection closes. PostgreSQL's `idle_in_transaction_session_timeout` or connection pooler timeouts naturally clean up truly abandoned connections. The health check panel shows the current lock count so the operator can monitor accumulation. If it becomes a problem, a future enhancement could embed the Job ID in the advisory lock key, enabling per-lock ownership verification.
 
 ### Feature 4: Host Status Dashboard
 
@@ -361,5 +363,61 @@ Every destructive action has a defined failure display:
 - All POST endpoints include Django's built-in CSRF protection (`{% csrf_token %}` in forms, `CsrfViewMiddleware` in settings)
 - `HostCommand` is the only vector for remote code execution — the command type is an enum, not freeform. The agent only executes whitelisted commands. `args_json` is validated per command type: `cleanup-locks` accepts only `{"dry_run": bool}`, `kill-process` accepts only `{"pid": int, "signal": "TERM"|"KILL"}`, all others accept no args
 - `kill-process` command is restricted to PIDs owned by the `ubuntu` user (the agent runs as `ubuntu`)
-- All actions logged to `PipelineAuditLog` with operator identity, source IP, action type, parameters, and outcome (success/failure/partial). Failed and denied attempts are also logged.
+- All actions logged to `PipelineAuditLog` with operator identity, source IP, action type, parameters, and outcome (success/failure/partial). Failed and denied attempts are also logged. Agent-side execution results (command output, errors) are logged via the `HostCommand.result_text` field.
+- `HostCommand.result_text` is sanitized before storage: environment variables, file paths containing usernames, and any string matching AWS credential patterns are redacted. Output is truncated to 4KB max.
 - No secrets or credentials exposed in the UI
+- **Host identity**: The agent polls for commands using `socket.gethostname()`, which matches the hostname registered via `setup_worker`. This is a private VPC network — all hosts connect to RDS via private IP, no public internet exposure. Hostname spoofing would require VPC-level network access which implies the attacker already has IAM credentials (game over regardless). Accepted risk for a single-operator system. If the system grows to multi-operator, mTLS or per-agent tokens would be warranted.
+- **Sudoers hardening**: The agent executes `sudo systemctl` only with hardcoded, exact service names. The sudoers configuration must use exact command paths with no wildcards:
+  ```
+  ubuntu ALL=(root) NOPASSWD: /usr/bin/systemctl restart lavandula-orchestrator
+  ubuntu ALL=(root) NOPASSWD: /usr/bin/systemctl restart lavandula-dashboard
+  ubuntu ALL=(root) NOPASSWD: /usr/bin/systemctl status lavandula-orchestrator
+  ubuntu ALL=(root) NOPASSWD: /usr/bin/systemctl status lavandula-dashboard
+  ```
+  The agent constructs the command as a fixed list (`["sudo", "systemctl", "restart", service_name]`) where `service_name` is selected from a hardcoded enum — never from user input or `args_json`.
+- **Django session security**: The deployment must configure `SESSION_COOKIE_SECURE=True`, `SESSION_COOKIE_HTTPONLY=True`, `CSRF_COOKIE_SECURE=True`. These are infrastructure settings, not application code changes.
+
+## Consultation Log
+
+### Round 2: Red Team Security Review (2026-05-14)
+
+**Gemini**: REQUEST_CHANGES. 1 CRITICAL, 3 HIGH, 2 MEDIUM, 1 LOW.
+
+1. **CRITICAL — Host identity spoofing via hostname**: Agent polls by `socket.gethostname()`, no mutual auth.
+   - **Disposition**: Accepted risk. Private VPC, no public exposure. Hostname spoofing requires IAM-level compromise. Documented in Security Considerations. Would revisit for multi-operator.
+
+2. **HIGH — Sudoers wildcard risk**: Broad sudo config could allow arbitrary systemctl commands.
+   - **Disposition**: Fixed. Added explicit sudoers rules — exact command paths, no wildcards. Agent uses hardcoded enum for service names, never user input.
+
+3. **HIGH — Lock accumulation from conservative cleanup**: Hosts with running jobs never get locks cleaned.
+   - **Disposition**: Acknowledged. Documented the bounded risk (session-level locks auto-release on connection close). Health check panel shows lock count for monitoring. Future enhancement: embed Job ID in lock key.
+
+4. **HIGH — result_text could expose secrets**: Command output stored in DB and shown in UI.
+   - **Disposition**: Fixed. Added sanitization requirement (redact env vars, AWS credential patterns, truncate to 4KB).
+
+5. **MEDIUM — MFA for single operator account**: Single credential = full control.
+   - **Disposition**: Out of scope for v1. Valid for future hardening if system grows.
+
+6. **MEDIUM — Session cookie security settings**: Standard Django hardening not mentioned.
+   - **Disposition**: Fixed. Added explicit requirement for SESSION_COOKIE_SECURE, HTTPONLY, CSRF_COOKIE_SECURE.
+
+7. **LOW — Standard Django session security**: Same as MEDIUM #6.
+   - **Disposition**: Addressed above.
+
+### Round 1: Spec Review (2026-05-14)
+
+**Gemini**: APPROVE (HIGH confidence). No key issues.
+
+**Codex**: REQUEST_CHANGES (HIGH confidence). 12 findings:
+1. HostCommand lifecycle incomplete → **Fixed**: Added claiming semantics, timeout, idempotency rules.
+2. Restart flow inconsistent → **Fixed**: Added explicit restart execution contract (fire-and-forget via Popen).
+3. "Clear queue" ambiguous → **Fixed**: Renamed to "Clear All Pending", explicitly excludes running jobs.
+4. Bulk cancel for running jobs vague → **Fixed**: Defaults to pending-only, explicit opt-in for running with warning.
+5. Stale job "Mark Failed" underspecified → **Fixed**: Added 5-point side-effect list including race guard.
+6. Orphan lock safety check not robust → **Fixed**: Changed to client_addr-based linkage with conservative skip-if-any-running-job rule.
+7. Audit requirement incomplete → **Fixed**: Added agent-side logging, failed attempt logging, outcome field.
+8. Host identity ambiguous → **Fixed**: Documented hostname source (setup_worker → socket.gethostname), dropdown from Worker model.
+9. Security too light → **Fixed**: Added CSRF, args_json validation, sudoers hardening, session cookies.
+10. Acceptance criteria not testable for host health → **Fixed**: Added status freshness rules (stale/offline thresholds, "unknown" vs "stopped").
+11. Failure-path UX missing → **Fixed**: Added failure display table for 6 scenarios.
+12. Testing strategy missing race/multi-host → **Fixed**: Added 6 additional test cases (claiming, restart recovery, offline timeout, pause persistence, CSRF, false positive prevention).
