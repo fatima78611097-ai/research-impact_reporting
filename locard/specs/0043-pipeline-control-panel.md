@@ -92,6 +92,17 @@ class HostCommand(models.Model):
 
 **Security constraint**: The command agent runs as the `ubuntu` user (same as systemd services). Service restart requires `sudo systemctl` — the `ubuntu` user must have passwordless sudo for these specific commands. This is already the case on both hosts.
 
+**Command lifecycle rules**:
+- **Claiming**: The agent claims a command by atomically updating `status='running', started_at=now()` with `WHERE status='pending' AND host=<my_hostname>`. The `select_for_update()` pattern prevents duplicate pickup after restart.
+- **Timeout**: Commands stuck in `pending` for > 60 seconds or `running` for > 120 seconds are considered timed out. The dashboard shows "timed out" status. A timed-out command is never retried automatically — the operator must re-issue it.
+- **Idempotency**: `restart-orchestrator` and `restart-dashboard` are inherently idempotent (restarting an already-running service is fine). `cleanup-locks` checks current state before acting. `kill-process` may fail silently if PID is gone (ProcessLookupError is expected, not an error).
+- **Host identity**: `HostCommand.host` must match `Worker.hostname` exactly. The agent filters by `socket.gethostname()` which matches the hostname registered via `setup_worker`. The dashboard's host dropdown is populated from `Worker.objects.filter(is_active=True)` — no freeform input.
+
+**Restart execution contract**: All restart commands are executed via `subprocess.Popen` (fire-and-forget, not blocking). The agent marks the command as `running`, spawns the subprocess, and returns control to the orchestrator loop immediately. Completion detection:
+- For `restart-orchestrator`: The restarted orchestrator process picks up the still-`running` command on its first tick and marks it `completed` after confirming the service PID has changed.
+- For `restart-dashboard`: The agent polls `systemctl is-active lavandula-dashboard` for up to 10 seconds after issuing the restart, then marks completed/failed.
+- If the process dies before marking completion, the command stays `running` and times out after 120 seconds.
+
 ### Feature 1: Queue Pause/Resume
 
 **Mechanism**: A `PipelineConfig` singleton row stores global operational state.
@@ -121,14 +132,16 @@ class PipelineConfig(models.Model):
 **Bulk Cancel**: Cancel all jobs matching a filter. Filter dimensions:
 - Phase (e.g., all `extract-context` jobs)
 - State (e.g., all jobs for TX)
-- Status (pending, running, or both)
+- Status: defaults to **pending only**. A separate "Include running" checkbox enables cancelling running jobs (shows warning: "Running jobs will be sent SIGTERM. Partially completed work may need re-processing.")
 - Host
+
+Running job cancellation uses the existing `cancel_job()` which sends SIGTERM→SIGKILL locally. For jobs on remote hosts, cancellation sets `status='cancelled'` in DB — the orchestrator on that host detects the status change and kills the process on its next tick.
 
 Executes `cancel_job()` for each matching job (which cascades to dependents). Shows confirmation with count before executing.
 
 **Bulk Retry**: Retry all failed jobs matching a filter. Same filter dimensions. Creates new pending jobs via `retry_job()`.
 
-**Clear Queue**: Cancel all pending jobs. Confirmation required ("This will cancel N pending jobs").
+**Clear Queue**: Cancel all pending jobs only — running jobs are never touched by Clear Queue. Confirmation required ("This will cancel N pending jobs"). The button label is "Clear All Pending" (not "Clear Queue") to avoid ambiguity.
 
 **UI**: Filter bar with dropdowns + action buttons. Results shown as a summary ("Cancelled 12 jobs, 3 dependents cascade-cancelled").
 
@@ -138,22 +151,34 @@ Executes `cancel_job()` for each matching job (which cascades to dependents). Sh
 - `last_heartbeat` is older than 10 minutes, OR
 - The host's Worker has `status='stale'` or `status='offline'`
 
+**"Mark Failed" side effects**: When marking a stale job as failed:
+1. Set `status='failed'`, `finished_at=now()`, `error_message='Marked failed by operator (stale)'`
+2. Preserve existing `last_heartbeat` and `host` fields (for diagnostics)
+3. Cascade-cancel all pending/scheduled dependent jobs (same as `cancel_job()` behavior)
+4. Do NOT auto-retry — the operator decides whether to retry after investigating
+5. **Race guard**: If the process is actually still alive (false positive), the status flip to `failed` is harmless — the process will finish its work but the Job record won't be updated to `completed` (the process checks status before final update). The operator can see this in the job's event log.
+
 **Orphaned advisory locks**: Advisory locks held by DB connections where:
 - The connection is idle (no active query)
 - No matching running Job exists for that connection's PID
 
 **UI**: "Health Check" panel showing:
-- Count of stale running jobs (with "Mark Failed" button)
-- Count of orphaned locks (with "Release Locks" button)
-- Each item expandable to show details before action
+- Count of stale running jobs (with "Mark Failed" button) — expandable to show job ID, state, phase, last heartbeat
+- Count of orphaned locks (with "Release Locks" button) — expandable to show DB PID, client IP, lock ID, connection age
+- Each item shown with details before action
 
 **Implementation**: The lock cleanup uses `pg_terminate_backend()` on orphaned connections (same approach as manual cleanup, but with safety checks to exclude connections that belong to active running jobs).
 
+**Authoritative ownership linkage**: There is no direct mapping between a Job's OS-level PID and its PostgreSQL backend PID — they are different processes (Python process vs DB connection). The safety check instead uses the **client IP address** from `pg_stat_activity` combined with the Job's `host` field (resolved to IP via the `Worker.ip_address` field):
+
 **Safety check before terminating a connection**:
-1. Get all PIDs from `pg_locks WHERE locktype = 'advisory'`
-2. Get all PIDs from `pg_stat_activity` that are NOT idle (state != 'idle') — these are active, skip them
-3. For remaining idle connections, cross-reference with running Job PIDs on the same host
-4. Only terminate connections that have NO matching running job process
+1. Get all `(pid, client_addr)` from `pg_locks JOIN pg_stat_activity WHERE locktype = 'advisory'`
+2. Skip any connection with `state != 'idle'` (actively executing a query)
+3. For each idle lock-holding connection, check: does any Job with `status='running'` exist on a host whose `Worker.ip_address` matches this connection's `client_addr`?
+4. If YES — skip (this connection likely belongs to an active job process on that host)
+5. If NO — safe to terminate (orphaned connection from a dead process)
+
+This is conservative: it protects ALL connections from a host that has ANY running job, even if the specific connection is unrelated. This prevents the WI/VA incident. The trade-off is that orphaned locks on hosts with running jobs won't be cleaned up until all jobs on that host finish — acceptable for a manual cleanup tool.
 
 ### Feature 4: Host Status Dashboard
 
@@ -172,6 +197,12 @@ Executes `cancel_job()` for each matching job (which cascades to dependents). Sh
 - Action buttons: Restart Orchestrator, Restart Dashboard, Report Status
 
 **Auto-refresh**: HTMX polling every 10 seconds.
+
+**Status freshness**: CPU/memory values come from the Worker model's heartbeat (updated by the orchestrator every ~30 seconds). Service status comes from the latest `report-status` HostCommand result. Display rules:
+- Worker heartbeat < 1 min old: show values as-is
+- Worker heartbeat 1-5 min old: show values with "(stale)" suffix in gray
+- Worker heartbeat > 5 min old or no heartbeat: show "—" for CPU/memory, status badge = "offline"
+- No `report-status` result: service status shows "unknown" in gray (not "stopped")
 
 ### Feature 5: Service Management
 
@@ -286,6 +317,12 @@ Single page with tabbed or stacked sections:
 8. **Audit logging**: Perform bulk cancel → verify PipelineAuditLog entry with action="bulk_cancel", parameters include filter criteria
 9. **Pause banner**: Pause queue → load classifier v3 page → verify "QUEUE PAUSED" banner appears
 10. **HTMX partials**: GET health check and host status endpoints → verify HTML fragments, not full pages
+11. **Command claiming**: Create two HostCommands for same host → agent claims one at a time → second remains pending until first completes
+12. **Restart recovery**: Create restart-orchestrator command → simulate process death → new process picks up running command and marks completed
+13. **Offline host command**: Create command for offline host → dashboard shows timeout after 120 seconds, command stays pending
+14. **Pause persists across restart**: Pause queue → restart orchestrator → verify queue still paused
+15. **CSRF enforcement**: POST to any control panel endpoint without CSRF token → verify 403
+16. **Lock cleanup false positive prevention**: Hold advisory lock from host with running job → cleanup should NOT terminate that connection
 
 ## Traps to Avoid
 
@@ -305,10 +342,24 @@ Single page with tabbed or stacked sections:
 
 8. **Don't restart the orchestrator that's executing the restart command synchronously**: The agent must background the restart and exit its current tick. The new orchestrator process inherits the pending command check.
 
+### Failure-Path UX
+
+Every destructive action has a defined failure display:
+
+| Scenario | UI Behavior |
+|----------|-------------|
+| HostCommand times out (>120s running) | Card shows "Command timed out — host may be unreachable" in red |
+| Host is offline (Worker.status='offline') | Restart buttons disabled with tooltip "Host offline" |
+| `sudo` fails (permission denied) | HostCommand.result_text shows error, card shows "Failed: permission denied" |
+| `pg_terminate_backend()` returns false | Lock shown as "Release failed — connection may have already closed" |
+| Partial bulk cancel (some jobs changed status between confirmation and execution) | Summary shows "Cancelled 8 of 10 jobs (2 already completed)" |
+| Bulk retry on job that already has a pending retry | Skip with note in summary: "Skipped 1 job (retry already exists)" |
+
 ## Security Considerations
 
 - All control panel endpoints use existing `LoginRequiredMixin` (single-operator system)
-- `HostCommand` is the only vector for remote code execution — the command type is an enum, not freeform. The agent only executes whitelisted commands.
+- All POST endpoints include Django's built-in CSRF protection (`{% csrf_token %}` in forms, `CsrfViewMiddleware` in settings)
+- `HostCommand` is the only vector for remote code execution — the command type is an enum, not freeform. The agent only executes whitelisted commands. `args_json` is validated per command type: `cleanup-locks` accepts only `{"dry_run": bool}`, `kill-process` accepts only `{"pid": int, "signal": "TERM"|"KILL"}`, all others accept no args
 - `kill-process` command is restricted to PIDs owned by the `ubuntu` user (the agent runs as `ubuntu`)
-- All actions logged to `PipelineAuditLog` with source IP
+- All actions logged to `PipelineAuditLog` with operator identity, source IP, action type, parameters, and outcome (success/failure/partial). Failed and denied attempts are also logged.
 - No secrets or credentials exposed in the UI
