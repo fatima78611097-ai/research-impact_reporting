@@ -88,7 +88,7 @@
             </td>
             <td class="py-2">{{ job.exit_code|default:"-" }}</td>
             <td class="py-2">{% if job.started_at and job.finished_at %}{{ job.started_at|timesince:job.finished_at }}{% else %}-{% endif %}</td>
-            <td class="py-2 text-gray-500">{{ job.finished_at|timesince }} ago</td>
+            <td class="py-2 text-gray-500">{% if job.finished_at %}{{ job.finished_at|timesince }} ago{% else %}-{% endif %}</td>
           </tr>
           {% endfor %}
         </tbody>

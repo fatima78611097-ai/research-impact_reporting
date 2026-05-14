@@ -541,11 +541,11 @@ _V3_PHASES = frozenset({
 })
 
 _V3_PREDECESSORS = {
-    "extract-context": frozenset(),
-    "reclassify": frozenset({"extract-context"}),
-    "compare-classify": frozenset({"reclassify"}),
-    "resolve-disagree": frozenset({"compare-classify"}),
-    "promote-classify": frozenset({"resolve-disagree"}),
+    "extract-context": frozenset({"extract-context"}),
+    "reclassify": frozenset({"extract-context", "reclassify"}),
+    "compare-classify": frozenset({"reclassify", "compare-classify"}),
+    "resolve-disagree": frozenset({"compare-classify", "resolve-disagree"}),
+    "promote-classify": frozenset({"resolve-disagree", "promote-classify"}),
 }
 
 
@@ -578,17 +578,18 @@ def create_v3_job(
                 f"(allowed predecessors: {allowed or 'none'})"
             )
 
-        upstream_state = depends_on.state_code
-        if upstream_state and not state:
-            raise InvalidParameterError(
-                f"Nationwide {phase} cannot depend on state-scoped "
-                f"{depends_on.phase} (state={upstream_state})"
-            )
-        if upstream_state and state and upstream_state != state:
-            raise InvalidParameterError(
-                f"State mismatch: {phase} targets {state} but depends on "
-                f"{depends_on.phase} which targets {upstream_state}"
-            )
+        if depends_on.phase != phase:
+            upstream_state = depends_on.state_code
+            if upstream_state and not state:
+                raise InvalidParameterError(
+                    f"Nationwide {phase} cannot depend on state-scoped "
+                    f"{depends_on.phase} (state={upstream_state})"
+                )
+            if upstream_state and state and upstream_state != state:
+                raise InvalidParameterError(
+                    f"State mismatch: {phase} targets {state} but depends on "
+                    f"{depends_on.phase} which targets {upstream_state}"
+                )
 
     with transaction.atomic():
         qs = Job.objects.select_for_update().filter(
@@ -598,6 +599,9 @@ def create_v3_job(
             qs = qs.filter(state_code=state)
         else:
             qs = qs.filter(state_code__isnull=True)
+
+        if depends_on and depends_on.phase == phase:
+            qs = qs.exclude(pk=depends_on.pk)
 
         existing = qs.first()
         if existing:

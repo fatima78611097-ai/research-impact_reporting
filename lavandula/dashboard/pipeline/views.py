@@ -356,9 +356,10 @@ class JobListView(HtmxLoginRequiredMixin, TemplateView):
         ctx = super().get_context_data(**kwargs)
         ctx["active_jobs"] = Job.objects.filter(status="running").order_by("-started_at")
         ctx["pending_jobs"] = Job.objects.filter(status="pending").order_by("created_at")
+        from django.db.models import F
         ctx["history_jobs"] = Job.objects.filter(
             status__in=["completed", "failed", "cancelled"]
-        ).order_by("-finished_at")[:50]
+        ).order_by(F("finished_at").desc(nulls_last=True))[:50]
         ctx["show_host"] = True
         return ctx
 
@@ -806,14 +807,20 @@ class ClassifierV3StatusPartial(HtmxLoginRequiredMixin, TemplateView):
             running = list(Job.objects.filter(phase=phase, status="running").order_by("state_code"))
             _annotate_running_jobs(running)
             _annotate_host_display(running)
-            pending_count = Job.objects.filter(phase=phase, status="pending").count()
+            pending_jobs = list(
+                Job.objects.filter(phase=phase, status="pending")
+                .select_related("depends_on")
+                .order_by("created_at")
+            )
+            _annotate_host_display(pending_jobs)
             last_completed = Job.objects.filter(
                 phase=phase, status__in=["completed", "failed"]
             ).order_by("-finished_at").first()
             steps.append({
                 "phase": phase, "label": label,
                 "running": running,
-                "pending_count": pending_count,
+                "pending_count": len(pending_jobs),
+                "pending_jobs": pending_jobs,
                 "last_completed": last_completed,
                 "last_duration": _job_duration(last_completed) if last_completed else None,
             })
