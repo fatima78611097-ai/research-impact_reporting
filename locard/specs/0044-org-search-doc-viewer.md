@@ -52,6 +52,7 @@ Before moving to Layer 2 (vocabulary extraction and analysis), operators need to
 - `first_page_text`
 
 **S3 layout**: `s3://lavandula-nonprofit-collaterals/pdfs/{sha256}.pdf`
+- Bucket configured with SSE-S3 encryption at rest, versioning enabled, private ACL (Spec 0007)
 
 ### Document Display Name
 
@@ -175,6 +176,17 @@ The toolbar provides redundant download/print buttons for discoverability, plus 
 - Browser cannot render PDF inline (rare): the `<iframe>` fallback is browser-dependent. Below the iframe, show a small "Can't see the PDF?" link to the download URL.
 
 **Back navigation:** The viewer accepts an optional `return_to` query parameter. Navigation links from org detail, reports list, and report detail pass their URL as `return_to`. The Back button uses this value if present; otherwise falls back to the org detail page (if org exists) or the reports list.
+
+**`return_to` validation** (open-redirect prevention):
+```python
+def _safe_return_url(request):
+    """Validate return_to param: must be a relative path, no scheme."""
+    url = request.GET.get("return_to", "")
+    if url and url.startswith("/") and "://" not in url and not url.startswith("//"):
+        return url
+    return None
+```
+The view calls `_safe_return_url()` in `get_context_data()` and passes the result to the template. The template uses it for the Back link, with a fallback to `{% url 'org_detail' report.source_org_ein %}` or `{% url 'report_list' %}`. Absolute URLs, protocol-relative URLs (`//evil.com`), and empty values are all rejected.
 
 **Next/Previous navigation:** Query the corpus for documents belonging to the same org, ordered by `-report_year, material_type, content_sha256` (deterministic tie-breaker), and provide links to adjacent documents. This enables browsing through an org's full document collection without returning to the org detail page. Next/prev links preserve the `return_to` parameter.
 
