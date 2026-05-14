@@ -1,0 +1,24 @@
+{% if commands %}
+<div class="text-xs space-y-1 border-t pt-2 mt-2">
+  {% for cmd in commands %}
+    <div class="flex items-center gap-2">
+      {% if cmd.status == "completed" %}
+        <span class="w-2 h-2 rounded-full bg-green-500 inline-block"></span>
+      {% elif cmd.status == "failed" %}
+        <span class="w-2 h-2 rounded-full bg-red-500 inline-block"></span>
+      {% elif cmd.status == "running" %}
+        <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse inline-block"></span>
+      {% else %}
+        <span class="w-2 h-2 rounded-full bg-gray-400 inline-block"></span>
+      {% endif %}
+      <span class="text-gray-600">{{ cmd.get_command_display }}</span>
+      <span class="text-gray-400">{{ cmd.created_at|timesince }} ago</span>
+      {% if cmd.status == "failed" and cmd.result_text %}
+        <span class="text-red-600 truncate max-w-xs" title="{{ cmd.result_text }}">{{ cmd.result_text|truncatechars:60 }}</span>
+      {% elif cmd.status == "completed" and cmd.result_text %}
+        <span class="text-green-700 truncate max-w-xs" title="{{ cmd.result_text }}">{{ cmd.result_text|truncatechars:60 }}</span>
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>
+{% endif %}

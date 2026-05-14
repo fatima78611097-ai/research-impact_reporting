@@ -388,3 +388,55 @@ class PipelineAuditLog(models.Model):
 
     def __str__(self):
         return f"{self.action} {self.process_name} @ {self.timestamp}"
+
+
+class PipelineConfig(models.Model):
+    queue_paused = models.BooleanField(default=False)
+    paused_at = models.DateTimeField(null=True, blank=True)
+    paused_by = models.CharField(max_length=100, blank=True, default="")
+
+    class Meta:
+        db_table = "pipeline_config"
+        constraints = [
+            models.CheckConstraint(condition=models.Q(pk=1), name="singleton_config")
+        ]
+
+    @classmethod
+    def get(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+
+COMMAND_CHOICES = [
+    ("start-orchestrator", "Start Orchestrator"),
+    ("stop-orchestrator", "Stop Orchestrator"),
+    ("restart-orchestrator", "Restart Orchestrator"),
+    ("start-dashboard", "Start Dashboard"),
+    ("stop-dashboard", "Stop Dashboard"),
+    ("restart-dashboard", "Restart Dashboard"),
+    ("report-status", "Report Status"),
+    ("cleanup-locks", "Cleanup Locks"),
+    ("kill-process", "Kill Process"),
+]
+
+
+class HostCommand(models.Model):
+    host = models.CharField(max_length=100)
+    command = models.CharField(max_length=50, choices=COMMAND_CHOICES)
+    args_json = models.JSONField(default=dict, blank=True)
+    status = models.CharField(max_length=20, default="pending",
+        choices=[("pending", "Pending"), ("running", "Running"),
+                 ("completed", "Completed"), ("failed", "Failed")])
+    result_text = models.TextField(blank=True, default="")
+    requested_by = models.ForeignKey(
+        "auth.User", on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "host_commands"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.command} on {self.host} [{self.status}]"

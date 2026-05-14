@@ -379,7 +379,7 @@ Every destructive action has a defined failure display:
 
 ## Consultation Log
 
-### Round 2: Red Team Security Review (2026-05-14)
+### Red Team Security Review (2026-05-14)
 
 **Gemini**: REQUEST_CHANGES. 1 CRITICAL, 3 HIGH, 2 MEDIUM, 1 LOW.
 
@@ -404,7 +404,7 @@ Every destructive action has a defined failure display:
 7. **LOW — Standard Django session security**: Same as MEDIUM #6.
    - **Disposition**: Addressed above.
 
-### Round 1: Spec Review (2026-05-14)
+### First Consultation (2026-05-14)
 
 **Gemini**: APPROVE (HIGH confidence). No key issues.
 

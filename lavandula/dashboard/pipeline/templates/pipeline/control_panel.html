@@ -1,0 +1,154 @@
+{% extends "pipeline/base.html" %}
+
+{% block title %}Control Panel — Lavandula Pipeline{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl">
+  <h1 class="text-2xl font-bold mb-6">Control Panel</h1>
+
+  <!-- Queue Control -->
+  <div class="bg-white rounded-lg shadow p-6 mb-6">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-semibold">Queue Control</h2>
+      {% if config.queue_paused %}
+        <span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">PAUSED</span>
+      {% else %}
+        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">RUNNING</span>
+      {% endif %}
+    </div>
+
+    <div class="flex gap-3 mb-6">
+      {% if config.queue_paused %}
+        <form method="post" action="{% url 'queue_resume' %}">
+          {% csrf_token %}
+          <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Resume Queue</button>
+        </form>
+        <p class="text-sm text-gray-500 self-center">
+          Paused by {{ config.paused_by }}{% if config.paused_at %} — {{ config.paused_at|timesince }} ago{% endif %}
+        </p>
+      {% else %}
+        <form method="post" action="{% url 'queue_pause' %}">
+          {% csrf_token %}
+          <button type="submit" class="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700">Pause Queue</button>
+        </form>
+      {% endif %}
+    </div>
+
+    <!-- Bulk Operations -->
+    <div class="border-t pt-4">
+      <h3 class="text-sm font-semibold text-gray-700 mb-3">Bulk Operations</h3>
+
+      <!-- Bulk Cancel -->
+      <div id="bulk-cancel-area" class="mb-4">
+        <form hx-post="{% url 'bulk_cancel' %}" hx-target="#bulk-cancel-result" hx-swap="innerHTML" class="flex flex-wrap gap-2 items-end">
+          {% csrf_token %}
+          <div>
+            <label class="block text-xs text-gray-500">Phase</label>
+            <select name="phase" class="border rounded px-2 py-1 text-sm">
+              <option value="">All</option>
+              {% for p in phases %}<option value="{{ p }}">{{ p }}</option>{% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500">State</label>
+            <select name="state" class="border rounded px-2 py-1 text-sm">
+              <option value="">All</option>
+              {% for s in states %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500">Host</label>
+            <select name="host" class="border rounded px-2 py-1 text-sm">
+              <option value="">All</option>
+              {% for h in hosts %}<option value="{{ h }}">{{ h }}</option>{% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500">Status</label>
+            <select name="status" class="border rounded px-2 py-1 text-sm">
+              <option value="pending">Pending only</option>
+              <option value="pending+running">Pending + Running</option>
+            </select>
+          </div>
+          <button type="submit" class="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700">Cancel Selected</button>
+        </form>
+        <div id="bulk-cancel-result" class="mt-2"></div>
+      </div>
+
+      <!-- Bulk Retry -->
+      <div id="bulk-retry-area" class="mb-4">
+        <form hx-post="{% url 'bulk_retry' %}" hx-target="#bulk-retry-result" hx-swap="innerHTML" class="flex flex-wrap gap-2 items-end">
+          {% csrf_token %}
+          <div>
+            <label class="block text-xs text-gray-500">Phase</label>
+            <select name="phase" class="border rounded px-2 py-1 text-sm">
+              <option value="">All</option>
+              {% for p in phases %}<option value="{{ p }}">{{ p }}</option>{% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500">State</label>
+            <select name="state" class="border rounded px-2 py-1 text-sm">
+              <option value="">All</option>
+              {% for s in states %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500">Host</label>
+            <select name="host" class="border rounded px-2 py-1 text-sm">
+              <option value="">All</option>
+              {% for h in hosts %}<option value="{{ h }}">{{ h }}</option>{% endfor %}
+            </select>
+          </div>
+          <button type="submit" class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">Retry Failed</button>
+        </form>
+        <div id="bulk-retry-result" class="mt-2"></div>
+      </div>
+
+      <!-- Clear Queue -->
+      <div id="clear-queue-area">
+        <form hx-post="{% url 'clear_queue' %}" hx-target="#clear-queue-result" hx-swap="innerHTML">
+          {% csrf_token %}
+          <button type="submit" class="px-3 py-1 bg-red-800 text-white rounded text-sm hover:bg-red-900">Clear All Pending</button>
+        </form>
+        <div id="clear-queue-result" class="mt-2"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Health Check -->
+  <div class="bg-white rounded-lg shadow p-6 mb-6">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-semibold">Health Check</h2>
+      <span class="text-xs text-gray-400">auto-refresh 10s</span>
+    </div>
+    <div hx-get="{% url 'control_health' %}" hx-trigger="load, every 10s" hx-swap="innerHTML">
+      <p class="text-gray-400 text-sm">Loading...</p>
+    </div>
+  </div>
+
+  <!-- Hosts -->
+  <div class="bg-white rounded-lg shadow p-6 mb-6">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-semibold">Hosts</h2>
+      <span class="text-xs text-gray-400">auto-refresh 10s</span>
+    </div>
+    <div hx-get="{% url 'control_hosts' %}" hx-trigger="load, every 10s" hx-swap="innerHTML">
+      <p class="text-gray-400 text-sm">Loading...</p>
+    </div>
+  </div>
+
+  <!-- Scheduler Config -->
+  <div class="bg-white rounded-lg shadow p-6">
+    <h2 class="text-lg font-semibold mb-4">Scheduler Config <span class="text-xs text-gray-400 font-normal">(read-only)</span></h2>
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+      {% for key, value in scheduler_config.items %}
+        <div>
+          <span class="text-gray-500">{{ key }}:</span>
+          <span class="font-mono">{{ value }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

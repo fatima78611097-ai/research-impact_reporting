@@ -658,11 +658,11 @@ projects:
   - id: "0043"
     title: "Pipeline Control Panel"
     summary: "Comprehensive control panel for managing pipeline operations: service lifecycle (start/stop/restart), job queue management (pause/resume, bulk cancel, retry), host management, and orphan lock cleanup. Designed to be separable from processing hosts for Layer 2 architecture."
-    status: conceived
+    status: implementing
     priority: high
     files:
       spec: locard/specs/0043-pipeline-control-panel.md
-      plan: null
+      plan: locard/plans/0043-pipeline-control-panel.md
       review: null
     dependencies: ["0040"]
     tags: [dashboard, operations, infrastructure, control-plane, layer-2]

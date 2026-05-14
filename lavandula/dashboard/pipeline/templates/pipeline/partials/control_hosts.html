@@ -1,0 +1,73 @@
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+{% for w in workers %}
+  <div class="border rounded-lg p-4 {% if w.heartbeat_offline %}border-red-200 bg-red-50{% elif w.heartbeat_stale %}border-yellow-200 bg-yellow-50{% else %}border-green-200 bg-green-50{% endif %}">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="font-semibold text-sm">{{ w.display_name|default:w.hostname }}</h3>
+      {% if w.heartbeat_offline %}
+        <span class="text-xs px-2 py-0.5 rounded-full bg-red-200 text-red-800">offline</span>
+      {% elif w.heartbeat_stale %}
+        <span class="text-xs px-2 py-0.5 rounded-full bg-yellow-200 text-yellow-800">stale</span>
+      {% else %}
+        <span class="text-xs px-2 py-0.5 rounded-full bg-green-200 text-green-800">online</span>
+      {% endif %}
+    </div>
+
+    <div class="text-xs text-gray-600 space-y-1 mb-3">
+      <div>Last heartbeat: {% if w.last_heartbeat %}{{ w.last_heartbeat|timesince }} ago{% else %}never{% endif %}</div>
+
+      {% if not w.heartbeat_offline %}
+        <div class="flex gap-4">
+          <div>CPU:
+            {% if w.heartbeat_stale %}<span class="text-gray-400">{{ w.cpu_pct|default:"—" }}% (stale)</span>
+            {% else %}{{ w.cpu_pct|default:"—" }}%{% endif %}
+          </div>
+          <div>Mem:
+            {% if w.heartbeat_stale %}<span class="text-gray-400">{{ w.mem_pct|default:"—" }}% (stale)</span>
+            {% else %}{{ w.mem_pct|default:"—" }}%{% endif %}
+          </div>
+        </div>
+      {% else %}
+        <div class="flex gap-4"><div>CPU: —</div><div>Mem: —</div></div>
+      {% endif %}
+
+      <div>Jobs: {{ w.running_count }} running, {{ w.pending_count }} pending</div>
+
+      {% if w.service_status %}
+        <div class="flex gap-4">
+          <div>Orch: {{ w.service_status.orchestrator|default:"unknown" }}</div>
+          <div>Dash: {{ w.service_status.dashboard|default:"unknown" }}</div>
+        </div>
+        {% if w.disk_info %}
+          <div>Disk: {{ w.disk_info.used_pct }}% used ({{ w.disk_info.free_gb }}GB free)</div>
+        {% endif %}
+      {% else %}
+        <div class="text-gray-400">Service status: unknown</div>
+      {% endif %}
+    </div>
+
+    <div class="flex flex-wrap gap-1">
+      <form method="post" action="{% url 'host_command' hostname=w.hostname %}">
+        {% csrf_token %}
+        <input type="hidden" name="command" value="restart-orchestrator">
+        <button type="submit" class="px-2 py-0.5 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 {% if w.status == 'offline' %}opacity-50 cursor-not-allowed{% endif %}" {% if w.status == 'offline' %}disabled title="Host offline"{% endif %}>Restart Orch</button>
+      </form>
+      <form method="post" action="{% url 'host_command' hostname=w.hostname %}">
+        {% csrf_token %}
+        <input type="hidden" name="command" value="restart-dashboard">
+        <button type="submit" class="px-2 py-0.5 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 {% if w.status == 'offline' %}opacity-50 cursor-not-allowed{% endif %}" {% if w.status == 'offline' %}disabled title="Host offline"{% endif %}>Restart Dash</button>
+      </form>
+      <form method="post" action="{% url 'host_command' hostname=w.hostname %}">
+        {% csrf_token %}
+        <input type="hidden" name="command" value="report-status">
+        <button type="submit" class="px-2 py-0.5 bg-gray-600 text-white rounded text-xs hover:bg-gray-700">Report Status</button>
+      </form>
+    </div>
+
+    <!-- Recent commands for this host -->
+    <div class="mt-3" hx-get="{% url 'host_command_status' hostname=w.hostname %}" hx-trigger="load, every 10s" hx-swap="innerHTML">
+    </div>
+  </div>
+{% empty %}
+  <p class="text-gray-400 text-sm col-span-3">No active workers registered.</p>
+{% endfor %}
+</div>

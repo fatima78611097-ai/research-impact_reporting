@@ -1,0 +1,57 @@
+{% if stale_jobs %}
+<div class="mb-4">
+  <p class="text-sm font-semibold text-red-700 mb-2">Stale Running Jobs: {{ stale_jobs|length }}</p>
+  <form method="post" action="{% url 'fix_stale_jobs' %}">
+    {% csrf_token %}
+    <table class="w-full text-sm">
+      <thead><tr class="text-left text-gray-500 text-xs">
+        <th class="p-1"><input type="checkbox" onclick="this.closest('table').querySelectorAll('input[name=job_ids]').forEach(c=>c.checked=this.checked)"></th>
+        <th class="p-1">Job</th><th class="p-1">Phase</th><th class="p-1">State</th><th class="p-1">Host</th><th class="p-1">Last Heartbeat</th>
+      </tr></thead>
+      <tbody>
+      {% for job in stale_jobs %}
+        <tr class="border-t">
+          <td class="p-1"><input type="checkbox" name="job_ids" value="{{ job.pk }}"></td>
+          <td class="p-1">#{{ job.pk }}</td>
+          <td class="p-1">{{ job.phase }}</td>
+          <td class="p-1">{{ job.state_code|default:"global" }}</td>
+          <td class="p-1">{{ job.host }}</td>
+          <td class="p-1 text-gray-500">{% if job.last_heartbeat %}{{ job.last_heartbeat|timesince }} ago{% else %}never{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <button type="submit" class="mt-2 px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700">Mark Failed</button>
+  </form>
+</div>
+{% endif %}
+
+{% if orphan_locks %}
+<div class="mb-4">
+  <p class="text-sm font-semibold text-orange-700 mb-2">Orphaned Advisory Locks: {{ orphan_locks|length }}</p>
+  <form method="post" action="{% url 'release_locks' %}">
+    {% csrf_token %}
+    <table class="w-full text-sm">
+      <thead><tr class="text-left text-gray-500 text-xs">
+        <th class="p-1"><input type="checkbox" onclick="this.closest('table').querySelectorAll('input[name=pids]').forEach(c=>c.checked=this.checked)"></th>
+        <th class="p-1">DB PID</th><th class="p-1">Client IP</th><th class="p-1">Connected Since</th>
+      </tr></thead>
+      <tbody>
+      {% for lock in orphan_locks %}
+        <tr class="border-t">
+          <td class="p-1"><input type="checkbox" name="pids" value="{{ lock.pid }}"></td>
+          <td class="p-1">{{ lock.pid }}</td>
+          <td class="p-1">{{ lock.client_addr }}</td>
+          <td class="p-1 text-gray-500">{% if lock.backend_start %}{{ lock.backend_start|timesince }} ago{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <button type="submit" class="mt-2 px-3 py-1 bg-orange-600 text-white rounded text-sm hover:bg-orange-700">Release Locks</button>
+  </form>
+</div>
+{% endif %}
+
+{% if not stale_jobs and not orphan_locks %}
+<p class="text-green-600 text-sm">All clear — no stale jobs or orphaned locks detected.</p>
+{% endif %}

@@ -62,4 +62,18 @@ urlpatterns = [
     path("reports/", views.ReportListView.as_view(), name="report_list"),
     path("reports/<str:sha>/", views.ReportDetailView.as_view(), name="report_detail"),
     path("reports/<str:sha>/download/", views.ReportDownloadView.as_view(), name="report_download"),
+
+    # Control Panel
+    path("control/", views.ControlPanelView.as_view(), name="control_panel"),
+    path("control/queue/pause/", views.QueuePauseView.as_view(), name="queue_pause"),
+    path("control/queue/resume/", views.QueueResumeView.as_view(), name="queue_resume"),
+    path("control/jobs/bulk-cancel/", views.BulkCancelView.as_view(), name="bulk_cancel"),
+    path("control/jobs/bulk-retry/", views.BulkRetryView.as_view(), name="bulk_retry"),
+    path("control/jobs/clear-queue/", views.ClearQueueView.as_view(), name="clear_queue"),
+    path("control/health/", views.HealthCheckPartial.as_view(), name="control_health"),
+    path("control/health/fix-stale/", views.FixStaleJobsView.as_view(), name="fix_stale_jobs"),
+    path("control/health/release-locks/", views.ReleaseLocksView.as_view(), name="release_locks"),
+    path("control/hosts/", views.HostStatusPartial.as_view(), name="control_hosts"),
+    path("control/hosts/<str:hostname>/command/", views.HostCommandView.as_view(), name="host_command"),
+    path("control/hosts/<str:hostname>/status/", views.HostCommandStatusPartial.as_view(), name="host_command_status"),
 ]

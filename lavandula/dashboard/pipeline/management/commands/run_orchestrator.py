@@ -66,6 +66,7 @@ class Command(BaseCommand):
             self._start_eligible_jobs()
             self._update_worker_heartbeat()
             self._check_worker_health()
+            self._poll_host_commands()
             time.sleep(POLL_INTERVAL)
 
         self._shutdown_worker()
@@ -192,6 +193,10 @@ class Command(BaseCommand):
                     create_job_event(job, "failed", {"reason": "orphaned: PID not found"})
 
     def _start_eligible_jobs(self):
+        from pipeline.models import PipelineConfig
+        if PipelineConfig.get().queue_paused:
+            return
+
         eligible = get_eligible_jobs(self.hostname)
         from pipeline.orchestrator import check_phase_conflict
 
@@ -665,3 +670,265 @@ class Command(BaseCommand):
             return True
         except (ProcessLookupError, PermissionError):
             return False
+
+    # ------------------------------------------------------------------
+    # Host Command Agent
+    # ------------------------------------------------------------------
+
+    def _poll_host_commands(self):
+        from datetime import timedelta
+        from django.db import transaction
+        from pipeline.models import HostCommand
+
+        self._expire_stale_commands()
+
+        with transaction.atomic():
+            cmd = (
+                HostCommand.objects
+                .select_for_update(skip_locked=True)
+                .filter(host=self.hostname, status="pending")
+                .order_by("created_at")
+                .first()
+            )
+            if cmd is None:
+                self._check_restart_recovery()
+                return
+
+            cmd.status = "running"
+            cmd.started_at = timezone.now()
+            cmd.save(update_fields=["status", "started_at"])
+
+        try:
+            result = self._execute_host_command(cmd)
+            cmd.status = "completed"
+            cmd.result_text = _sanitize_result(result)[:4096]
+        except Exception as e:
+            cmd.status = "failed"
+            cmd.result_text = _sanitize_result(str(e))[:4096]
+        cmd.finished_at = timezone.now()
+        cmd.save(update_fields=["status", "result_text", "finished_at"])
+
+    def _expire_stale_commands(self):
+        from datetime import timedelta
+        from pipeline.models import HostCommand
+
+        now = timezone.now()
+        HostCommand.objects.filter(
+            host=self.hostname, status="pending",
+            created_at__lt=now - timedelta(seconds=60)
+        ).update(
+            status="failed", finished_at=now,
+            result_text="Timed out: command was pending for > 60 seconds"
+        )
+        HostCommand.objects.filter(
+            host=self.hostname, status="running",
+            started_at__lt=now - timedelta(seconds=120)
+        ).exclude(
+            command__in=["restart-orchestrator", "stop-orchestrator"]
+        ).update(
+            status="failed", finished_at=now,
+            result_text="Timed out: command was running for > 120 seconds"
+        )
+
+    _ALLOWED_SERVICES = {
+        "orchestrator": "lavandula-orchestrator",
+        "dashboard": "lavandula-dashboard",
+    }
+
+    _SERVICE_COMMANDS = {
+        "start-orchestrator", "stop-orchestrator", "restart-orchestrator",
+        "start-dashboard", "stop-dashboard", "restart-dashboard",
+    }
+
+    def _execute_host_command(self, cmd):
+        if cmd.command in self._SERVICE_COMMANDS:
+            return self._exec_service_action(cmd)
+        elif cmd.command == "report-status":
+            return self._exec_report_status()
+        elif cmd.command == "cleanup-locks":
+            return self._exec_cleanup_locks(cmd.args_json)
+        elif cmd.command == "kill-process":
+            return self._exec_kill_process(cmd.args_json)
+        else:
+            raise ValueError(f"Unknown command: {cmd.command}")
+
+    def _exec_service_action(self, cmd):
+        parts = cmd.command.split("-", 1)
+        action = parts[0]
+        service_key = parts[1]
+        service_name = self._ALLOWED_SERVICES[service_key]
+
+        if action not in ("start", "stop", "restart"):
+            raise ValueError(f"Invalid service action: {action}")
+
+        argv = ["sudo", "systemctl", action, service_name]
+
+        if cmd.command in ("restart-orchestrator", "stop-orchestrator"):
+            subprocess.Popen(argv)
+            return f"{action} {service_name} issued (fire-and-forget, this process will restart)"
+
+        subprocess.Popen(argv)
+        deadline = time.monotonic() + 10
+        while time.monotonic() < deadline:
+            time.sleep(1)
+            try:
+                result = subprocess.run(
+                    ["sudo", "systemctl", "is-active", service_name],
+                    capture_output=True, text=True, timeout=5
+                )
+                is_active = result.stdout.strip() == "active"
+                if action in ("start", "restart") and is_active:
+                    return f"{service_name} is active"
+                if action == "stop" and not is_active:
+                    return f"{service_name} stopped"
+            except (subprocess.TimeoutExpired, OSError):
+                continue
+        return f"{action} {service_name} issued, status check inconclusive after 10s"
+
+    def _check_restart_recovery(self):
+        from datetime import timedelta
+        from pipeline.models import HostCommand
+
+        now = timezone.now()
+        cmds = HostCommand.objects.filter(
+            host=self.hostname,
+            command__in=["restart-orchestrator", "stop-orchestrator"],
+            status="running",
+        )
+        for cmd in cmds:
+            if cmd.started_at and (now - cmd.started_at).total_seconds() <= 120:
+                try:
+                    result = subprocess.run(
+                        ["sudo", "systemctl", "is-active", "lavandula-orchestrator"],
+                        capture_output=True, text=True, timeout=5
+                    )
+                    if result.stdout.strip() == "active":
+                        cmd.status = "completed"
+                        cmd.result_text = "Orchestrator restarted successfully (confirmed by new process)"
+                        cmd.finished_at = now
+                        cmd.save(update_fields=["status", "result_text", "finished_at"])
+                except (subprocess.TimeoutExpired, OSError):
+                    pass
+            elif cmd.started_at and (now - cmd.started_at).total_seconds() > 120:
+                cmd.status = "failed"
+                cmd.result_text = "Timed out: restart command was running for > 120 seconds"
+                cmd.finished_at = now
+                cmd.save(update_fields=["status", "result_text", "finished_at"])
+
+    def _exec_report_status(self):
+        import json
+        import shutil
+
+        status = {}
+        for svc in ("lavandula-orchestrator", "lavandula-dashboard"):
+            try:
+                result = subprocess.run(
+                    ["sudo", "systemctl", "is-active", svc],
+                    capture_output=True, text=True, timeout=5
+                )
+                status[svc] = result.stdout.strip()
+            except (subprocess.TimeoutExpired, OSError):
+                status[svc] = "unknown"
+
+        try:
+            disk = shutil.disk_usage("/")
+            status["disk_total_gb"] = round(disk.total / (1024**3), 1)
+            status["disk_used_gb"] = round(disk.used / (1024**3), 1)
+            status["disk_free_gb"] = round(disk.free / (1024**3), 1)
+            status["disk_used_pct"] = round(disk.used / disk.total * 100, 1)
+        except OSError:
+            pass
+
+        try:
+            with open("/proc/uptime") as f:
+                uptime_sec = float(f.read().split()[0])
+                status["uptime_hours"] = round(uptime_sec / 3600, 1)
+        except (OSError, ValueError):
+            pass
+
+        status["running_jobs"] = Job.objects.filter(
+            host=self.hostname, status="running"
+        ).count()
+
+        return json.dumps(status)
+
+    def _exec_cleanup_locks(self, args):
+        dry_run = args.get("dry_run", False)
+        if not isinstance(dry_run, bool):
+            raise ValueError("dry_run must be a boolean")
+
+        from django.db import connections
+        with connections["default"].cursor() as cur:
+            cur.execute("""
+                SELECT l.pid, a.client_addr, a.state, a.backend_start
+                FROM pg_locks l
+                JOIN pg_stat_activity a ON a.pid = l.pid
+                WHERE l.locktype = 'advisory' AND a.state = 'idle'
+                  AND a.usename = current_user
+            """)
+            lock_rows = cur.fetchall()
+
+        running_host_ips = set(
+            Worker.objects.filter(
+                hostname__in=Job.objects.filter(status="running")
+                    .values_list("host", flat=True),
+                is_active=True
+            ).values_list("ip_address", flat=True)
+        )
+        running_host_ips = {str(ip) for ip in running_host_ips if ip}
+
+        orphans = []
+        for pid, client_addr, state, backend_start in lock_rows:
+            if str(client_addr) not in running_host_ips:
+                orphans.append(pid)
+
+        if dry_run:
+            return f"Dry run: found {len(orphans)} orphaned lock(s): PIDs {orphans}"
+
+        released = 0
+        failed = 0
+        from django.db import connections
+        with connections["default"].cursor() as cur:
+            for pid in orphans:
+                cur.execute("SELECT pg_terminate_backend(%s)", [pid])
+                if cur.fetchone()[0]:
+                    released += 1
+                else:
+                    failed += 1
+
+        return f"Released {released} orphaned lock(s), {failed} failed"
+
+    def _exec_kill_process(self, args):
+        pid = args.get("pid")
+        sig_name = args.get("signal", "TERM")
+
+        if not isinstance(pid, int):
+            raise ValueError("pid must be an integer")
+        if sig_name not in ("TERM", "KILL"):
+            raise ValueError("signal must be TERM or KILL")
+
+        sig = signal.SIGTERM if sig_name == "TERM" else signal.SIGKILL
+        try:
+            os.kill(pid, sig)
+            return f"Sent SIG{sig_name} to PID {pid}"
+        except ProcessLookupError:
+            return f"PID {pid} not found (already exited)"
+        except PermissionError:
+            raise ValueError(f"Permission denied sending signal to PID {pid}")
+
+
+import re
+
+_SECRET_PATTERNS = [
+    re.compile(r"AKIA[A-Z0-9]{16}"),
+    re.compile(r"(?:aws_)?(?:secret_)?(?:access_)?key\s*[:=]\s*\S+", re.I),
+    re.compile(r"(?:password|passwd|token|secret|api.?key)\s*[:=]\s*\S+", re.I),
+    re.compile(r"/home/\w+", re.I),
+    re.compile(r"(?:export\s+)?\w+(?:KEY|SECRET|TOKEN|PASSWORD)\w*\s*=\s*\S+", re.I),
+]
+
+
+def _sanitize_result(text: str) -> str:
+    for pattern in _SECRET_PATTERNS:
+        text = pattern.sub("[REDACTED]", text)
+    return text[:4096]

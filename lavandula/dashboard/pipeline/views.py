@@ -5,7 +5,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import models
 from django.db.models import Count, Max, Q
 from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views import View
@@ -23,8 +23,10 @@ class HtmxLoginRequiredMixin(LoginRequiredMixin):
         return super().handle_no_permission()
 
 from .models import (
+    COMMAND_CHOICES,
     CrawledOrg,
     FilingIndex,
+    HostCommand,
     IndexRefreshLog,
     Job,
     JobEvent,
@@ -32,6 +34,7 @@ from .models import (
     OrgProvenance,
     Person,
     PipelineAuditLog,
+    PipelineConfig,
     PipelineProcess,
     Report,
     Worker,
@@ -1555,4 +1558,410 @@ class ProvenanceView(LoginRequiredMixin, ListView):
         params = self.request.GET.copy()
         params.pop("page", None)
         ctx["filter_params"] = params.urlencode()
+        return ctx
+
+
+# ---------------------------------------------------------------------------
+# Control Panel
+# ---------------------------------------------------------------------------
+
+
+def _client_ip(request):
+    return request.META.get("REMOTE_ADDR", "127.0.0.1")
+
+
+class ControlPanelView(LoginRequiredMixin, TemplateView):
+    template_name = "pipeline/control_panel.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["config"] = PipelineConfig.get()
+        ctx["phases"] = [c[0] for c in Job.PHASE_CHOICES]
+        ctx["states"] = list(
+            Job.objects.filter(state_code__isnull=False)
+            .values_list("state_code", flat=True).distinct().order_by("state_code")
+        )
+        ctx["hosts"] = list(
+            Worker.objects.filter(is_active=True)
+            .values_list("hostname", flat=True).order_by("hostname")
+        )
+        from .scheduler_config import load_config
+        sched = load_config()
+        ctx["scheduler_config"] = {
+            "max_concurrent_heavy": sched.max_concurrent_heavy,
+            "memory_ceiling_pct": sched.memory_ceiling_pct,
+            "cpu_ceiling_pct": sched.cpu_ceiling_pct,
+            "cool_down_after_failure_s": sched.cool_down_after_failure_s,
+            "starvation_boost_after_minutes": sched.starvation_boost_after_minutes,
+            "eta_lookahead": sched.eta_lookahead,
+            "stage_weights": sched.stage_weights,
+        }
+        return ctx
+
+
+class QueuePauseView(LoginRequiredMixin, View):
+    def post(self, request):
+        config = PipelineConfig.get()
+        config.queue_paused = True
+        config.paused_at = timezone.now()
+        config.paused_by = request.user.username
+        config.save()
+        PipelineAuditLog.objects.create(
+            action="queue_pause", process_name="control-panel",
+            parameters={}, source_ip=_client_ip(request))
+        messages.success(request, "Queue paused")
+        return redirect("control_panel")
+
+
+class QueueResumeView(LoginRequiredMixin, View):
+    def post(self, request):
+        config = PipelineConfig.get()
+        config.queue_paused = False
+        config.paused_at = None
+        config.paused_by = ""
+        config.save()
+        PipelineAuditLog.objects.create(
+            action="queue_resume", process_name="control-panel",
+            parameters={}, source_ip=_client_ip(request))
+        messages.success(request, "Queue resumed")
+        return redirect("control_panel")
+
+
+class BulkCancelView(LoginRequiredMixin, View):
+    def _build_queryset(self, request):
+        phase = request.POST.get("phase") or None
+        state = request.POST.get("state") or None
+        host = request.POST.get("host") or None
+        status_filter = request.POST.get("status") or "pending"
+        if status_filter == "pending+running":
+            statuses = ["pending", "running"]
+        else:
+            statuses = [status_filter] if status_filter in ("pending", "running") else ["pending"]
+        qs = Job.objects.filter(status__in=statuses)
+        if phase:
+            qs = qs.filter(phase=phase)
+        if state:
+            qs = qs.filter(state_code=state)
+        if host:
+            qs = qs.filter(host=host)
+        return qs, {"phase": phase, "state": state, "host": host, "status": status_filter}
+
+    def post(self, request):
+        qs, filters = self._build_queryset(request)
+        confirmed = request.POST.get("confirmed") == "1"
+
+        if not confirmed:
+            count = qs.count()
+            return render(request, "pipeline/partials/confirm_bulk_action.html", {
+                "action": "cancel", "count": count, "filters": filters,
+                "action_url": reverse("bulk_cancel"),
+                "warning": "Running jobs will be sent SIGTERM" if "running" in filters.get("status", "") else "",
+            })
+
+        jobs = list(qs)
+        cancelled = 0
+        skipped = 0
+        for job in jobs:
+            try:
+                cancel_job(job)
+                cancelled += 1
+            except Exception:
+                skipped += 1
+
+        outcome = "success" if skipped == 0 else "partial"
+        PipelineAuditLog.objects.create(
+            action="bulk_cancel", process_name="control-panel",
+            parameters={**filters, "cancelled": cancelled, "skipped": skipped,
+                        "outcome": outcome},
+            source_ip=_client_ip(request))
+        msg = f"Cancelled {cancelled} of {len(jobs)} jobs"
+        if skipped:
+            msg += f" ({skipped} already completed)"
+        messages.success(request, msg)
+        return redirect("control_panel")
+
+
+class BulkRetryView(LoginRequiredMixin, View):
+    def post(self, request):
+        phase = request.POST.get("phase") or None
+        state = request.POST.get("state") or None
+        host = request.POST.get("host") or None
+        confirmed = request.POST.get("confirmed") == "1"
+        qs = Job.objects.filter(status="failed")
+        if phase:
+            qs = qs.filter(phase=phase)
+        if state:
+            qs = qs.filter(state_code=state)
+        if host:
+            qs = qs.filter(host=host)
+
+        filters = {"phase": phase, "state": state, "host": host}
+
+        if not confirmed:
+            return render(request, "pipeline/partials/confirm_bulk_action.html", {
+                "action": "retry", "count": qs.count(), "filters": filters,
+                "action_url": reverse("bulk_retry"),
+            })
+
+        retried = 0
+        skipped = 0
+        for job in qs:
+            if Job.objects.filter(retry_of=job, status="pending").exists():
+                skipped += 1
+                continue
+            retry_job(job)
+            retried += 1
+        outcome = "success" if skipped == 0 else "partial"
+        PipelineAuditLog.objects.create(
+            action="bulk_retry", process_name="control-panel",
+            parameters={**filters, "retried": retried,
+                        "skipped_existing_retry": skipped, "outcome": outcome},
+            source_ip=_client_ip(request))
+        msg = f"Retried {retried} jobs"
+        if skipped:
+            msg += f" (skipped {skipped} with existing retry)"
+        messages.success(request, msg)
+        return redirect("control_panel")
+
+
+class ClearQueueView(LoginRequiredMixin, View):
+    def post(self, request):
+        pending = Job.objects.filter(status="pending")
+        confirmed = request.POST.get("confirmed") == "1"
+
+        if not confirmed:
+            return render(request, "pipeline/partials/confirm_bulk_action.html", {
+                "action": "clear_queue", "count": pending.count(), "filters": {},
+                "action_url": reverse("clear_queue"),
+            })
+
+        cancelled = 0
+        skipped = 0
+        for job in pending:
+            try:
+                cancel_job(job)
+                cancelled += 1
+            except Exception:
+                skipped += 1
+        outcome = "success" if skipped == 0 else "partial"
+        PipelineAuditLog.objects.create(
+            action="clear_queue", process_name="control-panel",
+            parameters={"cancelled": cancelled, "skipped": skipped, "outcome": outcome},
+            source_ip=_client_ip(request))
+        msg = f"Cancelled {cancelled} pending jobs"
+        if skipped:
+            msg += f" ({skipped} already changed)"
+        messages.success(request, msg)
+        return redirect("control_panel")
+
+
+class HealthCheckPartial(HtmxLoginRequiredMixin, TemplateView):
+    template_name = "pipeline/partials/control_health.html"
+
+    def get_context_data(self, **kwargs):
+        from datetime import timedelta
+        ctx = super().get_context_data(**kwargs)
+        ten_min_ago = timezone.now() - timedelta(minutes=10)
+        offline_hosts = set(
+            Worker.objects.filter(
+                is_active=True, status__in=["stale", "offline"]
+            ).values_list("hostname", flat=True)
+        )
+        stale_jobs = list(
+            Job.objects.filter(status="running").filter(
+                Q(last_heartbeat__lt=ten_min_ago) |
+                Q(host__in=offline_hosts)
+            )
+        )
+        ctx["stale_jobs"] = stale_jobs
+
+        from django.db import connections
+        try:
+            with connections["default"].cursor() as cur:
+                cur.execute("""
+                    SELECT l.pid, a.client_addr, a.state, a.backend_start
+                    FROM pg_locks l
+                    JOIN pg_stat_activity a ON a.pid = l.pid
+                    WHERE l.locktype = 'advisory' AND a.state = 'idle'
+                      AND a.usename = current_user
+                """)
+                lock_rows = cur.fetchall()
+        except Exception:
+            lock_rows = []
+
+        running_host_ips = set(
+            Worker.objects.filter(
+                hostname__in=Job.objects.filter(status="running")
+                    .values_list("host", flat=True),
+                is_active=True
+            ).values_list("ip_address", flat=True)
+        )
+        running_host_ips_str = {str(ip) for ip in running_host_ips if ip}
+        orphan_locks = []
+        for pid, client_addr, state, backend_start in lock_rows:
+            if str(client_addr) not in running_host_ips_str:
+                orphan_locks.append({
+                    "pid": pid, "client_addr": client_addr,
+                    "backend_start": backend_start,
+                })
+        ctx["orphan_locks"] = orphan_locks
+        return ctx
+
+
+class FixStaleJobsView(LoginRequiredMixin, View):
+    def post(self, request):
+        job_ids = request.POST.getlist("job_ids")
+        fixed = 0
+        for jid in job_ids:
+            try:
+                job = Job.objects.get(pk=int(jid), status="running")
+                job.status = "failed"
+                job.finished_at = timezone.now()
+                job.error_message = "Marked failed by operator (stale)"
+                job.save(update_fields=["status", "finished_at", "error_message"])
+                for dep in Job.objects.filter(depends_on=job, status__in=["pending", "scheduled"]):
+                    cancel_job(dep)
+                fixed += 1
+            except (Job.DoesNotExist, ValueError):
+                pass
+        outcome = "success" if fixed == len(job_ids) else ("partial" if fixed > 0 else "failed")
+        PipelineAuditLog.objects.create(
+            action="fix_stale", process_name="control-panel",
+            parameters={"job_ids": job_ids, "fixed": fixed, "outcome": outcome},
+            source_ip=_client_ip(request))
+        messages.success(request, f"Marked {fixed} jobs as failed")
+        return redirect("control_panel")
+
+
+class ReleaseLocksView(LoginRequiredMixin, View):
+    def post(self, request):
+        pids = request.POST.getlist("pids")
+        released = 0
+        failed = 0
+        from django.db import connections
+        with connections["default"].cursor() as cur:
+            for pid_str in pids:
+                try:
+                    cur.execute("SELECT pg_terminate_backend(%s)", [int(pid_str)])
+                    if cur.fetchone()[0]:
+                        released += 1
+                    else:
+                        failed += 1
+                except Exception:
+                    failed += 1
+        outcome = "success" if failed == 0 else ("partial" if released > 0 else "failed")
+        PipelineAuditLog.objects.create(
+            action="release_locks", process_name="control-panel",
+            parameters={"pids": pids, "released": released, "failed": failed, "outcome": outcome},
+            source_ip=_client_ip(request))
+        messages.success(request, f"Released {released} locks ({failed} failed)")
+        return redirect("control_panel")
+
+
+class HostStatusPartial(HtmxLoginRequiredMixin, TemplateView):
+    template_name = "pipeline/partials/control_hosts.html"
+
+    def get_context_data(self, **kwargs):
+        import json
+        ctx = super().get_context_data(**kwargs)
+        workers = list(Worker.objects.filter(is_active=True).order_by("hostname"))
+        now = timezone.now()
+        for w in workers:
+            w.running_count = Job.objects.filter(host=w.hostname, status="running").count()
+            w.pending_count = Job.objects.filter(host=w.hostname, status="pending").count()
+            if w.last_heartbeat:
+                age = (now - w.last_heartbeat).total_seconds()
+                w.heartbeat_stale = age > 60
+                w.heartbeat_offline = age > 300
+            else:
+                w.heartbeat_stale = True
+                w.heartbeat_offline = True
+            latest_report = (
+                HostCommand.objects.filter(
+                    host=w.hostname, command="report-status", status="completed"
+                ).order_by("-finished_at").first()
+            )
+            w.service_status = None
+            w.disk_info = None
+            if latest_report and latest_report.result_text:
+                try:
+                    data = json.loads(latest_report.result_text)
+                    w.service_status = {
+                        "orchestrator": data.get("lavandula-orchestrator", "unknown"),
+                        "dashboard": data.get("lavandula-dashboard", "unknown"),
+                    }
+                    if "disk_used_pct" in data:
+                        w.disk_info = {
+                            "used_pct": data["disk_used_pct"],
+                            "free_gb": data.get("disk_free_gb", "?"),
+                        }
+                except (json.JSONDecodeError, ValueError):
+                    pass
+        ctx["workers"] = workers
+        return ctx
+
+
+class HostCommandView(LoginRequiredMixin, View):
+    def post(self, request, hostname):
+        command = request.POST.get("command")
+        valid_commands = dict(COMMAND_CHOICES)
+        if command not in valid_commands:
+            PipelineAuditLog.objects.create(
+                action="host_command", process_name="control-panel",
+                parameters={"host": hostname, "command": command, "outcome": "denied",
+                            "reason": "invalid command"},
+                source_ip=_client_ip(request))
+            messages.error(request, f"Invalid command: {command}")
+            return redirect("control_panel")
+
+        worker = Worker.objects.filter(hostname=hostname, is_active=True).first()
+        if not worker:
+            PipelineAuditLog.objects.create(
+                action="host_command", process_name="control-panel",
+                parameters={"host": hostname, "command": command, "outcome": "denied",
+                            "reason": "unknown host"},
+                source_ip=_client_ip(request))
+            messages.error(request, f"Unknown host: {hostname}")
+            return redirect("control_panel")
+
+        if worker.status == "offline" and command != "report-status":
+            messages.error(request, f"Host {hostname} is offline")
+            return redirect("control_panel")
+
+        args = {}
+        if command == "cleanup-locks":
+            args["dry_run"] = request.POST.get("dry_run") == "on"
+        elif command == "kill-process":
+            try:
+                args["pid"] = int(request.POST["pid"])
+                args["signal"] = request.POST.get("signal", "TERM")
+                if args["signal"] not in ("TERM", "KILL"):
+                    raise ValueError
+            except (KeyError, ValueError):
+                messages.error(request, "Invalid kill-process parameters")
+                return redirect("control_panel")
+
+        HostCommand.objects.create(
+            host=hostname, command=command, args_json=args,
+            requested_by=request.user)
+        PipelineAuditLog.objects.create(
+            action="host_command", process_name="control-panel",
+            parameters={"host": hostname, "command": command, "args": args, "outcome": "submitted"},
+            source_ip=_client_ip(request))
+        messages.success(request, f"Command '{valid_commands[command]}' sent to {hostname}")
+        return redirect("control_panel")
+
+
+class HostCommandStatusPartial(HtmxLoginRequiredMixin, TemplateView):
+    template_name = "pipeline/partials/host_command_status.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        hostname = self.kwargs["hostname"]
+        recent_commands = list(
+            HostCommand.objects.filter(host=hostname)
+            .order_by("-created_at")[:10]
+        )
+        ctx["commands"] = recent_commands
+        ctx["hostname"] = hostname
         return ctx
