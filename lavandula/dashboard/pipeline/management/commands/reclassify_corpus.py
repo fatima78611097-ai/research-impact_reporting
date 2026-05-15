@@ -663,20 +663,33 @@ class Command(BaseCommand):
                     self.stderr.write(f"No incomplete run found for tag {run_tag!r}.")
                     return None, None, None
 
-        # Check for existing completed runs with same tag
+        # Check for existing runs with same tag
         with engine.connect() as conn:
             existing = conn.execute(text(
-                f"SELECT id, finished_at FROM {_SCHEMA}.classification_runs "
+                f"SELECT id, finished_at, config_json FROM {_SCHEMA}.classification_runs "
                 f"WHERE run_tag = :tag"
             ), {"tag": run_tag}).fetchall()
 
         completed = [r for r in existing if r[1] is not None]
+        incomplete = [r for r in existing if r[1] is None]
+
         if completed:
             self.stderr.write(
                 f"ERROR: Run tag '{run_tag}' already exists (completed). "
                 f"Use a different tag or delete the existing run."
             )
             return None, None, None
+
+        if incomplete:
+            row = incomplete[0]
+            run_id = row[0]
+            config = row[2] or {}
+            if isinstance(config, str):
+                config = json.loads(config)
+            cursor = config.get("cursor")
+            log.info("Auto-resuming incomplete run %d (tag=%s) from cursor %s",
+                     run_id, run_tag, cursor)
+            return run_id, cursor, config
 
         rules_yaml = Path(_RULES_PATH)
         if not rules_yaml.is_file():
