@@ -684,7 +684,7 @@ projects:
   - id: "0045"
     title: "Vocabulary Extraction & Archetype Discovery — Pilot"
     summary: "Production-quality vocabulary extraction pipeline scoped to P20 (Human Services, ~1,400 docs). LLM extracts domain-specific terms, Market Basket Analysis (FP-Growth + lift scoring) discovers sub-archetypes. Schema designed for full-corpus scale but populated with one vertical as proof-of-concept."
-    status: specified
+    status: abandoned
     priority: high
     files:
       spec: locard/specs/0045-vocabulary-extraction-pilot.md
@@ -692,11 +692,24 @@ projects:
       review: null
     dependencies: ["0035", "0038"]
     tags: [layer-2, vocabulary, extraction, archetype, mba, pilot]
-    notes: "Validated by Spike 001 (PASS — 4 archetypes, lift 2.9-6.45 from 75 docs). Production design, pilot scope. If favorable: widen to full corpus. Cost: ~$1.70 for pilot extraction."
+    notes: "ABANDONED 2026-05-16. Skipped Docling parsing stage (prerequisite). LLM extraction from partial text (~5 pages) produces throwaway results — full structured docs required. Also: statistical NLP methods (TF-IDF, C-value) are superior to LLM prompting for term extraction."
+
+  - id: "0046"
+    title: "Docling Full-Document Parsing"
+    summary: "GPU-accelerated structured text extraction from corpus PDFs via Docling. Produces section-labeled, table-aware, full-document text that feeds the NLP vocabulary extraction pipeline. Prerequisite for all Layer 2 work."
+    status: conceived
+    priority: high
+    files:
+      spec: locard/specs/0046-docling-parsing.md
+      plan: null
+      review: null
+    dependencies: []
+    tags: [layer-2, docling, parsing, infrastructure, gpu]
+    notes: "Pipeline stage: Parse (between Classify and Extract per PROJECT_SEED). G6 spot instance for GPU. Output feeds statistical term extraction (spaCy, TF-IDF, C-value)."
 
 ## Next Available Number
 
-**0046** - Reserve this number for your next project
+**0047** - Reserve this number for your next project
 
 ---
 
