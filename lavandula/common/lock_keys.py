@@ -20,5 +20,18 @@ from __future__ import annotations
 # `0xB0DGE7`; real hex needs digits in [0-9a-f], hence `0xB0D6E7`.
 BUDGET_LEDGER_RESERVE: int = 0xB0D6E7
 
+# Docling parse orchestrator — prevents concurrent orchestrator launches.
+# Used by lavandula.parse.db.acquire_advisory_lock / release_advisory_lock
+# and the parse_documents management command.
+DOCLING_PARSE_ORCHESTRATOR: int = 0xD0C114
 
-__all__ = ["BUDGET_LEDGER_RESERVE"]
+# Docling parse worker — prevents concurrent worker processes.
+# Used by lavandula.parse.worker at startup to verify single-worker invariant.
+DOCLING_PARSE_WORKER: int = 0xD0C115
+
+
+__all__ = [
+    "BUDGET_LEDGER_RESERVE",
+    "DOCLING_PARSE_ORCHESTRATOR",
+    "DOCLING_PARSE_WORKER",
+]
