@@ -20,7 +20,8 @@ The changes touch: `candidate_filter.py`, `redirect_policy.py`, `fetch_pdf.py`, 
 
 ```python
 MAX_UNKNOWN_HOPS = 2
-MISMATCH_THROTTLE_THRESHOLD = 5
+MISMATCH_SLOW_THRESHOLD = 3       # add delay after this many mismatches per domain
+MISMATCH_BLOCK_THRESHOLD = 10     # skip domain entirely after this many
 CROSS_ORIGIN_DROP_ALERT_THRESHOLD = 50
 ```
 
@@ -193,17 +194,26 @@ if is_pdf_candidate and r.status == "ok":
 
 ### D2. Per-domain mismatch throttling
 
-Add a module-level counter in `fetch_pdf.py`:
+Add a module-level counter in `fetch_pdf.py`. Uses a two-tier approach: after 3 mismatches from a domain, add a 10s delay between fetches; after 10 mismatches, skip entirely for the run. This prevents a single attacker-controlled domain from blocking legitimate CDN fetches via early poisoning.
 
 ```python
 _mismatch_counts: dict[str, int] = {}
 
-def is_domain_throttled(url: str) -> bool:
+MISMATCH_SLOW_THRESHOLD = 3    # add delay after this many mismatches
+MISMATCH_BLOCK_THRESHOLD = 10  # skip domain entirely after this many
+
+def get_domain_mismatch_state(url: str) -> str:
+    """Returns 'ok', 'slow', or 'blocked'."""
     from .redirect_policy import etld1
     from urllib.parse import urlsplit
     host = urlsplit(url).hostname or ""
     domain = etld1(host)
-    return _mismatch_counts.get(domain, 0) >= config.MISMATCH_THROTTLE_THRESHOLD
+    count = _mismatch_counts.get(domain, 0)
+    if count >= MISMATCH_BLOCK_THRESHOLD:
+        return "blocked"
+    if count >= MISMATCH_SLOW_THRESHOLD:
+        return "slow"
+    return "ok"
 
 def _increment_mismatch(url: str) -> None:
     from .redirect_policy import etld1
@@ -289,6 +299,8 @@ def main():
 - Rate limiting: reuse existing `host_throttle` module
 - Backoff: exponential on 429/5xx (base 2s, max 60s)
 - Progress: log every 100 URLs with running counts
+- **SQL safety**: All queries use psycopg2 parameterized queries (`%s` placeholders, never string interpolation). The `--state-filter` argument is validated against `config.PRIORITY_VALUE_RE` (alphanumeric + underscore only) before use in queries.
+- **TLS**: Reuses existing `ReportsHTTPClient` which enforces HTTPS with certificate verification (requests library defaults: TLS 1.2+, system CA bundle, hostname verification enabled). The `allow_insecure_cleartext=False` default is never overridden for recovery fetches.
 
 ### E4. Tests for Phase E
 
@@ -344,9 +356,16 @@ Check if HTML bodies are stored:
 --no-limit           explicitly bypass cap
 --batch-size INT     (default 500)
 --dry-run            discover candidates without queuing
---state-filter STR   comma-separated state codes
+--state-filter STR   comma-separated state codes (validated: alpha only)
 --source {cached,recrawl}  (default: auto-detect)
 ```
+
+### F3a. Security constraints (same as Pass 1)
+
+- All DB queries use parameterized placeholders — no string interpolation
+- `--state-filter` validated against `[A-Z]{2}` regex before use
+- TLS enforced for all HTTP fetches (existing client defaults)
+- No new dependencies introduced — uses existing `host_throttle`, `fetch_pdf`, `db_writer`
 
 ### F4. Tests for Phase F
 

@@ -227,7 +227,8 @@ Arguments:
 
 Add to `lavandula/reports/config.py`:
 - `MAX_UNKNOWN_HOPS = 2` — max cross-origin redirect hops through non-allowlisted domains for PDF candidates
-- `MISMATCH_THROTTLE_THRESHOLD = 5` — after this many content_type_mismatch hits per domain per run, skip further cross-origin candidates from that domain
+- `MISMATCH_SLOW_THRESHOLD = 3` — add inter-fetch delay for a domain after this many content_type_mismatches
+- `MISMATCH_BLOCK_THRESHOLD = 10` — skip domain entirely after this many content_type_mismatches per run
 - `CROSS_ORIGIN_DROP_ALERT_THRESHOLD = 50` — escalate logging from DEBUG to WARNING if an org exceeds this many non-PDF cross-origin drops in a single run
 
 ---
