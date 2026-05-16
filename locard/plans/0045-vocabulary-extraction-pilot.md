@@ -10,11 +10,13 @@ Build two Django management commands (`extract_vocabulary`, `analyze_vocabulary`
 
 ## Dependencies
 
-**Python packages to install:**
-- `mlxtend` (FP-Growth, association rules)
-- `scikit-learn` (silhouette score for auto-k selection)
+**Python packages to install (pinned versions):**
+- `mlxtend==0.23.3` (FP-Growth, association rules)
+- `scikit-learn==1.6.1` (silhouette score for auto-k selection)
 - `scipy` (hierarchical clustering — likely already installed)
 - `numpy` (matrix ops — likely already installed)
+
+Version pins ensure reproducible builds and protect against supply-chain attacks. Update only after reviewing changelogs and testing.
 
 **Database:** RDS access via Django ORM + raw SQL for schema creation.
 
@@ -67,7 +69,9 @@ lavandula/
 1.2. Create module structure:
    - `lavandula/vocab/__init__.py` (empty)
    - `lavandula/vocab/prompts/` directory
-   - `lavandula/vocab/prompts/v1_extract.txt` (extraction prompt from spec)
+   - `lavandula/vocab/prompts/v1_extract.txt` (extraction prompt from spec — version-controlled static asset, not runtime-modifiable)
+
+**Prompt file security:** Prompt paths are hardcoded constants (e.g., `Path(__file__).parent / "prompts" / "v1_extract.txt"`). The `prompt_path` parameter in `prompt_sha256()` accepts only `Path` objects resolved relative to the module directory. No user input flows into file path construction.
 
 **Note:** Package installation (`mlxtend`, `scikit-learn`) and migration execution are **operator steps** (see bottom of plan), not builder steps. Builder writes the migration file and code; operator applies to production.
 
@@ -170,7 +174,8 @@ Key implementation details:
 
 3.2. Wire up database operations:
 - Use Django's `connections['default'].cursor()` for raw SQL INSERT (observations table is not a Django model — it's in a separate schema)
-- Batch INSERT using `execute_values` or `executemany` for performance (100 observations at a time)
+- Batch INSERT using `psycopg2.extras.execute_values` for performance (100 observations at a time)
+- **CRITICAL: All raw SQL must use parameterized queries exclusively.** Values go via `%s` placeholders and the `params` tuple — NEVER via f-strings, `.format()`, or string concatenation. Example: `cursor.execute("INSERT INTO lava_vocab.observations (...) VALUES %s", values_list)`. This applies to all phases that write raw SQL (Phase 3 observations, Phase 5 archetypes/members/rules).
 
 3.3. Write integration test:
 - Mock DeepSeekAPIClient, verify observations land in database
@@ -354,7 +359,7 @@ Layer 1 is completely untouched. No cleanup needed beyond removing the schema.
 
 After the builder completes and PR merges:
 1. Apply migration: `psql -f lavandula/migrations/vocab/001_create_lava_vocab_schema.sql`
-2. Install packages: `pip3 install --user mlxtend scikit-learn`
+2. Install packages: `pip3 install --user mlxtend==0.23.3 scikit-learn==1.6.1`
 3. Run pilot extraction: `python manage.py extract_vocabulary P20-pilot-v1 --ntee P2%`
 4. Run analysis: `python manage.py analyze_vocabulary P20-pilot-v1`
 5. Review archetype report output against success metrics SM1-SM5
