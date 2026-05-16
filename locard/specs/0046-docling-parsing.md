@@ -93,8 +93,8 @@ CREATE TABLE lava_parse.documents (
     figure_count INT NOT NULL,
     total_text_chars INT NOT NULL,         -- total character count across all sections
     parse_duration_ms INT,                 -- how long parsing took
-    error TEXT,                            -- NULL if successful, error message if partial/failed
-    metadata_json JSONB                    -- document-level metadata (title, author if detected)
+    error TEXT,                            -- NULL if successful; sanitized error class + truncated message (max 500 chars, no stack traces or internal paths)
+    metadata_json JSONB                    -- filtered document metadata (title, year only — no internal editor names, hidden comments, or private codes)
 );
 
 -- One row per section/chunk (HierarchicalChunker output)
@@ -204,6 +204,8 @@ The GPU worker is a standalone Python script (not a Django management command) t
    ```
    
    **Concurrency safety:** The system runs a single worker at a time (one GPU instance). The orchestrator holds a `pg_advisory_lock(hashtext('docling-parse'))` for the duration of the run to prevent overlapping launches. If a second orchestrator attempt sees the lock held, it aborts with an error message. This is simpler than a claim table and sufficient for single-worker operation.
+   
+   **Advisory lock lifecycle:** PostgreSQL session-level advisory locks are automatically released when the session terminates (graceful or crash). If cloud2 crashes, the PostgreSQL connection closes and the lock is freed. No manual intervention needed. If a lock appears stuck (shouldn't happen), operator can identify the session via `pg_locks` and terminate it with `pg_terminate_backend(pid)`.
 3. **Downloads PDFs from S3** in parallel (prefetch next batch while processing current)
 4. **Parses with Docling:**
    ```python
@@ -361,9 +363,22 @@ Recommend Option A for production. Use Option B only during initial development/
 
 - **IAM:** GPU instance gets a dedicated instance profile (`docling_worker`) with least-privilege permissions:
   - `s3:GetObject` on `arn:aws:s3:::lavandula-nonprofit-collaterals/pdfs/*` (read PDFs only)
-  - `rds-db:connect` for `research_app` user on `db-NAMZ7DUPILQKINJANPKHMXEXDU`
+  - `rds-db:connect` for `docling_writer` user on `db-NAMZ7DUPILQKINJANPKHMXEXDU` (dedicated DB user, not `research_app`)
   - `ssm:GetParameter` on `/cloud2.lavandulagroup.com/rds-*` (connection config only)
   - No S3 write, no EC2 describe, no IAM access
+- **RDS privilege separation:** Create a dedicated PostgreSQL user `docling_writer` with permissions ONLY on `lava_parse` schema:
+  ```sql
+  CREATE USER docling_writer;
+  GRANT rds_iam TO docling_writer;
+  GRANT USAGE ON SCHEMA lava_parse TO docling_writer;
+  GRANT ALL ON ALL TABLES IN SCHEMA lava_parse TO docling_writer;
+  GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA lava_parse TO docling_writer;
+  -- READ-ONLY on corpus (for work-queue query):
+  GRANT USAGE ON SCHEMA lava_corpus TO docling_writer;
+  GRANT SELECT ON lava_corpus.corpus TO docling_writer;
+  -- No access to any other schema
+  ```
+  This limits blast radius: a compromised GPU instance can only write to `lava_parse` and read the corpus work queue.
 - **Network:** GPU instance in same VPC/subnet (`subnet-0e2008e48d602e945`, us-east-1a) — no public IP needed. RDS security group already allows `internal-hosts`.
 - **SSH:** Orchestrator connects to GPU instance via **EC2 Instance Connect** (push ephemeral key, no persistent SSH keys stored). Tailscale is not installed on the GPU instance — it's ephemeral and doesn't need mesh membership.
 - **Data in transit:** S3 downloads over HTTPS. RDS connection uses TLS 1.2+ (IAM auth requires it). No sensitive data leaves the VPC.
