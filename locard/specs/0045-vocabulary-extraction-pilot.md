@@ -385,6 +385,32 @@ These measure whether the approach works, not whether the code is correct. A cor
 - `lava_vocab` schema accessible only to `research_app` role (same grants as other schemas)
 - Evidence spans are truncated to 150 chars (no full document storage in observations table)
 
+### Input Validation (CRITICAL)
+
+**`run_tag` and all CLI arguments** must be strictly validated before use:
+- `run_tag`: alphanumeric + hyphens + underscores only, max 64 chars. Regex: `^[a-zA-Z0-9_-]{1,64}$`
+- `--ntee`: validated against pattern `^[A-Z][0-9]*%?$` (NTEE code prefix)
+- `--material`: validated against known classification values
+
+These arguments are used ONLY in parameterized SQL queries and Python string formatting for log messages. They are NEVER passed to shell commands, subprocess calls, or used in file path construction. The `run_tag` validation prevents injection if the value is ever logged or displayed.
+
+### Observation Caps (DoS Prevention)
+
+- **Max observations per document:** 100. If DeepSeek returns more than 100 observations for a single document, truncate to the top 100 by confidence score and log the overflow.
+- **Max pages_text length:** 32,000 chars (~8,000 tokens). Documents exceeding this are truncated with a log warning. Prevents outlier documents from causing unexpected API cost or timeout.
+
+### Category Validation
+
+The LLM's `category` field is validated against the allowed set: `{stakeholder, metric, outcome, program, methodology}`. Observations with any other category value are rejected (not stored). This prevents data integrity issues and downstream analysis errors from hallucinated categories.
+
+### Data Retention
+
+The `lava_vocab` schema is designed for easy lifecycle management:
+- **Pilot data** can be dropped entirely (`DROP SCHEMA lava_vocab CASCADE`) without affecting any other system
+- **Re-runs** create new `extraction_runs` entries; old observations remain for comparison
+- **Production policy:** retain the latest 2 extraction runs per NTEE vertical; older runs may be dropped after analysis results are confirmed stable
+- RDS volume encryption (AES-256, aws/rds) covers data at rest; all connections use TLS 1.2+
+
 ## Cost Estimate
 
 For P20 pilot (~1,426 docs):
