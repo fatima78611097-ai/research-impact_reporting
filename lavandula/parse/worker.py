@@ -74,7 +74,13 @@ def _run_loop(conn, args) -> None:
         "start_time": time.time(),
     }
 
+    max_docs = args.max_docs
+
     while True:
+        if max_docs is not None and stats["total"] >= max_docs:
+            logger.info("reached max-docs limit", extra={"max_docs": max_docs})
+            break
+
         batch = db.fetch_work_batch(conn, priority, args.batch_size)
         if not batch:
             logger.info("no more eligible documents")
@@ -105,6 +111,7 @@ def _run_loop(conn, args) -> None:
                 try:
                     result = _process_one(pdf_path, item)
                     db.insert_document(conn, result)
+                    _generate_thumbnail(s3, pdf_path, sha)
                     stats["succeeded"] += 1
                 except TransientError as e:
                     # Transient errors (RDS connection loss, etc.) — don't record,
@@ -156,12 +163,12 @@ def _process_one(pdf_path: Path, item: dict) -> dict:
 
     duration_ms = int((time.time() - start) * 1000)
 
-    import docling
+    from importlib.metadata import version as _pkg_version
 
     return {
         "sha": item["content_sha256"],
         "org_ein": item["source_org_ein"],
-        "parse_version": f"docling-{docling.__version__}",
+        "parse_version": f"docling-{_pkg_version('docling')}",
         "page_count": meta["page_count"],
         "section_count": len(sections),
         "table_count": len(tables),
@@ -173,6 +180,35 @@ def _process_one(pdf_path: Path, item: dict) -> dict:
         "sections": sections,
         "tables": tables,
     }
+
+
+def _generate_thumbnail(s3, pdf_path: Path, sha: str) -> None:
+    """Render page 1 as JPEG thumbnail and upload to S3."""
+    try:
+        from pdf2image import convert_from_path
+        from io import BytesIO
+
+        pages = convert_from_path(str(pdf_path), first_page=1, last_page=1, dpi=72)
+        if not pages:
+            return
+
+        img = pages[0]
+        ratio = config.THUMBNAIL_WIDTH / img.width
+        img = img.resize((config.THUMBNAIL_WIDTH, int(img.height * ratio)))
+
+        buf = BytesIO()
+        img.save(buf, format="JPEG", quality=config.THUMBNAIL_QUALITY)
+        buf.seek(0)
+
+        key = f"{config.THUMBNAIL_PREFIX}{sha}.jpg"
+        s3.put_object(
+            Bucket=config.S3_BUCKET,
+            Key=key,
+            Body=buf.getvalue(),
+            ContentType="image/jpeg",
+        )
+    except Exception as exc:
+        logger.warning("thumbnail generation failed", extra={"sha": sha[:16], "err": str(exc)[:80]})
 
 
 def _download_batch(s3, batch: list[dict], tmp_dir: Path) -> dict[str, Path]:
@@ -307,6 +343,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--database", required=True)
     parser.add_argument("--priority", default="annual,impact")
     parser.add_argument("--batch-size", type=int, default=config.BATCH_SIZE)
+    parser.add_argument("--max-docs", type=int, default=None,
+                        help="Stop after processing this many documents (required for safety)")
     return parser.parse_args(argv)
 
 

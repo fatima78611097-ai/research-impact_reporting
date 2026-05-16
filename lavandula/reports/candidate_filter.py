@@ -15,6 +15,8 @@ from dataclasses import dataclass
 from typing import Iterable
 from urllib.parse import unquote, urljoin, urlsplit
 
+import logging
+
 from bs4 import BeautifulSoup, Tag  # type: ignore
 
 from . import config
@@ -23,6 +25,8 @@ from .filename_grader import grade_filename
 from .redirect_policy import etld1
 from .taxonomy import current as _current_taxonomy
 from .url_redact import canonicalize_url
+
+_logger = logging.getLogger(__name__)
 
 
 class Decision(enum.Enum):
@@ -136,6 +140,7 @@ class Candidate:
     attribution_confidence: str         # 'own_domain' | 'platform_verified' | 'platform_unverified' | 'wayback_archive'
     original_source_url: str | None = None
     wayback_digest: str | None = None
+    cross_origin_candidate: bool = False
 
 
 _PLATFORM_HOSTS = {
@@ -183,6 +188,24 @@ def _is_ugc_referrer(referring_page_url: str) -> bool:
     """AC12.3 — discover-via-UGC-surface → platform_unverified."""
     path = (urlsplit(referring_page_url).path or "").lower()
     return any(sig in path for sig in config.UGC_PATH_SIGNATURES)
+
+
+_cross_origin_drop_counts: dict[str, int] = {}
+
+
+def _log_cross_origin_drop(href: str, seed_etld1: str, ein: str) -> None:
+    _cross_origin_drop_counts[ein] = _cross_origin_drop_counts.get(ein, 0) + 1
+    count = _cross_origin_drop_counts[ein]
+    level = (
+        logging.WARNING
+        if count >= config.CROSS_ORIGIN_DROP_ALERT_THRESHOLD
+        else logging.DEBUG
+    )
+    _logger.log(
+        level,
+        "cross_origin_non_pdf_dropped",
+        extra={"href": href[:120], "seed": seed_etld1, "ein": ein, "drop_count": count},
+    )
 
 
 def _classify_link(
@@ -239,7 +262,11 @@ def _classify_link(
     )
 
     if is_cross_origin and not is_cms_match:
-        return None
+        if _pdf_like(href):
+            pass  # fall through to normal scoring — flagged cross_origin_candidate
+        else:
+            _log_cross_origin_drop(href, seed_etld1, ein)
+            return None
 
     tax = _current_taxonomy()
 
@@ -330,7 +357,8 @@ def _classify_link(
         referring_page_url=referring_page_url,
         discovered_via=discovered_via,
         hosting_platform=hosting,
-        attribution_confidence="own_domain",
+        attribution_confidence="cross_origin_pdf" if is_cross_origin else "own_domain",
+        cross_origin_candidate=is_cross_origin,
     )
 
 
@@ -469,10 +497,7 @@ def classify_sitemap_url(
     link_etld1 = etld1(host) if host else seed_etld1
     is_cross_origin = bool(host and link_etld1 != seed_etld1)
 
-    # CMS-subdomain match (TICK-002 Fix 1), but for sitemap context
-    # we only enforce the label-match if the URL is a PDF — non-PDF
-    # pages on a CMS subdomain that happens to match the seed's
-    # brand are still out of scope for sitemap-only discovery.
+    # CMS-subdomain match (TICK-002 Fix 1) or Spec 0047 cross-origin PDF.
     if is_cross_origin:
         if _pdf_like(url) and _is_cms_subdomain_match(host, seed_etld1):
             return Candidate(
@@ -483,7 +508,16 @@ def classify_sitemap_url(
                 hosting_platform="own-cms",
                 attribution_confidence="platform_verified",
             )
-        # Any other cross-origin host → drop (AC10).
+        if _pdf_like(url):
+            return Candidate(
+                url=url,
+                anchor_text="",
+                referring_page_url=referring_page_url,
+                discovered_via="sitemap",
+                hosting_platform=None,
+                attribution_confidence="cross_origin_pdf",
+                cross_origin_candidate=True,
+            )
         return None
 
     # Same-eTLD+1 non-platform URL: apply tiered path + filename filter.

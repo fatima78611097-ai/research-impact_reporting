@@ -35,7 +35,7 @@ Docling (MIT-licensed, IBM Research) provides GPU-accelerated structured documen
 
 ### Infrastructure
 
-- **GPU instance:** G6.2xlarge (1× NVIDIA L4, 24 GiB VRAM, 8 vCPU, 32 GiB RAM) — spot pricing ~$0.30/hr in us-east-1
+- **GPU instance:** G6.2xlarge (1× NVIDIA L4, 24 GiB VRAM, 8 vCPU, 32 GiB RAM) — spot pricing ~$0.60/hr in us-east-1 (checked 2026-05-16, range $0.57–0.68)
 - **Source:** S3 `lavandula-nonprofit-collaterals/pdfs/{sha256}.pdf` (186,051 objects, 579.7 GiB)
 - **Target:** RDS PostgreSQL (`lava_prod1` on `lava-1.czahqlvmtyh8.us-east-1.rds.amazonaws.com`)
 - **Orchestration host:** cloud2 (t3.large) — starts/stops spot instance, monitors progress
@@ -64,8 +64,8 @@ Docling (MIT-licensed, IBM Research) provides GPU-accelerated structured documen
 ### Cost Estimate
 
 - **Pages:** ~5.6M pages × 0.49 sec/page = ~2.7M seconds = ~760 GPU-hours
-- **Spot rate:** G6.2xlarge at ~$0.30/hr spot = **~$230** for full corpus
-- **Priority batch (annual/impact, ~30K docs):** ~900K pages × 0.49s = ~125 GPU-hours = **~$38**
+- **Spot rate:** G6.2xlarge at ~$0.60/hr spot = **~$456** for full corpus
+- **Priority batch (annual/impact, ~30K docs):** ~900K pages × 0.49s = ~125 GPU-hours = **~$75**
 - **Storage:** Structured text averages 2-3× raw text size. 186K docs × ~100 KiB structured output = ~18 GiB in RDS (within auto-scale limits)
 
 ### Priority Order
@@ -178,7 +178,7 @@ GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA lava_parse TO research_app;
 │    └── Updates parse_runs.stats_json with progress              │
 │                                                                 │
 │  Environment: Python 3.11+, CUDA 12.x, docling, psycopg2       │
-│  IAM: Same role as cloud2 (S3 read, RDS connect)               │
+│  IAM: Same role as cloud2 (S3 read + thumbnail write, RDS)     │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -220,8 +220,9 @@ The GPU worker is a standalone Python script (not a Django management command) t
    chunks = list(chunker.chunk(doc))
    ```
 5. **Extracts tables:** from `doc.tables` — each table yields structured row/col data. **Section linkage rule:** Each Docling table has a `prov` (provenance) field with page number and bounding box. The table is assigned to the section whose `page_start <= table.page <= page_end` and whose position in the document is closest preceding the table's position. If no section matches (e.g., table appears before any heading), `section_id = NULL`.
-6. **Writes to RDS:** batch INSERT into `documents`, `sections`, `tables`
-7. **Repeats** until no more unparsed documents match the priority filter
+6. **Generates thumbnail:** Render page 1 as a 200px-wide JPEG (quality 80), upload to `s3://lavandula-nonprofit-collaterals/thumbnails/{sha256}.jpg`. Uses `pdf2image` (Poppler) which is already available on the worker instance. ~50ms per document. If thumbnail generation fails (e.g., encrypted PDF), log warning and continue — thumbnail is non-critical.
+7. **Writes to RDS:** batch INSERT into `documents`, `sections`, `tables`
+8. **Repeats** until no more unparsed documents match the priority filter
 
 ### Orchestrator Command
 
@@ -255,7 +256,7 @@ The orchestrator:
 
 - **Launch template:** Pre-configured with AMI (Ubuntu 22.04 + NVIDIA drivers + CUDA), security group (`internal-hosts`), IAM instance profile, and user-data bootstrap script
 - **Interruption handling:** Worker commits progress after every batch (500 docs). If spot instance is reclaimed, orchestrator detects termination and can relaunch — already-parsed docs are skipped (idempotent)
-- **Cost control:** `--max-hours` terminates after N hours regardless of completion state. Default 12 hours = ~$3.60 spot cost, parses ~88K pages
+- **Cost control:** `--max-hours` terminates after N hours regardless of completion state. Default 12 hours = ~$7.20 spot cost, parses ~88K pages
 
 ### Idempotency & Retry Semantics
 
@@ -362,10 +363,11 @@ Recommend Option A for production. Use Option B only during initial development/
 ## Security Considerations
 
 - **IAM:** GPU instance gets a dedicated instance profile (`docling_worker`) with least-privilege permissions:
-  - `s3:GetObject` on `arn:aws:s3:::lavandula-nonprofit-collaterals/pdfs/*` (read PDFs only)
+  - `s3:GetObject` on `arn:aws:s3:::lavandula-nonprofit-collaterals/pdfs/*` (read PDFs)
+  - `s3:PutObject` on `arn:aws:s3:::lavandula-nonprofit-collaterals/thumbnails/*` (write thumbnails only)
   - `rds-db:connect` for `docling_writer` user on `db-NAMZ7DUPILQKINJANPKHMXEXDU` (dedicated DB user, not `research_app`)
   - `ssm:GetParameter` on `/cloud2.lavandulagroup.com/rds-*` (connection config only)
-  - No S3 write, no EC2 describe, no IAM access
+  - No other S3 write, no EC2 describe, no IAM access
 - **RDS privilege separation:** Create a dedicated PostgreSQL user `docling_writer` with permissions ONLY on `lava_parse` schema:
   ```sql
   CREATE USER docling_writer;

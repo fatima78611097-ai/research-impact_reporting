@@ -23,7 +23,6 @@ Before moving to Layer 2 (vocabulary extraction and analysis), operators need to
 - Document annotation or editing
 - Batch document operations
 - Document upload or manual classification
-- Thumbnail generation
 
 ## Technical Context
 
@@ -63,10 +62,14 @@ Documents currently have no title field. The human-readable name should be deriv
 e.g., "American Red Cross — Annual Report (2023)"
 ```
 
-When year is unknown: `"American Red Cross — Annual Report"`
-When material_type is unknown: `"American Red Cross — Document (2023)"`
-When org name is unknown (missing org record): `"[EIN] — Annual Report (2023)"`
-When all metadata is null: `"Document"` with the source URL basename as subtitle
+**Precedence rules (apply in order):**
+1. Full: `"{Org Name} — {Material Type Label} ({Year})"`
+2. Missing year: `"{Org Name} — {Material Type Label}"`
+3. Missing material_type: `"{Org Name} �� Document ({Year})"` or `"{Org Name} — Document"` if year also null
+4. Missing org name: `"[EIN] — {Material Type Label} ({Year})"` (fall through same year/type rules)
+5. All null (no org, no type, no year): `"Document"` — show `source_url_redacted` basename as subtitle below
+
+These rules apply uniformly in document listing tables, viewer headings, and sidebar titles.
 
 The `source_url_redacted` basename can serve as a secondary identifier (e.g., `2023-Annual-Report.pdf`).
 
@@ -79,8 +82,8 @@ The `source_url_redacted` basename can serve as a secondary identifier (e.g., `2
 Add a `filter_name` parameter to `OrgListView.get_queryset()`:
 
 ```python
-name = self.request.GET.get("name", "").strip()
-if name:
+name = self.request.GET.get("name", "").strip()[:100]
+if len(name) >= 2:
     qs = qs.filter(name__icontains=name)
 ```
 
@@ -101,7 +104,8 @@ ctx["document_count"] = documents.count()
 ```
 
 Add a "Documents" section to `org_detail.html`:
-- Table with columns: Name (derived), Material Type, Year, Pages, Size, Archived
+- Table with columns: Thumbnail, Name (derived), Material Type, Year, Pages, Size, Archived
+- Thumbnail: 48px-tall JPEG of page 1, loaded from S3 presigned URL (`thumbnails/{sha256}.jpg`). If thumbnail doesn't exist, show a generic document icon placeholder.
 - Each row links to the document viewer page
 - Show document count in section header
 - If no documents: "No documents in corpus."
@@ -170,7 +174,8 @@ The toolbar provides redundant download/print buttons for discoverability, plus 
 **Presigned URL expiry:** 15 minutes (up from the current 5 minutes for downloads) to allow reading time. The URL is embedded in the page at load time — if it expires, the user reloads the page.
 
 **Error handling:**
-- If `generate_presigned_url` raises (e.g., S3 object doesn't exist, credentials issue): catch `ClientError`, set `ctx["pdf_error"] = True`, and show a message in place of the iframe: "PDF not available. The file may have been removed from storage." with a fallback link to the report detail page.
+- **Presign-time failure:** If `generate_presigned_url` raises `ClientError` (credentials issue, bucket misconfiguration): catch, set `ctx["pdf_error"] = True`, show error message with link to report detail page.
+- **Load-time failure (missing S3 object):** `generate_presigned_url` does NOT verify object existence — it signs the URL regardless. If the PDF was deleted from S3, the browser will receive a 404/403 XML error in the iframe. Handle this with an `iframe.onerror` listener or an `onload` check, and show the "PDF not available" message. Additionally, the "Can't see the PDF?" link below the iframe provides manual fallback.
 - If org record is missing (`NonprofitSeed.DoesNotExist`): `ctx["org"] = None`. Sidebar shows EIN only (no org name link). Display name falls back to `"[EIN] — Type (Year)"`.
 - Null metadata fields: each sidebar field shows "-" when null. Display name omits null components gracefully (see Document Display Name section).
 - Browser cannot render PDF inline (rare): the `<iframe>` fallback is browser-dependent. Below the iframe, show a small "Can't see the PDF?" link to the download URL.
@@ -180,24 +185,28 @@ The toolbar provides redundant download/print buttons for discoverability, plus 
 **`return_to` validation** (open-redirect prevention):
 ```python
 def _safe_return_url(request):
-    """Validate return_to param: must be a relative path, no scheme."""
+    """Validate return_to param: must be a relative dashboard path, no scheme."""
     url = request.GET.get("return_to", "")
-    if url and url.startswith("/") and "://" not in url and not url.startswith("//"):
+    if url and url.startswith("/dashboard/") and "://" not in url and not url.startswith("//"):
         return url
     return None
 ```
-The view calls `_safe_return_url()` in `get_context_data()` and passes the result to the template. The template uses it for the Back link, with a fallback to `{% url 'org_detail' report.source_org_ein %}` or `{% url 'report_list' %}`. Absolute URLs, protocol-relative URLs (`//evil.com`), and empty values are all rejected.
+The view calls `_safe_return_url()` in `get_context_data()` and passes the result to the template. The template uses it for the Back link, with a fallback to `{% url 'org_detail' report.source_org_ein %}` or `{% url 'report_list' %}`. Absolute URLs, protocol-relative URLs (`//evil.com`), non-dashboard paths, and empty values are all rejected. Query strings within the path are allowed (e.g., `/dashboard/orgs/?state=NY`). Next/prev and search-result links propagate the same validated `return_to` value unchanged.
 
 **Next/Previous navigation:** Query the corpus for documents belonging to the same org, ordered by `-report_year, material_type, content_sha256` (deterministic tie-breaker), and provide links to adjacent documents. This enables browsing through an org's full document collection without returning to the org detail page. Next/prev links preserve the `return_to` parameter.
 
-**Document search panel:** The sidebar includes a collapsible "Browse Corpus" section below the metadata. This lets the user search across the full corpus without leaving the viewer.
+**Null year ordering:** Documents with `report_year IS NULL` sort last (after all year-having documents). Use `COALESCE(report_year, 0)` or Django's `F('report_year').asc(nulls_last=True)` for deterministic ordering.
+
+**Single-document orgs:** When there is no next or previous document, the corresponding link is hidden (not disabled/greyed — just absent). The template uses `{% if next_doc %}` guards.
+
+**Document search panel:** The sidebar includes a collapsible "Browse Corpus" section below the metadata. This lets the user search across the full corpus without leaving the viewer. This is bundled with the viewer (not a separate spec) because the core use case is comparative browsing — reading one report, then jumping to a similar one in another vertical. Without in-viewer search, the operator must navigate back to the org list, find another org, open their documents, then open the viewer — 4 clicks vs 1.
 
 **URL:** `/dashboard/reports/search/` → `DocumentSearchPartial` (HTMX partial, name: `report_search`)
 
 **Filters:**
-- `q` (text): search by org name via `NonprofitSeed.objects.filter(name__icontains=q)`, then `Report.objects.filter(source_org_ein__in=matching_eins)`
-- `material_type` (dropdown): filter by `Report.material_type` exact match
-- `state` (dropdown): filter by org state — `Report.objects.filter(source_org_ein__in=NonprofitSeed.objects.filter(state=state).values("ein"))`
+- `q` (text): search by org name via `NonprofitSeed.objects.filter(name__icontains=q)`, then `Report.objects.filter(source_org_ein__in=matching_eins)`. Minimum 2 characters required; empty or single-char `q` returns no results (avoids full-table scan). Maximum 100 chars.
+- `material_type` (dropdown): filter by `Report.material_type` exact match. Dropdown values sourced from `Report.objects.values_list('material_type', flat=True).distinct().order_by('material_type')` — cached for 5 minutes.
+- `state` (dropdown): filter by org state — `Report.objects.filter(source_org_ein__in=NonprofitSeed.objects.filter(state=state).values("ein"))`. Dropdown values: hardcoded US state list (50 + DC), alphabetical.
 - `page` (int, default 1): pagination offset
 
 **Join strategy:** Filters that reference org metadata (name, state) use subqueries via `source_org_ein__in=NonprofitSeed.objects.filter(...).values("ein")`. This avoids cross-model joins on unmanaged tables and lets PostgreSQL optimize the subquery.
@@ -221,14 +230,14 @@ The search panel makes the viewer a self-contained browsing tool — operators c
 ## Acceptance Criteria
 
 ### Part 1: Org Name Search
-- AC1: Org list page has a "Name" text input that filters by partial name match (case-insensitive)
+- AC1: Org list page has a "Name" text input that filters by partial name match (case-insensitive, minimum 2 characters)
 - AC2: Name filter composes with existing filters (state, EIN, status, method)
 - AC3: Clearing the name field shows all orgs (no filter)
 - AC4: Filter values persist across pagination
 
 ### Part 2: Org Document Listing
 - AC5: Org detail page shows a "Documents (N)" section listing all corpus documents for the org
-- AC6: Each document row shows: derived display name, material type badge, year, page count, file size
+- AC6: Each document row shows: thumbnail (48px-tall page-1 JPEG, placeholder if missing), derived display name, material type badge, year, page count, file size
 - AC7: Each document row links to the PDF viewer page
 - AC8: Documents are ordered by year (descending), then material type, then SHA (deterministic)
 - AC9: If no documents exist for the org, show "No documents in corpus."
@@ -253,7 +262,7 @@ The search panel makes the viewer a self-contained browsing tool — operators c
 - AC24: Results show as compact list (org name, material type, year) — max 25 per page, "Load more" pagination
 - AC25: Clicking a search result navigates to that document in the viewer
 - AC26: Empty search results show "No documents match your filters."
-- AC27: Search endpoint requires authentication (403 for unauthenticated)
+- AC27: Search endpoint requires authentication (unauthenticated requests redirect to login; HTMX requests receive 302 which the browser follows)
 
 ### Error Handling
 - AC28: If S3 presign fails, viewer shows error message with link to report detail page
@@ -269,12 +278,14 @@ The search panel makes the viewer a self-contained browsing tool — operators c
 ## Security Considerations
 
 - All views require authentication (LoginRequiredMixin), including the HTMX search partial
+- **Authorization model:** This is a single-operator dashboard — all authenticated users may view all documents. There are no role-based document restrictions. If multi-user access is added later, object-level permissions would be needed.
 - S3 presigned URLs are time-limited (15 min) and scoped to a single object
-- Name search uses Django ORM `icontains` (parameterized query, no SQL injection)
+- **Audit logging:** Log document view events (`logger.info` with user ID and content_sha256) when `DocumentViewerView` generates a presigned URL. This provides an application-level audit trail for document access.
+- Name search uses Django ORM `icontains` (parameterized query, no SQL injection). Minimum 2-character input required to prevent broad single-char queries.
 - PDF rendered in `<iframe>` with S3 presigned URL — browser isolates the cross-origin content. No explicit CSP changes needed since the iframe src is a signed AWS URL, not user-controlled
 - No user-supplied content rendered as HTML (XSS-safe)
-- `return_to` parameter: must be validated as a relative URL (starts with `/`) to prevent open-redirect attacks. Reject absolute URLs or URLs with `://`
-- `source_url_redacted` is displayed as plain text (not a clickable link) — safe for display; URL tokens are already stripped by the crawler
+- `return_to` parameter: must be validated as a relative URL (starts with `/dashboard/`) to prevent open-redirect attacks. Reject absolute URLs or URLs with `://`
+- `source_url_redacted` is displayed as plain text (not a clickable link), truncated to 80 chars in display — safe for display; URL tokens are already stripped by the crawler
 
 ## Testing Requirements
 

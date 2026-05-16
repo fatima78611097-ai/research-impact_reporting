@@ -20,6 +20,8 @@ import queue
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from . import config
+
 if TYPE_CHECKING:
     from .http_client import FetchResult, ReportsHTTPClient
 
@@ -136,12 +138,45 @@ def _head_or_skip(client, url: str) -> tuple[bool, str]:
     return True, ""
 
 
+# --- Per-domain mismatch throttling (Spec 0047) -------------------------
+
+_mismatch_counts: dict[str, int] = {}
+
+
+def _domain_from_url(url: str) -> str:
+    from urllib.parse import urlsplit
+    from .redirect_policy import etld1
+    host = urlsplit(url).hostname or ""
+    return etld1(host)
+
+
+def get_domain_mismatch_state(url: str) -> str:
+    """Returns 'ok', 'slow', or 'blocked'."""
+    domain = _domain_from_url(url)
+    count = _mismatch_counts.get(domain, 0)
+    if count >= config.MISMATCH_BLOCK_THRESHOLD:
+        return "blocked"
+    if count >= config.MISMATCH_SLOW_THRESHOLD:
+        return "slow"
+    return "ok"
+
+
+def is_domain_throttled(url: str) -> bool:
+    return get_domain_mismatch_state(url) == "blocked"
+
+
+def _increment_mismatch(url: str) -> None:
+    domain = _domain_from_url(url)
+    _mismatch_counts[domain] = _mismatch_counts.get(domain, 0) + 1
+
+
 def download(
     url: str,
     client: "ReportsHTTPClient",
     *,
     seed_etld1: str | None = None,
     validate_structure: bool = True,
+    is_pdf_candidate: bool = False,
 ) -> DownloadOutcome:
     """Fetch `url`, verify PDF magic, SHA-256, and (optionally) structure.
 
@@ -163,7 +198,10 @@ def download(
             note=note,
         )
 
-    r = client.get(url, kind="pdf-get", seed_etld1=seed_etld1)
+    r = client.get(
+        url, kind="pdf-get", seed_etld1=seed_etld1,
+        is_pdf_candidate=is_pdf_candidate,
+    )
     if r.status != "ok":
         return DownloadOutcome(
             status=r.status,
@@ -179,7 +217,35 @@ def download(
         )
 
     body = r.body or b""
+
+    if is_pdf_candidate:
+        ct = (r.headers.get("Content-Type", "") or "").split(";")[0].strip().lower()
+        url_has_pdf_ext = url.lower().rstrip("/").endswith(".pdf")
+        allowed_types = {"application/pdf"}
+        if url_has_pdf_ext:
+            allowed_types.add("application/octet-stream")
+        if ct not in allowed_types:
+            _increment_mismatch(url)
+            _log.info(
+                "content_type_mismatch",
+                extra={"url": url[:120], "got": ct},
+            )
+            return DownloadOutcome(
+                status="content_type_mismatch",
+                url=url,
+                final_url=r.final_url,
+                final_url_redacted=r.final_url_redacted,
+                redirect_chain=r.redirect_chain,
+                redirect_chain_redacted=r.redirect_chain_redacted,
+                content_sha256=None,
+                bytes_read=len(body),
+                content_type=ct,
+                note=f"expected pdf, got {ct}",
+            )
+
     if not is_pdf_magic(body[:32]):
+        if is_pdf_candidate:
+            _increment_mismatch(url)
         return DownloadOutcome(
             status="blocked_content_type",
             url=url,
@@ -224,4 +290,10 @@ def download(
     )
 
 
-__all__ = ["is_pdf_magic", "download", "DownloadOutcome"]
+__all__ = [
+    "is_pdf_magic",
+    "download",
+    "DownloadOutcome",
+    "is_domain_throttled",
+    "get_domain_mismatch_state",
+]

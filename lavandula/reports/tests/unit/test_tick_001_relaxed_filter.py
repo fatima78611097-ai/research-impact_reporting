@@ -123,9 +123,10 @@ def test_ac4_platform_allowlist_preserved_issuu():
             assert c.attribution_confidence == "platform_verified"
 
 
-def test_ac5_cross_origin_non_platform_pdf_dropped():
-    """AC5: a PDF URL on a different eTLD+1 (not on the allowlist)
-    is dropped, even on a report-anchor subpage."""
+def test_ac5_cross_origin_pdf_accepted_as_candidate():
+    """Spec 0047: cross-origin PDF links found on org's own page are
+    accepted as candidates (with cross_origin_candidate=True), to be
+    validated via Content-Type at fetch time."""
     from lavandula.reports.candidate_filter import extract_candidates
     html = """
     <html><body>
@@ -141,8 +142,9 @@ def test_ac5_cross_origin_non_platform_pdf_dropped():
         discovered_via="subpage-link",
         parent_is_report_anchor=True,
     )
-    # No candidates — cross-origin non-platform links are dropped.
-    assert candidates == []
+    assert len(candidates) == 2
+    assert all(c.cross_origin_candidate is True for c in candidates)
+    assert all(c.attribution_confidence == "cross_origin_pdf" for c in candidates)
 
 
 def test_ac6_robots_gate_in_discover_layer(tmp_path):

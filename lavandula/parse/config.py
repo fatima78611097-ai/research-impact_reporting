@@ -14,6 +14,9 @@ PRIORITY_VALUE_RE = re.compile(r"^[a-z_]+$")
 METADATA_ALLOWED_KEYS = frozenset(["title", "year"])
 S3_BUCKET = "lavandula-nonprofit-collaterals"
 S3_PREFIX = "pdfs/"
+THUMBNAIL_PREFIX = "thumbnails/"
+THUMBNAIL_WIDTH = 200
+THUMBNAIL_QUALITY = 60
 
 TRANSIENT_RETRY_COUNT = 3
 TRANSIENT_RETRY_BASE_SECONDS = 2.0

@@ -204,6 +204,7 @@ class ReportsHTTPClient:
         kind: str = "homepage",
         seed_etld1: str | None = None,
         extra_headers: dict[str, str] | None = None,
+        is_pdf_candidate: bool = False,
     ) -> FetchResult:
         """Fetch `url` with throttle, redirect gating, size cap, TLS.
 
@@ -315,7 +316,9 @@ class ReportsHTTPClient:
 
                 if seed_etld1 is not None:
                     check = check_redirect_chain(
-                        redirect_chain, seed_etld1=seed_etld1
+                        redirect_chain,
+                        seed_etld1=seed_etld1,
+                        is_pdf_candidate=is_pdf_candidate,
                     )
                     if not check.ok:
                         return FetchResult(

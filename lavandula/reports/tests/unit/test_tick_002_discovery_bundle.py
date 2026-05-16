@@ -35,8 +35,9 @@ def test_ac1_cms_subdomain_match_accepted():
     assert "myschoolapp.com" in c.url
 
 
-def test_ac2_cms_subdomain_mismatch_rejected():
-    """Host whose first label does NOT match seed is still dropped."""
+def test_ac2_cms_subdomain_mismatch_accepted_as_cross_origin():
+    """Spec 0047: host whose first label doesn't match seed is no longer
+    dropped — it's accepted as cross_origin_candidate (not CMS-matched)."""
     from lavandula.reports.candidate_filter import extract_candidates
     html = (
         '<html><body>'
@@ -51,11 +52,14 @@ def test_ac2_cms_subdomain_mismatch_rejected():
         discovered_via="subpage-link",
         parent_is_report_anchor=True,
     )
-    assert candidates == []
+    assert len(candidates) == 1
+    assert candidates[0].cross_origin_candidate is True
+    assert candidates[0].hosting_platform is None
 
 
-def test_ac3_cms_short_label_rejected():
-    """Seed label shorter than CMS_LABEL_MIN_CHARS (4) → rule skipped."""
+def test_ac3_cms_short_label_accepted_as_cross_origin():
+    """Spec 0047: short seed label no longer blocks — cross-origin PDFs
+    are accepted regardless of CMS-match status."""
     from lavandula.reports.candidate_filter import extract_candidates
     html = (
         '<html><body>'
@@ -65,16 +69,19 @@ def test_ac3_cms_short_label_rejected():
     candidates = extract_candidates(
         html=html,
         base_url="https://www.abc.org/reports",
-        seed_etld1="abc.org",  # seed label "abc" is 3 chars → blocked
+        seed_etld1="abc.org",
         referring_page_url="https://www.abc.org/reports",
         discovered_via="subpage-link",
         parent_is_report_anchor=True,
     )
-    assert candidates == []
+    assert len(candidates) == 1
+    assert candidates[0].cross_origin_candidate is True
 
 
 def test_ac3_cms_generic_label_rejected():
-    """Seed label in blocklist (www, en, app, etc.) → rule skipped."""
+    """Seed label in blocklist (www, en, app, etc.) → CMS rule skipped,
+    but Spec 0047 allows cross-origin PDFs through as candidates
+    (validated at fetch time via Content-Type)."""
     from lavandula.reports.candidate_filter import extract_candidates
     html = (
         '<html><body>'
@@ -84,14 +91,16 @@ def test_ac3_cms_generic_label_rejected():
     candidates = extract_candidates(
         html=html,
         base_url="https://www.some-org.org/reports",
-        # If we just naively took "www" from seed_etld1="www.some-org.org"
-        # as the label, we'd accept www.anything.com. Guard prevents this.
         seed_etld1="www.some-org.org",
         referring_page_url="https://www.some-org.org/reports",
         discovered_via="subpage-link",
         parent_is_report_anchor=True,
     )
-    assert candidates == []
+    # Spec 0047: cross-origin PDFs are now accepted (not CMS-matched,
+    # but accepted as cross_origin_candidate for Content-Type validation).
+    assert len(candidates) == 1
+    assert candidates[0].cross_origin_candidate is True
+    assert candidates[0].hosting_platform is None
 
 
 # ---------------------------------------------------------------
