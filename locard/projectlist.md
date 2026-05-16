@@ -28,7 +28,7 @@ projects:
   - id: "NNNN"              # Four-digit project number
     title: "Brief title"
     summary: "One-sentence description of what this project does"
-    status: conceived|specified|planned|implementing|implemented|committed|integrated|abandoned|on-hold
+    status: specified|specified|planned|implementing|implemented|committed|integrated|abandoned|on-hold
     priority: high|medium|low
     files:
       spec: locard/specs/NNNN-name.md       # Required after "specified"
@@ -671,7 +671,7 @@ projects:
   - id: "0044"
     title: "Org Search, Document Listing & PDF Viewer"
     summary: "Add name/keyword search to the org list page, list all corpus documents on the org detail page with human-readable names and classification labels, and build a standalone PDF viewer page with in-browser rendering, download, print, and metadata sidebar."
-    status: conceived
+    status: specified
     priority: high
     files:
       spec: locard/specs/0044-org-search-doc-viewer.md
