@@ -681,9 +681,35 @@ projects:
     tags: [dashboard, ui, corpus, document-viewer, search]
     notes: "Prerequisite for Layer 2 vocabulary extraction — need to browse and understand the corpus before building extraction pipelines."
 
+  - id: "0045"
+    title: "Vocabulary Extraction & Archetype Discovery — Pilot"
+    summary: "Production-quality vocabulary extraction pipeline scoped to P20 (Human Services, ~1,400 docs). LLM extracts domain-specific terms, Market Basket Analysis (FP-Growth + lift scoring) discovers sub-archetypes. Schema designed for full-corpus scale but populated with one vertical as proof-of-concept."
+    status: abandoned
+    priority: high
+    files:
+      spec: locard/specs/0045-vocabulary-extraction-pilot.md
+      plan: locard/plans/0045-vocabulary-extraction-pilot.md
+      review: null
+    dependencies: ["0035", "0038"]
+    tags: [layer-2, vocabulary, extraction, archetype, mba, pilot]
+    notes: "ABANDONED 2026-05-16. Skipped Docling parsing stage (prerequisite). LLM extraction from partial text (~5 pages) produces throwaway results — full structured docs required. Also: statistical NLP methods (TF-IDF, C-value) are superior to LLM prompting for term extraction."
+
+  - id: "0046"
+    title: "Docling Full-Document Parsing"
+    summary: "GPU-accelerated structured text extraction from corpus PDFs via Docling. Produces section-labeled, table-aware, full-document text that feeds the NLP vocabulary extraction pipeline. Prerequisite for all Layer 2 work."
+    status: specified
+    priority: high
+    files:
+      spec: locard/specs/0046-docling-parsing.md
+      plan: locard/plans/0046-docling-parsing.md
+      review: null
+    dependencies: []
+    tags: [layer-2, docling, parsing, infrastructure, gpu]
+    notes: "Pipeline stage: Parse (between Classify and Extract per PROJECT_SEED). G6 spot instance for GPU (~$38 priority batch, ~$230 full corpus). Output feeds statistical term extraction (spaCy, TF-IDF, C-value)."
+
 ## Next Available Number
 
-**0045** - Reserve this number for your next project
+**0047** - Reserve this number for your next project
 
 ---
 
