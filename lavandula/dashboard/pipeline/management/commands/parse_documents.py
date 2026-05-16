@@ -23,13 +23,14 @@ from lavandula.parse import config, db
 AVG_PAGES_PER_DOC = 30
 SECONDS_PER_PAGE = 0.49
 SPOT_RATE_PER_HOUR = 0.60
+ONDEMAND_RATE_PER_HOUR = 0.98
 POLL_INTERVAL_SECONDS = 60
 HEARTBEAT_STALE_MINUTES = 10
 MAX_RELAUNCH_ATTEMPTS = 3
 SSM_AMI_PARAM = "/cloud2.lavandulagroup.com/docling-ami-id"
 SUBNET_ID = "subnet-0e2008e48d602e945"
 SECURITY_GROUP_ID = "sg-0d9a6217a104cfe35"
-IAM_PROFILE_NAME = "docling_worker"
+IAM_PROFILE_NAME = "cloud2_lavandulagroup"
 INSTANCE_TAG_PURPOSE = "docling-parse"
 
 
@@ -40,7 +41,7 @@ class Command(BaseCommand):
         parser.add_argument("run_tag", type=str, help="Unique identifier for this parse run")
         parser.add_argument("--priority", default="annual,impact", help="Comma-separated classification filter")
         parser.add_argument("--instance-type", default="g6.2xlarge")
-        parser.add_argument("--spot", action="store_true", default=True)
+        parser.add_argument("--no-spot", action="store_true", default=False, help="Use on-demand instead of spot")
         parser.add_argument("--max-hours", type=int, default=12)
         parser.add_argument("--batch-size", type=int, default=500)
         parser.add_argument("--dry-run", action="store_true")
@@ -84,13 +85,16 @@ class Command(BaseCommand):
         est_pages = count * AVG_PAGES_PER_DOC
         est_seconds = est_pages * SECONDS_PER_PAGE
         est_hours = est_seconds / 3600
-        est_cost = est_hours * SPOT_RATE_PER_HOUR
+        use_spot = not options["no_spot"]
+        rate = SPOT_RATE_PER_HOUR if use_spot else ONDEMAND_RATE_PER_HOUR
+        est_cost = est_hours * rate
+        pricing_label = f"spot @ ${SPOT_RATE_PER_HOUR}/hr" if use_spot else f"on-demand @ ${ONDEMAND_RATE_PER_HOUR}/hr"
 
         self.stdout.write(
             f"Eligible documents: {count:,}\n"
             f"Estimated pages:    ~{est_pages:,.0f}\n"
             f"Estimated GPU time: ~{est_hours:.1f} hours\n"
-            f"Estimated cost:     ~${est_cost:.0f} (spot @ ${SPOT_RATE_PER_HOUR}/hr)\n"
+            f"Estimated cost:     ~${est_cost:.0f} ({pricing_label})\n"
             f"Priority filter:    {', '.join(priority)}\n"
             f"Instance type:      {options['instance_type']}\n"
         )
@@ -296,8 +300,9 @@ class Command(BaseCommand):
             ec2.terminate_instances(InstanceIds=[existing])
             self._wait_for_termination(ec2, existing)
 
-        instance_id = self._launch_spot_instance(ec2, run_tag, options)
-        self.stdout.write(f"Launched spot instance {instance_id}\n")
+        instance_id = self._launch_instance(ec2, run_tag, options)
+        mode = "on-demand" if options["no_spot"] else "spot"
+        self.stdout.write(f"Launched {mode} instance {instance_id}\n")
 
         with conn:
             with conn.cursor() as cur:
@@ -319,19 +324,18 @@ class Command(BaseCommand):
             ec2.terminate_instances(InstanceIds=[instance_id])
             self.stdout.write(f"Terminated instance {instance_id}\n")
 
-    def _launch_spot_instance(self, ec2, run_tag: str, options: dict) -> str:
+    def _launch_instance(self, ec2, run_tag: str, options: dict) -> str:
         import boto3
 
         ssm = boto3.client("ssm", region_name="us-east-1")
         ami_resp = ssm.get_parameter(Name=SSM_AMI_PARAM)
         ami_id = ami_resp["Parameter"]["Value"]
 
-        response = ec2.run_instances(
+        kwargs = dict(
             ImageId=ami_id,
             InstanceType=options["instance_type"],
             MinCount=1,
             MaxCount=1,
-            InstanceMarketOptions={"MarketType": "spot"},
             IamInstanceProfile={"Name": IAM_PROFILE_NAME},
             SubnetId=SUBNET_ID,
             SecurityGroupIds=[SECURITY_GROUP_ID],
@@ -346,6 +350,10 @@ class Command(BaseCommand):
                 }
             ],
         )
+        if not options["no_spot"]:
+            kwargs["InstanceMarketOptions"] = {"MarketType": "spot"}
+
+        response = ec2.run_instances(**kwargs)
         return response["Instances"][0]["InstanceId"]
 
     def _find_instance(self, ec2, run_tag: str) -> str | None:
