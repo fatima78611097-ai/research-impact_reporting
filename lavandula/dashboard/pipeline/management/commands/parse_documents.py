@@ -311,6 +311,7 @@ class Command(BaseCommand):
                     (instance_id, run_id),
                 )
 
+        time.sleep(5)  # EC2 eventual consistency — wait before polling
         self._wait_for_running(ec2, instance_id)
         self.stdout.write(f"Instance {instance_id} is running\n")
 
@@ -391,7 +392,14 @@ class Command(BaseCommand):
             time.sleep(5)
 
     def _get_instance_state(self, ec2, instance_id: str) -> str:
-        response = ec2.describe_instances(InstanceIds=[instance_id])
+        from botocore.exceptions import ClientError
+
+        try:
+            response = ec2.describe_instances(InstanceIds=[instance_id])
+        except ClientError as e:
+            if "InvalidInstanceID.NotFound" in str(e):
+                return "pending"
+            raise
         reservations = response.get("Reservations", [])
         if not reservations:
             return "terminated"
