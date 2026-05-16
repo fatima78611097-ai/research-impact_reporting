@@ -697,15 +697,15 @@ projects:
   - id: "0046"
     title: "Docling Full-Document Parsing"
     summary: "GPU-accelerated structured text extraction from corpus PDFs via Docling. Produces section-labeled, table-aware, full-document text that feeds the NLP vocabulary extraction pipeline. Prerequisite for all Layer 2 work."
-    status: conceived
+    status: specified
     priority: high
     files:
       spec: locard/specs/0046-docling-parsing.md
-      plan: null
+      plan: locard/plans/0046-docling-parsing.md
       review: null
     dependencies: []
     tags: [layer-2, docling, parsing, infrastructure, gpu]
-    notes: "Pipeline stage: Parse (between Classify and Extract per PROJECT_SEED). G6 spot instance for GPU. Output feeds statistical term extraction (spaCy, TF-IDF, C-value)."
+    notes: "Pipeline stage: Parse (between Classify and Extract per PROJECT_SEED). G6 spot instance for GPU (~$38 priority batch, ~$230 full corpus). Output feeds statistical term extraction (spaCy, TF-IDF, C-value)."
 
 ## Next Available Number
 
