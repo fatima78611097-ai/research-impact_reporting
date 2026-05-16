@@ -20,10 +20,12 @@ This project has two distinct work streams:
 - Security group membership for GPU instance
 - AMI with Docling + CUDA (or user-data bootstrap for development)
 
-**Python packages (on GPU instance AMI):**
-- `docling==2.93.0` (pinned — document parsing)
-- `psycopg2-binary` (RDS connection)
-- `boto3` (S3 + EC2 metadata)
+**Python packages (on GPU instance AMI — all pinned in `requirements.txt`):**
+- `docling==2.93.0` (document parsing)
+- `psycopg2-binary==2.9.9` (RDS connection)
+- `boto3==1.35.0` (S3 + EC2 metadata)
+- `httpx==0.27.0` (spot metadata check)
+- `packaging==24.0` (version comparison)
 
 **Python packages (on cloud2 for orchestrator):**
 - `boto3` (already installed — EC2 API for spot management)
@@ -56,6 +58,8 @@ These define the behavioral contracts the builder must implement. Codex review f
 ### Run Tag Lifecycle
 
 `parse_runs.run_tag` is UNIQUE. Each invocation creates a new row. Reruns use a fresh tag (e.g., `priority-v1`, `priority-v2`). The `--status` command accepts a run_tag to show that specific run. If the orchestrator is relaunched after spot interruption for the SAME logical batch, it reuses the existing `parse_runs` row (matched by run_tag passed on CLI). The orchestrator checks: if a row exists and `finished_at IS NULL`, it's a resume — don't INSERT, just continue.
+
+**CRITICAL: Run tag validation.** `run_tag` is validated against `^[a-zA-Z0-9_-]{1,64}$` before ANY use — especially before constructing SSH commands or SQL. This prevents command injection via malicious run_tag values. Reject with `CommandError` if invalid.
 
 ### Worker Lifecycle Invariant
 
@@ -497,7 +501,7 @@ def record_error(conn, item, error):
 - **Temp directory:** Use `/tmp/docling-work/` on the instance SSD. Clean up per-document after insert.
 - **Memory management:** Process one PDF at a time (Docling loads the full document model into memory). For PDFs > 500 pages, skip prefetch to reduce memory pressure.
 - **Spot check:** Poll every document (cheap HTTP call to instance metadata). If termination pending, finish current document transaction and exit gracefully.
-- **Logging:** Write structured JSON logs to stdout. Orchestrator can capture via SSH or CloudWatch agent.
+- **Logging:** Write structured JSON logs to stdout via Python `logging` module with a custom formatter that applies `sanitize_error()` to all exception messages before output. No raw stack traces or internal paths in log output. Orchestrator can capture via SSH or CloudWatch agent.
 
 4.3. Write unit tests:
 - `test_worker.py`: Mock Docling + DB, verify main loop processes batch correctly
@@ -532,6 +536,15 @@ class Command(BaseCommand):
         parser.add_argument('--min-version', type=str)
     
     def handle(self, *args, **options):
+        # Input validation (prevents injection and resource exhaustion)
+        run_tag = options['run_tag']
+        if not re.match(r'^[a-zA-Z0-9_-]{1,64}$', run_tag):
+            raise CommandError("run_tag must be alphanumeric/hyphens/underscores, max 64 chars")
+        if not (1 <= options['max_hours'] <= 24):
+            raise CommandError("--max-hours must be 1-24")
+        if not (10 <= options['batch_size'] <= 5000):
+            raise CommandError("--batch-size must be 10-5000")
+        
         if options['dry_run']:
             return self._dry_run(options)
         if options['status']:
