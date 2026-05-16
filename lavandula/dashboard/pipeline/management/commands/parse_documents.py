@@ -315,6 +315,9 @@ class Command(BaseCommand):
         self._wait_for_running(ec2, instance_id)
         self.stdout.write(f"Instance {instance_id} is running\n")
 
+        self._wait_for_ssm(instance_id)
+        self.stdout.write(f"SSM agent connected on {instance_id}\n")
+
         self._start_worker(ec2, instance_id, run_id, priority, options)
         return instance_id
 
@@ -381,6 +384,21 @@ class Command(BaseCommand):
                 raise CommandError(f"Instance {instance_id} terminated before reaching running state")
             time.sleep(10)
         raise CommandError(f"Instance {instance_id} did not reach running state within {timeout}s")
+
+    def _wait_for_ssm(self, instance_id: str, timeout: int = 180) -> None:
+        """Wait for SSM agent to register the instance."""
+        import boto3
+
+        ssm = boto3.client("ssm", region_name="us-east-1")
+        start = time.time()
+        while time.time() - start < timeout:
+            resp = ssm.describe_instance_information(
+                Filters=[{"Key": "InstanceIds", "Values": [instance_id]}]
+            )
+            if resp.get("InstanceInformationList"):
+                return
+            time.sleep(10)
+        raise CommandError(f"SSM agent on {instance_id} did not register within {timeout}s")
 
     def _wait_for_termination(self, ec2, instance_id: str, timeout: int = 120) -> None:
         """Wait for instance to terminate."""
