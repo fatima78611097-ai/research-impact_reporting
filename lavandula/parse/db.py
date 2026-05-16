@@ -220,29 +220,39 @@ def delete_document_data(conn, sha: str) -> None:
             )
 
 
-def create_parse_run(conn, run_tag: str, config: dict) -> int:
-    """Create a parse_runs record. Returns the run ID."""
+class RunTagConflict(Exception):
+    """Raised when a run_tag already exists and is finished (cannot resume)."""
+
+
+def create_parse_run(conn, run_tag: str, config_dict: dict) -> int:
+    """Create or resume a parse_runs record. Returns the run ID.
+
+    - If no row exists: INSERT and return new ID.
+    - If row exists with finished_at IS NULL: resume (return existing ID).
+    - If row exists with finished_at IS NOT NULL: raise RunTagConflict.
+    """
     with conn:
         with conn.cursor() as cur:
             cur.execute(
-                """
-                INSERT INTO lava_parse.parse_runs (run_tag, config_json)
-                VALUES (%s, %s)
-                ON CONFLICT (run_tag) DO UPDATE
-                    SET config_json = EXCLUDED.config_json
-                WHERE lava_parse.parse_runs.finished_at IS NULL
-                RETURNING id
-                """,
-                (run_tag, json.dumps(config)),
-            )
-            row = cur.fetchone()
-            if row:
-                return row[0]
-            cur.execute(
-                "SELECT id FROM lava_parse.parse_runs WHERE run_tag = %s",
+                "SELECT id, finished_at FROM lava_parse.parse_runs WHERE run_tag = %s",
                 (run_tag,),
             )
-            return cur.fetchone()[0]
+            row = cur.fetchone()
+
+            if row is None:
+                cur.execute(
+                    "INSERT INTO lava_parse.parse_runs (run_tag, config_json) VALUES (%s, %s) RETURNING id",
+                    (run_tag, json.dumps(config_dict)),
+                )
+                return cur.fetchone()[0]
+
+            run_id, finished_at = row
+            if finished_at is not None:
+                raise RunTagConflict(
+                    f"Run tag '{run_tag}' already completed at {finished_at}. "
+                    f"Use a new tag (e.g., '{run_tag}-v2') for reruns."
+                )
+            return run_id
 
 
 def update_run_stats(conn, run_id: int, stats: dict) -> None:

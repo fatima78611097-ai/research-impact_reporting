@@ -24,6 +24,8 @@ AVG_PAGES_PER_DOC = 30
 SECONDS_PER_PAGE = 0.49
 SPOT_RATE_PER_HOUR = 0.30
 POLL_INTERVAL_SECONDS = 60
+HEARTBEAT_STALE_MINUTES = 10
+MAX_RELAUNCH_ATTEMPTS = 3
 SSM_AMI_PARAM = "/cloud2.lavandulagroup.com/docling-ami-id"
 SUBNET_ID = "subnet-0e2008e48d602e945"
 SECURITY_GROUP_ID = "sg-0d9a6217a104cfe35"
@@ -174,14 +176,119 @@ class Command(BaseCommand):
             "reparse": options["reparse"],
             "min_version": options.get("min_version"),
         }
-        run_id = db.create_parse_run(conn, run_tag, run_config)
-        self.stdout.write(f"Parse run {run_id} created (tag: {run_tag})\n")
+
+        try:
+            run_id = db.create_parse_run(conn, run_tag, run_config)
+        except db.RunTagConflict as e:
+            raise CommandError(str(e))
+
+        self.stdout.write(f"Parse run {run_id} created/resumed (tag: {run_tag})\n")
 
         if options["retry_errors"]:
             self._delete_error_rows(conn, priority)
         if options["reparse"] and options.get("min_version"):
             self._delete_old_version_rows(conn, priority, options["min_version"])
 
+        start_time = time.time()
+        max_seconds = options["max_hours"] * 3600
+        relaunch_count = 0
+
+        instance_id = self._launch_and_start(ec2, conn, run_id, run_tag, priority, options)
+
+        last_stats_update = time.time()
+        last_total = 0
+
+        while True:
+            time.sleep(POLL_INTERVAL_SECONDS)
+
+            elapsed = time.time() - start_time
+            if elapsed >= max_seconds:
+                self.stdout.write(f"Max hours ({options['max_hours']}) reached. Terminating.\n")
+                self._safe_terminate(ec2, instance_id)
+                break
+
+            # Check if worker reported completion
+            status = db.get_run_status(conn, run_tag)
+            if status and status.get("finished_at"):
+                self.stdout.write("Worker reported completion.\n")
+                self._safe_terminate(ec2, instance_id)
+                break
+
+            # Check instance state — spot interruption detection
+            state = self._get_instance_state(ec2, instance_id)
+            if state in ("terminated", "shutting-down"):
+                self.stdout.write(f"Instance {instance_id} terminated (spot reclaimed or crash).\n")
+
+                # Check if there's still work to do
+                remaining = db.get_eligible_count(conn, priority)
+                if remaining == 0:
+                    self.stdout.write("No remaining work. Run complete.\n")
+                    break
+
+                # Attempt relaunch
+                relaunch_count += 1
+                if relaunch_count > MAX_RELAUNCH_ATTEMPTS:
+                    self.stderr.write(
+                        f"Exceeded max relaunch attempts ({MAX_RELAUNCH_ATTEMPTS}). "
+                        f"Stopping. {remaining:,} docs remain.\n"
+                    )
+                    break
+
+                self.stdout.write(
+                    f"Relaunching (attempt {relaunch_count}/{MAX_RELAUNCH_ATTEMPTS}, "
+                    f"{remaining:,} docs remaining)...\n"
+                )
+                instance_id = self._launch_and_start(ec2, conn, run_id, run_tag, priority, options)
+                last_stats_update = time.time()
+                continue
+
+            # Heartbeat: detect stale worker (crash without instance termination)
+            stats = status.get("stats_json") if status else None
+            current_total = 0
+            if stats:
+                if isinstance(stats, str):
+                    stats = json.loads(stats)
+                current_total = stats.get("total", 0)
+                self.stdout.write(
+                    f"  Progress: {stats.get('succeeded', 0):,} ok, "
+                    f"{stats.get('failed', 0):,} err, "
+                    f"{current_total:,} total "
+                    f"({elapsed/60:.0f}m elapsed)\n"
+                )
+
+            if current_total > last_total:
+                last_stats_update = time.time()
+                last_total = current_total
+            elif (time.time() - last_stats_update) > HEARTBEAT_STALE_MINUTES * 60:
+                self.stderr.write(
+                    f"Worker stale — no progress in {HEARTBEAT_STALE_MINUTES} minutes. "
+                    f"Terminating instance.\n"
+                )
+                self._safe_terminate(ec2, instance_id)
+
+                # Treat as crash, attempt relaunch
+                remaining = db.get_eligible_count(conn, priority)
+                if remaining == 0:
+                    break
+                relaunch_count += 1
+                if relaunch_count > MAX_RELAUNCH_ATTEMPTS:
+                    self.stderr.write(f"Exceeded max relaunch attempts. Stopping.\n")
+                    break
+
+                self.stdout.write(f"Relaunching after stale worker...\n")
+                instance_id = self._launch_and_start(ec2, conn, run_id, run_tag, priority, options)
+                last_stats_update = time.time()
+                continue
+
+        # Mark run finished if not already
+        status = db.get_run_status(conn, run_tag)
+        if status and not status.get("finished_at"):
+            db.finish_run(conn, status["id"], status.get("stats_json") or {})
+
+        self.stdout.write("Parse run complete.\n")
+
+    def _launch_and_start(self, ec2, conn, run_id: int, run_tag: str, priority: list[str], options: dict) -> str:
+        """Launch a spot instance and start the worker. Returns instance_id."""
         # Terminate any existing instance for this purpose
         existing = self._find_instance(ec2, run_tag)
         if existing:
@@ -192,7 +299,6 @@ class Command(BaseCommand):
         instance_id = self._launch_spot_instance(ec2, run_tag, options)
         self.stdout.write(f"Launched spot instance {instance_id}\n")
 
-        # Store instance ID in run record
         with conn:
             with conn.cursor() as cur:
                 cur.execute(
@@ -203,57 +309,15 @@ class Command(BaseCommand):
         self._wait_for_running(ec2, instance_id)
         self.stdout.write(f"Instance {instance_id} is running\n")
 
-        # Start worker via EC2 Instance Connect
         self._start_worker(ec2, instance_id, run_id, priority, options)
+        return instance_id
 
-        # Monitor loop
-        start_time = time.time()
-        max_seconds = options["max_hours"] * 3600
-
-        while True:
-            time.sleep(POLL_INTERVAL_SECONDS)
-
-            elapsed = time.time() - start_time
-            if elapsed >= max_seconds:
-                self.stdout.write(f"Max hours ({options['max_hours']}) reached. Terminating.\n")
-                ec2.terminate_instances(InstanceIds=[instance_id])
-                break
-
-            # Check instance state
-            state = self._get_instance_state(ec2, instance_id)
-            if state in ("terminated", "shutting-down"):
-                self.stdout.write(f"Instance {instance_id} terminated (state: {state})\n")
-                break
-
-            # Check run progress
-            status = db.get_run_status(conn, run_tag)
-            if status and status.get("finished_at"):
-                self.stdout.write("Worker reported completion.\n")
-                break
-
-            stats = status.get("stats_json") if status else None
-            if stats:
-                if isinstance(stats, str):
-                    stats = json.loads(stats)
-                self.stdout.write(
-                    f"  Progress: {stats.get('succeeded', 0):,} ok, "
-                    f"{stats.get('failed', 0):,} err, "
-                    f"{stats.get('total', 0):,} total "
-                    f"({elapsed/60:.0f}m elapsed)\n"
-                )
-
-        # Ensure instance is terminated
+    def _safe_terminate(self, ec2, instance_id: str) -> None:
+        """Terminate instance if still running."""
         state = self._get_instance_state(ec2, instance_id)
         if state not in ("terminated", "shutting-down"):
             ec2.terminate_instances(InstanceIds=[instance_id])
             self.stdout.write(f"Terminated instance {instance_id}\n")
-
-        # Mark run finished if not already
-        status = db.get_run_status(conn, run_tag)
-        if status and not status.get("finished_at"):
-            db.finish_run(conn, status["id"], status.get("stats_json") or {})
-
-        self.stdout.write("Parse run complete.\n")
 
     def _launch_spot_instance(self, ec2, run_tag: str, options: dict) -> str:
         import boto3

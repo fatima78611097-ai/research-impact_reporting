@@ -151,6 +151,48 @@ class TestDeleteDocumentData:
         assert "documents" in sqls[2]
 
 
+class TestCreateParseRun:
+    def test_creates_new_run(self):
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_conn.__enter__ = MagicMock(return_value=mock_conn)
+        mock_conn.__exit__ = MagicMock(return_value=False)
+        mock_conn.cursor.return_value.__enter__ = MagicMock(return_value=mock_cursor)
+        mock_conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
+        # First SELECT returns None (no existing row)
+        mock_cursor.fetchone.side_effect = [None, (42,)]
+
+        run_id = db.create_parse_run(mock_conn, "test-run", {"priority": ["annual"]})
+        assert run_id == 42
+
+    def test_resumes_unfinished_run(self):
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_conn.__enter__ = MagicMock(return_value=mock_conn)
+        mock_conn.__exit__ = MagicMock(return_value=False)
+        mock_conn.cursor.return_value.__enter__ = MagicMock(return_value=mock_cursor)
+        mock_conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
+        # SELECT returns existing row with finished_at=None
+        mock_cursor.fetchone.return_value = (7, None)
+
+        run_id = db.create_parse_run(mock_conn, "test-run", {"priority": ["annual"]})
+        assert run_id == 7
+
+    def test_rejects_completed_run_tag(self):
+        from datetime import datetime
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_conn.__enter__ = MagicMock(return_value=mock_conn)
+        mock_conn.__exit__ = MagicMock(return_value=False)
+        mock_conn.cursor.return_value.__enter__ = MagicMock(return_value=mock_cursor)
+        mock_conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
+        # SELECT returns completed row
+        mock_cursor.fetchone.return_value = (5, datetime(2026, 5, 16))
+
+        with pytest.raises(db.RunTagConflict, match="already completed"):
+            db.create_parse_run(mock_conn, "test-run", {"priority": ["annual"]})
+
+
 class TestAdvisoryLocks:
     def test_acquire_orchestrator_lock(self):
         mock_conn = MagicMock()

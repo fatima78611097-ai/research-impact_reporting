@@ -95,8 +95,10 @@ def _run_loop(conn, args) -> None:
                 pdf_path = pdf_paths.get(sha)
 
                 if pdf_path is None:
-                    _record_error(conn, item, "download_failed: PDF not available in S3")
-                    stats["failed"] += 1
+                    # Download failure after retries is transient — skip, don't
+                    # record as permanent error. Doc remains eligible for next run.
+                    logger.warning("download failed after retries, skipping", extra={"sha": sha[:16]})
+                    stats["transient_skipped"] = stats.get("transient_skipped", 0) + 1
                     stats["total"] += 1
                     continue
 
@@ -105,9 +107,13 @@ def _run_loop(conn, args) -> None:
                     db.insert_document(conn, result)
                     stats["succeeded"] += 1
                 except TransientError as e:
-                    logger.warning("transient error", extra={"sha": sha[:16], "err": str(e)[:100]})
-                    stats["failed"] += 1
+                    # Transient errors (RDS connection loss, etc.) — don't record,
+                    # doc remains eligible for next run.
+                    logger.warning("transient error, skipping", extra={"sha": sha[:16], "err": str(e)[:100]})
+                    stats["transient_skipped"] = stats.get("transient_skipped", 0) + 1
                 except PermanentError as e:
+                    # Permanent errors (corrupt PDF, Docling crash, empty parse) —
+                    # record so doc is excluded from normal reruns.
                     _record_error(conn, item, e)
                     stats["failed"] += 1
                 finally:
