@@ -1,6 +1,6 @@
 # Spec 0047: Cross-Origin PDF Recovery
 
-**Status**: Draft
+**Status**: Review
 **Priority**: High
 **Dependencies**: None (standalone fix to crawler engine + recovery passes)
 **Estimated effort**: Medium (engine fix is small; recovery passes are operationally heavy)
@@ -69,6 +69,9 @@ if is_cross_origin and not is_cms_match:
         # with reduced score (will be validated at fetch time via Content-Type)
         pass  # fall through to normal scoring
     else:
+        # Log the drop — DEBUG normally, escalates to WARNING if volume
+        # exceeds CROSS_ORIGIN_DROP_ALERT_THRESHOLD per org per run
+        _log_cross_origin_drop(href, seed_etld1)
         return None
 ```
 
@@ -101,7 +104,7 @@ def _allowed(host: str, seed_etld1: str, *, content_type_hint: str | None = None
 
 However, the redirect policy is checked per-hop BEFORE the response body arrives. The cleaner approach:
 
-**Option A (recommended)**: Make `check_redirect_chain` accept an `is_pdf_candidate` flag. When True, all hops are allowed regardless of domain — we validate at the end by checking the final response's Content-Type header.
+**Option A (recommended)**: Make `check_redirect_chain` accept an `is_pdf_candidate` flag. When True, hops through known CDN infrastructure are allowed, and a single cross-origin hop to an unknown domain is tolerated (common pattern: org.com → CDN-specific shortener → CDN storage). Each cross-origin hop is logged at INFO for monitoring.
 
 ```python
 def check_redirect_chain(
@@ -116,21 +119,26 @@ def check_redirect_chain(
     if len(urls) - 1 > config.MAX_REDIRECTS:
         return RedirectCheckResult(ok=False, reason="server_error", note="redirect_chain_too_long")
 
-    if is_pdf_candidate:
-        # Trust candidates flagged as PDF by candidate_filter.
-        # Final Content-Type validation happens in the fetcher.
-        return RedirectCheckResult(ok=True)
-
+    unknown_hops = 0
     for url in urls:
         parsed = urlsplit(url)
         host = parsed.hostname or ""
         if not _allowed(host, seed_etld1):
-            return RedirectCheckResult(ok=False, reason="cross_origin_blocked",
-                                       note=f"hop {host!r} not in seed eTLD+1 or platform allowlist")
+            if is_pdf_candidate:
+                unknown_hops += 1
+                logger.info("pdf_candidate_cross_hop", extra={"host": host, "seed": seed_etld1})
+                if unknown_hops > config.MAX_UNKNOWN_HOPS:  # default: 2
+                    return RedirectCheckResult(ok=False, reason="cross_origin_blocked",
+                                               note=f"too many unknown hops ({unknown_hops})")
+            else:
+                return RedirectCheckResult(ok=False, reason="cross_origin_blocked",
+                                           note=f"hop {host!r} not in seed eTLD+1 or platform allowlist")
     return RedirectCheckResult(ok=True)
 ```
 
-**Content-Type validation in the fetcher**: After following redirects, the fetcher MUST check that the final response has `Content-Type: application/pdf` (or `application/octet-stream` with a `.pdf` URL). If not, discard the response and log `content_type_mismatch`.
+This limits exposure: the crawler follows at most 2 unknown-domain hops (covering the common CDN redirect patterns like `bitly → cdn-shortener → storage`) while preventing arbitrary multi-hop traversal through unrelated infrastructure.
+
+**Content-Type validation in the fetcher**: After following redirects, the fetcher MUST check that the final response has `Content-Type: application/pdf` (or `application/octet-stream` with a `.pdf` URL path). If not, discard the response and log `content_type_mismatch`.
 
 ### Part 3: Fetcher Content-Type Gate
 
@@ -140,13 +148,20 @@ Add a post-redirect validation step in the fetch pipeline:
 # In the fetcher, after following redirects for pdf candidates:
 if candidate.cross_origin_candidate:
     ct = response.headers.get("content-type", "").split(";")[0].strip().lower()
-    if ct not in ("application/pdf", "application/octet-stream"):
-        # Not actually a PDF — reject
+    url_is_pdf = candidate.url.lower().rstrip("/").endswith(".pdf")
+    allowed_types = {"application/pdf"}
+    if url_is_pdf:
+        allowed_types.add("application/octet-stream")
+    if ct not in allowed_types:
+        # Not actually a PDF — reject and update mismatch counter
         log_fetch(candidate, status="content_type_mismatch", note=f"got {ct}")
+        _increment_mismatch_counter(candidate.host_etld1)
         return None
 ```
 
 This ensures we never store non-PDF content even if the URL looked like a PDF.
+
+**Per-domain mismatch throttling**: Track `content_type_mismatch` counts per eTLD+1. If a domain produces more than `config.MISMATCH_THROTTLE_THRESHOLD` (default: 5) mismatches within a crawl run, temporarily skip further cross-origin PDF candidates from that domain for the remainder of the run. This prevents resource exhaustion from domains that consistently serve non-PDF content at `.pdf` URLs.
 
 ### Part 4: Pass 1 Recovery — Re-fetch Known URLs
 
@@ -163,13 +178,15 @@ A management command that:
 
 Arguments:
 - `--batch-size` (default 1000): number of URLs to process per batch
-- `--max-urls` (default None): hard cap for safety
+- `--max-urls` (required): hard cap — must be set explicitly, or use `--no-limit` to bypass
+- `--no-limit`: explicitly opt out of the cap (requires confirmation intent)
 - `--dry-run`: log what would be fetched without actually fetching
 - `--state-filter` (default all states): limit to specific states for phased rollout
 
 **Operational characteristics**:
 - Runs on existing t3.large (cloud2) — no GPU needed
 - Rate limiting: respect existing per-domain delays (1s between requests to same host)
+- Exponential backoff on HTTP 429/5xx (base 2s, max 60s) — reuses existing fetcher retry logic
 - Idempotent: skip URLs already successfully fetched
 - Resume-safe: processes in fetch_log ID order, can restart from last processed ID
 
@@ -196,12 +213,22 @@ A management command that:
 
 Arguments:
 - `--batch-size` (default 500): orgs per batch
-- `--max-orgs` (default None): hard cap
+- `--max-orgs` (required): hard cap — must be set explicitly, or use `--no-limit` to bypass
+- `--no-limit`: explicitly opt out of the cap (requires confirmation intent)
 - `--dry-run`: discover candidates without fetching
 - `--state-filter`: limit to specific states
 - `--source {cached,recrawl}`: whether to use cached HTML or re-crawl
 
 **Note**: Pass 2 discovered candidates feed into the normal fetch pipeline (which now has the engine fix). They don't need special handling beyond discovery.
+
+---
+
+## New Config Constants
+
+Add to `lavandula/reports/config.py`:
+- `MAX_UNKNOWN_HOPS = 2` — max cross-origin redirect hops through non-allowlisted domains for PDF candidates
+- `MISMATCH_THROTTLE_THRESHOLD = 5` — after this many content_type_mismatch hits per domain per run, skip further cross-origin candidates from that domain
+- `CROSS_ORIGIN_DROP_ALERT_THRESHOLD = 50` — escalate logging from DEBUG to WARNING if an org exceeds this many non-PDF cross-origin drops in a single run
 
 ---
 
@@ -231,16 +258,19 @@ Add `cross_origin_candidate: bool` to the candidate dataclass/dict. This flag:
 
 ### Threat: PDF-extension URL serving malicious HTML
 **Risk**: A URL ending in `.pdf` could serve HTML with embedded scripts.
-**Mitigation**: Content-Type check rejects anything that isn't `application/pdf` or `application/octet-stream`. Even if stored, PDFs are processed by Docling on isolated ephemeral GPU instances — no browser execution context.
+**Mitigation**: Content-Type check rejects anything that isn't `application/pdf` (or `application/octet-stream` only when the URL path ends in `.pdf`). Even if stored, PDFs are processed by Docling on isolated ephemeral GPU instances — no browser execution context. S3 bucket uses server-side encryption (SSE-S3) at rest.
 
 ### Threat: Unbounded fetching from arbitrary domains
-**Risk**: With relaxed cross-origin policy, the crawler could be directed to fetch from unintended targets.
+**Risk**: With relaxed cross-origin policy, the crawler could be directed to fetch from unintended targets via redirect chains.
 **Mitigation**: 
 - Only PDF-like URLs (`.pdf` extension) get relaxed treatment
 - Only URLs found on the org's OWN pages qualify
 - Rate limiting per domain remains in effect
 - MAX_REDIRECTS (5) still caps chain length
+- MAX_UNKNOWN_HOPS (2) limits traversal through non-allowlisted domains — prevents arbitrary multi-hop chains while supporting common CDN redirect patterns
+- Each unknown-domain hop is logged at INFO for monitoring
 - Content-Type gate ensures we only store actual PDFs
+- Per-domain mismatch throttling backs off domains that consistently serve non-PDFs
 
 ### Threat: Recovery pass overwhelming target servers
 **Risk**: Pass 1 re-fetches 31K URLs, potentially hammering CDN servers.
@@ -254,7 +284,7 @@ Add `cross_origin_candidate: bool` to the candidate dataclass/dict. This flag:
 2. **Pass 1 recovery**: Command exists, runs idempotently, successfully re-fetches previously-blocked PDFs with correct Content-Type validation
 3. **Pass 2 recovery**: Command exists, discovers previously-dropped candidates from cached/re-crawled HTML pages
 4. **No regression**: Existing crawl behavior for same-origin PDFs is unchanged
-5. **Logging**: All cross-origin decisions are logged (no more silent drops)
+5. **Logging**: All cross-origin PDF decisions are logged (no more silent drops for PDFs; non-PDF cross-origin drops logged at DEBUG level)
 6. **Safety caps**: Both recovery commands require `--max-urls`/`--max-orgs` or explicit `--no-limit` flag
 
 ---
