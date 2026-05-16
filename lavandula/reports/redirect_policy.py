@@ -14,11 +14,14 @@ fallback is the worst case — prefer the installed library.
 """
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from typing import Iterable
 from urllib.parse import urlsplit
 
 from . import config
+
+_log = logging.getLogger(__name__)
 
 
 try:
@@ -69,11 +72,15 @@ def check_redirect_chain(
     chain: Iterable[str],
     *,
     seed_etld1: str,
+    is_pdf_candidate: bool = False,
 ) -> RedirectCheckResult:
     """Validate every HOP, not just the final URL.
 
     Returns `ok=True` iff each URL's host is in {seed eTLD+1} or the
     `HOSTING_PLATFORMS` allowlist.
+
+    When `is_pdf_candidate=True`, up to `MAX_UNKNOWN_HOPS` hops through
+    non-allowlisted domains are tolerated (common CDN redirect patterns).
     """
     urls = list(chain)
     if not urls:
@@ -84,15 +91,29 @@ def check_redirect_chain(
             reason="server_error",
             note="redirect_chain_too_long",
         )
+    unknown_hops = 0
     for url in urls:
         parsed = urlsplit(url)
         host = parsed.hostname or ""
         if not _allowed(host, seed_etld1):
-            return RedirectCheckResult(
-                ok=False,
-                reason="cross_origin_blocked",
-                note=f"hop {host!r} not in seed eTLD+1 or platform allowlist",
-            )
+            if is_pdf_candidate:
+                unknown_hops += 1
+                _log.info(
+                    "pdf_candidate_cross_hop",
+                    extra={"host": host, "seed": seed_etld1},
+                )
+                if unknown_hops > config.MAX_UNKNOWN_HOPS:
+                    return RedirectCheckResult(
+                        ok=False,
+                        reason="cross_origin_blocked",
+                        note=f"too many unknown hops ({unknown_hops})",
+                    )
+            else:
+                return RedirectCheckResult(
+                    ok=False,
+                    reason="cross_origin_blocked",
+                    note=f"hop {host!r} not in seed eTLD+1 or platform allowlist",
+                )
     return RedirectCheckResult(ok=True)
 
 

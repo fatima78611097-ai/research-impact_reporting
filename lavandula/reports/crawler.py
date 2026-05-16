@@ -313,8 +313,20 @@ def process_org(
 
     download_t0 = time.monotonic()
     for cand in candidates:
+        if cand.cross_origin_candidate and fetch_pdf.is_domain_throttled(cand.url):
+            _write_fetch(
+                ein=ein,
+                url_redacted=redact_url(cand.url),
+                kind="pdf-get",
+                fetch_status="domain_throttled",
+                status_code=None,
+                elapsed_ms=None,
+                notes="cross_origin_mismatch_threshold_exceeded",
+            )
+            continue
         outcome = fetch_pdf.download(
-            cand.url, client, seed_etld1=seed_etld1, validate_structure=True
+            cand.url, client, seed_etld1=seed_etld1, validate_structure=True,
+            is_pdf_candidate=cand.cross_origin_candidate,
         )
         if outcome.status != "ok" or not outcome.body:
             _write_fetch(

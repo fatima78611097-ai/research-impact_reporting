@@ -12,7 +12,11 @@ import logging
 from concurrent.futures import ThreadPoolExecutor
 from typing import TYPE_CHECKING
 
-from .fetch_pdf import DownloadOutcome, _validate_pdf_structure, is_pdf_magic
+from . import config
+from .fetch_pdf import (
+    DownloadOutcome, _validate_pdf_structure, is_pdf_magic,
+    _increment_mismatch, is_domain_throttled,
+)
 
 if TYPE_CHECKING:
     from .async_http_client import AsyncHTTPClient
@@ -45,6 +49,7 @@ async def download(
     seed_etld1: str | None = None,
     validate_structure: bool = True,
     thread_pool: ThreadPoolExecutor | None = None,
+    is_pdf_candidate: bool = False,
 ) -> DownloadOutcome:
     """Fetch url, verify PDF magic, SHA-256, and (optionally) structure."""
     proceed, note = await _head_or_skip(client, url)
@@ -62,7 +67,10 @@ async def download(
             note=note,
         )
 
-    r = await client.get(url, kind="pdf-get", seed_etld1=seed_etld1)
+    r = await client.get(
+        url, kind="pdf-get", seed_etld1=seed_etld1,
+        is_pdf_candidate=is_pdf_candidate,
+    )
     if r.status != "ok":
         return DownloadOutcome(
             status=r.status,
@@ -78,7 +86,35 @@ async def download(
         )
 
     body = r.body or b""
+
+    if is_pdf_candidate:
+        ct = (r.headers.get("Content-Type", "") or "").split(";")[0].strip().lower()
+        url_has_pdf_ext = url.lower().rstrip("/").endswith(".pdf")
+        allowed_types = {"application/pdf"}
+        if url_has_pdf_ext:
+            allowed_types.add("application/octet-stream")
+        if ct not in allowed_types:
+            _increment_mismatch(url)
+            _log.info(
+                "content_type_mismatch",
+                extra={"url": url[:120], "got": ct},
+            )
+            return DownloadOutcome(
+                status="content_type_mismatch",
+                url=url,
+                final_url=r.final_url,
+                final_url_redacted=r.final_url_redacted,
+                redirect_chain=r.redirect_chain,
+                redirect_chain_redacted=r.redirect_chain_redacted,
+                content_sha256=None,
+                bytes_read=len(body),
+                content_type=ct,
+                note=f"expected pdf, got {ct}",
+            )
+
     if not is_pdf_magic(body[:32]):
+        if is_pdf_candidate:
+            _increment_mismatch(url)
         return DownloadOutcome(
             status="blocked_content_type",
             url=url,

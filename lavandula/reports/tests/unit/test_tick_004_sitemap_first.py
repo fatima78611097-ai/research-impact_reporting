@@ -200,15 +200,17 @@ def test_ac9_anti_noise_allows_pdf_in_uploads():
     assert result.discovered_via == "sitemap"
 
 
-def test_ac10_cross_origin_drops_unrelated_host():
-    """AC10: unrelated host from sitemap → dropped."""
+def test_ac10_cross_origin_pdf_accepted_from_sitemap():
+    """Spec 0047: cross-origin PDF from sitemap accepted as cross_origin_candidate."""
     from lavandula.reports.candidate_filter import classify_sitemap_url
     result = classify_sitemap_url(
         url="https://other-domain.com/report.pdf",
         seed_etld1="example.org",
         referring_page_url="https://example.org/",
     )
-    assert result is None
+    assert result is not None
+    assert result.cross_origin_candidate is True
+    assert result.attribution_confidence == "cross_origin_pdf"
 
 
 def test_ac10_cross_origin_accepts_platform_unverified():
