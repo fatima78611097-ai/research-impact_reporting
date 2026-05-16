@@ -707,9 +707,22 @@ projects:
     tags: [layer-2, docling, parsing, infrastructure, gpu]
     notes: "Pipeline stage: Parse (between Classify and Extract per PROJECT_SEED). G6 spot instance for GPU (~$38 priority batch, ~$230 full corpus). Output feeds statistical term extraction (spaCy, TF-IDF, C-value)."
 
+  - id: "0047"
+    title: "Cross-Origin PDF Recovery & Crawler Fix"
+    summary: "Fix the crawler's cross-origin blocking that silently drops PDFs hosted on CDNs (Squarespace, Webflow, Wix, etc.). Recover ~31K known PDF URLs from fetch_log (pass 1), re-scan ~40K orgs to discover CDN-hosted PDF links previously dropped by candidate_filter (pass 2), and permanently fix both candidate_filter.py and redirect_policy.py to accept PDFs linked from an org's own pages regardless of hosting domain."
+    status: conceived
+    priority: high
+    files:
+      spec: locard/specs/0047-cross-origin-pdf-recovery.md
+      plan: null
+      review: null
+    dependencies: ["0004", "0021"]
+    tags: [crawler, data-recovery, cdn, cross-origin, national-scale]
+    notes: "Discovered 2026-05-16: 36K PDFs blocked, 5K orgs affected in fetch_log alone. Candidate_filter silently drops another ~40K orgs worth of CDN links. Squarespace alone = 3,431 orgs / 22K PDFs."
+
 ## Next Available Number
 
-**0047** - Reserve this number for your next project
+**0048** - Reserve this number for your next project
 
 ---
 
