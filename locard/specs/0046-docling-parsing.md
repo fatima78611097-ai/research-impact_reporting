@@ -117,7 +117,7 @@ CREATE TABLE lava_parse.tables (
     id BIGSERIAL PRIMARY KEY,
     content_sha256 TEXT NOT NULL,
     table_index INT NOT NULL,             -- position among tables in this doc
-    section_id BIGINT REFERENCES lava_parse.sections(id),  -- which section contains this table
+    section_id BIGINT REFERENCES lava_parse.sections(id) ON DELETE CASCADE,  -- which section contains this table (NULL if before first heading)
     page_number INT,
     caption TEXT,                          -- table caption if detected
     row_count INT NOT NULL,
@@ -187,8 +187,14 @@ GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA lava_parse TO research_app;
 The GPU worker is a standalone Python script (not a Django management command) that runs directly on the GPU instance. It:
 
 1. **Connects to RDS** via IAM auth (same pattern as cloud2)
-2. **Fetches work batch:** Queries for unparsed documents:
+2. **Fetches work batch** via atomic claim:
    ```sql
+   -- Work queue uses advisory locks for claim coordination.
+   -- Single-worker design (one GPU instance at a time), but safe against
+   -- overlapping restarts via SELECT ... FOR UPDATE SKIP LOCKED on a
+   -- lightweight claim table.
+   
+   -- Step 1: Find eligible documents
    SELECT c.content_sha256, c.source_org_ein
    FROM lava_corpus.corpus c
    WHERE c.content_sha256 NOT IN (SELECT content_sha256 FROM lava_parse.documents)
@@ -196,6 +202,8 @@ The GPU worker is a standalone Python script (not a Django management command) t
    ORDER BY c.source_org_ein, c.content_sha256
    LIMIT 500
    ```
+   
+   **Concurrency safety:** The system runs a single worker at a time (one GPU instance). The orchestrator holds a `pg_advisory_lock(hashtext('docling-parse'))` for the duration of the run to prevent overlapping launches. If a second orchestrator attempt sees the lock held, it aborts with an error message. This is simpler than a claim table and sufficient for single-worker operation.
 3. **Downloads PDFs from S3** in parallel (prefetch next batch while processing current)
 4. **Parses with Docling:**
    ```python
@@ -209,7 +217,7 @@ The GPU worker is a standalone Python script (not a Django management command) t
    chunker = HierarchicalChunker()
    chunks = list(chunker.chunk(doc))
    ```
-5. **Extracts tables:** from `doc.tables` — each table yields structured row/col data
+5. **Extracts tables:** from `doc.tables` — each table yields structured row/col data. **Section linkage rule:** Each Docling table has a `prov` (provenance) field with page number and bounding box. The table is assigned to the section whose `page_start <= table.page <= page_end` and whose position in the document is closest preceding the table's position. If no section matches (e.g., table appears before any heading), `section_id = NULL`.
 6. **Writes to RDS:** batch INSERT into `documents`, `sections`, `tables`
 7. **Repeats** until no more unparsed documents match the priority filter
 
@@ -224,10 +232,13 @@ Options:
   --instance-type TEXT  EC2 instance type (default: 'g6.2xlarge')
   --spot               Use spot instance (default: true)
   --max-hours INT      Maximum runtime before auto-terminate (default: 12)
-  --batch-size INT     Documents per worker batch (default: 500)
+  --batch-size INT     Documents per work-queue fetch (default: 500)
   --dry-run            Show eligible count and cost estimate
   --status             Show progress of current/recent run
   --terminate          Terminate the GPU instance for this run
+  --retry-errors       Re-queue previously failed documents (deletes error rows first)
+  --reparse            Reparse all docs; use with --min-version to target old parses
+  --min-version TEXT   Only reparse docs parsed by versions older than this
 ```
 
 The orchestrator:
@@ -244,19 +255,46 @@ The orchestrator:
 - **Interruption handling:** Worker commits progress after every batch (500 docs). If spot instance is reclaimed, orchestrator detects termination and can relaunch — already-parsed docs are skipped (idempotent)
 - **Cost control:** `--max-hours` terminates after N hours regardless of completion state. Default 12 hours = ~$3.60 spot cost, parses ~88K pages
 
-### Idempotency
+### Idempotency & Retry Semantics
 
-- Documents already in `lava_parse.documents` are skipped (NOT IN subquery)
-- Partial failures: if a document fails parsing, INSERT into `documents` with `error` field set, `section_count=0`. Future re-runs skip it. Manual retry requires DELETE of the error record.
-- Tables and sections use UNIQUE constraints — duplicate inserts are rejected cleanly
+**Document states** (determined by `lava_parse.documents` row):
+- **No row:** Eligible for parsing
+- **Row with `error IS NULL`:** Successfully parsed. Skipped unless `--reparse` flag with newer `parse_version`.
+- **Row with `error IS NOT NULL`:** Failed. Eligible for retry via `--retry-errors` flag.
+
+**Failure classes:**
+- **Transient** (network timeout, S3 throttle, RDS connection loss): NOT recorded as document error. Worker retries 3× with backoff. If still failing, worker exits — orchestrator relaunches.
+- **Permanent** (corrupt PDF, Docling crash, empty output): recorded in `documents.error`. Skipped on normal re-runs. Retryable via `--retry-errors` which DELETEs the error row + its sections/tables, then requeues.
+
+**Parse-version upgrades:** When Docling is upgraded, operator can run with `--reparse --min-version <old_version>` to reparse documents parsed by an older version. This DELETEs the existing data (tables by SHA, then sections by SHA, then document row) and requeues for parsing. Only used for major Docling upgrades, not routine runs.
+
+**Retry/reparse deletion order:** Since `sections` has no FK to `documents` (TEXT reference only), cascading deletion is handled in application code:
+```sql
+DELETE FROM lava_parse.tables WHERE content_sha256 = :sha;
+DELETE FROM lava_parse.sections WHERE content_sha256 = :sha;
+DELETE FROM lava_parse.documents WHERE content_sha256 = :sha;
+```
+
+**S3 immutability assumption:** PDFs in S3 are never modified after upload (content-addressed by SHA256). If a PDF were replaced (impossible given SHA addressing), the parse would be stale — but this cannot happen by design.
+
+**Transaction model:** Each document is written atomically within a single transaction:
+```
+BEGIN;
+  INSERT INTO documents (...) VALUES (...);
+  INSERT INTO sections (...) VALUES (...), (...), ...;  -- all sections for this doc
+  INSERT INTO tables (...) VALUES (...), ...;           -- all tables for this doc
+COMMIT;
+```
+If the worker is killed mid-document, that document's transaction is rolled back. The document has no row in `documents` and will be picked up on next run. Progress is committed per-document (not per-batch of 500 — the batch size controls how many SHAs are fetched from the work queue at once, not the commit boundary).
 
 ### Error Handling
 
-- **PDF download failure:** Log error, skip document, record in `documents.error`
-- **Docling parse failure:** Catch exception, record in `documents.error`, continue with next doc
-- **RDS connection loss:** Retry with exponential backoff (3 attempts). If persistent, worker exits cleanly — orchestrator can relaunch
-- **Spot interruption:** Worker gets 2-minute warning via EC2 metadata. Commit current batch, exit. Orchestrator relaunches.
-- **Memory pressure:** If a PDF is extremely large (>500 pages), process it solo with reduced batch prefetch
+- **PDF download failure:** Transient — retry 3×. If still failing, record in `documents.error`, continue with next doc.
+- **Docling parse failure:** Permanent — catch exception, record in `documents.error`, continue with next doc.
+- **Empty/near-empty output:** If Docling produces 0 sections and 0 text, treat as permanent failure. Record `documents.error = 'empty_parse'` with `section_count=0, total_text_chars=0`. The document likely has no extractable text (image-only PDF without OCR, or a corrupt file).
+- **RDS connection loss:** Transient — retry with exponential backoff (3 attempts). If persistent, worker exits cleanly — orchestrator can relaunch.
+- **Spot interruption:** Worker gets 2-minute warning via EC2 metadata. Finish current document transaction, exit. Orchestrator relaunches.
+- **Memory pressure:** If a PDF is extremely large (>500 pages), process it solo with reduced batch prefetch.
 
 ### Bootstrap / AMI Strategy
 
@@ -278,7 +316,7 @@ Recommend Option A for production. Use Option B only during initial development/
 
 ### Schema
 - AC1: `lava_parse` schema exists with tables: `documents`, `sections`, `tables`, `parse_runs`
-- AC2: Tables have no cross-schema foreign keys (TEXT references only)
+- AC2: No foreign keys reference tables outside `lava_parse` (cross-schema refs are TEXT only). Intra-schema FKs (e.g., `tables.section_id → sections.id`) are allowed.
 - AC3: Schema can be dropped entirely without affecting Layer 1
 
 ### Worker
@@ -321,9 +359,13 @@ Recommend Option A for production. Use Option B only during initial development/
 
 ## Security Considerations
 
-- **IAM:** GPU instance needs same permissions as cloud2 (S3 GetObject on collaterals bucket, RDS IAM auth). Use same role or a minimal clone with only the required permissions.
-- **Network:** GPU instance in same VPC/subnet — no public exposure needed. RDS security group already allows internal-hosts.
-- **SSH:** Orchestrator SSHes to GPU instance for bootstrap/monitoring. Use EC2 Instance Connect or Tailscale (already deployed) — no persistent SSH keys.
+- **IAM:** GPU instance gets a dedicated instance profile (`docling_worker`) with least-privilege permissions:
+  - `s3:GetObject` on `arn:aws:s3:::lavandula-nonprofit-collaterals/pdfs/*` (read PDFs only)
+  - `rds-db:connect` for `research_app` user on `db-NAMZ7DUPILQKINJANPKHMXEXDU`
+  - `ssm:GetParameter` on `/cloud2.lavandulagroup.com/rds-*` (connection config only)
+  - No S3 write, no EC2 describe, no IAM access
+- **Network:** GPU instance in same VPC/subnet (`subnet-0e2008e48d602e945`, us-east-1a) — no public IP needed. RDS security group already allows `internal-hosts`.
+- **SSH:** Orchestrator connects to GPU instance via **EC2 Instance Connect** (push ephemeral key, no persistent SSH keys stored). Tailscale is not installed on the GPU instance — it's ephemeral and doesn't need mesh membership.
 - **Data in transit:** S3 downloads over HTTPS. RDS connection uses TLS 1.2+ (IAM auth requires it). No sensitive data leaves the VPC.
 - **Data at rest:** RDS encrypted (AES-256, aws/rds key). Parsed text is derived from publicly-available PDFs — same sensitivity as existing `pages_text`.
 - **Spot termination:** No data loss — all results committed to RDS per-batch. Temporary PDF files on instance disk are ephemeral.
