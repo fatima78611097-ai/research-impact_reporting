@@ -697,7 +697,7 @@ projects:
   - id: "0046"
     title: "Docling Full-Document Parsing"
     summary: "GPU-accelerated structured text extraction from corpus PDFs via Docling. Produces section-labeled, table-aware, full-document text that feeds the NLP vocabulary extraction pipeline. Prerequisite for all Layer 2 work."
-    status: specified
+    status: implementing
     priority: high
     files:
       spec: locard/specs/0046-docling-parsing.md
