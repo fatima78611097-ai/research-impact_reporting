@@ -35,7 +35,7 @@ Docling (MIT-licensed, IBM Research) provides GPU-accelerated structured documen
 
 ### Infrastructure
 
-- **GPU instance:** G6.2xlarge (1× NVIDIA L4, 24 GiB VRAM, 8 vCPU, 32 GiB RAM) — spot pricing ~$0.30/hr in us-east-1
+- **GPU instance:** G6.2xlarge (1× NVIDIA L4, 24 GiB VRAM, 8 vCPU, 32 GiB RAM) — spot pricing ~$0.60/hr in us-east-1 (checked 2026-05-16, range $0.57–0.68)
 - **Source:** S3 `lavandula-nonprofit-collaterals/pdfs/{sha256}.pdf` (186,051 objects, 579.7 GiB)
 - **Target:** RDS PostgreSQL (`lava_prod1` on `lava-1.czahqlvmtyh8.us-east-1.rds.amazonaws.com`)
 - **Orchestration host:** cloud2 (t3.large) — starts/stops spot instance, monitors progress
@@ -64,8 +64,8 @@ Docling (MIT-licensed, IBM Research) provides GPU-accelerated structured documen
 ### Cost Estimate
 
 - **Pages:** ~5.6M pages × 0.49 sec/page = ~2.7M seconds = ~760 GPU-hours
-- **Spot rate:** G6.2xlarge at ~$0.30/hr spot = **~$230** for full corpus
-- **Priority batch (annual/impact, ~30K docs):** ~900K pages × 0.49s = ~125 GPU-hours = **~$38**
+- **Spot rate:** G6.2xlarge at ~$0.60/hr spot = **~$456** for full corpus
+- **Priority batch (annual/impact, ~30K docs):** ~900K pages × 0.49s = ~125 GPU-hours = **~$75**
 - **Storage:** Structured text averages 2-3× raw text size. 186K docs × ~100 KiB structured output = ~18 GiB in RDS (within auto-scale limits)
 
 ### Priority Order
@@ -255,7 +255,7 @@ The orchestrator:
 
 - **Launch template:** Pre-configured with AMI (Ubuntu 22.04 + NVIDIA drivers + CUDA), security group (`internal-hosts`), IAM instance profile, and user-data bootstrap script
 - **Interruption handling:** Worker commits progress after every batch (500 docs). If spot instance is reclaimed, orchestrator detects termination and can relaunch — already-parsed docs are skipped (idempotent)
-- **Cost control:** `--max-hours` terminates after N hours regardless of completion state. Default 12 hours = ~$3.60 spot cost, parses ~88K pages
+- **Cost control:** `--max-hours` terminates after N hours regardless of completion state. Default 12 hours = ~$7.20 spot cost, parses ~88K pages
 
 ### Idempotency & Retry Semantics
 
