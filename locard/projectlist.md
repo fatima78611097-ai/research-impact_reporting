@@ -681,9 +681,22 @@ projects:
     tags: [dashboard, ui, corpus, document-viewer, search]
     notes: "Prerequisite for Layer 2 vocabulary extraction — need to browse and understand the corpus before building extraction pipelines."
 
+  - id: "0045"
+    title: "Vocabulary Extraction & Archetype Discovery — Pilot"
+    summary: "Production-quality vocabulary extraction pipeline scoped to P20 (Human Services, ~1,400 docs). LLM extracts domain-specific terms, Market Basket Analysis (FP-Growth + lift scoring) discovers sub-archetypes. Schema designed for full-corpus scale but populated with one vertical as proof-of-concept."
+    status: conceived
+    priority: high
+    files:
+      spec: locard/specs/0045-vocabulary-extraction-pilot.md
+      plan: null
+      review: null
+    dependencies: ["0035", "0038"]
+    tags: [layer-2, vocabulary, extraction, archetype, mba, pilot]
+    notes: "Validated by Spike 001 (PASS — 4 archetypes, lift 2.9-6.45 from 75 docs). Production design, pilot scope. If favorable: widen to full corpus. Cost: ~$1.70 for pilot extraction."
+
 ## Next Available Number
 
-**0045** - Reserve this number for your next project
+**0046** - Reserve this number for your next project
 
 ---
 
