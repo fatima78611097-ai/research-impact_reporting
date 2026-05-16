@@ -16,7 +16,7 @@ Spike 001 proved this is extractable via LLM + Market Basket Analysis on a 75-do
 
 1. **Production schema** — tables designed for the full corpus but populated with one vertical
 2. **Credible extraction** — structured, repeatable, with provenance back to source text
-3. **Archetype discovery** — Market Basket Analysis (FP-Growth + lift) reveals sub-archetypes within P20
+3. **Archetype discovery** — hierarchical clustering discovers sub-archetypes; FP-Growth + lift scoring characterizes them
 4. **Reusable pipeline** — same code runs on any NTEE vertical without modification
 5. **Clean separation** — Layer 2 tables in their own schema, no mutation of Layer 1 data
 
@@ -120,7 +120,7 @@ CREATE TABLE lava_vocab.archetype_members (
     id SERIAL PRIMARY KEY,
     archetype_id INT NOT NULL REFERENCES lava_vocab.archetypes(id),
     source_org_ein TEXT NOT NULL,
-    membership_strength REAL,            -- cosine similarity to cluster centroid
+    membership_strength REAL,            -- NULL for pilot; future: cosine similarity metric
     UNIQUE(archetype_id, source_org_ein)
 );
 
@@ -243,14 +243,21 @@ Documents flagged as 990s are skipped and logged (useful for improving Layer 1 c
    - Reject observations with confidence < 0.5
    - Insert into `lava_vocab.observations`
 
-5. **Checkpoint:** After each batch, update `extraction_runs.stats_json` with progress. Support `--resume` via cursor in `config_json`.
+5. **Checkpoint:** After each batch, update `extraction_runs.stats_json` with progress and store the last processed `content_sha256` in `config_json.cursor`. The extraction query has a deterministic sort order (`source_org_ein, report_year DESC, content_sha256`), so `--resume` adds `WHERE content_sha256 > :cursor` to skip already-processed docs. SHA256 is a unique, deterministic tie-breaker.
+
+**Page number extraction:** `pages_text` from Spec 0035's `classification_context` table contains `--- PAGE N ---` markers between pages. The extraction prompt asks for page numbers; the model reads them from these markers. If a term's page is not identifiable (marker absent or ambiguous), store `page_number = NULL`.
+
+**Multiple reports per org:** All reports for an org are extracted independently. The analysis phase unions terms across reports at the org level (one vector per org, not per document).
 
 **Error handling:**
-- DeepSeek timeout/error: retry once, then skip document and log
-- JSON parse failure: skip document, log raw response for debugging
+- DeepSeek timeout/error: retry once, then skip document and log to `extraction_runs.stats_json.errors[]` (content_sha256 + error message only — no raw response stored)
+- JSON parse failure: skip document, log SHA + first 200 chars of response to stats_json (truncated, no PII retention)
 - Batch failures don't abort the run — continue with next batch
+- Total error count tracked in `stats_json.error_count`
 
 **Rate limiting:** Same pattern as `reclassify_corpus` — track request timestamps, enforce 60 RPM ceiling per worker.
+
+**PII consideration:** Source documents are published annual/impact reports (public documents). No redaction required. Evidence spans are limited to 150 chars of text that's already in the public PDF.
 
 ### Analysis Pipeline
 
@@ -265,37 +272,54 @@ Options:
   --min-lift FLOAT      Minimum lift for association rules (default: 1.5)
   --k INT               Number of clusters for archetype discovery (default: auto)
   --min-org-count INT   Minimum orgs for a term to be included (default: 3)
+  --seed INT            Random seed for reproducibility (default: 42)
 ```
+
+**Two complementary analyses** (both stored, serving different purposes):
+
+| Analysis | Method | Output | Purpose |
+|----------|--------|--------|---------|
+| Archetype discovery | Hierarchical clustering | Org → archetype assignment | "What kinds of orgs exist in P20?" |
+| Archetype characterization | FP-Growth per archetype | Association rules with lift | "What vocabulary defines each archetype?" |
+
+Clustering answers "who groups together." MBA answers "what makes each group distinctive."
 
 **Steps:**
 
 1. **Build term frequency matrix:**
-   - Group observations by org (one row per org)
+   - Group observations by org — union of terms across ALL reports for that org (multiple reports per org contribute to the same row)
    - Terms must appear in `--min-org-count` orgs to be included (noise filter)
    - Binary presence matrix (term appears/doesn't appear for this org)
 
-2. **FP-Growth for frequent itemsets:**
-   - Use `mlxtend.frequent_patterns.fpgrowth` (or `efficient-apriori`)
-   - `min_support` threshold filters rare combinations
-   - Generate association rules with lift, confidence, conviction
-
-3. **Hierarchical clustering for archetype discovery:**
+2. **Hierarchical clustering for archetype discovery:**
    - Cosine distance on TF-normalized term vectors
-   - Ward linkage (same as spike)
+   - Complete linkage (appropriate for cosine distance; Ward assumes Euclidean)
    - Auto-select k via silhouette score if `--k auto`, else use provided k
    - Assign orgs to clusters
+   - Fixed random seed (`--seed`) ensures deterministic results under same inputs
+
+3. **Per-archetype FP-Growth:**
+   - For each cluster, subset the binary matrix to just that cluster's orgs
+   - Run FP-Growth (`mlxtend.frequent_patterns.fpgrowth`) on the subset
+   - Generate association rules with support, confidence, lift, conviction
+   - Rules are per-archetype (not global) — they describe vocabulary co-occurrence within a specific org type
 
 4. **Per-archetype lift scoring:**
-   - For each cluster, compute lift of every term relative to population
+   - For each cluster, compute lift of every term relative to full population
    - Terms with lift > 2.0 are archetype-specific
    - Terms with lift > 3.0 are definitional
 
-5. **Store results:**
+5. **Archetype labeling (heuristic):**
+   - Auto-label = top 2 terms by lift, joined with " + " (e.g., "food_pantry + nutrition")
+   - Stored in `archetypes.label` as initial label
+   - Can be manually overridden post-analysis (the label is descriptive, not structural)
+
+6. **Store results:**
    - Insert archetypes into `lava_vocab.archetypes`
-   - Insert org memberships into `lava_vocab.archetype_members`
+   - Insert org memberships into `lava_vocab.archetype_members` (membership_strength = NULL for pilot; future phases may compute centroid similarity)
    - Insert association rules into `lava_vocab.association_rules`
 
-6. **Generate report:** Print summary to stdout (archetype labels, top terms, lift scores, org examples) — same format as spike's CONCLUSION.md output.
+7. **Generate report:** Print summary to stdout (archetype labels, top terms, lift scores, org examples) — same format as spike's CONCLUSION.md output.
 
 ### 990 Contamination Report
 
@@ -310,7 +334,7 @@ This data can later feed back into Layer 1 to fix misclassifications (but that's
 ## Acceptance Criteria
 
 ### Schema
-- AC1: `lava_vocab` schema exists with all 5 tables and indexes
+- AC1: `lava_vocab` schema exists with tables: `extraction_runs`, `observations`, `archetypes`, `archetype_members`, `association_rules` — plus all defined indexes
 - AC2: Tables have no foreign key constraints to other schemas (TEXT references only)
 - AC3: Schema can be dropped entirely without affecting Layer 1 tables
 
@@ -324,7 +348,7 @@ This data can later feed back into Layer 1 to fix misclassifications (but that's
 - AC10: Observations with confidence < 0.5 are rejected
 - AC11: Run metadata (config, model, prompt version, timing, stats) stored in `extraction_runs`
 - AC12: `--resume` flag allows continuing from last checkpoint after interruption
-- AC13: `--dry-run` shows eligible document count and estimated cost without extracting
+- AC13: `--dry-run` shows eligible document count (after 990 filter) and estimated cost (count × $0.0012) without extracting
 - AC14: Rate limiting enforces ≤60 RPM per worker
 - AC15: Individual document failures don't abort the run
 
@@ -337,12 +361,15 @@ This data can later feed back into Layer 1 to fix misclassifications (but that's
 - AC21: Results stored in `archetypes`, `archetype_members`, and `association_rules` tables
 - AC22: Summary report printed to stdout with: archetype labels, org counts, top terms by lift, example orgs
 
-### Quality Gates
-- AC23: Average unique terms per org ≥ 15 (up from spike's 9.5, due to pages_text)
-- AC24: At least 5 distinct archetypes emerge with 3+ orgs each
-- AC25: Each archetype has at least 3 terms with lift > 2.0
-- AC26: Manual inspection of top 3 archetypes confirms they map to recognizable org types
-- AC27: Cost per document stays below $0.002 (budget: ~$2.85 for 1,426 docs)
+### Pilot Success Metrics (not build gates)
+
+These measure whether the approach works, not whether the code is correct. A correct implementation may fail these if the corpus doesn't contain the expected signal. Evaluate after the pilot run.
+
+- SM1: Average unique terms per org ≥ 15 (up from spike's 9.5, due to pages_text)
+- SM2: At least 5 distinct archetypes emerge with 3+ orgs each
+- SM3: Each archetype has at least 3 terms with lift > 2.0
+- SM4: Manual inspection of top 3 archetypes confirms they map to recognizable org types
+- SM5: Cost per document stays below $0.002 (budget: ~$2.85 for 1,426 docs)
 
 ### Operational
 - AC28: Extraction prompt stored in a versioned file (not hardcoded in Python)
@@ -376,14 +403,15 @@ For P20 pilot (~1,426 docs):
 - Integration test: mock DeepSeek response → observations in database
 - Integration test: observations in database → FP-Growth → archetypes in database
 - Unit tests for analysis pipeline (min_support filtering, lift calculation, cluster assignment)
-- Test that `--resume` correctly continues from checkpoint
+- Test that `--resume` correctly continues from checkpoint without duplicating
 - Test that `--dry-run` doesn't write any data
+- **Reproducibility:** analysis tests use a fixed `--seed` and assert deterministic output given the same observation input. Clustering and FP-Growth are deterministic under fixed inputs + fixed random seed.
 
 ## Traps to Avoid
 
 1. **Don't pre-define concept categories in the analysis.** The spike proved that hand-curated categories capture only 32% of observations. Let FP-Growth discover what clusters together.
 2. **Don't normalize terms aggressively.** "Food pantry" and "food bank" are different terms that may co-occur. Aggressive stemming/lemmatization destroys signal. Keep exact phrases, let MBA find co-occurrence.
-3. **Don't use the V2 classification column for filtering.** Use V2's `classification IN ('annual', 'impact')` for the pilot (it covers the full corpus), but note that V3's `material_type` is more accurate where available.
+3. **V2 classification is acceptable for the pilot filter.** `classification IN ('annual', 'impact')` covers the full corpus and is good enough for selecting the pilot set. V3's `material_type` is more accurate but only covers ~28K docs so far. When scaling beyond the pilot, switch to V3 `material_type IN ('annual_report', 'impact_report')` for states that have been reclassified.
 4. **Don't build a dashboard yet.** The analysis output is a printed report + database tables. UI comes after validating the approach works at scale.
 5. **Don't try to embed or vectorize observations in this spec.** That's a future phase. Raw term co-occurrence via MBA is the validated approach.
 6. **Don't merge observation tables with Layer 1 corpus tables.** Clean schema separation means we can iterate (or even drop and rebuild) without risk.
