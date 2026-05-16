@@ -29,6 +29,7 @@ from sqlalchemy import text
 from lavandula.common.db import make_app_engine
 from lavandula.nonprofits.definition_loader import load_definition, resolve_definition_name
 from lavandula.nonprofits.prefilter import RuleEngine
+from lavandula.pipeline_protocol import emit_progress
 from lavandula.reports.classify import (
     ClassificationResult,
     ClassifierError,
@@ -426,6 +427,8 @@ class Command(BaseCommand):
                     if not quiet:
                         self._print_progress(batch_num, stats, total_eligible,
                                              batch_times, allow_fallback)
+
+                    emit_progress(current=stats["total"], total=total_eligible)
 
                     if sample and stats["total"] >= sample:
                         break
