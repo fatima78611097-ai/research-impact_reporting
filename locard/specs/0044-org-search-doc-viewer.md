@@ -83,8 +83,8 @@ The `source_url_redacted` basename can serve as a secondary identifier (e.g., `2
 Add a `filter_name` parameter to `OrgListView.get_queryset()`:
 
 ```python
-name = self.request.GET.get("name", "").strip()
-if name:
+name = self.request.GET.get("name", "").strip()[:100]
+if len(name) >= 2:
     qs = qs.filter(name__icontains=name)
 ```
 
@@ -230,7 +230,7 @@ The search panel makes the viewer a self-contained browsing tool — operators c
 ## Acceptance Criteria
 
 ### Part 1: Org Name Search
-- AC1: Org list page has a "Name" text input that filters by partial name match (case-insensitive)
+- AC1: Org list page has a "Name" text input that filters by partial name match (case-insensitive, minimum 2 characters)
 - AC2: Name filter composes with existing filters (state, EIN, status, method)
 - AC3: Clearing the name field shows all orgs (no filter)
 - AC4: Filter values persist across pagination
@@ -278,12 +278,14 @@ The search panel makes the viewer a self-contained browsing tool — operators c
 ## Security Considerations
 
 - All views require authentication (LoginRequiredMixin), including the HTMX search partial
+- **Authorization model:** This is a single-operator dashboard — all authenticated users may view all documents. There are no role-based document restrictions. If multi-user access is added later, object-level permissions would be needed.
 - S3 presigned URLs are time-limited (15 min) and scoped to a single object
-- Name search uses Django ORM `icontains` (parameterized query, no SQL injection)
+- **Audit logging:** Log document view events (`logger.info` with user ID and content_sha256) when `DocumentViewerView` generates a presigned URL. This provides an application-level audit trail for document access.
+- Name search uses Django ORM `icontains` (parameterized query, no SQL injection). Minimum 2-character input required to prevent broad single-char queries.
 - PDF rendered in `<iframe>` with S3 presigned URL — browser isolates the cross-origin content. No explicit CSP changes needed since the iframe src is a signed AWS URL, not user-controlled
 - No user-supplied content rendered as HTML (XSS-safe)
-- `return_to` parameter: must be validated as a relative URL (starts with `/`) to prevent open-redirect attacks. Reject absolute URLs or URLs with `://`
-- `source_url_redacted` is displayed as plain text (not a clickable link) — safe for display; URL tokens are already stripped by the crawler
+- `return_to` parameter: must be validated as a relative URL (starts with `/dashboard/`) to prevent open-redirect attacks. Reject absolute URLs or URLs with `://`
+- `source_url_redacted` is displayed as plain text (not a clickable link), truncated to 80 chars in display — safe for display; URL tokens are already stripped by the crawler
 
 ## Testing Requirements
 
