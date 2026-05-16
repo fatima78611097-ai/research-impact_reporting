@@ -55,8 +55,11 @@ lavandula/
 
 1.1. Write SQL migration `lavandula/migrations/vocab/001_create_lava_vocab_schema.sql`:
    - `CREATE SCHEMA IF NOT EXISTS lava_vocab`
-   - All 5 tables exactly as specified
-   - All indexes
+   - All 5 tables exactly as specified: `extraction_runs`, `observations`, `archetypes`, `archetype_members`, `association_rules`
+   - All 6 indexes as specified
+   - UNIQUE constraint on `archetype_members(archetype_id, source_org_ein)`
+   - No cross-schema foreign keys (only TEXT references to `content_sha256` / `source_org_ein`)
+   - All timestamp columns use `TIMESTAMPTZ` (UTC)
    - `GRANT USAGE ON SCHEMA lava_vocab TO research_app`
    - `GRANT ALL ON ALL TABLES IN SCHEMA lava_vocab TO research_app`
    - `GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA lava_vocab TO research_app`
@@ -66,16 +69,9 @@ lavandula/
    - `lavandula/vocab/prompts/` directory
    - `lavandula/vocab/prompts/v1_extract.txt` (extraction prompt from spec)
 
-1.3. Install Python dependencies on cloud2:
-   - `pip3 install --user mlxtend scikit-learn`
-   - Verify: `python3 -c "from mlxtend.frequent_patterns import fpgrowth; print('ok')"`
+**Note:** Package installation (`mlxtend`, `scikit-learn`) and migration execution are **operator steps** (see bottom of plan), not builder steps. Builder writes the migration file and code; operator applies to production.
 
-1.4. Apply migration to RDS:
-   - `psql` with research_app credentials
-   - Run the DDL script
-   - Verify: `\dt lava_vocab.*`
-
-**Acceptance:** Schema exists, prompt file exists, imports work.
+**Acceptance:** Migration SQL file exists, module structure exists, prompt file exists.
 
 ### Phase 2: Extraction Core (2 hours)
 
@@ -92,6 +88,7 @@ import hashlib
 _RUN_TAG_RE = re.compile(r'^[a-zA-Z0-9_-]{1,64}$')
 _NTEE_RE = re.compile(r'^[A-Z][0-9]*%?$')
 _VALID_CATEGORIES = frozenset(['stakeholder', 'metric', 'outcome', 'program', 'methodology'])
+_VALID_MATERIALS = frozenset(['annual', 'impact'])  # V2 classification values
 _990_MARKERS = [
     "return of organization exempt from income tax",
     "form 990",
@@ -103,17 +100,28 @@ MAX_TEXT_LEN = 32_000
 
 def validate_run_tag(tag: str) -> str: ...
 def validate_ntee(ntee: str) -> str: ...
+def validate_materials(materials: list[str]) -> list[str]: ...
 def is_990(pages_text: str) -> bool: ...
+def is_990_structured(pages_text: str) -> dict | None:
+    """Returns structured 990 record or None: {type, content_sha256, source_org_ein, marker}"""
+    ...
 def validate_observation(obs: dict) -> dict | None: ...
 def dedup_observations(observations: list[dict]) -> list[dict]: ...
-def truncate_text(pages_text: str) -> str: ...
+def cap_observations(observations: list[dict], max_n=MAX_OBS_PER_DOC) -> list[dict]:
+    """Keep top max_n by confidence. Log if capped."""
+    ...
+def truncate_text(pages_text: str) -> tuple[str, bool]: ...
 def prompt_sha256(prompt_path: Path) -> str: ...
 ```
 
 Key validations:
-- `validate_observation`: check term length (3-60), confidence ≥ 0.5, category in allowed set, evidence_span truncated to 150 chars
+- `validate_run_tag`: regex match `^[a-zA-Z0-9_-]{1,64}$`, raise CommandError if invalid
+- `validate_materials`: each value must be in `_VALID_MATERIALS`, raise CommandError if invalid
+- `validate_observation`: check term length (3-60), confidence ≥ 0.5, category in `_VALID_CATEGORIES` (reject if not), evidence_span truncated to 150 chars
 - `dedup_observations`: group by (content_sha256, term), keep highest confidence
-- `truncate_text`: cap at MAX_TEXT_LEN chars, log warning if truncated
+- `cap_observations`: sort by confidence DESC, keep top 100
+- `truncate_text`: cap at MAX_TEXT_LEN chars, return (text, was_truncated) for logging
+- `is_990_structured`: returns `{"type": "990_contamination", "content_sha256": ..., "source_org_ein": ..., "marker": ...}` for structured logging in `stats_json.contamination_990[]`
 
 2.2. Write `lavandula/vocab/extraction.py`:
 
@@ -151,13 +159,14 @@ Structure follows `reclassify_corpus.py` pattern:
 - `_extract_one()`: call extraction.extract_one, validate, store
 
 Key implementation details:
-- Advisory lock keyed on `f"vocab-extract-{run_tag}"` (prevent duplicate runs)
-- Eligible doc query as specified (JOIN corpus + classification_context + nonprofits_seed)
-- Resume: store last `content_sha256` in `config_json.cursor`; on resume, add `AND c.content_sha256 > :cursor` with same ORDER BY
-- Rate limiting: sliding window per worker (same as reclassify_corpus)
-- Dry-run: execute count query + 990 pre-filter estimate, print count and cost, exit
-- Stats tracking: `stats_json = {total, extracted, skipped_990, errors: [], error_count}`
-- Progress: emit to fd 3 via `emit_progress()` for dashboard integration
+- **Advisory lock:** `pg_try_advisory_lock(hashtext('vocab-extract-{run_tag}'))` — same `hashtext()` pattern as reclassify_corpus. Single integer lock via `hashtext`.
+- **Eligible doc query:** as specified (JOIN corpus + classification_context + nonprofits_seed)
+- **Resume:** On `--resume`, query `SELECT DISTINCT content_sha256 FROM lava_vocab.observations WHERE run_id = :run_id` to get already-processed SHAs. Add `AND c.content_sha256 NOT IN (:processed)` to eligible query. For 1,400 docs this set is small and efficient. This approach is order-independent and handles partial batch failures correctly (no duplicate observations).
+- **Rate limiting:** sliding window per worker (same as reclassify_corpus)
+- **Dry-run:** Execute eligible doc query (same JOINs + filters), then scan first 500 chars of each doc's `pages_text` to count 990 hits. Report: `{eligible} total - {990_count} contaminated = {extractable} docs × $0.0012 = ${cost}`. For 1,400 docs this scan is fast (~2s on RDS).
+- **Stats tracking:** `stats_json = {total, extracted, skipped_990, contamination_990: [{type, sha, ein, marker}...], truncated_text: N, capped_observations: N, errors: [{sha, message}...], error_count}`
+- **Metadata lifecycle (AC11/AC29):** At run start: INSERT `extraction_runs` with `extractor_version = prompt_sha256(prompt_path)`, model name, config (ntee, materials, workers, batch_size, min_text_len). At run end (or on failure): UPDATE `finished_at = now()` and final `stats_json`.
+- **Progress:** emit to fd 3 via `emit_progress()` for dashboard integration
 
 3.2. Wire up database operations:
 - Use Django's `connections['default'].cursor()` for raw SQL INSERT (observations table is not a Django model — it's in a separate schema)
@@ -179,22 +188,34 @@ Key implementation details:
 4.1. Write `lavandula/vocab/analysis.py`:
 
 ```python
-def build_term_matrix(observations, min_org_count=3) -> tuple[np.ndarray, list[str], list[str]]:
-    """Returns (binary_matrix, org_eins, term_list)"""
+def build_term_matrix(observations, min_org_count=3) -> tuple[np.ndarray, np.ndarray, list[str], list[str]]:
+    """Returns (count_matrix, tf_normalized_matrix, org_eins, term_list)
+    
+    count_matrix: raw term counts per org (for FP-Growth binary conversion)
+    tf_normalized_matrix: row-normalized (for clustering via cosine distance)
+    """
     ...
 
-def cluster_orgs(matrix, k='auto', seed=42) -> tuple[np.ndarray, int]:
-    """Returns (labels, selected_k)"""
+def cluster_orgs(tf_matrix, k='auto', seed=42) -> tuple[np.ndarray, int, dict]:
+    """Returns (labels, selected_k, silhouette_scores)
+    
+    Uses TF-normalized matrix with cosine distance + complete linkage.
+    """
     # Complete linkage on cosine distance
     # Auto-k via silhouette score (range 4-20)
     ...
 
-def compute_lift(matrix, labels, terms) -> dict[int, list[tuple[str, float]]]:
-    """Per-cluster lift for each term relative to full population."""
+def compute_lift(count_matrix, labels, terms) -> dict[int, list[tuple[str, float]]]:
+    """Per-cluster lift for each term relative to full population.
+    Uses binary presence (count > 0) for lift calculation."""
     ...
 
-def run_fpgrowth_per_cluster(matrix, labels, orgs, terms, min_support=0.05, min_lift=1.5):
-    """Returns dict[cluster_id, DataFrame of rules]"""
+def run_fpgrowth_per_cluster(count_matrix, labels, orgs, terms, min_support=0.05, min_lift=1.5):
+    """Returns dict[cluster_id, DataFrame of rules]
+    
+    Converts count_matrix to binary (presence/absence) for FP-Growth.
+    FP-Growth operates on binary transactions, not counts.
+    """
     ...
 
 def label_archetypes(lift_scores: dict) -> dict[int, str]:
@@ -203,10 +224,10 @@ def label_archetypes(lift_scores: dict) -> dict[int, str]:
 ```
 
 4.2. Key implementation notes:
-- `build_term_matrix`: group observations by `source_org_ein`, create binary term presence matrix, filter terms below min_org_count
-- `cluster_orgs`: use `scipy.spatial.distance.pdist(matrix, 'cosine')` → `scipy.cluster.hierarchy.linkage(distances, method='complete')` → `fcluster(Z, t=k, criterion='maxclust')`. For auto-k, iterate k=4..20, compute silhouette score, pick max.
-- `run_fpgrowth_per_cluster`: for each cluster, subset matrix, convert to DataFrame, run `mlxtend.frequent_patterns.fpgrowth`, then `association_rules` with metric='lift'
-- Deterministic: `np.random.seed(seed)` at start (silhouette tie-breaking)
+- `build_term_matrix`: group observations by `source_org_ein` (union across all reports for the org), count term occurrences per org. Filter terms appearing in fewer than `min_org_count` orgs. Return BOTH raw count matrix AND TF-normalized matrix (row_counts / row_sum). Clustering uses TF-normalized; FP-Growth uses binary (count > 0).
+- `cluster_orgs`: takes TF-normalized matrix. Use `scipy.spatial.distance.pdist(tf_matrix, 'cosine')` → `scipy.cluster.hierarchy.linkage(distances, method='complete')` → `fcluster(Z, t=k, criterion='maxclust')`. For auto-k, iterate k=4..20, compute silhouette score on cosine metric, pick max. Return all silhouette scores for reporting.
+- `run_fpgrowth_per_cluster`: for each cluster, subset the count matrix to that cluster's rows, convert to binary DataFrame (>0 → True), run `mlxtend.frequent_patterns.fpgrowth`, then `association_rules` with metric='lift'
+- Deterministic: `np.random.seed(seed)` at start. Hierarchical clustering + FP-Growth are deterministic given same input; silhouette score uses precomputed distances (no randomness). Output is fully reproducible under same seed + same observations.
 
 4.3. Write unit tests:
 - `test_analysis.py`: fixed 10-org × 8-term matrix → verify clustering is deterministic with same seed, verify lift calculation matches manual computation, verify FP-Growth output format
