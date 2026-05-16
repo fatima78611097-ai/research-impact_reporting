@@ -437,7 +437,7 @@ class Command(BaseCommand):
         database = get_secret("rds-database")
 
         worker_cmd = (
-            f"python -m lavandula.parse.worker "
+            f"/opt/docling/bin/python -m lavandula.parse.worker "
             f"--run-id {run_id} "
             f"--host {host} "
             f"--port {port} "
@@ -446,15 +446,24 @@ class Command(BaseCommand):
             f"--batch-size {options['batch_size']}"
         )
 
-        # Use SSM send-command to start worker as a background process
+        # Deploy worker code and start as a background process
         ssm = boto3.client("ssm", region_name="us-east-1")
+
+        # Step 1: Deploy code from S3
+        deploy_commands = [
+            "#!/bin/bash",
+            "set -ex",
+            "cd /opt/docling",
+            "aws s3 cp s3://lavandula-nonprofit-collaterals/deploy/worker-code.tar.gz /tmp/worker-code.tar.gz",
+            "tar -xzf /tmp/worker-code.tar.gz -C /opt/docling/lib/python3.10/site-packages/",
+            f"nohup {worker_cmd} > /var/log/docling-worker.log 2>&1 &",
+        ]
+
         ssm.send_command(
             InstanceIds=[instance_id],
             DocumentName="AWS-RunShellScript",
             Parameters={
-                "commands": [
-                    f"nohup {worker_cmd} > /var/log/docling-worker.log 2>&1 &",
-                ]
+                "commands": deploy_commands,
             },
         )
         self.stdout.write(f"Worker started via SSM on {instance_id}\n")
