@@ -448,3 +448,14 @@ Phases E and F can be implemented in parallel (both depend on D).
 4. Don't process orgs that already have healthy corpus in Pass 2
 5. Don't skip rate limiting for recovery passes
 6. Don't forget to thread `is_pdf_candidate` through BOTH sync and async HTTP clients
+
+---
+
+## Consultation Log
+
+| Date | Type | Model | Verdict | Key Feedback |
+|------|------|-------|---------|-------------|
+| 2026-05-16 | plan-review | gemini | APPROVE | No issues found |
+| 2026-05-16 | red-team-plan | gemini | REQUEST_CHANGES | CRITICAL: SQL injection risk; HIGH: TLS config |
+
+All findings addressed: explicit parameterized queries, input validation on state-filter, TLS enforcement documented, two-tier mismatch thresholds.

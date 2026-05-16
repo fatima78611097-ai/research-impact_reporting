@@ -309,3 +309,14 @@ Add `cross_origin_candidate: bool` to the candidate dataclass/dict. This flag:
 3. **Don't re-fetch already-successful URLs**: Pass 1 must check `fetch_log` for existing success rows before re-fetching.
 4. **Don't process non-PDF orgs in Pass 2**: Only target orgs with zero PDFs or only cross_origin_blocked PDFs — don't re-scan orgs that already have a healthy corpus.
 5. **Don't skip rate limiting for recovery passes**: CDN or not, respect per-domain delays.
+
+---
+
+## Consultation Log
+
+| Date | Type | Model | Verdict | Key Feedback |
+|------|------|-------|---------|-------------|
+| 2026-05-16 | spec-review | gemini | COMMENT | Clarify logging for non-PDF cross-origin drops |
+| 2026-05-16 | red-team-spec | gemini | REQUEST_CHANGES | CRITICAL: redirect hops too permissive; HIGH: mismatch resource exhaustion, logging escalation |
+
+All findings addressed: bounded unknown hops (MAX_UNKNOWN_HOPS=2), two-tier mismatch throttling, escalating log levels, mandatory caps on recovery commands.
