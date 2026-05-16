@@ -47,6 +47,8 @@ class Command(BaseCommand):
         parser.add_argument("--dry-run", action="store_true")
         parser.add_argument("--status", action="store_true")
         parser.add_argument("--terminate", action="store_true")
+        parser.add_argument("--max-docs", type=int, default=None,
+                            help="Hard cap on documents to process (passed to worker)")
         parser.add_argument("--retry-errors", action="store_true")
         parser.add_argument("--reparse", action="store_true")
         parser.add_argument("--min-version", type=str)
@@ -436,6 +438,7 @@ class Command(BaseCommand):
         port = get_secret("rds-port")
         database = get_secret("rds-database")
 
+        max_docs_flag = f" --max-docs {options['max_docs']}" if options["max_docs"] else ""
         worker_cmd = (
             f"/opt/docling/bin/python -m lavandula.parse.worker "
             f"--run-id {run_id} "
@@ -444,6 +447,7 @@ class Command(BaseCommand):
             f"--database {database} "
             f"--priority {','.join(priority)} "
             f"--batch-size {options['batch_size']}"
+            f"{max_docs_flag}"
         )
 
         # Deploy worker code and start as a background process
