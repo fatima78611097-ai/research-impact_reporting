@@ -424,3 +424,13 @@ Terminate any running GPU instance. No other system affected.
 4. **Don't parse everything at once** — prioritize annual/impact reports. Layer 2 needs those first. Parse the rest incrementally.
 5. **Don't depend on OCR for the first pass** — most crawled PDFs are digital. Disabling OCR saves ~60% runtime. Handle the scanned subset separately after validating the pipeline works.
 6. **Don't create a Django model for lava_parse** — same pattern as other lava_* schemas. Raw SQL via psycopg2. The worker runs outside Django anyway.
+
+## Consultation Log
+
+| Round | Model | Type | Verdict | Key Findings |
+|-------|-------|------|---------|--------------|
+| 1 | Gemini | spec-review | COMMENT | Minor AC2 clarification (intra-schema FKs allowed) |
+| 2 | Codex | spec-review | REQUEST_CHANGES | 6 issues: failure semantics, work-claiming, transaction model, parse-version, table linkage, IAM specificity |
+| 3 | Gemini | red-team-spec | REQUEST_CHANGES | 1 HIGH (RDS privilege separation), 4 MEDIUM (advisory lock, metadata filtering, error sanitization, AMI build) |
+
+All findings addressed. Human approved 2026-05-16.

@@ -761,3 +761,13 @@ Terminate any running GPU instance. Delete IAM role/profile if needed. No other 
 | Add EC2 permissions to cloud2 role | Before first run | Operator |
 | Store AMI ID in SSM | Before first run | Operator |
 | Run priority batch | After code merge + infra ready | Operator |
+
+## Consultation Log
+
+| Round | Model | Type | Verdict | Key Findings |
+|-------|-------|------|---------|--------------|
+| 1 | Gemini | plan-review | APPROVE | No issues |
+| 2 | Codex | plan-review | REQUEST_CHANGES | 10 issues: run-tag lifecycle, commit granularity, error payload, section-to-table mapping, version comparison, priority filter, bootstrap, test coverage |
+| 3 | Gemini | red-team-plan | REQUEST_CHANGES | 1 CRITICAL (run_tag injection into SSH), 3 HIGH (dependency pinning, log sanitization, integer validation) |
+
+All findings addressed. Human approved 2026-05-16.
