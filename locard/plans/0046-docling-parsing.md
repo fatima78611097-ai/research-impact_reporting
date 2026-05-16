@@ -49,6 +49,113 @@ lavandula/
       002_create_docling_writer_user.sql  # DB user + grants
 ```
 
+## Operational Semantics
+
+These define the behavioral contracts the builder must implement. Codex review flagged these as underspecified — resolving them here so the builder has unambiguous guidance.
+
+### Run Tag Lifecycle
+
+`parse_runs.run_tag` is UNIQUE. Each invocation creates a new row. Reruns use a fresh tag (e.g., `priority-v1`, `priority-v2`). The `--status` command accepts a run_tag to show that specific run. If the orchestrator is relaunched after spot interruption for the SAME logical batch, it reuses the existing `parse_runs` row (matched by run_tag passed on CLI). The orchestrator checks: if a row exists and `finished_at IS NULL`, it's a resume — don't INSERT, just continue.
+
+### Worker Lifecycle Invariant
+
+**At most one worker process exists at any time.** Enforced by:
+1. Orchestrator holds `pg_advisory_lock(hashtext('docling-parse'))` — prevents concurrent orchestrator instances.
+2. Before launching a new spot instance, orchestrator terminates any existing instance tagged `Purpose=docling-parse` in the VPC.
+3. Worker startup verifies no other worker is active by attempting `pg_try_advisory_lock(hashtext('docling-worker'))`. If held, worker exits immediately.
+
+This three-layer defense ensures no overlap even during crash recovery.
+
+### Commit Granularity
+
+**Per-document transactions.** Each document's insert (document + sections + tables) is one atomic transaction. "Batch size" (500) controls how many SHAs are fetched from the work queue at once — it does NOT define the commit boundary. The stats_json is updated every 50 documents for progress visibility.
+
+### Priority Filter Handling (AC29-31)
+
+The `--priority` argument is a comma-separated list of `corpus.classification` values. Validation: each value must match `^[a-z_]+$`. The worker query uses `AND c.classification = ANY(:priority_list)`. When the priority batch is exhausted (0 eligible docs), the operator runs again with a broader filter (e.g., `--priority annual,impact,newsletter,program_description`) or no filter (all docs).
+
+### Error Row Payload
+
+When a document fails permanently, the INSERT uses these defaults for required fields:
+```python
+{
+    'sha': item['content_sha256'],
+    'org_ein': item['source_org_ein'],
+    'parse_version': f"docling-{docling.__version__}",
+    'page_count': 0,
+    'section_count': 0,
+    'table_count': 0,
+    'figure_count': 0,
+    'total_text_chars': 0,
+    'parse_duration_ms': elapsed_ms,
+    'error': sanitize_error(exc),  # max 500 chars
+    'metadata_json': None,
+    'sections': [],
+    'tables': [],
+}
+```
+
+### Section-to-Table ID Resolution
+
+Tables reference `sections.id` (a BIGSERIAL). Since sections are inserted in the same transaction as tables, the resolution pattern is:
+
+```python
+with conn:
+    with conn.cursor() as cur:
+        # Insert document row
+        cur.execute("INSERT INTO lava_parse.documents (...) VALUES (%s, ...)", (...))
+        
+        # Insert sections, get back IDs
+        section_ids = {}
+        for section in doc['sections']:
+            cur.execute(
+                "INSERT INTO lava_parse.sections (...) VALUES (%s, ...) RETURNING id",
+                (sha, section['section_index'], ...)
+            )
+            section_ids[section['section_index']] = cur.fetchone()[0]
+        
+        # Insert tables with resolved section_id
+        for table in doc['tables']:
+            section_id = section_ids.get(table['section_index'])  # None if unlinked
+            cur.execute(
+                "INSERT INTO lava_parse.tables (...) VALUES (%s, ...)",
+                (sha, table['table_index'], section_id, ...)
+            )
+```
+
+For large documents (100+ sections), use `execute_values` with a CTE approach:
+```sql
+WITH inserted_sections AS (
+    INSERT INTO lava_parse.sections (content_sha256, section_index, ...)
+    VALUES %s
+    RETURNING id, section_index
+)
+SELECT id, section_index FROM inserted_sections;
+```
+Then map `section_index → id` in Python for table inserts.
+
+### Version Comparison for `--min-version`
+
+`parse_version` is stored as `"docling-X.Y.Z"`. Comparison uses semantic versioning:
+```python
+from packaging.version import Version
+
+def parse_docling_version(v: str) -> Version:
+    return Version(v.removeprefix("docling-"))
+
+# --reparse --min-version docling-2.93.0
+# Selects: WHERE parse_version < 'docling-2.93.0' (string comparison works for semver with same prefix format)
+```
+Since all versions follow `docling-MAJOR.MINOR.PATCH` format, lexicographic string comparison is safe (no single-digit vs double-digit ambiguity in practice). If needed, the query uses `packaging.version` in Python to filter, not SQL string comparison.
+
+### Bootstrap Strategy
+
+**AMI-only for production.** The plan removes the temporary-public-IP fallback. The GPU instance has no public IP. The orchestrator connects via:
+1. EC2 Instance Connect (pushes ephemeral SSH key to instance metadata — works on private IPs within same VPC)
+2. If EC2 Instance Connect is unavailable: use SSM Session Manager (`aws ssm start-session`) as fallback
+
+No `scp` of worker code needed — the worker script is baked into the AMI alongside Docling. Configuration (run_id, priority, batch_size) passed via SSM parameters or environment variables in the launch template user-data.
+
 ## Implementation Phases
 
 ### Phase 1: Schema & Module Structure (0.5 hours)
@@ -597,7 +704,17 @@ python manage.py parse_documents priority-batch-v1 --priority annual,impact --ma
 | Infrastructure | spot launch → worker → terminate | Manual validation (real AWS) |
 | Smoke | 10 real PDFs parsed end-to-end | Real Docling, real RDS |
 
-**Test count estimate:** ~20-25 tests across unit + integration.
+**Required test cases (from Codex review):**
+- Idempotent rerun: parse doc, run again → 0 new inserts (real DB integration test)
+- `--retry-errors`: parse fails → error row exists → retry-errors deletes + requeues → success
+- Transient retry: mock S3 timeout 2×, succeed on 3rd → no error row recorded
+- Run-tag reuse: orchestrator resumes existing run (finished_at IS NULL) without INSERT conflict
+- Worker interruption: kill worker mid-batch → partial docs NOT in DB → relaunch picks them up
+- Section-to-table ID mapping: verify tables.section_id matches correct section after insert
+- Priority filter: `--priority annual` only processes annual; `--priority annual,impact` processes both
+- Version comparison: `--reparse --min-version docling-2.92.0` selects docs parsed by 2.92.0, skips 2.93.0
+
+**Test count estimate:** ~30-35 tests across unit + integration.
 
 **Note:** Infrastructure tests (Phase 6-7) are manual/operational, not automated CI. The spot instance lifecycle depends on real AWS APIs and GPU availability.
 
@@ -606,7 +723,7 @@ python manage.py parse_documents priority-batch-v1 --priority annual,impact --ma
 | Risk | Mitigation |
 |------|-----------|
 | Docling API differs from research (v2.93 specifics) | Phase 3 tests against real Docling output. Builder validates chunk structure early. |
-| EC2 Instance Connect not available in private subnet | Fallback: add public IP temporarily for bootstrap, remove after. Or use SSM Session Manager. |
+| EC2 Instance Connect not available in private subnet | Fallback: SSM Session Manager (requires SSM agent on AMI — included in AWS Deep Learning AMI). No public IP ever assigned. |
 | G6.2xlarge spot capacity unavailable | Fall back to g5.2xlarge (A10G, similar performance). Or use on-demand for small batches. |
 | AMI build fails (CUDA version mismatch) | Use AWS Deep Learning AMI as base (CUDA pre-installed, tested). |
 | Worker OOM on large PDFs | Monitor memory. Process 500+ page docs one-at-a-time with no prefetch. |
