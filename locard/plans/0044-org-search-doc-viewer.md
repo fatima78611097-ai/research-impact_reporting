@@ -9,11 +9,25 @@ Implement org name search, corpus document listing on org detail pages, an in-br
 
 ## Scope Addition: Parse Viewer (Part 4)
 
-The spec covers Parts 1-3. This plan adds **Part 4: Parse Content Viewer** — a tab/section on the document viewer page that renders the structured Docling parse output (sections with headings, body text, tables). This lets the operator evaluate extraction quality without running SQL.
+The spec covers Parts 1-3. **Part 4 (Parse Content Viewer) was explicitly requested by the operator** post-spec-approval to support evaluation of Docling extraction quality. It renders structured parse output (sections, headings, tables) without requiring SQL access.
 
-## Implementation Steps
+## Phase Structure
 
-### Step 1: Models for Parse Data
+Each phase is independently committable and testable:
+
+1. **Phase A** — Models + template helpers (foundation)
+2. **Phase B** — Org name search (Part 1)
+3. **Phase C** — Org document listing (Part 2)
+4. **Phase D** — PDF viewer (Part 3)
+5. **Phase E** — Parse content viewer (Part 4)
+6. **Phase F** — Corpus search panel
+7. **Phase G** — Navigation links + integration
+
+---
+
+## Phase A: Models & Template Helpers
+
+### Models for Parse Data
 
 Add unmanaged Django models for `lava_parse` tables in `pipeline/models.py`:
 
@@ -34,7 +48,7 @@ class ParsedDocument(models.Model):
 
     class Meta:
         managed = False
-        db_table = 'lava_parse"."documents'  # cross-schema reference
+        db_table = 'lava_parse"."documents'
 
 class ParsedSection(models.Model):
     content_sha256 = models.TextField()
@@ -66,199 +80,430 @@ class ParsedTable(models.Model):
         db_table = 'lava_parse"."tables'
 ```
 
-**Note:** Verify exact column names match the DB schema before coding. Use `information_schema.columns` query.
+**Before coding:** Verify exact column names via `information_schema.columns` query on the running DB.
 
-### Step 2: Org Name Search (Part 1)
+### Template Tags / Helpers
 
-**File:** `pipeline/views.py` — `OrgListView.get_queryset()`
+**File:** `pipeline/templatetags/pipeline_tags.py`
 
-Add `name` filter parameter:
 ```python
-name = self.request.GET.get("name", "").strip()[:100]
-if len(name) >= 2:
-    qs = qs.filter(name__icontains=name)
+@register.simple_tag
+def display_name(report, org=None):
+    """Derive display name per spec precedence rules."""
+    org_name = org.name if org else None
+    mat_label = report.material_type.replace("_", " ").title() if report.material_type else None
+    year = report.report_year
+
+    name_part = org_name or f"[{report.source_org_ein}]"
+    type_part = mat_label or "Document"
+    year_part = f" ({year})" if year else ""
+
+    return f"{name_part} — {type_part}{year_part}"
+
+
+@register.filter
+def material_type_label(value):
+    """annual_report → Annual Report"""
+    if not value:
+        return "-"
+    return value.replace("_", " ").title()
 ```
 
-Pass `filter_name` to context. Persist filter in pagination links.
+**Thumbnail approach (addresses Codex concern about per-row presigning):**
+- Use a deterministic URL pattern: `/dashboard/reports/<sha>/thumbnail/`
+- This view generates a short-lived presigned URL and returns a 302 redirect
+- Template uses `<img src="..." onerror="this.src='/static/img/doc-placeholder.svg'">`
+- This avoids N presign calls during template render — the browser fetches only visible thumbnails
+- Alternative: for the document listing table, pre-compute thumbnail URLs in the view for the page's documents (max 50 per page) since the S3 signing is CPU-only (no network), ~1ms each
+
+**Decision: Use view-level presigning** for the document listing (bounded to page size). The thumbnail `<img>` tag uses `onerror` to swap in a placeholder SVG if the S3 object doesn't exist (presigned URL returns 403/404 → browser fires onerror).
+
+---
+
+## Phase B: Org Name Search (Part 1)
+
+**File:** `pipeline/views.py` — `OrgListView`
+
+```python
+def get_queryset(self):
+    qs = NonprofitSeed.objects.all().order_by("ein")
+    name = self.request.GET.get("name", "").strip()[:100]
+    if len(name) >= 2:
+        qs = qs.filter(name__icontains=name)
+    # ... existing filters unchanged ...
+    return qs
+
+def get_context_data(self, **kwargs):
+    ctx = super().get_context_data(**kwargs)
+    ctx["filter_name"] = self.request.GET.get("name", "")
+    # ... existing context unchanged ...
+    return ctx
+```
 
 **File:** `pipeline/templates/pipeline/orgs.html`
 
-Add a "Name" text input as the first/most prominent filter field. Wire to same GET-based filter mechanism as existing fields.
+Add "Name" text input as the **first** filter field (most prominent). Wire to GET param like existing filters. Persist all filter values in pagination links via query string.
 
-### Step 3: Org Document Listing (Part 2)
+**Tests:**
+- Name search: exact, partial, case-insensitive, 1-char rejected, empty returns all
+- Composition: name + state combined
+- Pagination preserves filter
+
+---
+
+## Phase C: Org Document Listing (Part 2)
 
 **File:** `pipeline/views.py` — `OrgDetailView.get_context_data()`
 
-Query corpus documents for the org's EIN:
 ```python
 from django.db.models import F
 
 documents = Report.objects.filter(
     source_org_ein=self.object.ein
 ).order_by(F('report_year').desc(nulls_last=True), 'material_type', 'content_sha256')
+
 ctx["documents"] = documents
 ctx["document_count"] = documents.count()
-```
 
-Also check parse status for each document:
-```python
+# Parse status lookup
 parsed_shas = set(
     ParsedDocument.objects.filter(
         content_sha256__in=documents.values_list('content_sha256', flat=True)
     ).values_list('content_sha256', flat=True)
 )
 ctx["parsed_shas"] = parsed_shas
+
+# Thumbnail presigned URLs (bounded by page — max 50 docs shown)
+import boto3
+from django.conf import settings
+s3 = boto3.client("s3")
+thumb_urls = {}
+for doc in documents[:50]:
+    key = f"thumbnails/{doc.content_sha256}.jpg"
+    thumb_urls[doc.content_sha256] = s3.generate_presigned_url(
+        "get_object",
+        Params={"Bucket": settings.S3_COLLATERAL_BUCKET, "Key": key},
+        ExpiresIn=300,
+    )
+ctx["thumb_urls"] = thumb_urls
 ```
+
+**Null year ordering:** `F('report_year').desc(nulls_last=True)` ensures null-year docs sort last. This is PostgreSQL-native and works with Django's unmanaged models.
 
 **File:** `pipeline/templates/pipeline/org_detail.html`
 
-Add a "Documents (N)" section below existing content. Table columns:
-- Thumbnail (48px-tall, from presigned S3 `thumbnails/{sha}.jpg`, placeholder icon if missing)
-- Display name (derived per spec rules)
-- Material Type (badge)
-- Year
-- Pages
-- Size
-- Parse status indicator (checkmark if parsed)
-- Link to viewer
+Add "Documents (N)" section. Table columns:
+- Thumbnail: `<img src="{{ thumb_urls.sha }}" class="h-12" onerror="this.src='/static/pipeline/img/doc-placeholder.svg'">`
+- Display name: `{% display_name doc org %}`
+- Material Type: badge with `{{ doc.material_type|material_type_label }}`
+- Year: `{{ doc.report_year|default:"-" }}`
+- Pages: `{{ doc.page_count|default:"-" }}`
+- Size: `{{ doc.file_size_bytes|filesizeformat }}`
+- Parse: checkmark icon if `doc.content_sha256 in parsed_shas`
+- Actions: [View PDF] [View Parse (if parsed)]
 
-### Step 4: PDF Viewer Page (Part 3)
+Each row links to viewer with `return_to` set to current org detail URL.
+
+Zero-document state: "No documents in corpus."
+
+**Tests:**
+- Org with documents: correct count, ordering (year desc, nulls last, material_type, sha tiebreaker)
+- Org without documents: empty state
+- Parse status indicator: present for parsed docs, absent for unparsed
+- Thumbnail URL generation (mock S3)
+
+---
+
+## Phase D: PDF Viewer (Part 3)
 
 **URL:** `path("reports/<str:sha>/view/", views.DocumentViewerView.as_view(), name="report_view")`
 
-**View:** `DocumentViewerView(LoginRequiredMixin, DetailView)`
-- Generate 15-min presigned S3 URL for PDF
-- Look up org name
-- Compute next/prev documents for same org
-- Validate `return_to` param
-- Log document access (audit)
+**View:**
+
+```python
+class DocumentViewerView(LoginRequiredMixin, DetailView):
+    model = Report
+    template_name = "pipeline/document_viewer.html"
+    context_object_name = "report"
+    slug_field = "content_sha256"
+    slug_url_kwarg = "sha"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        import boto3
+        from botocore.exceptions import ClientError
+
+        # PDF presigned URL (15 min)
+        try:
+            s3 = boto3.client("s3")
+            key = f"pdfs/{self.object.content_sha256}.pdf"
+            ctx["pdf_url"] = s3.generate_presigned_url(
+                "get_object",
+                Params={"Bucket": settings.S3_COLLATERAL_BUCKET, "Key": key},
+                ExpiresIn=900,
+            )
+        except ClientError:
+            ctx["pdf_error"] = True
+
+        # Org lookup
+        try:
+            ctx["org"] = NonprofitSeed.objects.get(ein=self.object.source_org_ein)
+        except NonprofitSeed.DoesNotExist:
+            ctx["org"] = None
+
+        # Next/prev for same org
+        same_org = Report.objects.filter(
+            source_org_ein=self.object.source_org_ein
+        ).order_by(F('report_year').desc(nulls_last=True), 'material_type', 'content_sha256')
+        doc_list = list(same_org.values_list('content_sha256', flat=True))
+        idx = doc_list.index(self.object.content_sha256) if self.object.content_sha256 in doc_list else -1
+        ctx["prev_doc"] = doc_list[idx - 1] if idx > 0 else None
+        ctx["next_doc"] = doc_list[idx + 1] if 0 <= idx < len(doc_list) - 1 else None
+
+        # Parse status
+        ctx["is_parsed"] = ParsedDocument.objects.filter(
+            content_sha256=self.object.content_sha256
+        ).exists()
+
+        # return_to validation
+        ctx["return_to"] = _safe_return_url(self.request)
+
+        # Audit log
+        logger.info("document_view", extra={
+            "user": self.request.user.username,
+            "sha": self.object.content_sha256,
+        })
+
+        return ctx
+```
+
+**`return_to` validation and propagation:**
+
+```python
+def _safe_return_url(request):
+    url = request.GET.get("return_to", "")
+    if url and url.startswith("/dashboard/") and "://" not in url and not url.startswith("//"):
+        return url
+    return None
+```
+
+**Propagation contract:** Every link that enters the viewer passes `?return_to=<current_page_url>`:
+- Org detail document listing → viewer: `return_to=/dashboard/orgs/{ein}/`
+- Reports list → viewer: `return_to=/dashboard/reports/?page=N&...`
+- Report detail → viewer: `return_to=/dashboard/reports/{sha}/`
+- Next/prev links within viewer: preserve existing `return_to` unchanged
+- Search result links within viewer: preserve existing `return_to` unchanged
+
+Back button uses `return_to` if valid; falls back to org detail (if org exists) or reports list.
 
 **Template:** `pipeline/templates/pipeline/document_viewer.html`
-- Layout: toolbar top, iframe (75% width) + sidebar (25% width)
-- Toolbar: Back, Download, Print buttons
-- Sidebar: metadata fields, View Org link, Next/Prev links
-- Below iframe: "Can't see the PDF?" fallback download link
-- Error state if presign fails
 
-### Step 5: Parse Content Viewer (Part 4 — NEW)
+Sidebar metadata fields (all nullable → show "-" when null):
+- Org: name (linked to org detail) + EIN. If no org record: show EIN only, no link.
+- Material Type: `{{ report.material_type|material_type_label }}`
+- Year: `{{ report.report_year|default:"-" }}`
+- Pages: `{{ report.page_count|default:"-" }}`
+- Size: `{{ report.file_size_bytes|filesizeformat }}`
+- Source URL: plain text (NOT a link), truncated to 80 chars via `{{ report.source_url_redacted|truncatechars:80|default:"-" }}`
+- Confidence: `{{ report.classification_confidence|floatformat:3|default:"-" }}`
+- Archived: `{{ report.archived_at|default:"-" }}`
+- SHA-256: `{{ report.content_sha256 }}` (monospace, break-all)
+
+Navigation links:
+- [View Org →] (if org exists)
+- [View Parse →] (if is_parsed)
+- [← Prev Doc] / [Next Doc →] (if they exist; hidden not greyed when absent)
+
+Below iframe: `<a href="{% url 'report_download' report.content_sha256 %}">Can't see the PDF? Download it.</a>`
+
+Error state (pdf_error=True): show "Unable to load PDF" message with link to report detail page.
+
+**Tests:**
+- Presigned URL generation (mock S3, verify 900s expiry)
+- S3 ClientError → pdf_error in context
+- Org lookup success and DoesNotExist
+- Next/prev: middle doc, first doc (no prev), last doc (no next), single doc (no nav)
+- return_to: valid relative URL accepted, absolute URL rejected, protocol-relative rejected, non-dashboard path rejected, empty → None
+- Auth enforcement (anonymous → redirect to login)
+- Null metadata fields render as "-"
+
+---
+
+## Phase E: Parse Content Viewer (Part 4)
 
 **URL:** `path("reports/<str:sha>/parse/", views.ParseViewerView.as_view(), name="report_parse")`
 
-**View:** `ParseViewerView(LoginRequiredMixin, DetailView)`
-- Model: `Report` (same slug lookup as viewer)
-- Context: ParsedDocument metadata, all sections ordered by section_index, all tables
+**View:**
+
+```python
+class ParseViewerView(LoginRequiredMixin, DetailView):
+    model = Report
+    template_name = "pipeline/parse_viewer.html"
+    context_object_name = "report"
+    slug_field = "content_sha256"
+    slug_url_kwarg = "sha"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        sha = self.object.content_sha256
+
+        try:
+            ctx["parse_doc"] = ParsedDocument.objects.get(content_sha256=sha)
+        except ParsedDocument.DoesNotExist:
+            ctx["parse_doc"] = None
+            return ctx
+
+        ctx["sections"] = ParsedSection.objects.filter(
+            content_sha256=sha
+        ).order_by("section_index")
+
+        ctx["tables"] = ParsedTable.objects.filter(
+            content_sha256=sha
+        ).order_by("table_index")
+
+        try:
+            ctx["org"] = NonprofitSeed.objects.get(ein=self.object.source_org_ein)
+        except NonprofitSeed.DoesNotExist:
+            ctx["org"] = None
+
+        ctx["return_to"] = _safe_return_url(self.request)
+        return ctx
+```
 
 **Template:** `pipeline/templates/pipeline/parse_viewer.html`
 
-Layout:
-```
-┌─────────────────────────────────────────────────────────┐
-│ Toolbar: [← Back] [View PDF] [Org Detail]               │
-├─────────────────────────────────────────────────────────┤
-│ Parse Summary                                            │
-│ Version: docling-2.93.0 | Pages: 30 | Sections: 176    │
-│ Tables: 17 | Chars: 99,350 | Duration: 23.4s            │
-├─────────────────────────────────────────────────────────┤
-│ Sections                                                 │
-│ ─────────                                                │
-│ ## A Future We're Building Together          [p2]       │
-│ For 128 years, Mount Desert Island Hospital...           │
-│                                                          │
-│ ### Guided by Purpose, Grounded in Community  [p3]      │
-│ Mount Desert Island Hospital was established...          │
-│ ...                                                      │
-├─────────────────────────────────────────────────────────┤
-│ Tables                                                   │
-│ ─────────                                                │
-│ Table 1 (p6): "December 31, 2023 and 2022"             │
-│ | ASSETS | 2023 | 2022 |                                │
-│ | Cash   | $5.3M| $4.1M|                                │
-│ ...                                                      │
-└─────────────────────────────────────────────────────────┘
-```
+- Toolbar: [← Back] [View PDF] [Org Detail]
+- Parse summary bar: version, pages, sections, tables, chars (formatted with commas), duration (ms → seconds)
+- Sections: rendered with heading hierarchy. Heading level → indent/font-size. Body text in full. Page number badge per section.
+- Tables: rendered as HTML `<table>` elements. Parse the stored markdown table format into HTML rows/cells. Caption shown above if present.
+- Not-parsed state: "This document has not been parsed yet." with link back to org detail.
 
-- Sections rendered with heading hierarchy (indent by level)
-- Body text shown in full (no truncation)
-- Page numbers shown per section
-- Tables rendered as HTML `<table>` from markdown (use `markdown` library or manual parse)
-- If document not yet parsed: show "Not parsed" with link back
+**Table markdown → HTML conversion:** The `markdown` column stores pipe-delimited markdown tables. Convert using a simple parser (split on `|`, strip, first row = headers). Do NOT use a markdown library — keep it dependency-free.
 
-**Navigation integration:**
-- Document viewer sidebar gets a "View Parse" link (if parsed)
-- Org document listing gets a parse icon/link per row (if parsed)
-- Report detail page gets a "View Parse" button
+**Tests:**
+- Parsed document: sections and tables in context, correct ordering
+- Not-parsed document: parse_doc=None, graceful template
+- Auth enforcement
+- Table markdown rendering
 
-### Step 6: Corpus Search Panel (Spec AC19-27)
+---
+
+## Phase F: Corpus Search Panel (AC19-27)
 
 **URL:** `path("reports/search/", views.DocumentSearchPartial.as_view(), name="report_search")`
 
-**View:** `DocumentSearchPartial` — returns HTML fragment (HTMX partial)
-- Filters: `q` (org name, min 2 chars), `material_type` (dropdown), `state` (dropdown)
-- Results: 25 per page, "Load more" pagination
-- Auth required
+**View:**
 
-**Integration:** Add to document viewer sidebar as collapsible "Browse Corpus" panel.
+```python
+class DocumentSearchPartial(LoginRequiredMixin, ListView):
+    template_name = "pipeline/partials/search_results.html"
+    context_object_name = "results"
+    paginate_by = 25
 
-### Step 7: Navigation Links
+    def get_queryset(self):
+        qs = Report.objects.all()
 
-- `report_detail.html`: Add "View PDF" and "View Parse" buttons
-- `reports.html`: Add view icon per row
-- `org_detail.html`: Document listing rows link to viewer
+        q = self.request.GET.get("q", "").strip()[:100]
+        if len(q) >= 2:
+            matching_eins = NonprofitSeed.objects.filter(
+                name__icontains=q
+            ).values("ein")
+            qs = qs.filter(source_org_ein__in=matching_eins)
+        elif q:
+            return Report.objects.none()
 
-### Step 8: Template Tags / Helpers
+        material_type = self.request.GET.get("material_type", "")
+        if material_type:
+            qs = qs.filter(material_type=material_type)
 
-**File:** `pipeline/templatetags/pipeline_tags.py`
+        state = self.request.GET.get("state", "")
+        if state:
+            state_eins = NonprofitSeed.objects.filter(state=state).values("ein")
+            qs = qs.filter(source_org_ein__in=state_eins)
 
-Add helpers:
-- `display_name(report, org)` — implements spec's display name precedence rules
-- `material_type_label(material_type)` — `replace("_", " ").title()`
-- `thumbnail_url(sha)` — returns presigned S3 URL for thumbnail (5-min expiry)
+        return qs.order_by(
+            F('report_year').desc(nulls_last=True), 'material_type', 'content_sha256'
+        )
+```
 
-### Step 9: Tests
+**Auth:** Uses standard `LoginRequiredMixin`. Unauthenticated requests get redirected to login (302). HTMX follows the redirect (browser handles it). No 403 — follow spec exactly.
 
-- Unit tests for name search filter
-- Unit tests for document listing context
-- Unit tests for viewer view (presigned URL, next/prev, return_to validation)
-- Unit tests for parse viewer (sections/tables rendering, not-parsed state)
-- Unit tests for search partial (filters, pagination, auth)
-- Unit tests for display name derivation (all precedence cases)
+**Template:** `pipeline/templates/pipeline/partials/search_results.html`
+- Compact list: org name (truncated 30 chars), material type label, year
+- Each result links to that document's viewer (preserving `return_to`)
+- "Load more" link at bottom ��� HTMX append of page N+1
+- Empty state: "No documents match your filters."
+
+**Integration in viewer sidebar:** Collapsible "Browse Corpus" section with text input, material_type dropdown, state dropdown. HTMX `hx-get` triggers search, results replace a target div.
+
+Material type dropdown values: queried once in `DocumentViewerView.get_context_data()` and cached (Django cache, 5 min TTL).
+
+**Tests:**
+- Name filter: min 2 chars, partial match, case-insensitive
+- Material type filter: exact match
+- State filter: via org subquery
+- Combined filters
+- Pagination: 25 per page, "Load more" link
+- Empty results message
+- Auth: anonymous request → 302 redirect (not 403)
+
+---
+
+## Phase G: Navigation Links
+
+Update existing templates to link into the new views:
+
+**`report_detail.html`:**
+- Add "View PDF" button → `{% url 'report_view' report.content_sha256 %}?return_to={% url 'report_detail' report.content_sha256 %}`
+- Add "View Parse" button (if parsed) → `{% url 'report_parse' report.content_sha256 %}?return_to={% url 'report_detail' report.content_sha256 %}`
+
+**`reports.html`:**
+- Add view icon per row → viewer with `return_to` set to current reports list URL (including pagination/filters)
+
+**`org_detail.html`:** (already done in Phase C — document listing rows link to viewer)
+
+**Integration tests:**
+- Org detail → viewer → back returns to org detail
+- Reports list → viewer → back returns to reports list (with filters preserved)
+- Viewer → next/prev → return_to unchanged
+- Viewer → parse → back works
+- Search result → viewer → return_to unchanged
+
+---
 
 ## File Manifest
 
-| File | Action | Purpose |
-|------|--------|---------|
-| `pipeline/models.py` | Edit | Add ParsedDocument, ParsedSection, ParsedTable models |
-| `pipeline/views.py` | Edit | Add name filter, document listing, viewer, parse viewer, search partial |
-| `pipeline/urls.py` | Edit | Add 3 new URL patterns |
-| `pipeline/templatetags/pipeline_tags.py` | Edit | Add display_name, thumbnail_url helpers |
-| `pipeline/templates/pipeline/orgs.html` | Edit | Add name search input |
-| `pipeline/templates/pipeline/org_detail.html` | Edit | Add documents section |
-| `pipeline/templates/pipeline/document_viewer.html` | Create | PDF viewer page |
-| `pipeline/templates/pipeline/parse_viewer.html` | Create | Parse content viewer |
-| `pipeline/templates/pipeline/partials/search_results.html` | Create | HTMX search results fragment |
-| `pipeline/templates/pipeline/report_detail.html` | Edit | Add View PDF / View Parse buttons |
-| `pipeline/templates/pipeline/reports.html` | Edit | Add view link per row |
-| `pipeline/tests/test_org_search.py` | Create | Tests for Part 1 |
-| `pipeline/tests/test_document_listing.py` | Create | Tests for Part 2 |
-| `pipeline/tests/test_viewer.py` | Create | Tests for Parts 3-4 |
-| `pipeline/tests/test_search_partial.py` | Create | Tests for search panel |
+| File | Phase | Action | Purpose |
+|------|-------|--------|---------|
+| `pipeline/models.py` | A | Edit | Add ParsedDocument, ParsedSection, ParsedTable |
+| `pipeline/templatetags/pipeline_tags.py` | A | Edit | Add display_name, material_type_label |
+| `pipeline/views.py` | B-F | Edit | All new views and filter logic |
+| `pipeline/urls.py` | D-F | Edit | 4 new URL patterns (view, parse, search, thumbnail) |
+| `pipeline/templates/pipeline/orgs.html` | B | Edit | Name search input |
+| `pipeline/templates/pipeline/org_detail.html` | C | Edit | Documents section |
+| `pipeline/templates/pipeline/document_viewer.html` | D | Create | PDF viewer page |
+| `pipeline/templates/pipeline/parse_viewer.html` | E | Create | Parse content viewer |
+| `pipeline/templates/pipeline/partials/search_results.html` | F | Create | HTMX search fragment |
+| `pipeline/templates/pipeline/report_detail.html` | G | Edit | View PDF/Parse buttons |
+| `pipeline/templates/pipeline/reports.html` | G | Edit | View link per row |
+| `pipeline/static/pipeline/img/doc-placeholder.svg` | A | Create | Thumbnail fallback |
+| `pipeline/tests/test_org_search.py` | B | Create | Part 1 tests |
+| `pipeline/tests/test_document_listing.py` | C | Create | Part 2 tests |
+| `pipeline/tests/test_viewer.py` | D | Create | Part 3 tests |
+| `pipeline/tests/test_parse_viewer.py` | E | Create | Part 4 tests |
+| `pipeline/tests/test_search_partial.py` | F | Create | Search panel tests |
 
 ## Dependencies
 
-- HTMX (already available in dashboard — used by classifier views)
-- No new Python packages required
-- `markdown` library for table rendering (check if already installed; if not, use manual HTML table generation from the stored markdown)
+- HTMX (already in dashboard base template)
+- No new Python packages
+- Table markdown → HTML: manual pipe-split parser (no `markdown` library needed)
 
-## Acceptance Criteria (from spec + Part 4)
+## Security
 
-All spec ACs (AC1-AC34) plus:
-- AC35: `/dashboard/reports/<sha>/parse/` shows structured parse output (sections with headings, body text, page numbers)
-- AC36: Tables rendered as formatted HTML tables
-- AC37: Parse summary bar shows version, page count, section count, table count, total chars, duration
-- AC38: "Not parsed" state handled gracefully with message
-- AC39: Document viewer sidebar links to parse viewer (when parsed)
-- AC40: Org document listing shows parse status indicator per row
-
-## Estimated Effort
-
-Moderate — ~4-6 hours for a builder. No architectural novelty; standard Django views/templates with existing patterns.
+- All views: `LoginRequiredMixin` (single-operator model, no object-level perms)
+- `return_to`: validated via `_safe_return_url()` — rejects absolute URLs, protocol-relative, non-dashboard paths
+- `source_url_redacted`: displayed as plain text, truncated 80 chars, never rendered as clickable link
+- Presigned URLs: scoped to single object, time-limited (15 min PDF, 5 min thumbnails)
+- Audit: document views logged with user + SHA
+- Search inputs: parameterized queries via ORM (no raw SQL)
