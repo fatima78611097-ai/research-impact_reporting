@@ -684,11 +684,11 @@ projects:
   - id: "0045"
     title: "Vocabulary Extraction & Archetype Discovery — Pilot"
     summary: "Production-quality vocabulary extraction pipeline scoped to P20 (Human Services, ~1,400 docs). LLM extracts domain-specific terms, Market Basket Analysis (FP-Growth + lift scoring) discovers sub-archetypes. Schema designed for full-corpus scale but populated with one vertical as proof-of-concept."
-    status: conceived
+    status: specified
     priority: high
     files:
       spec: locard/specs/0045-vocabulary-extraction-pilot.md
-      plan: null
+      plan: locard/plans/0045-vocabulary-extraction-pilot.md
       review: null
     dependencies: ["0035", "0038"]
     tags: [layer-2, vocabulary, extraction, archetype, mba, pilot]
