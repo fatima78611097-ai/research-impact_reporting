@@ -178,7 +178,7 @@ GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA lava_parse TO research_app;
 │    └── Updates parse_runs.stats_json with progress              │
 │                                                                 │
 │  Environment: Python 3.11+, CUDA 12.x, docling, psycopg2       │
-│  IAM: Same role as cloud2 (S3 read, RDS connect)               │
+│  IAM: Same role as cloud2 (S3 read + thumbnail write, RDS)     │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -220,8 +220,9 @@ The GPU worker is a standalone Python script (not a Django management command) t
    chunks = list(chunker.chunk(doc))
    ```
 5. **Extracts tables:** from `doc.tables` — each table yields structured row/col data. **Section linkage rule:** Each Docling table has a `prov` (provenance) field with page number and bounding box. The table is assigned to the section whose `page_start <= table.page <= page_end` and whose position in the document is closest preceding the table's position. If no section matches (e.g., table appears before any heading), `section_id = NULL`.
-6. **Writes to RDS:** batch INSERT into `documents`, `sections`, `tables`
-7. **Repeats** until no more unparsed documents match the priority filter
+6. **Generates thumbnail:** Render page 1 as a 200px-wide JPEG (quality 80), upload to `s3://lavandula-nonprofit-collaterals/thumbnails/{sha256}.jpg`. Uses `pdf2image` (Poppler) which is already available on the worker instance. ~50ms per document. If thumbnail generation fails (e.g., encrypted PDF), log warning and continue — thumbnail is non-critical.
+7. **Writes to RDS:** batch INSERT into `documents`, `sections`, `tables`
+8. **Repeats** until no more unparsed documents match the priority filter
 
 ### Orchestrator Command
 
@@ -362,10 +363,11 @@ Recommend Option A for production. Use Option B only during initial development/
 ## Security Considerations
 
 - **IAM:** GPU instance gets a dedicated instance profile (`docling_worker`) with least-privilege permissions:
-  - `s3:GetObject` on `arn:aws:s3:::lavandula-nonprofit-collaterals/pdfs/*` (read PDFs only)
+  - `s3:GetObject` on `arn:aws:s3:::lavandula-nonprofit-collaterals/pdfs/*` (read PDFs)
+  - `s3:PutObject` on `arn:aws:s3:::lavandula-nonprofit-collaterals/thumbnails/*` (write thumbnails only)
   - `rds-db:connect` for `docling_writer` user on `db-NAMZ7DUPILQKINJANPKHMXEXDU` (dedicated DB user, not `research_app`)
   - `ssm:GetParameter` on `/cloud2.lavandulagroup.com/rds-*` (connection config only)
-  - No S3 write, no EC2 describe, no IAM access
+  - No other S3 write, no EC2 describe, no IAM access
 - **RDS privilege separation:** Create a dedicated PostgreSQL user `docling_writer` with permissions ONLY on `lava_parse` schema:
   ```sql
   CREATE USER docling_writer;

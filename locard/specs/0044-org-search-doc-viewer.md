@@ -23,7 +23,6 @@ Before moving to Layer 2 (vocabulary extraction and analysis), operators need to
 - Document annotation or editing
 - Batch document operations
 - Document upload or manual classification
-- Thumbnail generation
 
 ## Technical Context
 
@@ -105,7 +104,8 @@ ctx["document_count"] = documents.count()
 ```
 
 Add a "Documents" section to `org_detail.html`:
-- Table with columns: Name (derived), Material Type, Year, Pages, Size, Archived
+- Table with columns: Thumbnail, Name (derived), Material Type, Year, Pages, Size, Archived
+- Thumbnail: 48px-tall JPEG of page 1, loaded from S3 presigned URL (`thumbnails/{sha256}.jpg`). If thumbnail doesn't exist, show a generic document icon placeholder.
 - Each row links to the document viewer page
 - Show document count in section header
 - If no documents: "No documents in corpus."
@@ -237,7 +237,7 @@ The search panel makes the viewer a self-contained browsing tool — operators c
 
 ### Part 2: Org Document Listing
 - AC5: Org detail page shows a "Documents (N)" section listing all corpus documents for the org
-- AC6: Each document row shows: derived display name, material type badge, year, page count, file size
+- AC6: Each document row shows: thumbnail (48px-tall page-1 JPEG, placeholder if missing), derived display name, material type badge, year, page count, file size
 - AC7: Each document row links to the PDF viewer page
 - AC8: Documents are ordered by year (descending), then material type, then SHA (deterministic)
 - AC9: If no documents exist for the org, show "No documents in corpus."
