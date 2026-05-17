@@ -12,6 +12,7 @@ import argparse
 import logging
 import re
 import sys
+from collections.abc import Iterable
 from datetime import datetime
 from urllib.parse import unquote, urlparse
 
@@ -34,6 +35,7 @@ log = logging.getLogger("lavandula.reports.reconcile_s3")
 _SHA_RE = re.compile(r"^[a-f0-9]{64}$")
 _KEY_RE = re.compile(r"^(?:.*/)?([a-f0-9]{64})\.pdf$")
 _EIN_RE = re.compile(r"^\d{9}$")
+_NOTES_SHA_RE = re.compile(r"sha=([a-f0-9]{64})")
 
 _ALLOWED_ATTRIBUTION = {"own_domain", "platform_verified", "platform_unverified"}
 _ALLOWED_DISCOVERED_VIA = {
@@ -66,20 +68,44 @@ def _db_shas(engine: Engine) -> set[str]:
         }
 
 
-def _fetch_log_attribution(engine: Engine, sha: str) -> tuple[str, str] | None:
-    """Look up the authoritative (ein, url_redacted) for `sha` in fetch_log."""
+def _index_from_fetch_log_rows(
+    rows: Iterable[tuple[str, str, str]],
+) -> dict[str, tuple[str, str]]:
+    """Reduce (ein, url_redacted, notes) rows — ordered by ascending id —
+    into a {sha: (ein, url_redacted)} index.
+
+    Preserves the semantics of the old per-sha lookup:
+      - sha is parsed from the `notes` field (`sha=<64 hex>`)
+      - rows with an empty `ein` are ignored
+      - the highest-id row for a sha wins (callers pass rows id-ascending,
+        so a later write overwrites — equivalent to ORDER BY id DESC LIMIT 1)
+    """
+    idx: dict[str, tuple[str, str]] = {}
+    for ein, url_redacted, notes in rows:
+        if not ein:
+            continue
+        m = _NOTES_SHA_RE.search(notes or "")
+        if m:
+            idx[m.group(1)] = (ein, url_redacted)
+    return idx
+
+
+def _build_fetch_log_sha_index(engine: Engine) -> dict[str, tuple[str, str]]:
+    """One-pass {sha: (ein, url_redacted)} index from fetch_log notes.
+
+    Replaces a per-orphan `notes LIKE '%sha=...%'` query (one full scan
+    of the multi-million-row fetch_log per orphan) with a single streamed
+    scan, restricted to the rows whose notes carry a sha tag.
+    """
     with engine.connect() as conn:
-        row = conn.execute(
+        result = conn.execution_options(stream_results=True).execute(
             text(
-                "SELECT ein, url_redacted FROM lava_corpus.fetch_log "
-                " WHERE kind = 'pdf-get' AND notes LIKE :pat "
-                " ORDER BY id DESC LIMIT 1"
-            ),
-            {"pat": f"%sha={sha}%"},
-        ).fetchone()
-    if row is None or not row[0]:
-        return None
-    return row[0], row[1]
+                "SELECT ein, url_redacted, notes FROM lava_corpus.fetch_log "
+                " WHERE kind = 'pdf-get' AND notes LIKE '%sha=%' "
+                " ORDER BY id"
+            )
+        )
+        return _index_from_fetch_log_rows(iter(result))
 
 
 def _valid_metadata(md: dict) -> tuple[bool, dict, str]:
@@ -182,13 +208,15 @@ def reconcile(
         if sha not in db_shas:
             orphans.append((key, sha))
 
+    fl_index = _build_fetch_log_sha_index(engine)
+
     for key, sha in orphans:
         head = client.head_object(Bucket=bucket, Key=key)
         md = head.get("Metadata", {}) or {}
         ok, clean, reason = _valid_metadata(md)
         size = head.get("ContentLength", 0)
 
-        fl = _fetch_log_attribution(engine, sha)
+        fl = fl_index.get(sha)
         ein: str | None = None
         source_redacted: str | None = None
         fetched_at = ""
