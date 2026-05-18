@@ -83,19 +83,28 @@ staged diffs
 
 **Files**: `.gitignore`, generated artifact paths
 
+**Precondition:** Steps 3 and 4 may not begin until Step 1's PR is merged
+**and** Step 2 is resolved (either the reset is confirmed, or Option B is
+chosen). Until then the tree state is not final and any cleanup is premature.
+
 - Add **targeted** `.gitignore` rules only:
   `lavandula/reports/.crawler.*.lock`, `lavandula/reports/reports.db`,
   `lavandula/dashboard/staticfiles/`, `downloads/`, `screenshots/`,
   `/*_website.json`, `/output.json`.
-- Remove the clearly-generated artifacts after the ignore rules exist.
-- Delete the superseded `locard/plans/0048-repository-cleanup-for-approval.md`.
-- For every **deferred** ambiguous path (migration SQL under `sample_pdfs/`,
-  `locard/reviews/0040-audit-findings.md`,
-  `lavandula/migrations/classifier_refactor/`, `locard/spikes/001-data/`,
-  `cohort_junk_rate.sql`, handoff files, `GEMINI.md`,
-  `lavandula/review_uploads/`, `experiments/`): present the list to the human
-  and act only on their decision. Do not delete logs before a replacement is
-  confirmed.
+
+**Step 4a — safe to delete now (regenerable, no decision needed):** after the
+ignore rules exist, remove the clearly-generated artifacts (crawler locks,
+`reports.db`, `staticfiles/`, `downloads/`, `screenshots/`, root scratch JSON)
+and the superseded `locard/plans/0048-repository-cleanup-for-approval.md`.
+These are reproducible or explicitly replaced — no human gate.
+
+**Step 4b — delete only after recorded human confirmation:** migration SQL
+under `sample_pdfs/`, `locard/reviews/0040-audit-findings.md`,
+`lavandula/migrations/classifier_refactor/`, `locard/spikes/001-data/`,
+`cohort_junk_rate.sql`, handoff files, `GEMINI.md`,
+`lavandula/review_uploads/`, `experiments/`. Present the list; act only on the
+recorded decision in `locard/maintain/0048-inventory.md`. Default = retain.
+Never delete logs before a replacement is confirmed.
 
 ### Step 5: Author the Data-Quality & Attribution-Confidence Standard
 
@@ -105,8 +114,12 @@ staged diffs
   the exact evidence/fields that produce each tier (Spec 0048 Part 3).
 - Define the sampling design: strata = `state × NTEE-major × recovery-source`;
   minimum `n` per stratum; measured statistic = EIN-misattribution rate.
-- **GATE:** insert the sponsor-approved acceptance threshold(s). The document
-  is not complete until the threshold is filled in by human decision.
+- **GATE (soft):** insert the sponsor-approved acceptance threshold(s). If the
+  decision is delayed or withheld, do **not** stall the milestone: ship the
+  strawman default (≤ 2% high/medium; `low` excluded), mark the standard
+  **PROVISIONAL** at the top, and record that production recovery writes remain
+  blocked until the threshold is ratified. The milestone closes; the *next*
+  phase stays gated. (Spec 0048 §Open Decisions item 2.)
 - Define stratum-level quarantine as the failure action (not all-or-nothing).
 - Add the extraction-QA symmetry stub (detailed bar deferred to Docling
   project, ownership recorded here).
@@ -155,12 +168,39 @@ staged diffs
 ## Testing Strategy
 
 ### Manual Validation
-1. `git status --porcelain` + `git rev-list --left-right --count
-   master...origin/master` confirm a reconciled, clean tree.
-2. Grep confirms the bypass is gone and CSRF hardening is present.
-3. Read `data-quality-standard.md` end-to-end: rubric is computable, sampling
-   design is concrete, the threshold is a real number (not a placeholder),
-   quarantine is stratum-level.
+
+**Git reconciliation:**
+- `git rev-list --left-right --count master...origin/master` → `0  0` (Option
+  A) **or** documented Option B with `backup/master-pre-0048` present
+  (`git rev-parse --verify backup/master-pre-0048`).
+- `git status --porcelain` shows only intentional, reviewable paths.
+- `git log origin/master..master` empty (A) or explicitly N/A (B).
+
+**Bypass absence / hardening presence (grep gates):**
+- `grep -rn "MISMATCH_DISABLED = True\|validate_structure=False"
+  lavandula/` → no hits.
+- `CSRF_COOKIE_SECURE = True` present in `settings.py`; logout `<form
+  method="post"` + `{% csrf_token %}` present in `base.html`.
+
+**Ignore rules:** `git check-ignore` returns a hit for each previously-noisy
+path; no previously-tracked source path is newly ignored.
+
+**Inventory artifact:** `locard/maintain/0048-inventory.md` exists; every
+`git status` / untracked path has a row; zero `defer` rows remain
+unresolved (or each carries a recorded human decision + date).
+
+**Data-quality standard checklist** (each must be checkable, not prose):
+- [ ] Confidence rubric: all four tiers (high/medium/low/reject) with the exact
+      fields/evidence producing each.
+- [ ] Sampling design: strata defined, minimum `n` per stratum stated,
+      measured statistic named.
+- [ ] Threshold: a concrete number present (strawman or ratified), and a
+      PROVISIONAL marker iff unratified.
+- [ ] Failure action: stratum-level quarantine explicitly stated (not
+      all-or-nothing).
+- [ ] Field provenance table present (existing / derived / downstream).
+- [ ] Extraction-QA symmetry stub present with recorded ownership.
+- [ ] Binding clause present (downstream specs fail review if non-compliant).
 
 ### Automated Validation
 - Run the narrowest relevant `lavandula/reports/tools` test subset for the
