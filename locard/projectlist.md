@@ -710,19 +710,32 @@ projects:
   - id: "0047"
     title: "Cross-Origin PDF Recovery & Crawler Fix"
     summary: "Fix the crawler's cross-origin blocking that silently drops PDFs hosted on CDNs (Squarespace, Webflow, Wix, etc.). Recover ~31K known PDF URLs from fetch_log (pass 1), re-scan ~40K orgs to discover CDN-hosted PDF links previously dropped by candidate_filter (pass 2), and permanently fix both candidate_filter.py and redirect_policy.py to accept PDFs linked from an org's own pages regardless of hosting domain."
-    status: conceived
+    status: integrated
     priority: high
     files:
       spec: locard/specs/0047-cross-origin-pdf-recovery.md
-      plan: null
+      plan: locard/plans/0047-cross-origin-pdf-recovery.md
       review: null
     dependencies: ["0004", "0021"]
     tags: [crawler, data-recovery, cdn, cross-origin, national-scale]
-    notes: "Discovered 2026-05-16: 36K PDFs blocked, 5K orgs affected in fetch_log alone. Candidate_filter silently drops another ~40K orgs worth of CDN links. Squarespace alone = 3,431 orgs / 22K PDFs."
+    notes: "Discovered 2026-05-16: 36K PDFs blocked, 5K orgs affected in fetch_log alone. Candidate_filter silently drops another ~40K orgs worth of CDN links. Squarespace alone = 3,431 orgs / 22K PDFs. Status/plan-path reconciliation folds in the intent of dropped hot-patch commit e2183a5 ([Spec 0047] Update status to implementing, add plan path); origin/master PR #40 is the canonical reconcile_s3 line."
+
+  - id: "0048"
+    title: "Recovery Readiness: Repository Stabilization & Data-Quality Bar"
+    summary: "First micro-plan gate from the corpus-integrity macro-plan. Reconcile the divergent git state (local master 4 ahead / origin/master 2 ahead), make an explicit human decision on the 4 direct-to-master hot-patch commits, discard the unreviewed Content-Type/structure-validation bypass while keeping the legitimate CSRF hardening, remove or ignore generated artifacts, AND author a falsifiable Data-Quality & Attribution-Confidence Standard that all downstream recovery/ingestion must satisfy before any production write."
+    status: planned
+    priority: high
+    files:
+      spec: locard/specs/0048-recovery-readiness-baseline.md
+      plan: locard/plans/0048-recovery-readiness-baseline.md
+      review: null
+    dependencies: ["0047"]
+    tags: [maintain, git-hygiene, data-quality, attribution, recovery-readiness, blocker]
+    notes: "Critical-path blocker for the macro-plan (locard/operations/macro-plan-corpus-integrity-rag-readiness.md). No production recovery may run until this is integrated. Supersedes the earlier untracked draft locard/plans/0048-repository-cleanup-for-approval.md (cleanup-only; mislocated the 4 commits). Human approved spec/plan + builder spawned 2026-05-18 (through expert + red-team consult, 0 CRITICAL); status held at 'planned' per AI lifecycle ceiling — human marks specified/integrated. Inventory: locard/maintain/0048-inventory.md. Default disposition Option B (non-destructive; backup/master-pre-0048 preserved, no reset)."
 
 ## Next Available Number
 
-**0048** - Reserve this number for your next project
+**0049** - Reserve this number for your next project
 
 ---
 
