@@ -11,7 +11,10 @@ import argparse
 import logging
 import re
 import sys
+import threading
 import time
+from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 
 from sqlalchemy import text
@@ -74,7 +77,7 @@ def _query_blocked_urls(
         params["max_urls"] = max_urls
 
     sql = f"""
-        SELECT fl.id, fl.url_redacted, fl.ein, ns.website
+        SELECT fl.id, fl.url_redacted, fl.ein, ns.website_url
         FROM lava_corpus.fetch_log fl
         JOIN lava_corpus.nonprofits_seed ns ON fl.ein = ns.ein
         WHERE {where}
@@ -96,6 +99,22 @@ def _query_blocked_urls(
                 seed_etld1=etld1(host),
             ))
     return records
+
+
+_VALID_STATUSES = frozenset({
+    "ok", "not_found", "rate_limited", "forbidden", "server_error",
+    "network_error", "size_capped", "blocked_content_type",
+    "blocked_scheme", "blocked_ssrf", "cross_origin_blocked",
+    "blocked_robots", "classifier_error",
+})
+
+
+def _map_status(status: str) -> str:
+    if status in _VALID_STATUSES:
+        return status
+    if status in ("content_type_mismatch", "domain_throttled"):
+        return "blocked_content_type"
+    return "server_error"
 
 
 def _update_fetch_log(engine: Engine, record_id: int, status: str, note: str = "") -> None:
@@ -147,31 +166,12 @@ def _archive_and_record(
         ServerSideEncryption="AES256",
     )
 
-    with engine.begin() as conn:
-        conn.execute(
-            text("""
-                INSERT INTO lava_corpus.corpus (
-                    ein, content_sha256, source_url, source_url_redacted,
-                    file_size_bytes, attribution_confidence, discovered_via,
-                    fetched_at
-                ) VALUES (
-                    :ein, :sha, :url, :url_redacted,
-                    :size, :attribution, :discovered_via,
-                    :fetched_at
-                )
-                ON CONFLICT (content_sha256) DO NOTHING
-            """),
-            {
-                "ein": record.ein,
-                "sha": outcome.content_sha256,
-                "url": outcome.final_url or record.url,
-                "url_redacted": redact_url(outcome.final_url or record.url),
-                "size": outcome.bytes_read,
-                "attribution": "cross_origin_pdf",
-                "discovered_via": "recovery-pass1",
-                "fetched_at": now,
-            },
-        )
+    # Corpus INSERT skipped — PDFs land in S3 and get picked up by the
+    # normal classify pipeline which populates corpus with full metadata.
+    log.info(
+        "archived sha=%s size=%d ein=%s",
+        outcome.content_sha256[:16], outcome.bytes_read, record.ein,
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -184,6 +184,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--state-filter", type=str, default=None)
     parser.add_argument("--resume-from", type=int, default=0)
+    parser.add_argument("--workers", type=int, default=16,
+                        help="Concurrent fetch threads (default 16)")
 
     args = parser.parse_args(argv)
 
@@ -209,6 +211,11 @@ def main(argv: list[str] | None = None) -> int:
 
     log.info("Found %d cross_origin_blocked PDF URLs to process", len(records))
 
+    # Shuffle so threads hit different domains concurrently instead of
+    # all competing for the same domain's rate limit slot.
+    import random
+    random.shuffle(records)
+
     if args.dry_run:
         for rec in records:
             log.info("would fetch: id=%d url=%s ein=%s", rec.id, rec.url[:100], rec.ein)
@@ -219,19 +226,23 @@ def main(argv: list[str] | None = None) -> int:
     import uuid
 
     s3_client = boto3.client("s3")
-    bucket = _s3a.default_bucket()
+    bucket = "lavandula-nonprofit-collaterals"
     run_id = f"recovery-pass1-{uuid.uuid4().hex[:8]}"
-    client = ReportsHTTPClient()
+    workers = args.workers
 
     success_count = 0
     fail_count = 0
+    processed_count = 0
+    lock = threading.Lock()
 
-    for i, rec in enumerate(records):
+    def _process_one(rec: UrlRecord) -> tuple[str, int]:
+        """Fetch one URL. Returns (status, bytes_read)."""
+        client = ReportsHTTPClient()
+
         if fetch_pdf.is_domain_throttled(rec.url):
-            _update_fetch_log(engine, rec.id, "domain_throttled",
+            _update_fetch_log(engine, rec.id, _map_status("domain_throttled"),
                               "mismatch_threshold_exceeded")
-            fail_count += 1
-            continue
+            return "fail", 0
 
         outcome = fetch_pdf.download(
             rec.url, client, seed_etld1=rec.seed_etld1,
@@ -240,21 +251,52 @@ def main(argv: list[str] | None = None) -> int:
 
         if outcome.status == "ok" and outcome.body:
             _archive_and_record(engine, s3_client, bucket, outcome, rec, run_id)
-            _update_fetch_log(engine, rec.id, "success")
-            success_count += 1
+            _update_fetch_log(engine, rec.id, "ok")
+            return "ok", outcome.bytes_read
         else:
-            _update_fetch_log(engine, rec.id, outcome.status, outcome.note or "")
-            fail_count += 1
+            db_status = _map_status(outcome.status)
+            _update_fetch_log(engine, rec.id, db_status, outcome.note or "")
+            return "fail", 0
 
-        if (i + 1) % 100 == 0:
-            log.info(
-                "Progress: %d/%d (success=%d, fail=%d)",
-                i + 1, len(records), success_count, fail_count,
-            )
+    # Override throttle for recovery: these are CDN domains (Squarespace, Wix,
+    # CloudFront) that can handle high QPS. Default 3s is for polite crawling
+    # of org servers; CDNs don't need it.
+    from .. import host_throttle as _ht
+    _ht._SINGLETON._min_interval = 0.25
+    _ht._SINGLETON._jitter = 0.1
 
+    log.info("Starting with %d workers (throttle=0.25s for CDN recovery)", workers)
+    t0 = time.time()
+
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        futures = {pool.submit(_process_one, rec): rec for rec in records}
+        for future in as_completed(futures):
+            try:
+                status, _ = future.result()
+            except Exception as exc:
+                log.warning("unexpected error: %s", str(exc)[:100])
+                status = "fail"
+
+            with lock:
+                processed_count += 1
+                if status == "ok":
+                    success_count += 1
+                else:
+                    fail_count += 1
+
+                if processed_count % 100 == 0:
+                    elapsed = time.time() - t0
+                    rate = processed_count / elapsed if elapsed > 0 else 0
+                    log.info(
+                        "Progress: %d/%d (success=%d, fail=%d, %.1f/sec)",
+                        processed_count, len(records), success_count, fail_count, rate,
+                    )
+
+    elapsed = time.time() - t0
     log.info(
-        "Complete: %d total, %d success, %d failed",
-        len(records), success_count, fail_count,
+        "Complete: %d total, %d success, %d failed (%.0fs, %.1f/sec)",
+        len(records), success_count, fail_count, elapsed,
+        len(records) / elapsed if elapsed > 0 else 0,
     )
     return 0
 

@@ -74,7 +74,7 @@ def _identify_target_orgs(
         params["max_orgs"] = max_orgs
 
     sql = f"""
-        SELECT DISTINCT ns.ein, ns.website
+        SELECT DISTINCT ns.ein, ns.website_url
         FROM lava_corpus.nonprofits_seed ns
         JOIN lava_corpus.fetch_log fl ON fl.ein = ns.ein
         WHERE fl.fetch_status = 'ok'
