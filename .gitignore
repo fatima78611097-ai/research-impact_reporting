@@ -32,3 +32,14 @@ logs/
 .claude/
 nptech/
 lavandula/nonprofits/data/rds-backups/
+
+# Spec 0048 Part 4 — targeted generated-artifact rules (durable paths only;
+# no broad patterns that could mask source). Hard-reject verified: no
+# currently-tracked path matches any rule below.
+lavandula/reports/.crawler.*.lock
+lavandula/reports/reports.db
+lavandula/dashboard/staticfiles/
+/downloads/
+/screenshots/
+/*_website.json
+/output.json
