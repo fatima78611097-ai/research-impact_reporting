@@ -302,3 +302,46 @@ decision changes the default, it does not gate basic progress:
 3. Fate of the deferred ambiguous artifacts (migration SQL, 0040 audit
    findings, classifier_refactor migrations, spikes/001-data). **Default if no
    decision:** retain in place (no deletion) until explicitly ratified.
+
+## Consultation Log
+
+### Round 1: Expert Review (2026-05-18)
+
+**codex spec-review** — Verdict: **REQUEST_CHANGES** (HIGH confidence)
+- Acceptance threshold undefined; spec can't close until concrete per-stratum limits supplied.
+- Re-home-then-reset fallback path not specified if sponsor rejects local master reset.
+- Per-path decision table is illustrative — need a required exhaustive inventory artifact.
+- `views.py` "defer" needs decision owner, required evidence, default-if-unresolved.
+- Require written inventory artifact before any deletion (auditable).
+- Testing strategy too light for high-stakes stabilization.
+- Data-quality standard doesn't clarify field source-of-truth (existing vs derived vs downstream).
+
+**gemini spec-review** — Verdict: **APPROVE** (HIGH confidence)
+- No issues raised.
+
+**Resolution:** All 7 codex findings addressed in revision `b0913ff`:
+reset-rejection fallback (Option B), required inventory artifact with completeness gate,
+views.py decision owner + revert-default, strawman/provisional QA threshold,
+field provenance table.
+
+### Round 2: Red-Team Security Review (2026-05-18)
+
+**codex red-team-spec** — Verdict: **REQUEST_CHANGES** (HIGH confidence), 0 CRITICAL
+- Frozen-snapshot protocol needed for inventory artifact (stale-state risk).
+- `MISMATCH_DISABLED` toggle too easy to surface as runtime option even with False default.
+- Sponsor-decision mechanism not concretely specified (weakens auditability).
+- Binding relationship of QA standard to downstream specs not operationally enforced.
+
+**gemini red-team-spec** — Verdict: **REQUEST_CHANGES**, 0 CRITICAL / 1 HIGH / 3 MEDIUM / 1 LOW
+- HIGH: Retained `MISMATCH_DISABLED` flag is a latent vulnerability; prefer removal.
+- MEDIUM: Insufficient auditability for human-decision gates (need decider/date/link).
+- MEDIUM: `GEMINI.md` may hold canonical security/process content; don't classify as scratch.
+- MEDIUM: No preventative measures against recurrence (direct-to-master policy).
+- LOW: Strawman 2% may be too permissive; suggest 1% fail-closed default.
+
+**Resolution:** All findings addressed in revision `753256f`:
+default-remove MISMATCH_DISABLED flag + negative-test gate if retained,
+frozen-snapshot inventory protocol, decision-record fields (decider/date/link),
+views.py data-exposure/DoS assessment requirement, GEMINI.md reclassified to defer,
+strawman tightened 2%→1%, canonical standard path + downstream enforcement,
+out-of-scope dispositions recorded (process-policy / CSRF_HTTPONLY / secure-delete).

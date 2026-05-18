@@ -254,3 +254,43 @@ This is the macro-plan's critical-path blocker. It is part stabilization
 (MAINTAIN) and part standards authoring. Two steps are destructive/irreversible
 (Step 2 reset) or require a sponsor decision (Steps 1, 2, 5 thresholds) — these
 must stop and wait, not proceed autonomously.
+
+## Consultation Log
+
+### Round 1: Expert Review (2026-05-18)
+
+**codex plan-review** — Verdict: **COMMENT** (MEDIUM confidence)
+- Sponsor-approved threshold gated in Step 5 but no operational path if decision delayed/rejected.
+- Step 4 mixes delete-safe and delete-after-confirmation items; should separate explicitly.
+- Sequencing: Steps 3/4 depend on Step 1 PR merged + Step 2 reset; not made explicit.
+- No concrete validation method for the new standard beyond manual review.
+
+**gemini plan-review** — Verdict: **APPROVE** (HIGH confidence)
+- No issues raised.
+
+**Resolution:** All 4 codex findings addressed in revision `5fd4068`:
+provisional-threshold operational path (strawman + PROVISIONAL marker),
+Step 4a/4b delete split (safe-now vs after-confirm), explicit Step 3/4
+sequencing precondition, concrete standard-completeness + git/grep validation
+checklist.
+
+### Round 2: Red-Team Security Review (2026-05-18)
+
+**codex red-team-plan** — Verdict: **REQUEST_CHANGES** (HIGH confidence), 0 CRITICAL
+- Inventory-backed decisions not hard-enforced before deletion.
+- Local master reset not fully protected by verified remote-preservation gate.
+- `views.py` requires mandatory written decision or revert record.
+- Step 0 should deduplicate paths appearing in multiple git states.
+- `.gitignore` needs safeguard: reject if tracked source path newly ignored.
+- `MISMATCH_DISABLED` disposition in Step 3 should be non-negotiable, not preference.
+
+**gemini red-team-plan** — Verdict: **REQUEST_CHANGES**, 0 CRITICAL / 0 HIGH / 2 MEDIUM / 1 LOW
+- MEDIUM: CSRF cookie `httponly` flag not mentioned (acknowledged: Django intentionally non-httponly).
+- MEDIUM: `views.py` subquery removal should assess data-exposure/DoS risk.
+- LOW: Secure deletion for sensitive deferred files (acknowledged: out of scope for git hygiene).
+
+**Resolution:** All findings addressed in revision `6655965`:
+Step 0 frozen-snapshot + one-row-per-path dedupe, Step 3 non-negotiable
+MISMATCH_DISABLED removal rule, hard-reject .gitignore safeguard for tracked
+paths, bypass-flag negative test + inventory-completeness assertion in
+validation, strawman 2%→1%.
