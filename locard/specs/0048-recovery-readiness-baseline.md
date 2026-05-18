@@ -305,7 +305,9 @@ decision changes the default, it does not gate basic progress:
 
 ## Consultation Log
 
-### Round 1: Expert Review (2026-05-18)
+### First Consultation
+
+**Date**: 2026-05-18
 
 **codex spec-review** — Verdict: **REQUEST_CHANGES** (HIGH confidence)
 - Acceptance threshold undefined; spec can't close until concrete per-stratum limits supplied.
@@ -324,7 +326,9 @@ reset-rejection fallback (Option B), required inventory artifact with completene
 views.py decision owner + revert-default, strawman/provisional QA threshold,
 field provenance table.
 
-### Round 2: Red-Team Security Review (2026-05-18)
+### Red Team Security Review
+
+**Verdict**: REQUEST_CHANGES (0 CRITICAL)
 
 **codex red-team-spec** — Verdict: **REQUEST_CHANGES** (HIGH confidence), 0 CRITICAL
 - Frozen-snapshot protocol needed for inventory artifact (stale-state risk).
