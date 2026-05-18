@@ -26,10 +26,15 @@ reset). Those steps are explicitly **human-gated** and must stop for sign-off.
   `git merge-base master origin/master`.
 - Capture `git log --oneline origin/master..master` (the 4 hot-patches) and
   `master..origin/master` (the 2 clean commits) into the maintenance record.
-- Produce the full per-path classification table from Spec 0048 Part 2 for
-  **every** entry in `git status --porcelain` and
-  `git ls-files --others --exclude-standard`. Nothing is deleted until this
-  table is written and the deferred items are flagged for human decision.
+- **Freeze a snapshot**: write the captured commit SHA, verbatim
+  `git status --porcelain`, and `git ls-files --others --exclude-standard`
+  output (with timestamp) at the top of `locard/maintain/0048-inventory.md`.
+- Produce the full per-path classification table from Spec 0048 Part 2 against
+  that frozen snapshot — **exactly one row per logical path** (normalize a path
+  that appears tracked + staged + untracked into a single disposition).
+  Nothing is deleted until the table is written, every `defer` carries a
+  recorded decision (decider/date/link), and the snapshot is still current
+  (re-freeze + reconcile if the tree moved).
 - Create a safety tag/branch on local `master`'s tip
   (`git branch backup/master-pre-0048 master`) so the 4 commits' SHAs are
   recoverable even after reset.
@@ -72,6 +77,11 @@ staged diffs
 - Confirm the security bypass is absent from the post-reconcile tree
   (no `validate_structure=False`, no `MISMATCH_DISABLED=True`). If any residue
   remains uncommitted, discard it.
+- **Non-negotiable (Spec 0048 Part 2):** default action is to remove the
+  `MISMATCH_DISABLED` flag from `fetch_pdf.py` entirely. It is retained only if
+  Spec 0047 strictly requires it; if retained it must default `False`, carry an
+  in-code `# SECURITY:` warning, and have a negative test (below). Any
+  production path setting it `True` is a blocking finding.
 - `views.py` `_v3_state_grid` subquery removal: either record a written
   rationale (and route it through the Step 1 PR or its own PR) or revert it.
   Do not leave it as an unexplained loose change.
@@ -116,7 +126,7 @@ Never delete logs before a replacement is confirmed.
   minimum `n` per stratum; measured statistic = EIN-misattribution rate.
 - **GATE (soft):** insert the sponsor-approved acceptance threshold(s). If the
   decision is delayed or withheld, do **not** stall the milestone: ship the
-  strawman default (≤ 2% high/medium; `low` excluded), mark the standard
+  strawman default (≤ 1% high/medium; `low` excluded), mark the standard
   **PROVISIONAL** at the top, and record that production recovery writes remain
   blocked until the threshold is ratified. The milestone closes; the *next*
   phase stays gated. (Spec 0048 §Open Decisions item 2.)
@@ -183,7 +193,9 @@ Never delete logs before a replacement is confirmed.
   method="post"` + `{% csrf_token %}` present in `base.html`.
 
 **Ignore rules:** `git check-ignore` returns a hit for each previously-noisy
-path; no previously-tracked source path is newly ignored.
+path. **Hard reject:** if any currently-tracked path
+(`git ls-files`) matches a newly-added ignore rule, the rule is too broad —
+back it out and narrow before proceeding.
 
 **Inventory artifact:** `locard/maintain/0048-inventory.md` exists; every
 `git status` / untracked path has a row; zero `defer` rows remain
@@ -207,6 +219,12 @@ unresolved (or each carries a recorded human decision + date).
   recovery scripts that land via the Step 1 PR (validates the schema fix
   doesn't regress).
 - Confirm previously-noisy paths are ignored: `git check-ignore` on each.
+- **Negative test for the bypass flag**: if `MISMATCH_DISABLED` is retained,
+  assert via test that no production code path sets it `True` and that its
+  module default is `False`. If the flag was removed, assert it is absent.
+- **Inventory completeness assertion**: every entry in the frozen
+  `git status --porcelain` + untracked snapshot maps to exactly one row in
+  `locard/maintain/0048-inventory.md`; fail if any path is missing or doubled.
 
 ## Success Criteria
 
