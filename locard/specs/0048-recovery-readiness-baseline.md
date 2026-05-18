@@ -112,11 +112,37 @@ kept.
 **Decision required from sponsor (gating):** approve the re-home-then-reset
 strategy, or specify an alternative disposition for the 4 commits.
 
+**Fallback if the sponsor rejects the local `master` reset (Option B):** do
+*not* reset. Instead, preserve the 4 commits permanently on
+`backup/master-pre-0048`, treat `origin/master` as the sole canonical line, and
+stop using local `master` as a working ref (all future work branches from
+`origin/master`). This still satisfies "recovery scripts on a known commit"
+(the re-homed PR) and leaves no ambiguous *active* divergence, at the cost of a
+stale local `master` ref that is explicitly documented as abandoned. Option B
+is non-destructive and requires no further sign-off.
+
 ### Part 2: Classify and resolve the working tree
 
-Produce an explicit per-path decision table (keep / discard / ignore / delete /
-defer) covering **every** modified and untracked path — no blanket deletes.
-Binding classifications:
+The table below is the **binding classification ruleset**. Applying it produces
+a required, auditable artifact: `locard/maintain/0048-inventory.md`, an
+exhaustive per-path table with one row for **every** entry in
+`git status --porcelain` plus `git ls-files --others --exclude-standard`, each
+carrying its class, action, and (for `defer` rows) the human decision and date.
+No path may be deleted until its row exists in that artifact and any `defer`
+row is resolved. The artifact — not this spec table — is the completeness
+gate.
+
+**Decision ownership:** `keep`/`discard`/`ignore` rows follow the ruleset
+mechanically (builder executes). Every `defer` row, and the `views.py` row
+specifically, requires an explicit decision recorded by the **project owner**
+(architect may recommend; only the human ratifies). For `views.py`: the
+required evidence is a written rationale for removing the
+`cr.run_id = (SELECT MAX(...))` join condition (what query behavior changes,
+why intended); **if unresolved by the time the milestone would otherwise close,
+the default is REVERT** — an unexplained behavioral change must never ride
+through a stabilization pass.
+
+Binding classification ruleset:
 
 | Path | Class | Action |
 |------|-------|--------|
@@ -150,7 +176,15 @@ downstream recovery/ingestion specs. It must define:
    minimum sample `n` per stratum; the statistic measured (EIN-misattribution
    rate: sampled documents whose content/source contradicts the attributed EIN).
 3. **Acceptance threshold** — the maximum tolerable misattribution rate per
-   stratum (the **sponsor decision** — Part 3 cannot close without it).
+   stratum. The standard ships with a **strawman default the sponsor accepts or
+   overrides**, so the document is falsifiable even before sign-off:
+   - `high`/`medium` strata: ≤ **2%** sampled EIN-misattribution rate.
+   - `low` tier: excluded from downstream production use by default (not
+     gated by a rate — its presence alone bars production ingestion).
+   Until the sponsor ratifies or overrides, the standard is marked
+   **PROVISIONAL**: the milestone may still close, but no production recovery
+   write may proceed against a provisional threshold (the gate moves, it does
+   not disappear).
 4. **Failure action** — **stratum-level quarantine**, not all-or-nothing: a
    failing stratum is held out of downstream use and re-worked; passing strata
    proceed.
@@ -158,6 +192,17 @@ downstream recovery/ingestion specs. It must define:
    extraction quality must be gated before vocabulary mining, with the detailed
    bar deferred to the Docling project but explicitly owned here so it is not
    forgotten.
+
+**Field provenance (source of truth):** the standard must state, per field,
+whether it is existing, derived, or downstream-schema:
+- `NTEE-major` — **existing**, derived from `nonprofits_seed` NTEE code (seed
+  layer is intact per the macro-plan).
+- `recovery-source` — **derived** at recovery time from the tool/provenance
+  path (e.g., `pass1`, `pass2`, `s3-orphan`); recorded by the recovery run.
+- `attribution_confidence` — **new derived** field whose *computation* this
+  standard defines; its *persistence* is downstream attribution-schema work
+  (Spec 0048 non-goal). Builders treat it as computed-at-evaluation, not a
+  column to read, until the schema project lands.
 
 This standard is a *contract*, not code. Later specs reference it; they fail
 review if they ingest below-threshold data or omit the confidence rubric.
@@ -215,9 +260,15 @@ decision; never delete logs before a replacement is confirmed.
 
 ## Open Decisions (sponsor sign-off required)
 
-1. Disposition of the 4 direct-to-master hot-patch commits (recommend:
-   re-home substantive work via PR, then human-gated local `master` reset).
-2. The acceptance threshold(s) for the attribution-QA bar (max misattribution
-   rate per stratum).
+Each has a defined default so the milestone is never silently blocked — the
+decision changes the default, it does not gate basic progress:
+
+1. Disposition of the 4 hot-patch commits. **Default if no decision:** Option B
+   (non-destructive — preserve on `backup/master-pre-0048`, no reset).
+   Recommended: re-home via PR, then human-gated reset (Option A).
+2. The attribution-QA acceptance threshold. **Default if no decision:** the
+   strawman (≤ 2% high/medium; `low` excluded), standard marked PROVISIONAL,
+   production writes blocked until ratified.
 3. Fate of the deferred ambiguous artifacts (migration SQL, 0040 audit
-   findings, classifier_refactor migrations, spikes/001-data).
+   findings, classifier_refactor migrations, spikes/001-data). **Default if no
+   decision:** retain in place (no deletion) until explicitly ratified.
