@@ -125,22 +125,36 @@ is non-destructive and requires no further sign-off.
 
 The table below is the **binding classification ruleset**. Applying it produces
 a required, auditable artifact: `locard/maintain/0048-inventory.md`, an
-exhaustive per-path table with one row for **every** entry in
-`git status --porcelain` plus `git ls-files --others --exclude-standard`, each
-carrying its class, action, and (for `defer` rows) the human decision and date.
-No path may be deleted until its row exists in that artifact and any `defer`
-row is resolved. The artifact — not this spec table — is the completeness
-gate.
+exhaustive per-path table with **exactly one row per logical path** (a path
+appearing in multiple git states — tracked/staged/untracked — is normalized to
+one row with one final disposition).
+
+**Frozen-snapshot protocol:** the artifact is built against a captured snapshot
+— record the commit SHA, the verbatim `git status --porcelain`, and
+`git ls-files --others --exclude-standard` output at a fixed timestamp at the
+top of the artifact. Classification and deletion act against that frozen list,
+not the live tree. If the working tree changes before cleanup completes, the
+snapshot is re-captured and the artifact reconciled. No path may be deleted
+until its row exists, its `defer` (if any) is resolved, and the snapshot is
+current. The artifact — not this spec table — is the completeness gate.
+
+**Decision-record fields:** every `defer` row and every sponsor decision
+records: the decision, the deciding individual/role, the date, and a link to
+the supporting rationale/PR/thread. Mechanical (`keep`/`discard`/`ignore`) rows
+need no decider but still appear in the artifact.
 
 **Decision ownership:** `keep`/`discard`/`ignore` rows follow the ruleset
 mechanically (builder executes). Every `defer` row, and the `views.py` row
 specifically, requires an explicit decision recorded by the **project owner**
 (architect may recommend; only the human ratifies). For `views.py`: the
-required evidence is a written rationale for removing the
-`cr.run_id = (SELECT MAX(...))` join condition (what query behavior changes,
-why intended); **if unresolved by the time the milestone would otherwise close,
-the default is REVERT** — an unexplained behavioral change must never ride
-through a stabilization pass.
+required evidence is a written rationale (a committed rationale file or the PR
+description — not "documented somewhere") for removing the
+`cr.run_id = (SELECT MAX(...))` join condition, which must explicitly assess
+whether dropping the `MAX` condition widens the returned result set (data
+exposure) or increases query load (DoS), even though the change is not
+security-motivated. **If unresolved by the time the milestone would otherwise
+close, the default is REVERT** — an unexplained behavioral change must never
+ride through a stabilization pass.
 
 Binding classification ruleset:
 
@@ -148,14 +162,15 @@ Binding classification ruleset:
 |------|-------|--------|
 | `settings.py` (+`CSRF_COOKIE_SECURE`) | Security hardening | **Keep** — re-home with recovery PR or its own small PR |
 | `base.html` (logout GET→POST + csrf) | Security hardening | **Keep** |
-| `fetch_pdf.py` (`MISMATCH_DISABLED` flag, default `False`) | Bypass capability | Discard unless Spec 0047 requires it; flag must never default `True` |
+| `fetch_pdf.py` (`MISMATCH_DISABLED` flag) | Latent bypass | **Default action: remove the flag entirely.** Retain ONLY if Spec 0047 strictly requires it for a legitimate path; if retained: must default `False`, carry an in-code `# SECURITY:` warning of the open-redirect/Content-Type impact, and be covered by a negative test asserting no production code path sets it `True`. Setting it `True` outside dev is review-blocking. |
 | `recovery_pass1.py` worktree delta (`validate_structure=False`, `MISMATCH_DISABLED=True`) | **Security bypass** | **Discard** — must not ship |
 | `views.py` `_v3_state_grid` subquery removal | Untriaged behavioral | **Defer** — record rationale or revert; do not bundle blindly |
 | `recovery_pass1/2.py` staged schema fix | Real work | Land via the Part 1 PR, not as loose staged diff |
 | `.crawler.*.lock`, `reports.db`, `staticfiles/`, `downloads/`, `screenshots/`, root `*_website.json`, `output.json` | Generated noise | Remove + add targeted `.gitignore` rules |
 | `sample_pdfs/migration_004_*.sql`, `migration_005_*.sql` | Possible real work | **Defer** — human decision before delete |
 | `locard/reviews/0040-audit-findings.md`, macro-plan, `lavandula/migrations/classifier_refactor/`, `locard/spikes/001-data/`, `cohort_junk_rate.sql` | Possible real work | **Defer** — human decision before delete |
-| `GEMINI.md`, `locard/project-handoff*.{md,log,tsv}`, `experiments/`, `lavandula/review_uploads/` | Scratch/handoff | Delete or relocate per human decision (do not delete logs before confirming superseded) |
+| `GEMINI.md` | Possible canonical docs | **Defer** — may hold security/process conventions; before any delete/relocate, verify no unique canonical content (security workflow, dev conventions) and migrate it to a permanent location first |
+| `locard/project-handoff*.{md,log,tsv}`, `experiments/`, `lavandula/review_uploads/` | Scratch/handoff | Delete or relocate per human decision (do not delete logs before confirming superseded) |
 | `locard/plans/0048-repository-cleanup-for-approval.md` | Superseded draft | Delete — replaced by this spec/plan |
 
 ### Part 3: Author the Data-Quality & Attribution-Confidence Standard
@@ -178,7 +193,8 @@ downstream recovery/ingestion specs. It must define:
 3. **Acceptance threshold** — the maximum tolerable misattribution rate per
    stratum. The standard ships with a **strawman default the sponsor accepts or
    overrides**, so the document is falsifiable even before sign-off:
-   - `high`/`medium` strata: ≤ **2%** sampled EIN-misattribution rate.
+   - `high`/`medium` strata: ≤ **1%** sampled EIN-misattribution rate
+     (deliberately fail-closed; the sponsor may loosen with justification).
    - `low` tier: excluded from downstream production use by default (not
      gated by a rate — its presence alone bars production ingestion).
    Until the sponsor ratifies or overrides, the standard is marked
@@ -204,8 +220,22 @@ whether it is existing, derived, or downstream-schema:
   (Spec 0048 non-goal). Builders treat it as computed-at-evaluation, not a
   column to read, until the schema project lands.
 
-This standard is a *contract*, not code. Later specs reference it; they fail
-review if they ingest below-threshold data or omit the confidence rubric.
+This standard is a *contract*, not code. Its canonical home is
+`locard/resources/data-quality-standard.md` (discoverable, permanent — not a
+scratch location). Later recovery/ingestion specs MUST link it; spec/plan
+review explicitly checks that any downstream spec touching recovery or
+ingestion references this standard and does not ingest below-threshold data or
+omit the confidence rubric.
+
+## Out of Scope (considered during red-team, deferred)
+
+- **Process policy to prevent recurrence** (mandating PR-only, prohibiting
+  direct-to-master). Valid, but a governance change beyond this stabilization
+  milestone — captured as a recommended follow-up project, not 0048 scope.
+- **`CSRF_COOKIE_HTTPONLY`**: intentionally left at Django's default (the CSRF
+  cookie must be JS-readable); not a gap. Noted so it is not re-raised.
+- **Secure/overwrite deletion of sensitive deferred files**: out of scope for
+  git hygiene; standard `git rm` + history considerations only.
 
 ### Part 4: Normalize repository hygiene
 
@@ -267,7 +297,7 @@ decision changes the default, it does not gate basic progress:
    (non-destructive — preserve on `backup/master-pre-0048`, no reset).
    Recommended: re-home via PR, then human-gated reset (Option A).
 2. The attribution-QA acceptance threshold. **Default if no decision:** the
-   strawman (≤ 2% high/medium; `low` excluded), standard marked PROVISIONAL,
+   strawman (≤ 1% high/medium; `low` excluded), standard marked PROVISIONAL,
    production writes blocked until ratified.
 3. Fate of the deferred ambiguous artifacts (migration SQL, 0040 audit
    findings, classifier_refactor migrations, spikes/001-data). **Default if no
