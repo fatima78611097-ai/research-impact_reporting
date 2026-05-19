@@ -85,13 +85,20 @@ ROBOTS_CACHE_TTL_SEC = 24 * 3600
 HOSTING_PLATFORMS = frozenset({
     "issuu.com", "flipsnack.com", "canva.com",
     # CDN domains used by common website builders (Wix, Squarespace, etc.)
-    "wixstatic.com", "wixmp.com",
-    "squarespace-cdn.com", "sqspcdn.com",
+    "wixstatic.com", "wixmp.com", "filesusr.com",
+    "squarespace.com", "squarespace-cdn.com", "sqspcdn.com",
     "ctfassets.net",       # Contentful
     "amazonaws.com",       # S3-hosted PDFs
     "cloudfront.net",      # CloudFront CDN
     "azureedge.net",       # Azure CDN
     "googleusercontent.com",
+    # File-sharing / CMS platforms
+    "box.com", "boxcloud.com",
+    "wildapricot.com",
+    "finalsite.net",
+    "prod.website-files.com",  # Webflow CDN
+    "constantcontact.com", "conta.cc",
+    "donordrive.com",
 })
 
 # --- Candidate keywords (taxonomy-driven) --------------------------------

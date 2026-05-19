@@ -30,15 +30,17 @@ _log = logging.getLogger(__name__)
 
 _BOM = b"\xef\xbb\xbf"
 _PDF_HEADER = b"%PDF-1."
+_PDF_HEADER_2 = b"%PDF-2."
 _STRUCTURE_TIMEOUT_SEC = 2.0
 
 
 def is_pdf_magic(data: bytes) -> bool:
-    """True iff `data` starts with the PDF magic (tolerating BOM)."""
+    """True iff `data` starts with the PDF magic (tolerating BOM and leading whitespace)."""
     if not data:
         return False
     b = data[len(_BOM):] if data.startswith(_BOM) else data
-    return b.startswith(_PDF_HEADER)
+    b = b.lstrip(b"\x00\x09\x0a\x0d\x20")
+    return b.startswith(_PDF_HEADER) or b.startswith(_PDF_HEADER_2)
 
 
 @dataclass

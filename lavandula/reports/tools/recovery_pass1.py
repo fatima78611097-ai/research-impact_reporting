@@ -60,7 +60,7 @@ def _query_blocked_urls(
 ) -> list[UrlRecord]:
     clauses = [
         "fl.fetch_status = 'cross_origin_blocked'",
-        "fl.url_redacted LIKE '%.pdf'",
+        "fl.kind = 'pdf-get'",
         "fl.id > :resume_from",
     ]
     params: dict = {"resume_from": resume_from}
