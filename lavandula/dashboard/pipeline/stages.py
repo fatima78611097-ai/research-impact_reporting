@@ -104,6 +104,8 @@ STAGE_REGISTRY: dict[str, StageDefinition] = {
             "max_download_workers": ParamSpec(type="integer", cli_flag="--max-download-workers", min_value=1, max_value=100),
 "state": ParamSpec(type="state_code", cli_flag="--state"),
             "classifier_backend": ParamSpec(type="string", cli_flag="--classifier-backend", pattern=r"^[a-z]+$"),
+            "refresh": ParamSpec(type="boolean", cli_flag="--refresh"),
+            "skip_existing": ParamSpec(type="boolean", cli_flag="--skip-existing"),
         },
         predecessors=["resolve"],
         conflict_group="per-state",
