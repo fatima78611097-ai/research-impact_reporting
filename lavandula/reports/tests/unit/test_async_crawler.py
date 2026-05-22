@@ -639,3 +639,170 @@ async def test_wayback_all_active_content_produces_permanent_skip():
     assert crawled_org_writes[0].status == "permanent_skip"
     assert crawled_org_writes[0].notes == "wayback_unsafe_archive"
     assert stats.orgs_permanent_failed == 1
+
+
+# ---------- skip-existing: skip downloads for URLs already in corpus ----------
+
+@pytest.mark.asyncio
+async def test_skip_existing_skips_known_urls():
+    """When skip_existing=True, candidates whose redacted URL is already
+    in corpus should NOT be enqueued for download."""
+    enqueued: list[object] = []
+    download_items: list[object] = []
+    loop = asyncio.get_running_loop()
+
+    async def mock_enqueue(req):
+        enqueued.append(req)
+        fut = loop.create_future()
+        fut.set_result(True)
+        return fut
+
+    db_actor = MagicMock()
+    db_actor.enqueue = mock_enqueue
+
+    async def mock_get(url, *, kind="homepage", seed_etld1=None, extra_headers=None):
+        return _FakeResult(body=b"ok", status="ok", http_status=200,
+                           final_url=url, final_url_redacted=url)
+
+    client = MagicMock()
+    client.get = mock_get
+
+    download_queue = asyncio.Queue()
+    stats = CrawlStats()
+    shutdown = asyncio.Event()
+
+    existing_pdf = Candidate(
+        url="https://example.com/reports/existing.pdf",
+        anchor_text="Existing Report",
+        referring_page_url="https://example.com",
+        discovered_via="homepage-link",
+        hosting_platform="own-domain",
+        attribution_confidence="high",
+    )
+    new_pdf = Candidate(
+        url="https://example.com/reports/new-report.pdf",
+        anchor_text="New Report",
+        referring_page_url="https://example.com",
+        discovered_via="homepage-link",
+        hosting_platform="own-domain",
+        attribution_confidence="high",
+    )
+    discovery_result = DiscoveryResult(
+        candidates=[existing_pdf, new_pdf], homepage_ok=True,
+    )
+
+    mock_engine = MagicMock()
+
+    with patch(
+        "lavandula.reports.async_crawler.discover_org",
+        return_value=discovery_result,
+    ), patch(
+        "lavandula.reports.async_crawler.db_writer.existing_corpus_urls",
+        return_value={"https://example.com/reports/existing.pdf"},
+    ):
+        async def drain_queue():
+            await asyncio.sleep(0.05)
+            while not download_queue.empty():
+                item = await download_queue.get()
+                download_items.append(item)
+                _, _, tracker, *_ = item
+                tracker.decrement()
+                download_queue.task_done()
+
+        consumer = asyncio.create_task(drain_queue())
+
+        await _process_org_async(
+            ein="12-3456789",
+            website="https://example.com",
+            client=client,
+            db_actor=db_actor,
+            download_queue=download_queue,
+            archive=MagicMock(),
+            run_id="test",
+            stats=stats,
+            shutdown_event=shutdown,
+            pdf_thread_pool=MagicMock(),
+            engine=mock_engine,
+            skip_existing=True,
+        )
+
+        await consumer
+
+    assert len(download_items) == 1, f"Expected 1 download, got {len(download_items)}"
+    _, queued_cand, *_ = download_items[0]
+    assert "new-report.pdf" in queued_cand.url
+    assert stats.downloads_skipped_existing == 1
+
+
+@pytest.mark.asyncio
+async def test_skip_existing_false_downloads_all():
+    """When skip_existing=False (default), all candidates are enqueued
+    for download even if they exist in corpus."""
+    enqueued: list[object] = []
+    download_items: list[object] = []
+    loop = asyncio.get_running_loop()
+
+    async def mock_enqueue(req):
+        enqueued.append(req)
+        fut = loop.create_future()
+        fut.set_result(True)
+        return fut
+
+    db_actor = MagicMock()
+    db_actor.enqueue = mock_enqueue
+
+    async def mock_get(url, *, kind="homepage", seed_etld1=None, extra_headers=None):
+        return _FakeResult(body=b"ok", status="ok", http_status=200,
+                           final_url=url, final_url_redacted=url)
+
+    client = MagicMock()
+    client.get = mock_get
+
+    download_queue = asyncio.Queue()
+    stats = CrawlStats()
+    shutdown = asyncio.Event()
+
+    cand = Candidate(
+        url="https://example.com/reports/existing.pdf",
+        anchor_text="Existing Report",
+        referring_page_url="https://example.com",
+        discovered_via="homepage-link",
+        hosting_platform="own-domain",
+        attribution_confidence="high",
+    )
+    discovery_result = DiscoveryResult(
+        candidates=[cand], homepage_ok=True,
+    )
+
+    with patch(
+        "lavandula.reports.async_crawler.discover_org",
+        return_value=discovery_result,
+    ):
+        async def drain_queue():
+            await asyncio.sleep(0.05)
+            while not download_queue.empty():
+                item = await download_queue.get()
+                download_items.append(item)
+                _, _, tracker, *_ = item
+                tracker.decrement()
+                download_queue.task_done()
+
+        consumer = asyncio.create_task(drain_queue())
+
+        await _process_org_async(
+            ein="12-3456789",
+            website="https://example.com",
+            client=client,
+            db_actor=db_actor,
+            download_queue=download_queue,
+            archive=MagicMock(),
+            run_id="test",
+            stats=stats,
+            shutdown_event=shutdown,
+            pdf_thread_pool=MagicMock(),
+        )
+
+        await consumer
+
+    assert len(download_items) == 1
+    assert stats.downloads_skipped_existing == 0

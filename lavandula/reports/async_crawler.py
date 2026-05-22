@@ -72,6 +72,7 @@ class CrawlStats:
     wayback_recoveries: int = 0
     wayback_empty: int = 0
     wayback_errors: int = 0
+    downloads_skipped_existing: int = 0
 
 
 def _pick_discovered_via(c: Candidate) -> str:
@@ -123,6 +124,8 @@ async def _org_worker(
     stats: CrawlStats,
     shutdown_event: asyncio.Event,
     pdf_thread_pool: ThreadPoolExecutor,
+    engine: Engine | None = None,
+    skip_existing: bool = False,
 ) -> None:
     while True:
         item = await org_queue.get()
@@ -143,6 +146,8 @@ async def _org_worker(
                 stats=stats,
                 shutdown_event=shutdown_event,
                 pdf_thread_pool=pdf_thread_pool,
+                engine=engine,
+                skip_existing=skip_existing,
             )
         except asyncio.CancelledError:
             raise
@@ -187,6 +192,8 @@ async def _process_org_async(
     stats: CrawlStats,
     shutdown_event: asyncio.Event,
     pdf_thread_pool: ThreadPoolExecutor,
+    engine: Engine | None = None,
+    skip_existing: bool = False,
 ) -> None:
     seed_etld1 = etld1(urlsplit(website).hostname or "")
 
@@ -277,12 +284,28 @@ async def _process_org_async(
     org_fetched = [0]
     org_active_content_rejections = [0]
 
+    already_in_corpus: set[str] = set()
+    if skip_existing and engine is not None:
+        loop = asyncio.get_running_loop()
+        already_in_corpus = await loop.run_in_executor(
+            None, lambda: db_writer.existing_corpus_urls(engine, ein=ein)
+        )
+        if already_in_corpus:
+            _log.info("discover: ein=%s skip_existing=%d urls already in corpus",
+                      ein, len(already_in_corpus))
+
     download_t0 = time.monotonic()
+    skipped_existing = 0
     for cand in candidates:
         if shutdown_event.is_set():
             break
+        if already_in_corpus and redact_url(cand.url) in already_in_corpus:
+            skipped_existing += 1
+            continue
         org_tracker.increment()
         await download_queue.put((ein, cand, org_tracker, seed_etld1, org_fetched, org_active_content_rejections))
+    if skipped_existing:
+        stats.downloads_skipped_existing += skipped_existing
 
     await org_tracker.wait_all_done()
     download_ms = int((time.monotonic() - download_t0) * 1000)
@@ -692,13 +715,16 @@ async def _progress_reporter(
         eta_hours = remaining / rate if rate > 0 else 0
         eta_days = int(eta_hours // 24)
         eta_h = int(eta_hours % 24)
+        skip_str = ""
+        if stats.downloads_skipped_existing > 0:
+            skip_str = f" | skipped: {stats.downloads_skipped_existing}"
         _log.info(
-            "orgs: %d/%d (%.1f%%) | active: %d | queue: %d | PDFs: %d | "
+            "orgs: %d/%d (%.1f%%) | active: %d | queue: %d | PDFs: %d%s | "
             "rate: %.0f orgs/hr | ETA: %dd %dh",
             stats.orgs_completed, stats.orgs_total,
             100 * stats.orgs_completed / max(stats.orgs_total, 1),
             stats.orgs_active, stats.download_queue_depth,
-            stats.pdfs_downloaded, rate, eta_days, eta_h,
+            stats.pdfs_downloaded, skip_str, rate, eta_days, eta_h,
         )
 
 
@@ -724,6 +750,7 @@ async def run_async(
     classifier_backend: str | None = None,
     job_id: int | None = None,
     lock_path: Path | None = None,
+    skip_existing: bool = False,
 ) -> CrawlStats:
     _ensure_taxonomy()
 
@@ -832,6 +859,8 @@ async def run_async(
                 _org_worker(
                     org_queue, download_queue, client, db_actor, archive,
                     run_id, stats, shutdown_event, pdf_thread_pool,
+                    engine=engine if skip_existing else None,
+                    skip_existing=skip_existing,
                 )
             )
             for _ in range(max_concurrent_orgs)
@@ -905,6 +934,7 @@ async def run_async(
                 "orgs_transient_failed": stats.orgs_transient_failed,
                 "orgs_permanent_failed": stats.orgs_permanent_failed,
                 "pdfs_downloaded": stats.pdfs_downloaded,
+                "downloads_skipped_existing": stats.downloads_skipped_existing,
                 "bytes_downloaded": stats.bytes_downloaded,
                 "wall_seconds": int(elapsed),
                 "flush_failures": stats.flush_failures,

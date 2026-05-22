@@ -58,8 +58,10 @@ COMMAND_MAP: dict[str, dict[str, Any]] = {
             "limit": {"type": "int", "min": 0, "max": 999999, "flag": "--limit"},
             "max_concurrent_orgs": {"type": "int", "min": 1, "max": 500, "flag": "--max-concurrent-orgs"},
             "max_download_workers": {"type": "int", "min": 1, "max": 100, "flag": "--max-download-workers"},
-"state": {"type": "text", "pattern": r"^[A-Z]{2}$", "flag": "--state"},
+            "state": {"type": "text", "pattern": r"^[A-Z]{2}$", "flag": "--state"},
             "classifier_backend": {"type": "text", "pattern": r"^[a-z]+$", "flag": "--classifier-backend"},
+            "refresh": {"type": "bool", "flag": "--refresh"},
+            "skip_existing": {"type": "bool", "flag": "--skip-existing"},
         },
     },
     "classify": {

@@ -588,6 +588,8 @@ def run(argv: list[str] | None = None) -> int:
                         help="Classifier backend: deepseek (default), gemini, claude, codex")
     parser.add_argument("--no-wayback", action="store_true",
                         help="Disable Wayback CDX fallback (spec 0022 kill-switch)")
+    parser.add_argument("--skip-existing", action="store_true",
+                        help="Skip downloading PDFs already in corpus (use with --refresh)")
     args = parser.parse_args(argv)
 
     if args.use_async and args.max_workers != 8:
@@ -703,15 +705,18 @@ def run(argv: list[str] | None = None) -> int:
                     run_id=run_id,
                     classifier_backend=args.classifier_backend,
                     lock_path=lock_path,
+                    skip_existing=args.skip_existing,
                 ))
                 logger.info(
                     "=== ASYNC CRAWLER DONE === run_id=%s orgs=%d "
-                    "completed=%d transient=%d permanent=%d pdfs=%d exit_code=%d",
+                    "completed=%d transient=%d permanent=%d pdfs=%d "
+                    "skipped_existing=%d exit_code=%d",
                     run_id, len(pending),
                     crawl_stats.orgs_completed,
                     crawl_stats.orgs_transient_failed,
                     crawl_stats.orgs_permanent_failed,
                     crawl_stats.pdfs_downloaded,
+                    crawl_stats.downloads_skipped_existing,
                     crawl_stats.exit_code,
                 )
                 return crawl_stats.exit_code

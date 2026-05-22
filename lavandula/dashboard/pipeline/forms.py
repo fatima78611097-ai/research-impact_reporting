@@ -123,6 +123,14 @@ class RunCrawlForm(forms.Form):
         widget=forms.Select(attrs={"class": _SELECT}),
         label="Classifier",
     )
+    refresh = forms.BooleanField(
+        required=False,
+        label="Refresh (re-crawl existing orgs)",
+    )
+    skip_existing = forms.BooleanField(
+        required=False,
+        label="Skip existing PDFs (use with Refresh)",
+    )
 
 
 class ResolverForm(forms.Form):

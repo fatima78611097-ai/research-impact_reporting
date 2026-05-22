@@ -541,6 +541,17 @@ def finish_run(
         )
 
 
+def existing_corpus_urls(engine: Engine, *, ein: str) -> set[str]:
+    """Return the set of source_url_redacted already in corpus for this org."""
+    with engine.connect() as conn:
+        rows = conn.execute(
+            text(f"SELECT source_url_redacted FROM {_SCHEMA}.corpus "
+                 f"WHERE source_org_ein = :ein"),
+            {"ein": ein},
+        ).fetchall()
+    return {r[0] for r in rows}
+
+
 __all__ = [
     "git_short_sha",
     "record_fetch",
@@ -549,4 +560,5 @@ __all__ = [
     "record_deletion",
     "create_run",
     "finish_run",
+    "existing_corpus_urls",
 ]
