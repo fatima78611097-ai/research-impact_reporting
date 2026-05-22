@@ -590,6 +590,8 @@ def run(argv: list[str] | None = None) -> int:
                         help="Disable Wayback CDX fallback (spec 0022 kill-switch)")
     parser.add_argument("--skip-existing", action="store_true",
                         help="Skip downloading PDFs already in corpus (use with --refresh)")
+    parser.add_argument("--job-id", type=int, default=None,
+                        help="Dashboard job ID (passed by orchestrator)")
     args = parser.parse_args(argv)
 
     if args.use_async and args.max_workers != 8:
