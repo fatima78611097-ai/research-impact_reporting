@@ -64,8 +64,11 @@ def test_ac3_hosting_platform_signatures():
 
 
 def test_ac4_per_org_candidate_cap():
-    """100 matching links → truncated to 30."""
+    """extract_candidates collects up to CANDIDATE_COLLECTION_CAP (200);
+    final truncation to CANDIDATE_CAP_PER_ORG (30) is applied by
+    per_org_candidates after PDF-first sorting."""
     from lavandula.reports.candidate_filter import extract_candidates, CANDIDATE_CAP_PER_ORG
+    from lavandula.reports.config import CANDIDATE_COLLECTION_CAP
     links = "\n".join(
         f'<a href="/annual-report-{i}.pdf">Annual Report {i}</a>' for i in range(100)
     )
@@ -77,7 +80,8 @@ def test_ac4_per_org_candidate_cap():
         referring_page_url="https://example.org/",
     )
     assert CANDIDATE_CAP_PER_ORG == 30
-    assert len(candidates) <= 30
+    assert len(candidates) == 100
+    assert len(candidates) <= CANDIDATE_COLLECTION_CAP
 
 
 def test_ac8_1_max_parsed_links_per_page():

@@ -50,9 +50,17 @@ MAX_PARSED_LINKS_PER_PAGE = 10_000
 
 # --- Candidate / discovery caps -----------------------------------------
 CANDIDATE_CAP_PER_ORG = 30
+# Collection ceiling: gather up to this many candidates during discovery,
+# then sort PDFs first and truncate to CANDIDATE_CAP_PER_ORG at the end.
+# Prevents HTML garbage from crowding out PDFs via early-break.
+CANDIDATE_COLLECTION_CAP = 200
 # TICK-002 Fix 3: raised from 5 → 10 based on 2026-04-19 run
 # showing orgs with >5 report-anchor candidates truncated.
 MAX_SUBPAGES_PER_ORG = 10
+# How many hops deep from homepage to follow HTML subpages.
+# Depth 1 = homepage → subpage (original). Depth 2 = homepage →
+# subpage → sub-subpage (reaches About → Reports → PDF).
+MAX_SUBPAGE_DEPTH = 2
 # TICK-001: When expanding a subpage whose OWN URL/anchor already
 # matched a report pattern, accept any PDF-suffix link inside it
 # (bypassing the strict anchor/path keyword filter). Capped to

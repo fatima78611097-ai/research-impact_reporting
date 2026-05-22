@@ -451,7 +451,7 @@ def extract_candidates(
             and c.hosting_platform == "own-domain"
         ):
             relaxed_pdf_count += 1
-        if len(candidates) >= CANDIDATE_CAP_PER_ORG:
+        if len(candidates) >= config.CANDIDATE_COLLECTION_CAP:
             break
     return candidates
 

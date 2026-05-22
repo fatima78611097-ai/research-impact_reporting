@@ -32,6 +32,8 @@ from .candidate_filter import (
     classify_sitemap_url,
     extract_candidates,
 )
+
+_COLLECTION_CAP = config.CANDIDATE_COLLECTION_CAP
 from .redirect_policy import etld1
 from .robots import can_fetch as robots_can_fetch, sitemap_urls_from_robots
 from .url_redact import canonicalize_url
@@ -102,7 +104,7 @@ def per_org_candidates(
             return False
         seen_canonical.add(canonical)
         candidates.append(c)
-        return len(candidates) >= CANDIDATE_CAP_PER_ORG
+        return len(candidates) >= _COLLECTION_CAP
 
     # --- robots gate -----
     def _allowed(path: str) -> bool:
@@ -179,7 +181,7 @@ def per_org_candidates(
         if c is None:
             continue
         _remember(c)
-        if len(candidates) >= CANDIDATE_CAP_PER_ORG:
+        if len(candidates) >= _COLLECTION_CAP:
             break
         # TICK-007: if this sitemap URL is a same-domain HTML page
         # whose path matched a report keyword, queue it for subpage
@@ -229,30 +231,35 @@ def per_org_candidates(
             subpages_to_walk.append(c)
     subpages_to_walk.sort(key=_subpage_priority)
 
-    # --- one-hop subpages (runs regardless of homepage outcome) -----
-    _log.info("discover: ein=%s subpages_queued=%d (cap=%d)",
-              ein, len(subpages_to_walk), MAX_SUBPAGES_PER_ORG)
-    if subpages_to_walk:
-        for i, sub in enumerate(subpages_to_walk[:MAX_SUBPAGES_PER_ORG]):
+    # --- multi-depth subpage walk -----
+    subpages_walked: set[str] = set()
+    total_subpages_fetched = 0
+    max_depth = config.MAX_SUBPAGE_DEPTH
+    current_round = subpages_to_walk
+
+    for depth in range(max_depth):
+        if not current_round:
+            break
+        _log.info("discover: ein=%s depth=%d subpages_queued=%d (cap=%d)",
+                  ein, depth + 1, len(current_round), MAX_SUBPAGES_PER_ORG)
+        next_round: list[Candidate] = []
+        budget = MAX_SUBPAGES_PER_ORG - total_subpages_fetched
+        if budget <= 0:
+            break
+        for sub in current_round[:budget]:
+            canon_sub = canonicalize_url(sub.url)
+            if canon_sub in subpages_walked:
+                continue
+            subpages_walked.add(canon_sub)
             sub_parsed = urlsplit(sub.url)
             if etld1(sub_parsed.hostname or "") != seed_etld1:
-                _log.info("discover: ein=%s subpage[%d] skip cross-origin: %s", ein, i, sub.url)
                 continue
             if not _allowed(sub_parsed.path or "/"):
-                _log.info("discover: ein=%s subpage[%d] skip robots: %s", ein, i, sub.url)
                 continue
             sub_body, sub_status = fetcher(sub.url, "subpage")
             if sub_status != "ok" or not sub_body:
-                _log.info("discover: ein=%s subpage[%d] fetch failed (%s): %s",
-                          ein, i, sub_status, sub.url)
                 continue
-            _log.info("discover: ein=%s subpage[%d] fetched %d bytes: %s",
-                      ein, i, len(sub_body), sub.url)
-            # TICK-001: compute parent_is_report_anchor from the
-            # subpage's OWN URL/anchor metadata. If the subpage was
-            # chosen for expansion because its own path or its
-            # referring-anchor matched a report keyword, relax the
-            # strict PDF filter for links found inside it.
+            total_subpages_fetched += 1
             parent_is_report_anchor = (
                 _anchor_matches(sub.anchor_text)
                 or _path_matches(sub_parsed.path or "")
@@ -273,6 +280,12 @@ def per_org_candidates(
                 ):
                     continue
                 _remember(c)
+                if _is_html_subpage_candidate(c):
+                    c_canon = canonicalize_url(c.url)
+                    if c_canon not in subpages_walked and c_canon not in _subpage_seen:
+                        next_round.append(c)
+        next_round.sort(key=_subpage_priority)
+        current_round = next_round
 
     # Prioritize PDF candidates over HTML pages since the crawler
     # downloads PDFs — HTML candidates that survive to the download
