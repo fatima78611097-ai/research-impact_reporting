@@ -135,7 +135,7 @@ def test_cms_match_still_works():
 
 
 def test_cross_origin_drop_logging_escalation(caplog):
-    """After CROSS_ORIGIN_DROP_ALERT_THRESHOLD drops, log level escalates."""
+    """At CROSS_ORIGIN_DROP_ALERT_THRESHOLD, one INFO summary is emitted then silence."""
     import logging
     from lavandula.reports.candidate_filter import (
         _log_cross_origin_drop, _cross_origin_drop_counts,
@@ -145,15 +145,20 @@ def test_cross_origin_drop_logging_escalation(caplog):
     ein = "test_ein_0047"
     _cross_origin_drop_counts.pop(ein, None)
 
+    threshold = config.CROSS_ORIGIN_DROP_ALERT_THRESHOLD
     with caplog.at_level(logging.DEBUG, logger="lavandula.reports.candidate_filter"):
-        for i in range(config.CROSS_ORIGIN_DROP_ALERT_THRESHOLD + 1):
+        for i in range(threshold + 10):
             _log_cross_origin_drop(f"https://x.com/page{i}", "example.org", ein)
 
-    warning_records = [
+    info_records = [
         r for r in caplog.records
-        if r.levelno >= logging.WARNING
+        if r.levelno == logging.INFO and "suppressing further" in r.message
     ]
-    assert len(warning_records) >= 1
+    assert len(info_records) == 1
+
+    # Past threshold: no more records emitted
+    debug_records = [r for r in caplog.records if r.levelno == logging.DEBUG]
+    assert len(debug_records) == threshold - 1
 
     _cross_origin_drop_counts.pop(ein, None)
 

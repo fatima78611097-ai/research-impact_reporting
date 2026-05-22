@@ -612,20 +612,6 @@ material_types:
     tier: web
     description: "Catch-all"
 
-  - id: irs_form_990
-    group: other
-    tier: web
-    filename_signals:
-      strong_positive: ["990", form-990, irs-990]
-      medium_positive: [990-return, tax-return, form990]
-    anchor_signals:
-      - "form 990"
-      - "return of organization exempt from income tax"
-      - "internal revenue service"
-      - "OMB No. 1545-0047"
-      - "department of the treasury"
-    description: "IRS Form 990 public tax filing"
-
   - id: not_relevant
     group: other
     tier: web
@@ -783,6 +769,12 @@ path_keywords:
 filename_negative_signals:
   strong:
     - form
+    - "990"
+    - form-990
+    - irs-990
+    - 990-return
+    - form990
+    - tax-return
     - application
     - waiver
     - consent

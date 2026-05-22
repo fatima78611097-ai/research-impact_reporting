@@ -1,7 +1,7 @@
 rules:
   # 990s — strongest signal (text markers)
   - name: irs_990_text
-    material_type: irs_form_990
+    material_type: not_relevant
     confidence: 0.99
     reasoning: "Rule: IRS Form 990 detected from page text markers"
     conditions:
@@ -14,7 +14,7 @@ rules:
 
   # 990s — URL pattern
   - name: irs_990_url
-    material_type: irs_form_990
+    material_type: not_relevant
     confidence: 0.95
     reasoning: "Rule: URL contains 990 filing indicator"
     conditions:
@@ -22,7 +22,7 @@ rules:
 
   # 990s — compound: known filing software + text co-signal
   - name: irs_990_creator_plus_text
-    material_type: irs_form_990
+    material_type: not_relevant
     confidence: 0.95
     reasoning: "Rule: Known 990 filing software + 990 text markers"
     conditions:
