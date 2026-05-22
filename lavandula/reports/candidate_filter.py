@@ -196,16 +196,16 @@ _cross_origin_drop_counts: dict[str, int] = {}
 def _log_cross_origin_drop(href: str, seed_etld1: str, ein: str) -> None:
     _cross_origin_drop_counts[ein] = _cross_origin_drop_counts.get(ein, 0) + 1
     count = _cross_origin_drop_counts[ein]
-    level = (
-        logging.WARNING
-        if count >= config.CROSS_ORIGIN_DROP_ALERT_THRESHOLD
-        else logging.DEBUG
-    )
-    _logger.log(
-        level,
-        "cross_origin_non_pdf_dropped",
-        extra={"href": href[:120], "seed": seed_etld1, "ein": ein, "drop_count": count},
-    )
+    if count == config.CROSS_ORIGIN_DROP_ALERT_THRESHOLD:
+        _logger.info(
+            "cross_origin_non_pdf_dropped: ein=%s seed=%s count=%d (suppressing further)",
+            ein, seed_etld1, count,
+        )
+    elif count < config.CROSS_ORIGIN_DROP_ALERT_THRESHOLD:
+        _logger.debug(
+            "cross_origin_non_pdf_dropped",
+            extra={"href": href[:120], "seed": seed_etld1, "ein": ein, "drop_count": count},
+        )
 
 
 def _classify_link(
