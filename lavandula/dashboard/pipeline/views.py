@@ -656,6 +656,15 @@ class CrawlerView(LoginRequiredMixin, TemplateView):
             for row in cursor.fetchall():
                 pct = round(row[2] / row[1] * 100) if row[1] > 0 else 0
                 crawl_stats.append({"state": row[0], "resolved": row[1], "crawled": row[2], "pct": pct})
+        refresh_states = set(
+            Job.objects.filter(
+                phase="crawl",
+                status__in=["pending", "scheduled", "running"],
+                config_json__refresh=True,
+            ).exclude(state_code__isnull=True).values_list("state_code", flat=True)
+        )
+        for stat in crawl_stats:
+            stat["refreshing"] = stat["state"] in refresh_states
         ctx["crawl_stats"] = crawl_stats
         from .forms import CrawlerForm, RunCrawlForm
         ctx["form"] = CrawlerForm()
