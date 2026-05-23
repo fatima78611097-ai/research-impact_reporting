@@ -640,7 +640,6 @@ projects:
     dependencies: []
     tags: [infrastructure, cost-optimization, ssm, kms, ops]
     notes: "Discovered 2026-05-12: AWS KMS budget alert triggered at 17K/20K free tier requests. Verified 2026-05-14: all 6 non-sensitive RDS params (rds-endpoint, rds-port, rds-database, rds-schema, rds-app-user, rds-ro-user) are already String type. Only actual secrets remain SecureString. No code or infra changes needed — problem was already resolved. Only borderline item: rds-dashboard-user is SecureString (username, not password) but impact is trivial."
-```
 
   - id: "0042"
     title: "Classifier V3 State Progress Grid"
@@ -732,10 +731,24 @@ projects:
     dependencies: ["0047"]
     tags: [maintain, git-hygiene, data-quality, attribution, recovery-readiness, blocker]
     notes: "Critical-path blocker for the macro-plan (locard/operations/macro-plan-corpus-integrity-rag-readiness.md). No production recovery may run until this is integrated. Supersedes the earlier untracked draft locard/plans/0048-repository-cleanup-for-approval.md (cleanup-only; mislocated the 4 commits). Human approved spec/plan + builder spawned 2026-05-18 (through expert + red-team consult, 0 CRITICAL); status held at 'planned' per AI lifecycle ceiling — human marks specified/integrated. Inventory: locard/maintain/0048-inventory.md. Default disposition Option B (non-destructive; backup/master-pre-0048 preserved, no reset)."
+```
+
+  - id: "0049"
+    title: "Statistical NLP Extraction & Sub-Archetype Discovery"
+    summary: "NLP pipeline operating on Docling-parsed sections: spaCy NER, TF-IDF keyness, C-value multi-word term extraction, and sentence embeddings per section. Market basket analysis (FP-Growth + lift scoring) on term co-occurrence discovers sub-archetypes within NTEE verticals. Replaces abandoned LLM extraction approach (0045)."
+    status: conceived
+    priority: high
+    files:
+      spec: locard/specs/0049-nlp-extraction-archetypes.md
+      plan: null
+      review: null
+    dependencies: ["0046"]
+    tags: [layer-2, nlp, extraction, archetype, mba, spacy, tfidf]
+    notes: "Replaces abandoned 0045 (LLM extraction). Statistical methods extract what's IN documents; LLMs project priors. Pipeline: spaCy NER → TF-IDF/C-value → embeddings → FP-Growth MBA → sub-archetype clustering."
 
 ## Next Available Number
 
-**0049** - Reserve this number for your next project
+**0050** - Reserve this number for your next project
 
 ---
 
