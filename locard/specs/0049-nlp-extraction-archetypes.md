@@ -207,10 +207,13 @@ CREATE TABLE lava_vocab.association_rules (
 CREATE INDEX idx_rules_archetype ON lava_vocab.association_rules(archetype_id);
 CREATE INDEX idx_rules_lift ON lava_vocab.association_rules(lift DESC);
 
--- Grants
+-- Grants (least-privilege: INSERT/SELECT/UPDATE only — no DELETE/TRUNCATE on data tables)
 GRANT USAGE ON SCHEMA lava_vocab TO research_app;
-GRANT ALL ON ALL TABLES IN SCHEMA lava_vocab TO research_app;
+GRANT SELECT, INSERT, UPDATE ON ALL TABLES IN SCHEMA lava_vocab TO research_app;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA lava_vocab TO research_app;
+-- DELETE restricted to extraction_runs and doc_extractions only (for re-runs)
+GRANT DELETE ON lava_vocab.extraction_runs, lava_vocab.doc_extractions TO research_app;
+-- To purge old run data (observations, scores, archetypes), use a manual admin session
 ```
 
 ### Pipeline Overview
@@ -414,9 +417,13 @@ This lets us build and validate the pipeline while the crawl finishes and before
 
 **spaCy `en_core_web_lg` memory:** ~1.5 GiB resident. On t3.large (8 GiB RAM), 4 workers would require ~6 GiB. With Django + Postgres connections, set `--workers 2` on t3.large (safe ceiling). Use `--workers 4` only on hosts with ≥16 GiB.
 
+**Per-section cap:** Individual sections with `body_text` exceeding 100,000 characters are truncated to 100K chars before spaCy processing, with a warning logged. This prevents a single malformed section from consuming unbounded memory.
+
 **Large document handling:** If a document's concatenated section text exceeds 500,000 characters, process it one section at a time (no concatenation for C-value) and log a warning. This prevents spaCy from consuming excessive memory on outlier documents.
 
 **Section-level streaming:** Each section is processed independently through spaCy. The full document text is NOT loaded into a single spaCy `Doc`. C-value computation needs concatenated text, but capped at 500K chars.
+
+**Failure rate circuit breaker:** If more than 20% of documents in a run fail (error rate computed after each batch), the pipeline pauses and logs a warning: "High failure rate ({pct}%) — check lava_parse data quality." The operator can resume with `--resume` after investigation. This prevents wasting compute on systematically bad input.
 
 ### Input Validation
 
@@ -477,14 +484,20 @@ All CLI arguments are validated at command entry, before any DB operations:
 
 ## Security Considerations
 
-- No external API calls — all processing is local CPU
-- No user-supplied input reaches SQL queries (parameterized throughout)
-- `lava_vocab` schema accessible only to `research_app` role
-- Source text stays in `lava_parse` — observations contain only extracted terms and short headings
-- `run_tag` validated: `^[a-zA-Z0-9_-]{1,64}$`
-- `--ntee` validated: `^[A-Z][0-9]*%?$`
-- `--material` validated against known material_type values
-- No shell commands, subprocess calls, or file path construction from user input
+- **No external API calls** — all processing is local CPU. Zero network egress for extraction.
+- **Parameterized SQL** — no user-supplied input is interpolated into SQL strings
+- **Least-privilege DB grants** — `research_app` gets SELECT/INSERT/UPDATE only on data tables. No DELETE on observations, scores, or archetype tables. Purging old data requires a manual admin session.
+- **Source text stays in `lava_parse`** — observations contain only extracted terms and short headings, not document content
+- **Input validation** at command entry:
+  - `run_tag`: `^[a-zA-Z0-9_-]{1,64}$` — invalid exits with descriptive error
+  - `--ntee`: `^[A-Z][0-9]*%?$` — invalid exits with descriptive error
+  - `--material`: validated against known `material_type` values
+- **No shell commands, subprocess calls, or file path construction** from user input
+- **Per-section input cap** — sections >100K chars truncated before spaCy processing (prevents memory exhaustion from malformed lava_parse data)
+- **Failure circuit breaker** — pipeline halts at >20% error rate (prevents wasting compute on systematically bad input)
+- **Error sanitization** — `doc_extractions.error` stores only the exception class name + first 200 chars of message, no stack traces or internal paths
+- **Data at rest/transit** — RDS encrypted (AES-256, aws/rds key); all DB connections use TLS 1.2+ (same as existing infrastructure)
+- **spaCy model integrity** — `en_core_web_lg` installed via `pip`/`spacy download` over HTTPS from PyPI/GitHub releases (standard pip TLS verification)
 
 ## Cost Estimate
 
