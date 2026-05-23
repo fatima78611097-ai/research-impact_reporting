@@ -43,6 +43,8 @@ Spec 0045 attempted this via LLM prompting and was abandoned: LLMs project train
 
 5. **Section context matters.** A term found under "Our Programs" heading carries different weight than one under "Acknowledgments." Use section heading context as a feature.
 
+6. **Term canonicalization policy.** Multi-word terms are canonicalized by: (a) lowercase all tokens, (b) lemmatize each token via spaCy, (c) join with single space, (d) strip leading/trailing whitespace, (e) collapse internal whitespace. Hyphens are preserved ("trauma-informed" stays hyphenated). Possessives are stripped ("children's" → "child"). Plurals are lemmatized ("food pantries" → "food pantry"). Named entities (ORG, PRODUCT) skip lemmatization — stored as-is in lowercase. This policy ensures "food pantry" and "food pantries" merge, while "food pantry" and "food bank" remain distinct.
+
 ## Technical Context
 
 ### Input: Docling Output (`lava_parse`)
@@ -274,7 +276,7 @@ Options:
 - Generic nonprofit boilerplate: "community", "mission", "impact", "stakeholders", "board of directors", "fiscal year", "annual report", "strategic plan" (same list validated in Spike 001)
 - Financial/IRS language: "form 990", "tax-exempt", "gross receipts", "net assets"
 - Single-character and single-word terms are excluded (only multi-word or named entities kept)
-- Terms appearing in >80% of documents in the vertical are excluded (too common to be distinctive)
+- Terms appearing in >80% of documents are excluded (computed per-vertical: denominator is all documents matching the `--ntee` filter that were extracted in this run; too common to be distinctive)
 
 **Section heading context:**
 Each observation carries the section heading and parent_headings from the section it was found in. This enables downstream analysis like "terms found under 'Programs' headings cluster differently than terms under 'Financial Summary'."
@@ -306,7 +308,12 @@ Runs after Step 1 completes for at least one vertical (ideally two or more for c
 2. Compute NC-value by weighting with context words that frequently appear with the term
 3. Store in `lava_vocab.cvalue_terms`
 
-**When only one vertical is available** (initial pilot), `tfidf_keyness` is NULL — within-vertical TF-IDF still works but cross-vertical comparison requires a second vertical. The system works with one vertical but gets better with more.
+**Corpus definition for TF-IDF:**
+- **Within-vertical TF-IDF** (`tfidf_within`): computed over documents matching the `--ntee` filter in the current run. The denominator is all documents in that vertical with observations.
+- **Corpus-wide document frequency** (`corpus_doc_frequency`): counted across ALL documents in `lava_vocab.observations` for the same `run_id`, regardless of NTEE filter. If only one vertical has been extracted, `corpus_doc_frequency == doc_frequency` and `tfidf_keyness` is set to NULL (not meaningful).
+- **Cross-vertical keyness** (`tfidf_keyness`): `tfidf_within / tfidf_corpus_wide`. Only populated when observations exist for 2+ NTEE prefixes in the same run. Rows are still inserted with `tfidf_keyness = NULL` when only one vertical exists. Downstream consumers should check for NULL before using keyness as a filter.
+
+**When only one vertical is available** (initial pilot), within-vertical TF-IDF still works for identifying terms that are common vs rare within the vertical. Cross-vertical keyness becomes available after extracting a second vertical. The system works with one vertical but gets better with more.
 
 ### Step 3: Archetype Discovery
 
@@ -331,16 +338,17 @@ Runs after Step 2 completes for a vertical.
 **Process:**
 
 1. **Build org-term matrix:**
-   - Group observations by `source_org_ein` — union of terms across all documents for that org
-   - Filter to terms appearing in `--min-org-count` orgs
-   - Optionally filter to terms with `tfidf_keyness >= --min-keyness` (if available)
-   - Binary presence matrix (term appears / doesn't)
+   - Group observations by `source_org_ein` — union of terms across all documents for that org (a term is present if it appears in ANY document for that org, regardless of which document or section)
+   - Filter to terms appearing in `--min-org-count` orgs (count distinct EINs, not documents)
+   - Optionally filter to terms with `tfidf_keyness >= --min-keyness` (if available; skip filter when keyness is NULL)
+   - Binary presence matrix (term appears / doesn't — NOT frequency-weighted)
+   - Tied terms (same term appearing in multiple documents for the same org) collapse to a single 1 in the matrix
 
 2. **Hierarchical clustering:**
    - Cosine distance on the org-term matrix
    - Complete linkage (appropriate for cosine distance)
-   - Auto-select k via silhouette score, or use provided `--k`
-   - Assign orgs to clusters
+   - Auto-select k: compute silhouette score for k=2..min(20, N/3). Pick k with highest mean silhouette. If silhouette is flat (max - min < 0.05 across all k), default to k=5 and log a warning. The `--k` flag overrides auto-selection.
+   - Assign orgs to clusters (each org belongs to exactly one cluster)
 
 3. **Per-archetype FP-Growth:**
    - For each cluster, run FP-Growth on the cluster's org-term subset
@@ -352,7 +360,7 @@ Runs after Step 2 completes for a vertical.
    - lift > 2.0 = archetype-specific, lift > 3.0 = definitional
 
 5. **Auto-label archetypes:**
-   - Label = top 2 terms by lift, joined with " + " (e.g., "food_pantry + nutrition")
+   - Label = top 2 terms by lift, joined with " + " (e.g., "food_pantry + nutrition"). If lift scores are tied, break ties alphabetically (deterministic).
    - Stored in `archetypes.label` — can be overridden manually
 
 6. **Store results** in `archetypes`, `archetype_members`, `association_rules`
@@ -390,6 +398,34 @@ Since Docling hasn't parsed any documents yet, we can **test the extraction pipe
 
 This lets us build and validate the pipeline while the crawl finishes and before Docling runs.
 
+### Resume & Idempotency
+
+**Checkpoint mechanism:** After each batch of documents is processed, the last `content_sha256` is stored in `extraction_runs.config_json.cursor`. The work query uses a deterministic sort order (`source_org_ein, content_sha256`) and `--resume` adds `WHERE content_sha256 > :cursor` to skip already-processed docs.
+
+**Idempotency rule:** The UNIQUE constraint on `(run_id, content_sha256, term, section_index)` prevents duplicate observations. If a worker crashes mid-batch, uncommitted rows are rolled back. On `--resume`, the cursor points past the last committed batch — no duplicates possible.
+
+**Error handling:**
+- **spaCy processing failure** on a single section: catch exception, skip that section, log section_index + error class to `doc_extractions.error`, continue with next section
+- **spaCy processing failure** on entire document (e.g., out of memory on very large text): catch, record error in `doc_extractions`, continue with next document. Error count tracked in `extraction_runs.stats_json.error_count`.
+- **Batch-level failures** don't abort the run. Progress continues with next batch.
+- **No retry logic:** extraction is deterministic — if spaCy fails on a section, retrying produces the same failure. Errors are logged for investigation.
+
+### Memory & Performance Guardrails
+
+**spaCy `en_core_web_lg` memory:** ~1.5 GiB resident. On t3.large (8 GiB RAM), 4 workers would require ~6 GiB. With Django + Postgres connections, set `--workers 2` on t3.large (safe ceiling). Use `--workers 4` only on hosts with ≥16 GiB.
+
+**Large document handling:** If a document's concatenated section text exceeds 500,000 characters, process it one section at a time (no concatenation for C-value) and log a warning. This prevents spaCy from consuming excessive memory on outlier documents.
+
+**Section-level streaming:** Each section is processed independently through spaCy. The full document text is NOT loaded into a single spaCy `Doc`. C-value computation needs concatenated text, but capped at 500K chars.
+
+### Input Validation
+
+All CLI arguments are validated at command entry, before any DB operations:
+- `run_tag`: validated against `^[a-zA-Z0-9_-]{1,64}$`. Invalid → exit with "Invalid run_tag: must be 1-64 alphanumeric/hyphen/underscore characters"
+- `--ntee`: validated against `^[A-Z][0-9]*%?$`. Invalid → exit with "Invalid NTEE filter"
+- `--material`: each value validated against the set of known `material_type` values in `lava_corpus.corpus`. Unknown value → exit with "Unknown material type: {value}"
+- `--workers`, `--batch-size`, `--min-section-chars`: must be positive integers. Invalid → argparse default error.
+
 ## Acceptance Criteria
 
 ### Schema
@@ -403,14 +439,15 @@ This lets us build and validate the pipeline while the crawl finishes and before
 - AC6: C-value extracts multi-word terms (2-5 words) with score > 1.0
 - AC7: Each observation stored with: term (canonical), term_raw, term_type, frequency, section_index, section_heading, heading_context
 - AC8: Stopword/boilerplate terms filtered per the defined lists
-- AC9: Terms appearing in >80% of documents excluded
-- AC10: `--resume` allows continuing from checkpoint after interruption
-- AC11: `--dry-run` shows eligible document count without extracting
-- AC12: Individual document failures don't abort the run
+- AC9: Terms appearing in >80% of documents in the target vertical (per `--ntee` filter) are excluded from observations
+- AC10: `--resume` continues from the last committed checkpoint (`config_json.cursor`) without producing duplicate observations (enforced by UNIQUE constraint)
+- AC11: `--dry-run` shows eligible document count without writing to any table
+- AC12: A spaCy failure on one document records error in `doc_extractions` and continues processing remaining documents. Run exits 0 if any docs succeeded.
+- AC12a: CLI arguments (`run_tag`, `--ntee`, `--material`) validated at entry; invalid input exits with descriptive error before any DB writes
 
 ### Keyness Scoring (Step 2)
 - AC13: `score_keyness` computes within-vertical TF-IDF for all extracted terms
-- AC14: Corpus-wide document frequency computed for cross-vertical keyness (when multiple verticals available)
+- AC14: Corpus-wide document frequency computed across all observations in the run. When only one vertical exists, `tfidf_keyness` is NULL (not zero). Rows are still inserted.
 - AC15: Terms with `--min-docs` filter applied
 - AC16: Results stored in `tfidf_scores` and `cvalue_terms`
 
@@ -432,10 +469,11 @@ This lets us build and validate the pipeline while the crawl finishes and before
 - SM5: Zero API cost for extraction
 
 ### Operational
-- AC25: Pipeline runs on CPU (cloud2 t3.large or equivalent) — no GPU required
-- AC26: `en_core_web_lg` model bundled or documented as prerequisite
+- AC25: Pipeline runs on CPU (cloud2 t3.large or equivalent) — no GPU required. `--workers` defaults to 2 on hosts with <16 GiB RAM.
+- AC26: `en_core_web_lg` model documented as prerequisite with install command (`python -m spacy download en_core_web_lg`)
 - AC27: All timestamps in UTC
 - AC28: Run can be repeated with different config for comparison (new run_tag)
+- AC29: Documents with >500K chars of concatenated section text are processed section-by-section with a logged warning
 
 ## Security Considerations
 
