@@ -645,30 +645,51 @@ def retry_job(job: Job) -> Job:
         return new_job
 
 
+def _is_local_host(hostname: str) -> bool:
+    import socket
+    return hostname == socket.gethostname()
+
+
+def _local_kill(pid: int) -> None:
+    """SIGTERM → wait → SIGKILL a local process group."""
+    try:
+        os.killpg(pid, signal.SIGTERM)
+    except (ProcessLookupError, PermissionError):
+        return
+    time.sleep(0.5)
+    deadline = time.monotonic() + 10
+    while time.monotonic() < deadline:
+        try:
+            os.killpg(pid, 0)
+        except (ProcessLookupError, PermissionError):
+            return
+        time.sleep(0.5)
+    try:
+        os.killpg(pid, signal.SIGKILL)
+    except (ProcessLookupError, PermissionError):
+        pass
+
+
+def _remote_kill(hostname: str, pid: int) -> None:
+    """Send a kill-process HostCommand to the remote orchestrator."""
+    from .models import HostCommand
+    HostCommand.objects.create(
+        host=hostname,
+        command="kill-process",
+        args_json={"pid": pid, "signal": "TERM"},
+    )
+
+
 def cancel_job(job: Job) -> None:
     """Cancel a job. If running, send SIGTERM→SIGKILL. Cascade to dependents."""
     if job.status not in ("pending", "scheduled", "running"):
         return
 
-    if job.status == "running" and job.pid:
-        try:
-            os.killpg(job.pid, signal.SIGTERM)
-        except (ProcessLookupError, PermissionError):
-            pass
+    if job.status == "running" and job.pid and job.host:
+        if _is_local_host(job.host):
+            _local_kill(job.pid)
         else:
-            time.sleep(0.5)
-            deadline = time.monotonic() + 10
-            while time.monotonic() < deadline:
-                try:
-                    os.killpg(job.pid, 0)
-                except (ProcessLookupError, PermissionError):
-                    break
-                time.sleep(0.5)
-            else:
-                try:
-                    os.killpg(job.pid, signal.SIGKILL)
-                except (ProcessLookupError, PermissionError):
-                    pass
+            _remote_kill(job.host, job.pid)
 
     job.status = "cancelled"
     job.finished_at = timezone.now()

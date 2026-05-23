@@ -916,10 +916,14 @@ class Command(BaseCommand):
 
         sig = signal.SIGTERM if sig_name == "TERM" else signal.SIGKILL
         try:
-            os.kill(pid, sig)
-            return f"Sent SIG{sig_name} to PID {pid}"
+            os.killpg(pid, sig)
+            return f"Sent SIG{sig_name} to process group {pid}"
         except ProcessLookupError:
-            return f"PID {pid} not found (already exited)"
+            try:
+                os.kill(pid, sig)
+                return f"Sent SIG{sig_name} to PID {pid} (no process group)"
+            except ProcessLookupError:
+                return f"PID {pid} not found (already exited)"
         except PermissionError:
             raise ValueError(f"Permission denied sending signal to PID {pid}")
 
