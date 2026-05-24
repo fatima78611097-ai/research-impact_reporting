@@ -40,6 +40,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("run_tag", type=str, help="Unique identifier for this parse run")
         parser.add_argument("--priority", default="annual,impact", help="Comma-separated classification filter")
+        parser.add_argument("--ntee", default=None, help="NTEE prefix filter (e.g. 'P2%%' for Human Services)")
         parser.add_argument("--instance-type", default="g6.2xlarge")
         parser.add_argument("--no-spot", action="store_true", default=False, help="Use on-demand instead of spot")
         parser.add_argument("--max-hours", type=int, default=12)
@@ -69,18 +70,22 @@ class Command(BaseCommand):
         if not config.validate_priority_values(priority_values):
             raise CommandError("--priority values must match ^[a-z_]+$")
 
+        ntee_filter = options.get("ntee")
+        if ntee_filter and not all(c.isalnum() or c == '%' for c in ntee_filter):
+            raise CommandError("--ntee must be alphanumeric with optional trailing %")
+
         if options["dry_run"]:
-            return self._dry_run(run_tag, priority_values, options)
+            return self._dry_run(run_tag, priority_values, ntee_filter, options)
         if options["status"]:
             return self._show_status(run_tag)
         if options["terminate"]:
             return self._terminate(run_tag)
-        return self._run(run_tag, priority_values, options)
+        return self._run(run_tag, priority_values, ntee_filter, options)
 
-    def _dry_run(self, run_tag: str, priority: list[str], options: dict) -> None:
+    def _dry_run(self, run_tag: str, priority: list[str], ntee_filter: str | None, options: dict) -> None:
         conn = self._get_conn()
         try:
-            count = db.get_eligible_count(conn, priority)
+            count = db.get_eligible_count(conn, priority, ntee_filter=ntee_filter)
         finally:
             conn.close()
 
@@ -98,6 +103,7 @@ class Command(BaseCommand):
             f"Estimated GPU time: ~{est_hours:.1f} hours\n"
             f"Estimated cost:     ~${est_cost:.0f} ({pricing_label})\n"
             f"Priority filter:    {', '.join(priority)}\n"
+            f"NTEE filter:        {ntee_filter or 'all'}\n"
             f"Instance type:      {options['instance_type']}\n"
         )
 
@@ -150,7 +156,7 @@ class Command(BaseCommand):
         finally:
             conn.close()
 
-    def _run(self, run_tag: str, priority: list[str], options: dict) -> None:
+    def _run(self, run_tag: str, priority: list[str], ntee_filter: str | None, options: dict) -> None:
         import boto3
 
         conn = self._get_conn()
@@ -163,18 +169,19 @@ class Command(BaseCommand):
             )
 
         try:
-            self._execute_run(conn, run_tag, priority, options)
+            self._execute_run(conn, run_tag, priority, ntee_filter, options)
         finally:
             db.release_orchestrator_lock(conn)
             conn.close()
 
-    def _execute_run(self, conn, run_tag: str, priority: list[str], options: dict) -> None:
+    def _execute_run(self, conn, run_tag: str, priority: list[str], ntee_filter: str | None, options: dict) -> None:
         import boto3
 
         ec2 = boto3.client("ec2", region_name="us-east-1")
 
         run_config = {
             "priority": priority,
+            "ntee_filter": ntee_filter,
             "instance_type": options["instance_type"],
             "batch_size": options["batch_size"],
             "max_hours": options["max_hours"],
