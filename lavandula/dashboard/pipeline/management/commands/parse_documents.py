@@ -206,7 +206,7 @@ class Command(BaseCommand):
         max_seconds = options["max_hours"] * 3600
         relaunch_count = 0
 
-        instance_id = self._launch_and_start(ec2, conn, run_id, run_tag, priority, options)
+        instance_id = self._launch_and_start(ec2, conn, run_id, run_tag, priority, ntee_filter, options)
 
         last_stats_update = time.time()
         last_total = 0
@@ -251,7 +251,7 @@ class Command(BaseCommand):
                     f"Relaunching (attempt {relaunch_count}/{MAX_RELAUNCH_ATTEMPTS}, "
                     f"{remaining:,} docs remaining)...\n"
                 )
-                instance_id = self._launch_and_start(ec2, conn, run_id, run_tag, priority, options)
+                instance_id = self._launch_and_start(ec2, conn, run_id, run_tag, priority, ntee_filter, options)
                 last_stats_update = time.time()
                 continue
 
@@ -289,7 +289,7 @@ class Command(BaseCommand):
                     break
 
                 self.stdout.write(f"Relaunching after stale worker...\n")
-                instance_id = self._launch_and_start(ec2, conn, run_id, run_tag, priority, options)
+                instance_id = self._launch_and_start(ec2, conn, run_id, run_tag, priority, ntee_filter, options)
                 last_stats_update = time.time()
                 continue
 
@@ -300,7 +300,7 @@ class Command(BaseCommand):
 
         self.stdout.write("Parse run complete.\n")
 
-    def _launch_and_start(self, ec2, conn, run_id: int, run_tag: str, priority: list[str], options: dict) -> str:
+    def _launch_and_start(self, ec2, conn, run_id: int, run_tag: str, priority: list[str], ntee_filter: str | None, options: dict) -> str:
         """Launch a spot instance and start the worker. Returns instance_id."""
         # Terminate any existing instance for this purpose
         existing = self._find_instance(ec2, run_tag)
@@ -327,7 +327,7 @@ class Command(BaseCommand):
         self._wait_for_ssm(instance_id)
         self.stdout.write(f"SSM agent connected on {instance_id}\n")
 
-        self._start_worker(ec2, instance_id, run_id, priority, options)
+        self._start_worker(ec2, instance_id, run_id, priority, ntee_filter, options)
         return instance_id
 
     def _safe_terminate(self, ec2, instance_id: str) -> None:
@@ -435,8 +435,8 @@ class Command(BaseCommand):
             return "terminated"
         return instances[0]["State"]["Name"]
 
-    def _start_worker(self, ec2, instance_id: str, run_id: int, priority: list[str], options: dict) -> None:
-        """Start the worker process on the GPU instance via EC2 Instance Connect."""
+    def _start_worker(self, ec2, instance_id: str, run_id: int, priority: list[str], ntee_filter: str | None, options: dict) -> None:
+        """Start the worker process on the GPU instance via SSM."""
         import boto3
 
         from lavandula.common.secrets import get_secret
@@ -446,6 +446,7 @@ class Command(BaseCommand):
         database = get_secret("rds-database")
 
         max_docs_flag = f" --max-docs {options['max_docs']}" if options["max_docs"] else ""
+        ntee_flag = f" --ntee {ntee_filter}" if ntee_filter else ""
         worker_cmd = (
             f"/opt/docling/bin/python -m lavandula.parse.worker "
             f"--run-id {run_id} "
@@ -455,6 +456,7 @@ class Command(BaseCommand):
             f"--priority {','.join(priority)} "
             f"--batch-size {options['batch_size']}"
             f"{max_docs_flag}"
+            f"{ntee_flag}"
         )
 
         # Deploy worker code and start as a background process
