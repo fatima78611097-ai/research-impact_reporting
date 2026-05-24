@@ -181,15 +181,69 @@ Follow the same structure as `reclassify_corpus.py`:
 
 **Memory note from spec:** On t3.large (8 GiB), default `--workers 2`. Each process loads ~1.5 GiB for spaCy. The command should check available memory at startup and warn if `workers * 1.5 GiB > 75% available RAM`.
 
-### B3. 80% frequency filter
+### B2a. Transaction Boundaries & Error Handling (AC10, AC12)
 
-The spec says terms in >80% of documents are excluded. This requires knowing the total doc count for the vertical in this run.
+**Per-document transaction model:**
 
-**Implementation:** After all extraction is complete (or in a post-pass), compute per-term document frequency. Delete observations where `doc_frequency / total_docs > 0.80`. This is a cleanup step after the main extraction, not during — because we don't know the denominator until extraction finishes.
+Each document is processed in its own transaction. The commit unit is one document, not one batch:
 
-Alternative: maintain a running count and apply the filter at scoring time (Step 2). **Chosen approach:** defer to Step 2. Store all observations during extraction, then apply the 80% filter during `score_keyness`. This avoids a second pass over observations and keeps extraction idempotent.
+```python
+for doc in batch:
+    try:
+        observations = extract_from_doc(doc, nlp)  # CPU work, no DB
+        with engine.begin() as conn:
+            # Single transaction per doc:
+            insert_observations(conn, run_id, doc.sha, observations)
+            insert_doc_extraction(conn, run_id, doc.sha, doc.ein, 
+                                  term_count=len(observations), error=None)
+            update_cursor(conn, run_id, doc.sha)
+            # Transaction commits here (context manager exit)
+    except Exception as e:
+        with engine.begin() as conn:
+            insert_doc_extraction(conn, run_id, doc.sha, doc.ein,
+                                  term_count=0, error=f"{type(e).__name__}: {str(e)[:200]}")
+            update_cursor(conn, run_id, doc.sha)
+        error_count += 1
+```
 
-**Rationale:** The spec says "Terms appearing in >80% of documents are excluded (computed per-vertical)". The per-vertical denominator is only known after extraction completes. Scoring is the natural place to apply this filter since it already computes document frequencies.
+**Key behaviors:**
+- **Success:** observations + doc_extraction + cursor update all commit atomically
+- **spaCy failure on one section:** caught inside `extract_from_doc`, that section skipped, other sections still produce observations. The `doc_extractions.error` field records which sections failed (e.g., "SectionError: section 5 ValueError")
+- **spaCy failure on entire doc:** caught at the outer level. `doc_extractions` row written with `error` and `term_count=0`. Cursor advances past this doc.
+- **DB failure:** transaction rolls back. Cursor NOT advanced. On `--resume`, this doc will be retried.
+- **Process crash:** last committed cursor is the resume point. No duplicates because UNIQUE constraint + cursor-based WHERE clause.
+
+**Exit code:** Command exits 0 if `success_count > 0`. Exits 1 if ALL documents failed (`success_count == 0`).
+
+**Circuit breaker check:** After each batch, compute `error_count / (success_count + error_count)`. If > 0.20, print warning and pause (don't exit — operator can `--resume` after investigation).
+
+### B3. 80% frequency filter (AC9)
+
+The spec requires terms in >80% of documents to be excluded **from observations** (AC9). The denominator is all documents matching the `--ntee` filter that were extracted in this run.
+
+**Implementation:** Two-pass within `extract_terms`:
+1. **Pass 1 (main extraction):** Insert all observations normally (no frequency filter yet — denominator unknown until extraction complete)
+2. **Pass 2 (purge):** After all documents are processed, compute per-term document frequency:
+   ```sql
+   DELETE FROM lava_vocab.observations
+   WHERE run_id = :run_id
+     AND term IN (
+       SELECT term
+       FROM lava_vocab.observations
+       WHERE run_id = :run_id
+       GROUP BY term
+       HAVING COUNT(DISTINCT content_sha256) > 0.80 * :total_docs
+     )
+   ```
+   Where `:total_docs` = `SELECT COUNT(*) FROM lava_vocab.doc_extractions WHERE run_id = :run_id AND error IS NULL`.
+
+3. **Record purged terms** in `extraction_runs.stats_json.purged_terms` (list of terms removed + their doc frequency). This provides auditability.
+
+4. **Update `doc_extractions.term_count`** after purge: decrement counts for affected documents.
+
+This keeps the filter within `extract_terms` (satisfying AC9: terms excluded from observations), while being practical about the chicken-and-egg denominator problem. The purge runs once at the end of the extraction command, not during scoring.
+
+**Resume interaction:** If `--resume` is used after a crash during purge, the purge runs again (idempotent — DELETE on already-deleted rows is a no-op). A flag in `config_json.purge_complete` marks successful purge completion.
 
 ### B4. Tests for Phase B
 
@@ -209,6 +263,18 @@ Alternative: maintain a running count and apply the filter at scoring time (Step
 
 **File**: `lavandula/nlp/keyness.py`
 
+#### Data-Flow Contract (explicit universe definitions)
+
+| Concept | Definition | Source Query |
+|---------|-----------|--------------|
+| **Target vertical docs** | All `doc_extractions` WHERE `run_id = :run_id` AND `error IS NULL` AND `source_org_ein` has NTEE prefix matching `--ntee` | JOIN `lava_vocab.doc_extractions` → `lava_corpus.nonprofits_seed` ON ein, WHERE `ntee LIKE :ntee_prefix` |
+| **Within-vertical terms** | All observations WHERE `run_id = :run_id` AND `content_sha256` IN target vertical docs | Direct query on observations with doc filter |
+| **Corpus-wide docs** | ALL `doc_extractions` WHERE `run_id = :run_id` AND `error IS NULL` (regardless of NTEE) | Simple count on doc_extractions |
+| **Corpus-wide doc frequency** | For each term: COUNT(DISTINCT content_sha256) across ALL observations in this run | Aggregate on observations grouped by term |
+| **Single-vertical case** | When corpus-wide docs == target vertical docs (only one NTEE prefix extracted), set `tfidf_keyness = NULL` | Check: `SELECT COUNT(DISTINCT ntee_prefix) FROM the join` — if 1, keyness is NULL |
+
+**NTEE prefix resolution:** The `--ntee` flag uses SQL LIKE pattern (e.g., `'P2%'`). The join path is: `observations.source_org_ein` → `lava_corpus.nonprofits_seed.ein` → `nonprofits_seed.ntee`. This means the NTEE classification comes from the seed table, not from the corpus or parse tables.
+
 ```python
 def compute_tfidf_scores(
     engine, run_id: int, ntee_prefix: str, min_docs: int = 3
@@ -221,13 +287,13 @@ def compute_tfidf_scores(
 
 **Algorithm:**
 1. Build document-term matrix for target vertical:
-   - Query: all observations WHERE run_id AND source_org_ein in orgs matching ntee_prefix
+   - Query: all observations WHERE run_id AND source_org_ein has ntee LIKE ntee_prefix (via nonprofits_seed join)
    - Binary presence (1 if term appears in doc, 0 otherwise)
    - Filter: only terms appearing in >= `min_docs` documents
-   - **Also filter:** exclude terms where doc_frequency > 80% of vertical docs (the deferred filter from Phase B)
+   - (80% filter already applied during extraction — no need to re-filter here)
 2. Compute TF-IDF using `sklearn.feature_extraction.text.TfidfTransformer` on the binary matrix
-3. Compute corpus-wide doc frequency: count distinct content_sha256 per term across ALL ntee prefixes in this run
-4. Compute keyness ratio: `tfidf_within / tfidf_corpus` (NULL if only one vertical)
+3. Compute corpus-wide doc frequency: count distinct content_sha256 per term across ALL observations in this run (not just the target vertical)
+4. Compute keyness ratio: `tfidf_within / tfidf_corpus_wide`. Set to NULL if only one vertical exists in this run (detected by checking distinct NTEE prefixes among extracted docs).
 5. Return score rows for insertion into `lava_vocab.tfidf_scores`
 
 ```python
@@ -277,6 +343,15 @@ Usage:
 ### D1. Archetype logic
 
 **File**: `lavandula/nlp/archetypes.py`
+
+#### Data-Flow Contract (archetype inputs)
+
+| Input | Definition | Filtering |
+|-------|-----------|-----------|
+| **Org universe** | Distinct `source_org_ein` values from observations WHERE `run_id` AND NTEE prefix match | Same NTEE join as Phase C |
+| **Term universe** | Terms from observations WHERE `run_id` AND in org universe | Further filtered by `--min-org-count` (distinct EINs, not docs) |
+| **min_keyness filter** | When `--min-keyness` is set AND `tfidf_scores` has non-NULL keyness for this run/term, exclude terms below threshold | If `tfidf_keyness IS NULL` for all terms (single-vertical run), the filter is SKIPPED entirely (not applied as "exclude all") |
+| **Binary matrix** | Rows = orgs, columns = terms. Cell = 1 if term appears in ANY doc for that org in this run | A term appearing 5 times across 3 docs for one org = still just 1 |
 
 ```python
 def build_org_term_matrix(
