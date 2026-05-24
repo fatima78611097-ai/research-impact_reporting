@@ -1,6 +1,6 @@
 # Spec 0049: Statistical NLP Extraction & Sub-Archetype Discovery
 
-**Status:** Draft
+**Status:** Approved
 **Author:** Architect
 **Created:** 2026-05-23
 **Dependencies:** 0046 (Docling Full-Document Parsing)
