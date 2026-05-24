@@ -735,11 +735,11 @@ projects:
   - id: "0049"
     title: "Statistical NLP Extraction & Sub-Archetype Discovery"
     summary: "NLP pipeline operating on Docling-parsed sections: spaCy NER, TF-IDF keyness, C-value multi-word term extraction, and sentence embeddings per section. Market basket analysis (FP-Growth + lift scoring) on term co-occurrence discovers sub-archetypes within NTEE verticals. Replaces abandoned LLM extraction approach (0045)."
-    status: specified
+    status: implementing
     priority: high
     files:
       spec: locard/specs/0049-nlp-extraction-archetypes.md
-      plan: null
+      plan: locard/plans/0049-nlp-extraction-archetypes.md
       review: null
     dependencies: ["0046"]
     tags: [layer-2, nlp, extraction, archetype, mba, spacy, tfidf]
