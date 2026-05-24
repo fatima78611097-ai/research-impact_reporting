@@ -576,3 +576,11 @@ Phases A and the test infrastructure can be built in parallel. Phases B-D are se
 6. **No dashboard/UI.** Output = DB tables + stdout.
 7. **No embeddings/vectors.** Raw co-occurrence only.
 8. **No merging with Layer 1 tables.** Clean schema separation.
+
+## Consultation Log
+
+| Date | Type | Model | Verdict | Key Changes |
+|------|------|-------|---------|-------------|
+| 2026-05-24 | plan-review | gemini | APPROVE | No changes needed |
+| 2026-05-24 | plan-review | codex | REQUEST_CHANGES | AC9 80% filter moved to extraction, transaction boundaries specified, data-flow contracts added |
+| 2026-05-24 | red-team-plan | gemini | REQUEST_CHANGES | Pinned exact dep versions, added PII operational note |

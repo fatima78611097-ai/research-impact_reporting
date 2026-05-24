@@ -528,3 +528,11 @@ All CLI arguments are validated at command entry, before any DB operations:
 6. **Don't build a dashboard.** Output is DB tables + stdout summary. UI comes after validating the approach.
 7. **Don't embed or vectorize.** That's a future phase. Raw co-occurrence via FP-Growth is the validated approach.
 8. **Don't merge with Layer 1 tables.** Clean schema separation means we can iterate or rebuild without risk.
+
+## Consultation Log
+
+| Date | Type | Model | Verdict | Key Changes |
+|------|------|-------|---------|-------------|
+| 2026-05-23 | spec-review | gemini | APPROVE | Minor clarifications incorporated |
+| 2026-05-23 | spec-review | codex | APPROVE | Corpus definition for TF-IDF clarified |
+| 2026-05-23 | red-team-spec | gemini | REQUEST_CHANGES | Added input validation, error sanitization, circuit breaker, per-section cap |
