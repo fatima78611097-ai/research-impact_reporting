@@ -22,16 +22,21 @@ All code lives in Django management commands under `lavandula/dashboard/pipeline
 
 ## Dependencies (pip)
 
+Pin exact versions (not ranges) to prevent supply-chain drift:
+
 ```
-spacy>=3.7,<4.0
-scikit-learn>=1.3
-mlxtend>=0.23
-scipy>=1.11
+spacy==3.7.6
+scikit-learn==1.5.2
+mlxtend==0.23.1
+scipy==1.14.1
 ```
 
 Model: `python -m spacy download en_core_web_lg`
 
-These are added to `requirements.txt` (or equivalent). The builder must verify these don't conflict with existing deps.
+The builder must:
+1. Verify these don't conflict with existing deps (`pip check` after install)
+2. Pin to the latest patch version available at build time
+3. Include transitive deps in a lockfile (`pip freeze > requirements-nlp.lock`)
 
 ---
 
@@ -557,6 +562,7 @@ Phases A and the test infrastructure can be built in parallel. Phases B-D are se
 - **Monitoring**: `extraction_runs.stats_json` provides progress. `SELECT * FROM lava_vocab.extraction_runs WHERE finished_at IS NULL` shows active runs.
 - **Disk**: observations for 44K docs ≈ 220 MiB. Well within RDS limits.
 - **No interaction with existing crawl/enrich pipeline**: completely isolated schema and commands.
+- **PII awareness**: extracted terms may contain names/orgs from source documents (e.g., "John Smith Foundation" as a named entity). The `lava_vocab` schema inherits the same access controls as `lava_parse`. No additional PII mitigation needed for single-operator use, but downstream consumers should be aware that observations can contain proper nouns from source docs.
 
 ---
 
