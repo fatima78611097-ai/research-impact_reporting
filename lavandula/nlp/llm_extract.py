@@ -47,7 +47,7 @@ For each metric, return:
 - "geo_impact": Geographic scope of this metric. One of: "LOCAL" (single city/county), "STATE" (single state), "NATIONAL" (multi-state or nationwide), or "GLOBAL" (international). Infer from context clues in the text.
 - "source_snippet": The exact phrase from the text containing the metric
 
-Skip: financial line items, page numbers, years as dates, addresses, phone numbers, ZIP codes, donor names, staff lists, board member counts, photo credits.
+Include top-line financial metrics like total revenue, total expenses, and total assets. Skip: detailed financial line items (e.g., individual grant amounts, salary breakdowns), page numbers, years as dates, addresses, phone numbers, ZIP codes, donor names, staff lists, board member counts, photo credits.
 
 ## 2. IMPACT STORIES
 Personal narratives, testimonials, and case studies about people helped.
@@ -60,7 +60,7 @@ For each story, return:
 - "themes": Array of 1-3 theme tags
 - "source_snippet": Key 1-2 sentences anchoring the story
 
-Skip: organizational founding history, board/staff listings, event recaps with only dates/numbers, financial summaries.
+Skip: organizational founding history, board/staff listings, event recaps with only dates/numbers.
 
 ## OUTPUT FORMAT
 Return a single JSON object with two keys:
