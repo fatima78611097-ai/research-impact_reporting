@@ -752,11 +752,11 @@ projects:
   - id: "0050"
     title: "Metric Extraction with Context Snippets"
     summary: "Extract performance metrics (term + number pairs) from parsed document sections, preserving full sentence/paragraph context, section heading, and source provenance. Builds on archetype vocabulary (0049) to identify metrics per org type. Feeds the AI interviewer with real phrasing patterns and metric templates."
-    status: specifying
+    status: implementing
     priority: high
     files:
       spec: locard/specs/0050-metric-extraction-context.md
-      plan: null
+      plan: locard/plans/0050-metric-extraction-context.md
       review: null
     dependencies: ["0049"]
     tags: [layer-2, nlp, metrics, extraction, interviewer]
