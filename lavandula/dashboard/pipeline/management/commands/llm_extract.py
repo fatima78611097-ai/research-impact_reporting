@@ -316,7 +316,7 @@ class Command(BaseCommand):
         """Query eligible documents for extraction."""
         params = {"ntee": ntee}
         where_clauses = [
-            "c.v3_material_type IN ('annual_report', 'impact_report')",
+            "(c.material_type IN ('annual_report', 'impact_report') OR c.v3_material_type IN ('annual_report', 'impact_report'))",
             "ns.ntee_code LIKE :ntee",
         ]
 
