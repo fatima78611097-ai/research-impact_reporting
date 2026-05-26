@@ -782,20 +782,35 @@ projects:
   - id: "0052"
     title: "Extraction QA Viewer (PDF + Metrics/Stories)"
     summary: "Side-by-side viewer showing source PDF and LLM-extracted metrics/stories with interactive hover-to-highlight and click-to-lock linking between extracted items and their source snippets in the document. Primary QA tool for validating extraction quality at scale."
-    status: conceived
+    status: specified
     priority: high
     files:
       spec: locard/specs/0052-extraction-qa-viewer.md
-      plan: null
+      plan: locard/plans/0052-extraction-qa-viewer.md
       review: null
     dependencies: ["0044", "0051"]
     tags: [dashboard, ui, extraction, qa, pdf-viewer, layer-2]
-    notes: "Builds on 0044's PDF viewer infrastructure. Interactive affordance: hover metric → PDF scrolls + highlights source_snippet. Click locks highlight for reading context."
+    notes: "Spec approved 2026-05-26. Builds on 0044's PDF viewer infrastructure. Interactive affordance: hover metric → PDF scrolls + highlights source_snippet. Click locks highlight for reading context."
+```
+
+```yaml
+  - id: "0053"
+    title: "Metric Type Taxonomy (Controlled Vocabulary)"
+    summary: "Derive a curated metric_type taxonomy from observed extraction data, cluster synonyms into canonical types, publish as YAML definition, and constrain the LLM extraction prompt to use the pick list (with escape hatch for new types). Same pattern as Spec 0020/0025 collateral taxonomy."
+    status: conceived
+    priority: medium
+    files:
+      spec: null
+      plan: null
+      review: null
+    dependencies: ["0051"]
+    tags: [layer-2, taxonomy, extraction, llm, data-quality]
+    notes: "Requires enough extraction data to observe natural clusters (P20 run will produce ~5K+ metric_type values). Pattern: observe → cluster → curate YAML → constrain prompt with pick list + 'suggest new' escape hatch."
 ```
 
 ## Next Available Number
 
-**0053** - Reserve this number for your next project
+**0054** - Reserve this number for your next project
 
 ---
 

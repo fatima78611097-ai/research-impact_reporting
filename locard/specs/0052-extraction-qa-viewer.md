@@ -1,6 +1,6 @@
 # Spec 0052: Extraction QA Viewer (PDF + Metrics/Stories)
 
-**Status:** Draft
+**Status:** Approved
 **Author:** Architect
 **Created:** 2026-05-26
 **Dependencies:** 0044 (Org Search, Document Listing & PDF Viewer), 0051 (LLM Impact Extraction)
