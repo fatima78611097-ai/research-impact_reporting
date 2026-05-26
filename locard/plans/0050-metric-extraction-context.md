@@ -90,6 +90,8 @@ Exclusion patterns applied before number detection:
 
 Implementation approach: first find all exclusion spans, then find all number matches, then remove any number match whose span overlaps an exclusion span.
 
+Regex safety note: all number patterns use fixed-length, non-overlapping sub-patterns (e.g., `(?:,\d{3})+` consumes exactly 4 chars per step — no ambiguity, no catastrophic backtracking). As a defensive measure, wrap regex matching in a per-section timeout: if any single section takes > 5 seconds to process, skip it and log a warning. This prevents any edge-case pathological input from stalling the pipeline.
+
 `numeric_parsed` rules:
 - Strip commas, parse float
 - `%` suffix: parse number before it (92% → 92.0)
@@ -164,7 +166,7 @@ If heading is None or empty → `"neutral"`
 
 Process a single table's `data_json` (JSONB from `lava_parse.tables`):
 
-1. Parse `data_json` — it's a list of row arrays. First row is typically headers (column headers).
+1. Parse `data_json` — expected structure: list of row arrays (list[list[str]]). **Validate before processing**: if `data_json` is not a list, or any row is not a list, or the table has < 2 rows (need at least header + 1 data row), skip with a debug log. Wrap in try/except to handle malformed JSON gracefully.
 2. Count numeric cells across all rows (excluding header). If > 50% of all data cells are numeric → skip (financial statement).
 3. Extract column headers from first row.
 4. For each data row (not header):
@@ -376,7 +378,7 @@ Phase B has no database dependency for unit testing. Phase C requires A (table m
 
 ## Consultation Log
 
-**Round 1 (2026-05-26)**:
+**Round 1 — Plan Review (2026-05-26)**:
 - **Gemini**: APPROVE (HIGH confidence). No key issues.
 - **Codex**: REQUEST_CHANGES (HIGH confidence). 6 issues:
   1. Schema DDL incomplete (indexes/grants not spelled out) → Fixed: added exact DDL
@@ -385,3 +387,11 @@ Phase B has no database dependency for unit testing. Phase C requires A (table m
   4. Table term matching missing column-header fallback → Fixed: added fallback per spec
   5. Resume strategy muddled → Fixed: clarified `metrics_cursor` key, no doc_extractions
   6. Test gaps (bullet, confidence, column-header) → Fixed: added tests 7 and 8 in D1
+
+**Round 2 — Red Team (2026-05-26)**:
+- **Gemini**: REQUEST_CHANGES (1 CRITICAL, 3 HIGH)
+  1. CRITICAL: ReDoS in comma regex → False positive (`(?:,\d{3})+` is fixed-length, non-overlapping), but added defensive per-section timeout as safeguard
+  2. HIGH: Over-permissioning → Already addressed in spec (DELETE needed for re-run cleanup, matches existing grant pattern)
+  3. HIGH: SQL injection → All queries use SQLAlchemy bind parameters throughout; no string concatenation
+  4. HIGH: PII leakage → Already addressed in spec security section (public docs, single-operator DB, deferred to display layer)
+  5. MEDIUM: data_json validation → Fixed: added structure validation and try/except in B6
