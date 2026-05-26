@@ -82,6 +82,8 @@ linkService.setViewer(viewer);
 
 The `source_snippet` from the extraction may not exactly match PDF.js's text layer output due to: whitespace normalization, hyphenation, ligatures (fi→fi), Unicode equivalence, or OCR artifacts. The matching strategy uses a **fallback chain:**
 
+**Max query length:** Search queries are capped at 80 characters to avoid PDF.js performance issues on pathological inputs. Snippets longer than 80 chars are always substrung.
+
 **Step 1 — Exact substring match:** Extract a distinctive 40-60 character substring from `source_snippet` (prefer substrings containing numbers, which are more unique in reports). Pass to `findController.executeCommand('find', { query, highlightAll: true, caseSensitive: false })`.
 
 **Step 2 — Shortened query:** If step 1 finds 0 matches (reported via `updatefindmatchescount` event), retry with a shorter 20-30 character substring (the most numeric-dense portion).
@@ -319,11 +321,14 @@ From the LLM extraction dashboard page (Spec 0051), extraction run results can l
 
 ## Security Considerations
 
-- **Authentication:** View requires `LoginRequiredMixin` — presigned URLs are only generated for authenticated users. URLs cannot be reused across sessions (they expire in 15 min and are not cached).
-- **XSS prevention:** All metric/story text rendered via Django template escaping (`{{ value }}`). `source_snippet` placed in `data-snippet` attributes uses `json_script` filter or explicit attribute escaping. No `|safe` or `innerHTML` for user-derived content.
-- **PDF sandbox:** PDF.js renders to `<canvas>` and does not execute JavaScript from PDF documents. Malicious PDFs cannot execute code in the browser.
-- **PDF metadata/annotations:** The viewer renders page content only. PDF annotations, embedded files, and JavaScript actions are not exposed to the user (PDF.js default behavior).
-- **Presigned URL scope:** Each presigned URL grants read access to exactly one PDF for 15 minutes. URLs are generated per-request and not stored or logged.
+**Authorization model:** This is a single-operator system (one authenticated user). All authenticated users have access to all reports and extraction data — there is no per-org, per-role, or per-tenant access control. `LoginRequiredMixin` is the only authorization gate. This is intentional and matches all other dashboard pages.
+
+- **Authentication:** View requires `LoginRequiredMixin`. Unauthenticated requests redirect to login.
+- **Presigned URL risk acknowledgment:** Presigned S3 URLs are bearer tokens — anyone who obtains the URL can access the PDF for 15 minutes regardless of session. This is an accepted risk for a single-operator internal tool. Mitigations: short expiry (15 min), URLs not persisted in logs or analytics, page served with `Cache-Control: no-store` header.
+- **XSS prevention:** All extraction text (metric_text, story_title, source_snippet, etc.) is rendered via Django template auto-escaping (`{{ value }}`). For JavaScript access, extraction data is serialized via Django's `json_script` template tag (produces `<script type="application/json">` with safe escaping). No `|safe` filter, no `innerHTML`, no attribute interpolation of raw text. The `data-snippet` approach in the JavaScript section uses the pre-escaped JSON data from `json_script`, not direct attribute injection.
+- **PDF sandbox:** PDF.js renders to `<canvas>` and does not execute JavaScript embedded in PDF documents. The implementation MUST NOT enable `enableScripting` in PDFViewer options. PDF annotations, embedded files, and form actions are not rendered.
+- **No client-side persistence:** No extraction content or PDF URLs stored in localStorage, sessionStorage, or sent to analytics.
+- **Console logging:** "Not found" debug events log the metric row index, not raw snippet text.
 
 ## Testing Requirements
 
