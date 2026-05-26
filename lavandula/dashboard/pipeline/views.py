@@ -1177,6 +1177,35 @@ class OrgDetailView(LoginRequiredMixin, DetailView):
         except OrgProvenance.DoesNotExist:
             ctx["provenance"] = None
 
+        # LLM-extracted metrics and stories (Spec 0051)
+        from django.db import connections
+        try:
+            with connections["default"].cursor() as cur:
+                cur.execute("""
+                    SELECT metric_text, metric_type, metric_value, unit, geo_impact,
+                           source_snippet, created_at
+                    FROM lava_vocab.llm_metrics
+                    WHERE source_org_ein = %s
+                    ORDER BY metric_value DESC NULLS LAST
+                """, [ein])
+                columns = [col[0] for col in cur.description]
+                ctx["llm_metrics"] = [dict(zip(columns, row)) for row in cur.fetchall()]
+
+                cur.execute("""
+                    SELECT story_title, story_summary, people_mentioned, program,
+                           themes, source_snippet, created_at
+                    FROM lava_vocab.llm_stories
+                    WHERE source_org_ein = %s
+                    ORDER BY created_at DESC
+                """, [ein])
+                columns = [col[0] for col in cur.description]
+                ctx["llm_stories"] = [dict(zip(columns, row)) for row in cur.fetchall()]
+        except Exception:
+            import logging as _log
+            _log.getLogger(__name__).exception("Failed to load LLM metrics/stories for %s", ein)
+            ctx["llm_metrics"] = []
+            ctx["llm_stories"] = []
+
         return ctx
 
 
@@ -1980,3 +2009,186 @@ class HostCommandStatusPartial(HtmxLoginRequiredMixin, TemplateView):
         ctx["commands"] = recent_commands
         ctx["hostname"] = hostname
         return ctx
+
+
+# ---------------------------------------------------------------------------
+# LLM Impact Extraction (Spec 0051)
+# ---------------------------------------------------------------------------
+
+
+class LlmExtractView(LoginRequiredMixin, TemplateView):
+    template_name = "pipeline/llm_extract.html"
+
+    def get_context_data(self, **kwargs):
+        import json as _json
+        ctx = super().get_context_data(**kwargs)
+        from django.db import connections
+        with connections["default"].cursor() as cur:
+            cur.execute("""
+                SELECT id, run_tag, ntee_filter, extractor_version,
+                       started_at, finished_at, stats_json
+                FROM lava_vocab.extraction_runs
+                WHERE extractor_version = '0051-v1'
+                ORDER BY id DESC
+                LIMIT 20
+            """)
+            runs = []
+            active_run = None
+            for row in cur.fetchall():
+                stats = row[6] if isinstance(row[6], dict) else _json.loads(row[6] or "{}")
+                run = {
+                    "id": row[0], "run_tag": row[1], "ntee_filter": row[2],
+                    "started_at": row[4], "finished_at": row[5],
+                    "status": stats.get("status", "unknown"),
+                    "docs_processed": stats.get("docs_processed", 0),
+                    "docs_skipped": stats.get("docs_skipped", 0),
+                    "docs_failed": stats.get("docs_failed", 0),
+                    "metrics_found": stats.get("metrics_found", 0),
+                    "stories_found": stats.get("stories_found", 0),
+                    "cost_usd": stats.get("cost_usd", 0),
+                    "elapsed_s": stats.get("elapsed_s", 0),
+                }
+                runs.append(run)
+                if run["status"] == "running":
+                    active_run = run
+
+        ctx["runs"] = runs
+        ctx["active_run"] = active_run
+        return ctx
+
+
+class LlmExtractJobCreateView(LoginRequiredMixin, View):
+    def post(self, request):
+        import re as _re
+        import subprocess as _sub
+
+        ntee = request.POST.get("ntee", "P2%").strip()
+        state_filter = request.POST.get("state", "").strip()
+        max_docs = request.POST.get("max_docs", "").strip()
+        parallel = request.POST.get("parallel", "5").strip()
+        cost_limit = request.POST.get("cost_limit", "25").strip()
+        run_tag = request.POST.get("run_tag", "").strip()
+
+        if not run_tag or not _re.match(r"^[a-zA-Z0-9_-]{1,64}$", run_tag):
+            messages.error(request, "Invalid run tag: must be 1-64 alphanumeric/hyphen/underscore characters")
+            return redirect("llm_extract")
+        if not _re.match(r"^[A-Z][0-9]*%?$", ntee):
+            messages.error(request, "Invalid NTEE filter")
+            return redirect("llm_extract")
+        if state_filter and not _re.match(r"^[A-Z]{2}$", state_filter):
+            messages.error(request, "Invalid state code")
+            return redirect("llm_extract")
+
+        cmd = [
+            "python3", "manage.py", "llm_extract", run_tag,
+            "--ntee", ntee,
+            "--parallel", parallel,
+            "--cost-limit", cost_limit,
+        ]
+        if state_filter:
+            cmd.extend(["--state", state_filter])
+        if max_docs:
+            cmd.extend(["--max-docs", max_docs])
+
+        try:
+            _sub.Popen(
+                cmd,
+                cwd="/home/ubuntu/research",
+                stdout=open(f"/tmp/llm_extract_{run_tag}.log", "w"),
+                stderr=_sub.STDOUT,
+                start_new_session=True,
+            )
+            _log_audit(request, "llm_extract_start", "llm-extract", {
+                "run_tag": run_tag, "ntee": ntee, "state": state_filter,
+                "max_docs": max_docs, "parallel": parallel, "cost_limit": cost_limit,
+            })
+            messages.success(request, f"Started LLM extraction run: {run_tag}")
+        except Exception as e:
+            messages.error(request, f"Failed to start extraction: {e}")
+
+        return redirect("llm_extract")
+
+
+class LlmExtractStatusPartial(HtmxLoginRequiredMixin, View):
+    def get(self, request):
+        import json as _json
+        from django.db import connections
+
+        run_id = request.GET.get("run_id", "").strip()
+
+        with connections["default"].cursor() as cur:
+            if run_id and run_id.isdigit():
+                cur.execute("""
+                    SELECT stats_json FROM lava_vocab.extraction_runs
+                    WHERE id = %s AND extractor_version = '0051-v1'
+                """, [int(run_id)])
+            else:
+                cur.execute("""
+                    SELECT stats_json FROM lava_vocab.extraction_runs
+                    WHERE extractor_version = '0051-v1'
+                      AND stats_json->>'status' = 'running'
+                    ORDER BY id DESC LIMIT 1
+                """)
+            row = cur.fetchone()
+
+        if row:
+            stats = row[0] if isinstance(row[0], dict) else _json.loads(row[0] or "{}")
+            return HttpResponse(
+                _json.dumps(stats),
+                content_type="application/json",
+            )
+        return HttpResponse("{}", content_type="application/json")
+
+
+class LlmExtractStopView(LoginRequiredMixin, View):
+    def post(self, request):
+        import json as _json
+        from django.db import connections
+
+        run_id = request.POST.get("run_id", "").strip()
+
+        with connections["default"].cursor() as cur:
+            if run_id and run_id.isdigit():
+                cur.execute("""
+                    SELECT id, stats_json FROM lava_vocab.extraction_runs
+                    WHERE id = %s AND extractor_version = '0051-v1'
+                """, [int(run_id)])
+            else:
+                cur.execute("""
+                    SELECT id, stats_json FROM lava_vocab.extraction_runs
+                    WHERE extractor_version = '0051-v1'
+                    ORDER BY id DESC LIMIT 1
+                """)
+            row = cur.fetchone()
+
+        if row:
+            run_id_int = row[0]
+            stats = row[1] if isinstance(row[1], dict) else _json.loads(row[1] or "{}")
+            status = stats.get("status", "")
+
+            if status == "running":
+                # Use jsonb_set to atomically set stop_requested without
+                # clobbering concurrent stats_json writes from the command
+                with connections["default"].cursor() as cur:
+                    cur.execute(
+                        "UPDATE lava_vocab.extraction_runs "
+                        "SET stats_json = jsonb_set(stats_json, '{stop_requested}', 'true'::jsonb) "
+                        "WHERE id = %s",
+                        [run_id_int],
+                    )
+                _log_audit(request, "llm_extract_stop", "llm-extract", {"run_id": run_id_int})
+                messages.success(request, "Stop requested — run will finish current batch and shut down")
+            else:
+                with connections["default"].cursor() as cur:
+                    cur.execute(
+                        "UPDATE lava_vocab.extraction_runs "
+                        "SET stats_json = jsonb_set(stats_json, '{status}', '\"aborted\"'::jsonb), "
+                        "    finished_at = now() "
+                        "WHERE id = %s",
+                        [run_id_int],
+                    )
+                messages.success(request, f"Run marked as aborted (was: {status})")
+        else:
+            messages.error(request, "No LLM extraction run found")
+
+        return redirect("llm_extract")

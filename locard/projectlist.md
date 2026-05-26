@@ -763,9 +763,24 @@ projects:
     notes: "Next step after archetype discovery. Ties vocabulary to actual reported numbers with full context snippets for phrasing patterns."
 ```
 
+```yaml
+  - id: "0051"
+    title: "LLM Impact Extraction (Metrics + Stories)"
+    summary: "Replace Spec 0050 regex pipeline with full-document LLM extraction via DeepSeek. Single API call per document extracts structured impact metrics AND narrative stories. Validated at 100% competitor match rate across 3 test reports. ~$12-15 for full P20 corpus."
+    status: conceived
+    priority: high
+    files:
+      spec: locard/specs/0051-llm-impact-extraction.md
+      plan: null
+      review: null
+    dependencies: []
+    tags: [layer-2, extraction, llm, deepseek, metrics, stories, interviewer]
+    notes: "Validated via experiment 2026-05-26: DeepSeek combined extraction matched 100% of competitor metrics across CanCare, Think New Mexico, Boys & Girls Club. Also extracts stories. Supersedes Spec 0050 regex approach which produced 750 junk observations per doc."
+```
+
 ## Next Available Number
 
-**0051** - Reserve this number for your next project
+**0052** - Reserve this number for your next project
 
 ---
 

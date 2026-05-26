@@ -1,0 +1,136 @@
+{% extends "pipeline/base.html" %}
+{% load humanize %}
+{% block title %}LLM Extraction — Lavandula Pipeline{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold text-gray-900 mb-2">LLM Impact Extraction</h1>
+<p class="text-sm text-gray-500 mb-6">Extract structured metrics and impact stories from nonprofit reports via DeepSeek LLM.</p>
+
+{% if active_run %}
+<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6" id="active-run">
+  <div class="flex items-center justify-between mb-2">
+    <div class="flex items-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+      <span class="font-semibold text-blue-900">Running: {{ active_run.run_tag }}</span>
+    </div>
+    <form method="post" action="{% url 'llm_extract_stop' %}">
+      {% csrf_token %}
+      <input type="hidden" name="run_id" value="{{ active_run.id }}">
+      <button type="submit" class="text-red-600 hover:text-red-800 text-sm font-medium" onclick="return confirm('Stop the running extraction?')">Stop Run</button>
+    </form>
+  </div>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm" id="run-stats">
+    <div><span class="text-gray-500">Processed:</span> <span class="font-mono" id="stat-processed">{{ active_run.docs_processed }}</span></div>
+    <div><span class="text-gray-500">Skipped:</span> <span class="font-mono" id="stat-skipped">{{ active_run.docs_skipped }}</span></div>
+    <div><span class="text-gray-500">Failed:</span> <span class="font-mono" id="stat-failed">{{ active_run.docs_failed }}</span></div>
+    <div><span class="text-gray-500">Cost:</span> $<span class="font-mono" id="stat-cost">{{ active_run.cost_usd }}</span></div>
+    <div><span class="text-gray-500">Metrics:</span> <span class="font-mono" id="stat-metrics">{{ active_run.metrics_found }}</span></div>
+    <div><span class="text-gray-500">Stories:</span> <span class="font-mono" id="stat-stories">{{ active_run.stories_found }}</span></div>
+    <div><span class="text-gray-500">Elapsed:</span> <span class="font-mono" id="stat-elapsed">{{ active_run.elapsed_s }}s</span></div>
+  </div>
+</div>
+<script>
+(function() {
+  function poll() {
+    fetch("{% url 'llm_extract_status' %}?run_id={{ active_run.id }}")
+      .then(r => r.json())
+      .then(d => {
+        if (!d.status || d.status !== "running") { location.reload(); return; }
+        document.getElementById("stat-processed").textContent = d.docs_processed || 0;
+        document.getElementById("stat-skipped").textContent = d.docs_skipped || 0;
+        document.getElementById("stat-failed").textContent = d.docs_failed || 0;
+        document.getElementById("stat-cost").textContent = (d.cost_usd || 0).toFixed(3);
+        document.getElementById("stat-metrics").textContent = d.metrics_found || 0;
+        document.getElementById("stat-stories").textContent = d.stories_found || 0;
+        document.getElementById("stat-elapsed").textContent = (d.elapsed_s || 0).toFixed(0) + "s";
+        setTimeout(poll, 3000);
+      })
+      .catch(() => setTimeout(poll, 5000));
+  }
+  setTimeout(poll, 3000);
+})();
+</script>
+{% endif %}
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <!-- Start New Run -->
+  <div class="bg-white rounded-lg shadow p-5">
+    <h2 class="text-sm font-semibold text-gray-500 uppercase mb-3">Start New Run</h2>
+    <form method="post" action="{% url 'llm_extract_job_create' %}">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="block text-xs font-medium text-gray-600 mb-1">Run Tag</label>
+        <input type="text" name="run_tag" required pattern="[a-zA-Z0-9_-]{1,64}" placeholder="e.g. p20-v1" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+      </div>
+      <div class="mb-3">
+        <label class="block text-xs font-medium text-gray-600 mb-1">NTEE Filter</label>
+        <input type="text" name="ntee" value="P2%" pattern="[A-Z][0-9]*%?" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+      </div>
+      <div class="mb-3">
+        <label class="block text-xs font-medium text-gray-600 mb-1">State (optional)</label>
+        <input type="text" name="state" placeholder="e.g. TX" pattern="[A-Z]{2}" maxlength="2" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+      </div>
+      <div class="mb-3">
+        <label class="block text-xs font-medium text-gray-600 mb-1">Max Documents (optional)</label>
+        <input type="number" name="max_docs" min="1" placeholder="all" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+      </div>
+      <div class="grid grid-cols-2 gap-3 mb-3">
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Parallel</label>
+          <input type="number" name="parallel" value="5" min="1" max="20" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Cost Limit ($)</label>
+          <input type="number" name="cost_limit" value="25" min="0.01" step="0.01" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+        </div>
+      </div>
+      <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded text-sm hover:bg-blue-700" {% if active_run %}disabled title="A run is already active"{% endif %}>Start Extraction</button>
+    </form>
+  </div>
+
+  <!-- Run History -->
+  <div class="lg:col-span-2 bg-white rounded-lg shadow p-5">
+    <h2 class="text-sm font-semibold text-gray-500 uppercase mb-3">Run History</h2>
+    {% if runs %}
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead><tr class="text-left text-gray-500 border-b">
+          <th class="pb-2">Run Tag</th>
+          <th class="pb-2">Status</th>
+          <th class="pb-2 text-right">Docs</th>
+          <th class="pb-2 text-right">Metrics</th>
+          <th class="pb-2 text-right">Stories</th>
+          <th class="pb-2 text-right">Cost</th>
+          <th class="pb-2 text-right">Duration</th>
+        </tr></thead>
+        <tbody>
+          {% for run in runs %}
+          <tr class="border-b hover:bg-gray-50">
+            <td class="py-2 font-mono text-xs">{{ run.run_tag }}</td>
+            <td class="py-2">
+              <span class="inline-block px-2 py-0.5 rounded text-xs font-medium
+                {% if run.status == 'completed' %}bg-green-100 text-green-700
+                {% elif run.status == 'running' %}bg-blue-100 text-blue-700
+                {% elif run.status == 'aborted' %}bg-yellow-100 text-yellow-700
+                {% elif run.status == 'failed' %}bg-red-100 text-red-700
+                {% else %}bg-gray-100 text-gray-700{% endif %}">{{ run.status }}</span>
+            </td>
+            <td class="py-2 text-right">{{ run.docs_processed }}<span class="text-gray-400">/{{ run.docs_skipped }}s/{{ run.docs_failed }}f</span></td>
+            <td class="py-2 text-right">{{ run.metrics_found }}</td>
+            <td class="py-2 text-right">{{ run.stories_found }}</td>
+            <td class="py-2 text-right font-mono">${{ run.cost_usd|floatformat:3 }}</td>
+            <td class="py-2 text-right">
+              {% if run.elapsed_s %}
+                {% if run.elapsed_s >= 60 %}{{ run.elapsed_s|floatformat:0 }}s{% else %}{{ run.elapsed_s|floatformat:1 }}s{% endif %}
+              {% else %}—{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-gray-500 text-sm">No extraction runs yet.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
