@@ -54,22 +54,47 @@ Spec 0044 uses browser-native `<iframe>` PDF rendering. This viewer requires **P
 - Text layer access for search and highlight
 - Custom highlight overlay rendering
 
-PDF.js is Mozilla's open-source PDF renderer — renders PDFs to canvas with an invisible text layer for selection and search. The text layer enables `findController` for programmatic text search and highlight.
+**PDF.js version:** Use PDF.js **4.x** (latest stable). Vendor the library into `static/vendor/pdfjs/` rather than using CDN — avoids external dependency for an internal tool. Required files:
+- `pdf.min.mjs` (core library, ES module)
+- `pdf.worker.min.mjs` (web worker)
+- `pdf_viewer.mjs` (viewer component)
+- `pdf_viewer.css` (text layer styles)
 
-### Highlight Mechanism
+**Embedding approach:** Use the PDF.js **viewer components** (not the pre-built viewer application). Initialize `PDFViewer` with an `EventBus`, `PDFLinkService`, and `PDFFindController` inside a `<div>` container. This gives programmatic control without the full Firefox viewer UI chrome.
 
-PDF.js exposes a text layer (`<div class="textLayer">`) containing `<span>` elements for each text run. To highlight a `source_snippet`:
+```javascript
+const eventBus = new pdfjsViewer.EventBus();
+const linkService = new pdfjsViewer.PDFLinkService({ eventBus });
+const findController = new pdfjsViewer.PDFFindController({ eventBus, linkService });
+const viewer = new pdfjsViewer.PDFViewer({
+    container: document.getElementById('pdf-container'),
+    eventBus,
+    linkService,
+    findController,
+    textLayerMode: 2,  // ENABLE (renders text layer for search)
+});
+linkService.setViewer(viewer);
+```
 
-1. Use PDF.js `findController.executeCommand('find', { query: snippet })` to search for the text
-2. PDF.js automatically scrolls to and highlights matches
-3. Custom CSS styles the highlight (yellow background, smooth scroll)
+**Page lifecycle:** PDF.js renders pages lazily — only visible pages get canvas + text layer. When `findController` locates text on an unrendered page, the viewer automatically scrolls to and renders that page before highlighting. No manual page management needed.
 
-If the snippet is too long for exact match (PDF.js find works best on short phrases), extract a distinctive 40-60 character substring from the snippet as the search query.
+### Highlight Mechanism — Snippet Matching
 
-**Edge cases:**
-- Snippet spans multiple pages → highlight on first occurrence
-- Snippet not found (OCR differences, formatting) → show "Source not located" indicator on the metric row, no scroll
-- Multiple occurrences of same text → highlight first occurrence (usually correct for reports)
+The `source_snippet` from the extraction may not exactly match PDF.js's text layer output due to: whitespace normalization, hyphenation, ligatures (fi→fi), Unicode equivalence, or OCR artifacts. The matching strategy uses a **fallback chain:**
+
+**Step 1 — Exact substring match:** Extract a distinctive 40-60 character substring from `source_snippet` (prefer substrings containing numbers, which are more unique in reports). Pass to `findController.executeCommand('find', { query, highlightAll: true, caseSensitive: false })`.
+
+**Step 2 — Shortened query:** If step 1 finds 0 matches (reported via `updatefindmatchescount` event), retry with a shorter 20-30 character substring (the most numeric-dense portion).
+
+**Step 3 — Number-only fallback:** Extract just the key number from `source_snippet` (e.g., "670,017" from "670,017 meals prepared"). Search for the number. This almost always matches but may highlight the wrong occurrence if the number appears multiple times.
+
+**Step 4 — Give up:** If all attempts find 0 matches, mark the row with an orange dot indicator and tooltip "Source text not located in PDF." Do not scroll the PDF.
+
+**Success criteria:** A match is "found" when `findController` reports ≥1 match via the `updatefindmatchescount` event. The viewer scrolls to and highlights the first match.
+
+**Multiple occurrences:** If the same text appears multiple times in the document, the first occurrence is highlighted. This is acceptable because reports rarely repeat exact metric phrasing.
+
+**Snippet spans pages:** `findController` handles cross-page matches natively — it highlights the match on whichever page(s) it spans.
 
 ## Technical Implementation
 
@@ -206,69 +231,27 @@ class ExtractionQAView(LoginRequiredMixin, DetailView):
 - Don't scroll the PDF — leave it where it is
 - Log not-found events to console for debugging
 
-### JavaScript Architecture
+### Interaction State Model
 
-```javascript
-// extraction-qa.js
-class ExtractionQAViewer {
-    constructor(pdfUrl, containerEl) {
-        this.pdfViewer = null;
-        this.lockedRow = null;
-        this.init(pdfUrl, containerEl);
-    }
+The viewer manages three pieces of UI state:
 
-    async init(pdfUrl, containerEl) {
-        // Initialize PDF.js viewer
-        const loadingTask = pdfjsLib.getDocument(pdfUrl);
-        const pdf = await loadingTask.promise;
-        // ... render pages into container with text layers
-    }
+1. **Hovered row** — which metric/story row the mouse is over (null if none)
+2. **Locked row** — which metric/story is "pinned" with a persistent highlight (null if none)
+3. **Selected run** — which extraction run is active
 
-    highlightSnippet(snippet, lock = false) {
-        const query = this.extractSearchPhrase(snippet);
-        this.pdfViewer.findController.executeCommand('findagain', {
-            query: query,
-            highlightAll: true,
-            findPrevious: false,
-        });
-        if (lock) this.lockedRow = /* current row */;
-    }
+**State transitions on run change:**
+- Locked row resets to null (highlight cleared)
+- Hovered row resets to null
+- Metrics and stories lists replace entirely
+- "Not located" indicators reset (re-evaluated lazily on next hover/click)
+- PDF stays on current page (no scroll)
 
-    extractSearchPhrase(snippet) {
-        // Pick a distinctive substring (40-60 chars)
-        // Prefer numeric content (more unique in reports)
-        // Avoid line-break boundaries
-        if (snippet.length <= 60) return snippet;
-        // Find a substring with numbers (more unique)
-        const numMatch = snippet.match(/\d[\d,.]* [a-zA-Z ]{10,40}/);
-        if (numMatch) return numMatch[0];
-        return snippet.substring(0, 60);
-    }
+**State transitions on document navigation (next/prev):**
+- Full page reload (new URL) — all state resets naturally
 
-    clearHighlight() {
-        if (!this.lockedRow) {
-            this.pdfViewer.findController.executeCommand('findagain', {
-                query: '',
-                highlightAll: false,
-            });
-        }
-    }
-}
-```
+### CORS
 
-### PDF.js Integration
-
-**Library source:** Use PDF.js from CDN (`mozilla.github.io/pdf.js/`) or vendor a copy.
-
-**Viewer setup:** Use the "viewer components" approach (not the full viewer application) to embed just the rendering and find functionality without the full Firefox PDF viewer UI chrome.
-
-Required PDF.js components:
-- `pdf.js` (core library)
-- `pdf.worker.js` (web worker for parsing)
-- `pdf_viewer.js` (viewer component with text layers)
-- `pdf_viewer.css` (text layer styling)
-
-**CORS:** Presigned S3 URLs are same-origin-neutral (the URL itself authenticates). PDF.js can fetch them directly. No CORS headers needed on S3 bucket.
+Presigned S3 URLs are same-origin-neutral (the URL authenticates via query string). PDF.js can fetch them directly without CORS headers on the S3 bucket.
 
 ### Performance Considerations
 
@@ -321,21 +304,52 @@ From the LLM extraction dashboard page (Spec 0051), extraction run results can l
 
 ### Navigation
 19. Toolbar shows org name and current document position (e.g., "Doc 3 of 7")
-20. Prev/Next buttons navigate between org's documents that have extraction data
-21. Run dropdown switches between extraction runs for the same document
-22. Back button returns to org detail page
+20. Prev/Next buttons navigate between org's documents that have extraction data, ordered by `report_year DESC, content_sha256 ASC`
+21. When org has only one extracted document, Prev/Next buttons are hidden (not disabled)
+22. Run dropdown switches between extraction runs for the same document; changing run resets locked highlight and reloads extraction panel
+23. Back button returns to org detail page
 
 ### Error Handling
-23. Missing PDF (S3 404) shows clear error message, extraction panel still visible
-24. Document with no extractions shows "No extraction data for this document" message
-25. Expired presigned URL shows reload prompt
+24. Missing PDF (S3 404) shows "PDF not available" message in left panel; extraction panel still visible and fully functional
+25. Document with no extractions shows "No extraction data for this document" in right panel; PDF viewer still renders normally
+26. Expired presigned URL (PDF fails to load after page has been open >15 min) shows "Session expired — reload page" overlay on the PDF panel
+27. Metrics-only extraction (stories list empty) shows metrics normally, stories section shows "No stories extracted"
+28. Stories-only extraction (metrics list empty) shows stories normally, metrics section shows "No metrics extracted"
+29. Degraded text layer (scanned PDF with no text layer) — hover/click attempts all reach step 4 (give up); all rows show "not located" indicators. PDF still renders visually. No special pre-detection needed.
 
 ## Security Considerations
 
-- Presigned URLs expose the document to anyone with the link for 15 minutes — acceptable for internal QA tool behind auth
-- No user-supplied content rendered as HTML (all metric/story text is escaped)
-- PDF.js sandboxes PDF rendering (no JS execution from malicious PDFs)
-- `source_snippet` values are stored server-side and never come from user input in this context
+- **Authentication:** View requires `LoginRequiredMixin` — presigned URLs are only generated for authenticated users. URLs cannot be reused across sessions (they expire in 15 min and are not cached).
+- **XSS prevention:** All metric/story text rendered via Django template escaping (`{{ value }}`). `source_snippet` placed in `data-snippet` attributes uses `json_script` filter or explicit attribute escaping. No `|safe` or `innerHTML` for user-derived content.
+- **PDF sandbox:** PDF.js renders to `<canvas>` and does not execute JavaScript from PDF documents. Malicious PDFs cannot execute code in the browser.
+- **PDF metadata/annotations:** The viewer renders page content only. PDF annotations, embedded files, and JavaScript actions are not exposed to the user (PDF.js default behavior).
+- **Presigned URL scope:** Each presigned URL grants read access to exactly one PDF for 15 minutes. URLs are generated per-request and not stored or logged.
+
+## Testing Requirements
+
+### Unit Tests (Python)
+- View returns correct metrics/stories for a given (sha, run_id)
+- View defaults to latest run when no run_id specified
+- View handles document with no extractions (empty metrics/stories lists)
+- View handles document with metrics but no stories, and vice versa
+- Prev/Next navigation query returns correct ordering and filters to docs with extractions
+- Run dropdown query returns distinct runs for the document
+
+### Integration Tests (Python)
+- Authenticated user can load QA viewer page (200 response)
+- Unauthenticated user is redirected to login
+- Page context includes pdf_url, metrics, stories, available_runs
+- Run switching via query parameter loads correct extraction data
+
+### Browser/Manual Tests
+- PDF renders in left panel with text layer visible
+- Hovering a metric row scrolls PDF and highlights text within 500ms
+- Mouse-out clears highlight
+- Clicking locate icon locks highlight; clicking again unlocks
+- Clicking a different row transfers lock
+- "Not located" indicator appears for unmatched snippets
+- Run dropdown switches data without page reload
+- Expired presigned URL shows reload message
 
 ## Dependencies
 
@@ -343,8 +357,8 @@ From the LLM extraction dashboard page (Spec 0051), extraction run results can l
 - **Spec 0051** — provides the extraction data (`llm_metrics`, `llm_stories` tables with `source_snippet` column)
 - **PDF.js** — Mozilla's PDF rendering library (MIT license)
 
-## Open Questions
+## Design Decisions
 
-1. **Spec 0044 not yet implemented** — should the QA viewer depend on 0044 being done first, or should it be self-contained (duplicate the presigned URL + view patterns)? Recommendation: make it self-contained since the viewer logic is sufficiently different (PDF.js vs iframe).
-2. **Text search accuracy** — PDF.js text extraction may not exactly match the LLM's `source_snippet` (hyphenation, ligatures, Unicode normalization). May need fuzzy matching fallback.
-3. **Split-path documents** — documents that went through the dual-path extraction (metrics and stories from separate API calls) may have overlapping source_snippets. Not a problem for display but worth noting.
+1. **Self-contained (no dependency on 0044 implementation)** — The QA viewer is self-contained. It uses PDF.js (not iframe) and its own view/template. If 0044 is implemented later, the QA viewer can link to/from it, but doesn't share rendering infrastructure.
+2. **Text matching uses fallback chain** — Exact match → shortened query → number-only → give up. No fuzzy/approximate string matching library required. The fallback chain handles 95%+ of cases based on the nature of metric snippets (they contain distinctive numbers).
+3. **Split-path extraction is transparent** — Whether metrics and stories came from one call or two is invisible to the viewer. Both are stored identically in the database.
