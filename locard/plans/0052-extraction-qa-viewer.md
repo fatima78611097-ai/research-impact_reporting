@@ -19,7 +19,7 @@ Build an interactive QA viewer that displays a PDF alongside its LLM-extracted m
 
 ### Steps
 
-1. Download PDF.js 4.x pre-built release from GitHub releases (`pdfjs-4.x.x-dist.zip`)
+1. Download PDF.js pre-built release from GitHub releases — pin to a specific version (e.g., `pdfjs-4.9.155-dist.zip` or whatever is latest stable at build time). Record the exact version and source URL in a `VERSION` file in the vendor directory.
 2. Extract into `lavandula/dashboard/pipeline/static/vendor/pdfjs/`:
    - `pdf.min.mjs`
    - `pdf.worker.min.mjs`
@@ -76,7 +76,9 @@ Build an interactive QA viewer that displays a PDF alongside its LLM-extracted m
      ORDER BY c.report_year DESC NULLS LAST, c.content_sha256 ASC
      ```
    - From the ordered list, find current doc's index → compute prev/next SHAs and "Doc X of Y" position
+   - Centralize this as a `_get_org_docs(engine, ein, run_id)` helper returning `{ docs: list, current_index: int }` — reused by both `ExtractionQAView` and `OrgExtractionQARedirectView` (which picks `docs[0]`)
    - Get org name from `NonprofitSeed`
+   - **Empty state initialization:** Always set `metrics=[]`, `stories=[]`, `available_runs=[]`, `selected_run_id=None`, `prev_doc=None`, `next_doc=None`, `doc_position=0`, `doc_total=0` at top of `get_context_data()`. Overwrite with real values when data exists. Template always has all keys.
 3. Create `OrgExtractionQARedirectView`:
    - Look up the first document for this EIN that has extraction data
    - Redirect to `/dashboard/reports/<sha>/qa/`
@@ -214,18 +216,19 @@ Build an interactive QA viewer that displays a PDF alongside its LLM-extracted m
 ### Steps
 
 1. Parse extraction data from `json_script` elements on page load
-2. Attach event listeners to all metric/story rows:
-   - `mouseenter` → if no locked row, call `highlightSnippet(snippet)`
+2. **Click target model:** The locate icon (⊕) is the click target for lock/unlock. The entire row triggers hover. Child elements (badges, tags) do not have their own click handlers — clicks bubble to the row. `event.stopPropagation()` is not needed because there are no competing handlers.
+3. Attach event listeners to all metric/story rows:
+   - `mouseenter` → if no locked row and search not pending, call `highlightSnippet(snippet)`
    - `mouseleave` → if no locked row, call `clearHighlight()`
-   - `click` → toggle lock state:
+   - `click` on locate icon → toggle lock state:
      - If clicking already-locked row: unlock, clear highlight
      - If clicking different row: lock new row, highlight new snippet
      - If clicking with no lock: lock this row
-3. Visual state management:
+4. **Search state machine** per row: `idle → searching → found | not-found`. During `searching`, additional hover/click requests for that same row are ignored (prevents race conditions from rapid mouse movement). State resets to `idle` on run change.
+5. Visual state management:
    - Add/remove `.qa-row-active` class on locked row
    - Add `.qa-row-not-found` class if highlight returns `found: false`
-4. Debounce hover (50ms) to avoid rapid-fire searches when mouse moves across rows quickly
-5. Show brief loading state on row while find is in progress (disable hover for that row until result)
+6. Debounce hover (50ms) to avoid rapid-fire searches when mouse moves across rows quickly
 
 ### Acceptance Criteria
 - Hover over row → PDF highlights within 500ms

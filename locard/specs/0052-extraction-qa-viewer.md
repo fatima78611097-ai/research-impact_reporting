@@ -43,9 +43,7 @@ Operators need to see the source PDF and its extracted data together, with inter
 - Metrics have: `metric_text`, `metric_type`, `metric_value`, `unit`, `geo_impact`, `source_snippet`
 - Stories have: `story_title`, `story_summary`, `people_mentioned`, `program`, `themes`, `source_snippet`
 
-**Text source for search:** `lava_parse.sections` (Docling-parsed full text by section)
-- Used for text-layer search when PDF.js text layer is insufficient
-- Fallback: pdftotext extraction
+**Text source (informational):** The extraction pipeline (Spec 0051) uses `lava_parse.sections` and pdftotext as text sources for the LLM. The QA viewer does NOT use these for search — it searches exclusively via PDF.js's text layer. For scanned/degraded PDFs where the text layer is empty, the viewer degrades gracefully (see AC 29).
 
 ### PDF Rendering
 
