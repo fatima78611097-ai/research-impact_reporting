@@ -185,8 +185,10 @@ Follows the same pattern as `extract_terms`: advisory lock, cursor-based resume,
 ### Security and Data Handling
 
 - **Snippet truncation**: Hard cap at 500 characters prevents storage of unexpectedly large content
-- **No PII redaction at extraction time**: Snippets contain org-published report text (already public documents). PII concerns are deferred to the interviewer/display layer where context determines what to show.
+- **PII acknowledgment**: Snippets contain org-published report text (annual/impact reports filed publicly). These documents may incidentally contain staff names, donor names, or participant counts that could be considered PII. No PII redaction is performed at extraction time because: (1) the source documents are already public, (2) this is a single-operator research database with no external access, (3) redaction at extraction would degrade snippet quality. PII handling is the responsibility of any downstream system that surfaces snippets to end users (AI interviewer, published lexicon). The `metric_observations` table should not be exposed to external systems without a PII review pass.
 - **Input sanitization**: Snippets are parameterized via SQLAlchemy bind parameters — no SQL injection risk. No user-supplied input enters the extraction pipeline.
+- **Regex safety**: Number detection and sentence splitting use simple, non-backtracking patterns (no nested quantifiers). Input text is pre-parsed by Docling (Spec 0046), not raw user uploads. Per-section processing limits the blast radius of any malformed content.
+- **Database permissions**: `research_app` requires DELETE for re-run cleanup (clearing previous run's observations before re-extraction). UPDATE is granted for consistency with the existing `lava_vocab` grant pattern but is not used by the extraction command itself.
 
 ## Output Example
 
