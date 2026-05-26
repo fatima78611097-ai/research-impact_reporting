@@ -63,6 +63,10 @@ urlpatterns = [
     path("reports/<str:sha>/", views.ReportDetailView.as_view(), name="report_detail"),
     path("reports/<str:sha>/download/", views.ReportDownloadView.as_view(), name="report_download"),
 
+    # Extraction QA Viewer (Spec 0052)
+    path("reports/<str:sha>/qa/", views.ExtractionQAView.as_view(), name="extraction_qa"),
+    path("orgs/<str:ein>/qa/", views.OrgExtractionQARedirectView.as_view(), name="org_extraction_qa"),
+
     # LLM Impact Extraction (Spec 0051)
     path("llm-extract/", views.LlmExtractView.as_view(), name="llm_extract"),
     path("llm-extract/queue/", views.LlmExtractJobCreateView.as_view(), name="llm_extract_job_create"),

@@ -235,9 +235,12 @@
 </div>
 
 <!-- LLM Impact Metrics (Spec 0051) -->
-{% if llm_metrics %}
+{% if llm_metrics or llm_stories %}
 <div class="mt-8">
-  <h2 class="text-xl font-bold text-gray-900 mb-4">Impact Metrics</h2>
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-xl font-bold text-gray-900">Impact Metrics</h2>
+    <a href="{% url 'org_extraction_qa' org.ein %}" class="text-sm text-blue-600 hover:underline">QA Viewer &rarr;</a>
+  </div>
   <div class="bg-white rounded-lg shadow p-5">
     <div class="overflow-x-auto">
       <table class="w-full text-sm">
