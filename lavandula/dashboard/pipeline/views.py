@@ -2192,3 +2192,200 @@ class LlmExtractStopView(LoginRequiredMixin, View):
             messages.error(request, "No LLM extraction run found")
 
         return redirect("llm_extract")
+
+
+# ---------------------------------------------------------------------------
+# Extraction QA Viewer (Spec 0052) — data helpers
+# ---------------------------------------------------------------------------
+
+def _qa_get_runs(sha):
+    from django.db import connections
+    with connections["default"].cursor() as cur:
+        cur.execute("""
+            SELECT DISTINCT r.id, r.run_tag, r.created_at
+            FROM lava_vocab.extraction_runs r
+            WHERE r.id IN (
+                SELECT run_id FROM lava_vocab.llm_metrics WHERE content_sha256 = %s
+                UNION
+                SELECT run_id FROM lava_vocab.llm_stories WHERE content_sha256 = %s
+            )
+            ORDER BY r.id DESC
+        """, [sha, sha])
+        columns = [col[0] for col in cur.description]
+        return [dict(zip(columns, row)) for row in cur.fetchall()]
+
+
+def _qa_get_metrics(run_id, sha):
+    from django.db import connections
+    with connections["default"].cursor() as cur:
+        cur.execute("""
+            SELECT metric_text, metric_type, metric_value, unit,
+                   geo_impact, source_snippet
+            FROM lava_vocab.llm_metrics
+            WHERE run_id = %s AND content_sha256 = %s
+            ORDER BY metric_value DESC NULLS LAST
+        """, [run_id, sha])
+        cols = [col[0] for col in cur.description]
+        return [dict(zip(cols, row)) for row in cur.fetchall()]
+
+
+def _qa_get_stories(run_id, sha):
+    from django.db import connections
+    with connections["default"].cursor() as cur:
+        cur.execute("""
+            SELECT story_title, story_summary, people_mentioned,
+                   program, themes, source_snippet
+            FROM lava_vocab.llm_stories
+            WHERE run_id = %s AND content_sha256 = %s
+            ORDER BY story_title
+        """, [run_id, sha])
+        cols = [col[0] for col in cur.description]
+        return [dict(zip(cols, row)) for row in cur.fetchall()]
+
+
+def _qa_get_org_docs(ein, run_id):
+    from django.db import connections
+    with connections["default"].cursor() as cur:
+        cur.execute("""
+            SELECT DISTINCT c.content_sha256, c.report_year
+            FROM lava_corpus.corpus c
+            WHERE c.source_org_ein = %s
+              AND c.content_sha256 IN (
+                  SELECT content_sha256 FROM lava_vocab.llm_metrics WHERE run_id = %s
+                  UNION
+                  SELECT content_sha256 FROM lava_vocab.llm_stories WHERE run_id = %s
+              )
+            ORDER BY c.report_year DESC NULLS LAST, c.content_sha256 ASC
+        """, [ein, run_id, run_id])
+        return cur.fetchall()
+
+
+def _qa_get_latest_run_for_org(ein):
+    from django.db import connections
+    with connections["default"].cursor() as cur:
+        cur.execute("""
+            SELECT r.id
+            FROM lava_vocab.extraction_runs r
+            WHERE r.id IN (
+                SELECT DISTINCT m.run_id FROM lava_vocab.llm_metrics m
+                JOIN lava_corpus.corpus c ON c.content_sha256 = m.content_sha256
+                WHERE c.source_org_ein = %s
+                UNION
+                SELECT DISTINCT s.run_id FROM lava_vocab.llm_stories s
+                JOIN lava_corpus.corpus c ON c.content_sha256 = s.content_sha256
+                WHERE c.source_org_ein = %s
+            )
+            ORDER BY r.id DESC LIMIT 1
+        """, [ein, ein])
+        row = cur.fetchone()
+        return row[0] if row else None
+
+
+# ---------------------------------------------------------------------------
+# Extraction QA Viewer (Spec 0052) — views
+# ---------------------------------------------------------------------------
+
+class ExtractionQAView(LoginRequiredMixin, DetailView):
+    model = Report
+    template_name = "pipeline/extraction_qa.html"
+    context_object_name = "report"
+    slug_field = "content_sha256"
+    slug_url_kwarg = "sha"
+
+    def get_context_data(self, **kwargs):
+        import boto3
+        from django.conf import settings
+
+        ctx = super().get_context_data(**kwargs)
+        sha = self.object.content_sha256
+        ein = self.object.source_org_ein
+        run_id = self.request.GET.get("run_id")
+
+        # Defaults (template always has all keys)
+        ctx["metrics"] = []
+        ctx["stories"] = []
+        ctx["available_runs"] = []
+        ctx["selected_run_id"] = None
+        ctx["prev_doc"] = None
+        ctx["next_doc"] = None
+        ctx["doc_position"] = 0
+        ctx["doc_total"] = 0
+        ctx["org"] = None
+        ctx["metrics_json"] = []
+        ctx["stories_json"] = []
+
+        # Presigned PDF URL (15-min expiry)
+        try:
+            s3 = boto3.client("s3")
+            ctx["pdf_url"] = s3.generate_presigned_url(
+                "get_object",
+                Params={"Bucket": settings.S3_COLLATERAL_BUCKET, "Key": f"pdfs/{sha}.pdf"},
+                ExpiresIn=900,
+            )
+        except Exception:
+            ctx["pdf_url"] = ""
+
+        runs = _qa_get_runs(sha)
+        ctx["available_runs"] = runs
+
+        if not run_id and runs:
+            run_id = runs[0]["id"]
+        elif run_id:
+            run_id = int(run_id)
+
+        if run_id:
+            ctx["selected_run_id"] = run_id
+            metrics = _qa_get_metrics(run_id, sha)
+            stories = _qa_get_stories(run_id, sha)
+            ctx["metrics"] = metrics
+            ctx["stories"] = stories
+
+            ctx["metrics_json"] = [
+                {"metric_text": m["metric_text"], "source_snippet": m["source_snippet"] or ""}
+                for m in metrics
+            ]
+            ctx["stories_json"] = [
+                {"story_title": s["story_title"], "source_snippet": s["source_snippet"] or ""}
+                for s in stories
+            ]
+
+        # Org context
+        try:
+            ctx["org"] = NonprofitSeed.objects.get(ein=ein)
+        except NonprofitSeed.DoesNotExist:
+            pass
+
+        # Prev/next navigation
+        if run_id:
+            docs = _qa_get_org_docs(ein, run_id)
+            ctx["doc_total"] = len(docs)
+            for i, (doc_sha, _year) in enumerate(docs):
+                if doc_sha == sha:
+                    ctx["doc_position"] = i + 1
+                    if i > 0:
+                        ctx["prev_doc"] = docs[i - 1][0]
+                    if i < len(docs) - 1:
+                        ctx["next_doc"] = docs[i + 1][0]
+                    break
+
+        return ctx
+
+    def render_to_response(self, context, **response_kwargs):
+        response = super().render_to_response(context, **response_kwargs)
+        response["Cache-Control"] = "no-store"
+        return response
+
+
+class OrgExtractionQARedirectView(LoginRequiredMixin, View):
+    def get(self, request, ein):
+        from django.http import Http404
+
+        run_id = _qa_get_latest_run_for_org(ein)
+        if not run_id:
+            raise Http404("No extracted documents for this org")
+
+        docs = _qa_get_org_docs(ein, run_id)
+        if not docs:
+            raise Http404("No extracted documents for this org")
+
+        return redirect(reverse("extraction_qa", kwargs={"sha": docs[0][0]}) + f"?run_id={run_id}")

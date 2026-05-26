@@ -1,0 +1,131 @@
+{% extends "pipeline/base.html" %}
+{% load static tz %}
+{% block title %}QA Viewer — {{ report.content_sha256|truncatechars:12 }}{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'vendor/pdfjs/pdf_viewer.css' %}">
+<link rel="stylesheet" href="{% static 'pipeline/css/extraction-qa.css' %}">
+
+<!-- Toolbar -->
+<div class="qa-toolbar">
+  <div class="qa-toolbar-left">
+    {% if org %}
+    <a href="{% url 'org_detail' org.ein %}" class="qa-toolbar-btn">&larr; {{ org.name|default:org.ein|truncatechars:30 }}</a>
+    {% endif %}
+    {% if doc_total > 1 %}
+    <span class="qa-toolbar-sep">|</span>
+    {% if prev_doc %}
+    <a href="{% url 'extraction_qa' prev_doc %}{% if selected_run_id %}?run_id={{ selected_run_id }}{% endif %}" class="qa-toolbar-btn">&larr; Prev</a>
+    {% endif %}
+    <span class="qa-toolbar-pos">Doc {{ doc_position }} of {{ doc_total }}</span>
+    {% if next_doc %}
+    <a href="{% url 'extraction_qa' next_doc %}{% if selected_run_id %}?run_id={{ selected_run_id }}{% endif %}" class="qa-toolbar-btn">Next &rarr;</a>
+    {% endif %}
+    {% endif %}
+  </div>
+  <div class="qa-toolbar-right">
+    {% if available_runs %}
+    <label class="qa-toolbar-label">Run:</label>
+    <select id="run-selector" class="qa-toolbar-select" onchange="if(this.value) window.location='?run_id='+this.value;">
+      {% for run in available_runs %}
+      <option value="{{ run.id }}" {% if run.id == selected_run_id %}selected{% endif %}>
+        {{ run.run_tag }} (#{{ run.id }})
+      </option>
+      {% endfor %}
+    </select>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Main Layout -->
+<div class="qa-layout">
+  <!-- PDF Panel (left) -->
+  <div class="qa-pdf-panel">
+    <div id="pdf-container" class="qa-pdf-container">
+      <div id="viewer" class="pdfViewer"></div>
+    </div>
+    <div id="pdf-error" class="qa-pdf-error" style="display:none;">
+      <p>PDF not available</p>
+    </div>
+    <div id="pdf-expired" class="qa-pdf-expired" style="display:none;">
+      <p>Session expired — <a href="" onclick="location.reload();return false;">reload page</a></p>
+    </div>
+  </div>
+
+  <!-- Extraction Panel (right) -->
+  <div class="qa-extract-panel">
+    {% if not metrics and not stories %}
+    <div class="qa-empty-state">
+      <p>No extraction data for this document.</p>
+    </div>
+    {% else %}
+
+    <!-- Metrics Section -->
+    <div class="qa-section">
+      <h3 class="qa-section-header">METRICS ({{ metrics|length }})</h3>
+      {% if metrics %}
+      <div class="qa-rows" id="metrics-list">
+        {% for m in metrics %}
+        <div class="qa-row" data-type="metric" data-index="{{ forloop.counter0 }}">
+          <span class="qa-locate" title="Locate in PDF">&#8853;</span>
+          <div class="qa-row-content">
+            <div class="qa-row-primary">{{ m.metric_text }}</div>
+            <div class="qa-row-secondary">
+              {% if m.metric_type %}<span class="qa-tag">{{ m.metric_type }}</span>{% endif %}
+              {% if m.metric_value is not None %}<span class="qa-value">{{ m.metric_value|floatformat:0 }}</span>{% endif %}
+              {% if m.unit %}<span class="qa-unit">{{ m.unit }}</span>{% endif %}
+              {% if m.geo_impact %}
+              <span class="qa-geo qa-geo-{{ m.geo_impact|lower }}">{{ m.geo_impact }}</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="qa-empty-section">No metrics extracted</p>
+      {% endif %}
+    </div>
+
+    <!-- Stories Section -->
+    <div class="qa-section">
+      <h3 class="qa-section-header">STORIES ({{ stories|length }})</h3>
+      {% if stories %}
+      <div class="qa-rows" id="stories-list">
+        {% for s in stories %}
+        <div class="qa-row" data-type="story" data-index="{{ forloop.counter0 }}">
+          <span class="qa-locate" title="Locate in PDF">&#8853;</span>
+          <div class="qa-row-content">
+            <div class="qa-row-primary">{{ s.story_title }}</div>
+            <div class="qa-row-secondary">
+              {% if s.story_summary %}<span class="qa-summary">{{ s.story_summary|truncatewords:20 }}</span>{% endif %}
+            </div>
+            <div class="qa-row-tags">
+              {% if s.program %}<span class="qa-tag qa-tag-program">{{ s.program }}</span>{% endif %}
+              {% if s.themes %}{% for theme in s.themes %}<span class="qa-tag qa-tag-theme">{{ theme }}</span>{% endfor %}{% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="qa-empty-section">No stories extracted</p>
+      {% endif %}
+    </div>
+
+    {% endif %}
+  </div>
+</div>
+
+{{ metrics_json|json_script:"metrics-data" }}
+{{ stories_json|json_script:"stories-data" }}
+
+{{ pdf_url|json_script:"pdf-url-data" }}
+<script>
+  window.QA_CONFIG = {
+    pdfUrl: JSON.parse(document.getElementById('pdf-url-data').textContent),
+    workerSrc: "{% static 'vendor/pdfjs/pdf.worker.min.mjs' %}",
+    pageLoadTime: Date.now()
+  };
+</script>
+<script type="module" src="{% static 'pipeline/js/extraction-qa.js' %}"></script>
+{% endblock %}
