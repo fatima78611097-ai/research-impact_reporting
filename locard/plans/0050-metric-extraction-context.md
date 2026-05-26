@@ -43,11 +43,27 @@ CREATE TABLE IF NOT EXISTS lava_vocab.metric_observations (
 );
 ```
 
-Plus indexes and grants per spec. Check existing migration numbering — `001_create_schema.sql` and `002_*.sql` may exist.
+Indexes (exact DDL):
+
+```sql
+CREATE INDEX IF NOT EXISTS idx_metric_ein ON lava_vocab.metric_observations(source_org_ein);
+CREATE INDEX IF NOT EXISTS idx_metric_term ON lava_vocab.metric_observations(term);
+CREATE INDEX IF NOT EXISTS idx_metric_run ON lava_vocab.metric_observations(run_id);
+CREATE INDEX IF NOT EXISTS idx_metric_archetype ON lava_vocab.metric_observations(archetype_id);
+```
+
+Grants (exact DDL):
+
+```sql
+GRANT SELECT, INSERT, UPDATE, DELETE ON lava_vocab.metric_observations TO research_app;
+GRANT USAGE, SELECT ON lava_vocab.metric_observations_id_seq TO research_app;
+```
+
+Check existing migration numbering — `001_create_schema.sql` and `002_*.sql` may exist.
 
 ### A2: Apply migration
 
-Run the migration manually via `psql` (same as prior migrations). Verify table exists and grants are correct. The `research_app` role needs `SELECT, INSERT, UPDATE, DELETE` on the table and `USAGE, SELECT` on the sequence.
+Run the migration manually via `psql` (same as prior migrations). Verify table exists and grants are correct by querying `\dp lava_vocab.metric_observations`.
 
 ## Phase B: Core Library — `lavandula/nlp/metrics.py`
 
@@ -94,9 +110,15 @@ Regex-based sentence splitting — NO spaCy model load. Split on:
 - `. ` followed by uppercase letter: `(?<=[.!?])\s+(?=[A-Z])`
 - Bullet/list markers: `\n\s*[-•]\s+` or `\n\s*\d+[.)]\s+`
 
-Return list of sentence strings with their start/end character offsets in the original text (for snippet construction).
+Return list of sentence/fragment tuples with metadata for source_type classification.
 
-Signature: `split_sentences(text: str) -> list[tuple[str, int, int]]` where tuple is (sentence_text, start_offset, end_offset).
+Signature: `split_sentences(text: str) -> list[SentenceFragment]`
+
+`SentenceFragment` is a namedtuple: `(text: str, start: int, end: int, is_bullet: bool)`
+
+Detection of `is_bullet`:
+- A fragment is classified as a bullet if it was split on a bullet/list marker (`\n\s*[-•]\s+` or `\n\s*\d+[.)]\s+`)
+- This drives `source_type='bullet'` in the observation (vs `'narrative'` for normal sentences)
 
 ### B3: Snippet construction — `build_snippet(sentence, heading, next_sentence) -> str`
 
@@ -142,15 +164,18 @@ If heading is None or empty → `"neutral"`
 
 Process a single table's `data_json` (JSONB from `lava_parse.tables`):
 
-1. Parse `data_json` — it's a list of row arrays. First row is typically headers.
-2. Count numeric cells. If > 50% of all cells are numeric → skip (financial statement).
-3. For each data row (not header):
-   - Row label = first column value
+1. Parse `data_json` — it's a list of row arrays. First row is typically headers (column headers).
+2. Count numeric cells across all rows (excluding header). If > 50% of all data cells are numeric → skip (financial statement).
+3. Extract column headers from first row.
+4. For each data row (not header):
+   - Row label = first column value (may be empty)
    - For each cell after the first:
      - Run `detect_numbers(cell_value)`
-     - If numbers found, match row_label (lowercased) against term_set
-     - If matched: build observation dict with `source_type='table'`, `confidence='high'`
-     - Snippet: `build_table_snippet(heading, row_label, cell_value)`
+     - If numbers found:
+       - **Term source**: use row_label if non-empty, otherwise fall back to the column header for that cell's column index (per spec: "row label or column header if row label is empty")
+       - Match the term source (lowercased) against term_set using same substring rule
+       - If matched: build observation dict with `source_type='table'`, `confidence='high'`
+       - Snippet: `build_table_snippet(heading, term_source, cell_value)`
 
 Returns list of observation dicts ready for DB insert.
 
@@ -165,10 +190,15 @@ Orchestrates extraction for one document:
 3. For each section:
    a. `classify_heading(heading)` → skip if `"skip"`
    b. Process narrative text:
-      - `split_sentences(body_text)`
-      - For each sentence: `detect_numbers(sentence)` → if any, `match_terms(sentence_lower, term_set)`
-      - For each (term, number) pair: build observation dict
-      - Confidence: `"high"` if term in sentence, else check heading match for `"medium"`/`"low"`
+      - `split_sentences(body_text)` → list of SentenceFragment
+      - For each fragment: `detect_numbers(fragment.text)` → if any numbers found:
+        - `matched_terms = match_terms(fragment.text.lower(), term_set)`
+        - Determine `source_type`: `'bullet'` if `fragment.is_bullet`, else `'narrative'`
+        - **Confidence assignment** (deterministic branching):
+          1. If `matched_terms` is non-empty → `confidence='high'` (term + number in same sentence)
+          2. If `matched_terms` is empty BUT `match_terms(heading.lower(), term_set)` is non-empty → `confidence='medium'` (number in sentence, term in section heading). Use heading-matched terms as the `term` value.
+          3. If both empty BUT the heading itself matches the term set → `confidence='low'` (heading matches but term not in body). Use heading-matched terms. **Skip this level by default** — only emit if a `--include-low-confidence` flag is set.
+        - For each (term, number) pair from the above: build snippet, emit observation dict
    c. Process tables belonging to this section:
       - `extract_table_metrics(data_json, heading, term_set)`
 4. Return all observation dicts (do NOT write to DB here — caller handles that)
@@ -251,13 +281,15 @@ DO NOTHING
 
 ### C6: Resume support
 
-Use `doc_extractions` table (same as extract_terms) to track which documents have been processed. On `--resume`:
-1. Look up existing run by tag
-2. Read cursor from `config_json`
-3. Continue from cursor position
-4. Skip documents already in `metric_observations` for this run_id
+Resume uses a **dedicated cursor key** in `extraction_runs.config_json` — `"metrics_cursor"` — separate from the terms extraction cursor (`"cursor"`). This avoids conflicting with extract_terms state.
 
-Alternatively, since this command reuses an extraction_run, add a separate cursor key in `config_json` (e.g., `"metrics_cursor"`) to avoid conflicting with the terms cursor.
+On `--resume`:
+1. Look up existing run by tag, verify it exists
+2. Read `metrics_cursor` from `config_json` (default: empty string if not set)
+3. The document iteration query in C3 uses `AND d.content_sha256 > :cursor` — this is the sole resume mechanism
+4. After each document is written to `metric_observations`, update `metrics_cursor` in `config_json`
+
+No `doc_extractions` table is used by this command — that table belongs to extract_terms. Resume state is entirely cursor-based.
 
 ## Phase D: Tests
 
@@ -265,12 +297,17 @@ Alternatively, since this command reuses an extraction_run, add a separate curso
 
 Test functions from Phase B:
 
-1. **test_detect_numbers**: All fixtures from spec T1 (percentages, currency, commas, plain integers, exclusions)
-2. **test_split_sentences**: Basic sentence splitting, bullet points, short fragments
-3. **test_build_snippet**: All four cases from spec T2 (long, short, table, truncation)
+1. **test_detect_numbers**: All fixtures from spec T1 (percentages, currency, commas, plain integers, exclusions for years, phones, dates, page refs, ZIPs)
+2. **test_split_sentences**: Basic sentence splitting, bullet points (`is_bullet=True`), short fragments, numbered lists
+3. **test_build_snippet**: All four cases from spec T2 (long, short, table, truncation at 500 chars)
 4. **test_match_terms**: Cases from spec T3 (multi-word match, non-match, multiple terms/numbers)
 5. **test_classify_heading**: Block list, priority list, neutral, None/empty
-6. **test_extract_table_metrics**: Table with program data, financial table skipped, empty table
+6. **test_extract_table_metrics**: Table with program data, financial table (>50% numeric) skipped, column-header fallback when row label is empty
+7. **test_bullet_source_type**: Verify that bullet-detected fragments produce observations with `source_type='bullet'`, non-bullet fragments produce `source_type='narrative'`
+8. **test_confidence_levels**: Explicit test for all three confidence branches:
+   - Term + number in same sentence → `'high'`
+   - Number in sentence, term only in heading → `'medium'`
+   - Heading matches term, term not in body → `'low'`
 
 ### D2: Integration test — `lavandula/nlp/tests/test_metrics_integration.py`
 
@@ -339,4 +376,12 @@ Phase B has no database dependency for unit testing. Phase C requires A (table m
 
 ## Consultation Log
 
-*(To be filled after review)*
+**Round 1 (2026-05-26)**:
+- **Gemini**: APPROVE (HIGH confidence). No key issues.
+- **Codex**: REQUEST_CHANGES (HIGH confidence). 6 issues:
+  1. Schema DDL incomplete (indexes/grants not spelled out) → Fixed: added exact DDL
+  2. `source_type='bullet'` never defined → Fixed: added `is_bullet` to SentenceFragment, drives source_type
+  3. Confidence branching underspecified → Fixed: added deterministic 3-branch logic in B7
+  4. Table term matching missing column-header fallback → Fixed: added fallback per spec
+  5. Resume strategy muddled → Fixed: clarified `metrics_cursor` key, no doc_extractions
+  6. Test gaps (bullet, confidence, column-header) → Fixed: added tests 7 and 8 in D1
