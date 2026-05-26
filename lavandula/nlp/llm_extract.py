@@ -33,7 +33,51 @@ _RETRY_DELAYS = (1, 2, 4)
 _INPUT_COST_PER_M = 0.14
 _OUTPUT_COST_PER_M = 0.28
 
-_SYSTEM_PROMPT = """You extract structured data from nonprofit annual reports and impact reports.
+_METRICS_PROMPT = """You extract impact metrics from nonprofit annual reports and impact reports.
+
+Extract:
+- Program outcomes (people served, patients supported, hours delivered, meals provided, youth reached)
+- Geographic reach (states, countries, communities, facilities, partner locations)
+- Organizational scale (volunteers, staff, languages spoken, cancer types, referring organizations)
+- Financial summary (total revenue, total expenses — only top-line)
+
+For each metric, return:
+- "metric_text": Short natural language description (e.g., "1,514 cancer patients and caregivers served")
+- "metric_type": Short category label for what is being measured, without the number (e.g., "patients and caregivers supported", "volunteer hours", "meals and snacks", "youth served", "program participants"). Use lowercase.
+- "metric_value": The numeric value as a number
+- "unit": What is being counted (e.g., "people", "hours", "states", "languages")
+- "geo_impact": Geographic scope of this metric. One of: "LOCAL" (single city/county), "STATE" (single state), "NATIONAL" (multi-state or nationwide), or "GLOBAL" (international). Infer from context clues in the text.
+- "source_snippet": The exact phrase from the text containing the metric
+
+Extract every distinct metric even if the numbers are related (e.g., "11,500 total served" and "1,514 served through matching" are separate metrics). For "20+" or "over 500", use the stated number (20, 500).
+
+Skip: detailed financial breakdowns (individual line items, percentages of budget), page numbers, years as dates, addresses, phone numbers, ZIP codes, individual donor names and gift amounts, biographical details (ages, years of experience).
+
+Return a JSON array of metric objects. If no metrics found, return [].
+
+IMPORTANT: Only extract metrics explicitly present in the text. Never invent or fabricate.
+
+Return ONLY the JSON array, no other text."""
+
+_STORIES_PROMPT = """You extract impact stories and personal narratives from nonprofit annual reports and impact reports.
+
+For each story found, return:
+- "story_title": Short descriptive title
+- "story_summary": 2-3 sentence summary
+- "people_mentioned": Names of people featured (first names only, or "Anonymous" if unnamed)
+- "program": Which program or service, if identifiable
+- "themes": Array of 1-3 theme tags
+- "source_snippet": Key 1-2 sentences anchoring the story
+
+Skip: organizational founding history, board/staff listings, event recaps with only dates/numbers.
+
+Return a JSON array of story objects. If no stories found, return [].
+
+IMPORTANT: Only extract stories explicitly present in the text. Never invent or fabricate.
+
+Return ONLY the JSON array, no other text."""
+
+_COMBINED_PROMPT = """You extract structured data from nonprofit annual reports and impact reports.
 Extract TWO types of content:
 
 ## 1. IMPACT METRICS
@@ -80,6 +124,8 @@ Return a single JSON object with two keys:
 IMPORTANT: Only extract content explicitly present in the text. Never invent or fabricate. If none found for a category, use an empty array.
 
 Return ONLY the JSON object, no other text."""
+
+_SPLIT_THRESHOLD = 15000
 
 _S3_BUCKET = "lavandula-nonprofit-collaterals"
 _S3_PREFIX = "pdfs"
@@ -141,7 +187,8 @@ def get_document_text(engine: Engine, sha: str, s3_client, tmp_dir: Path) -> str
     return None
 
 
-def call_deepseek(api_key: str, document_text: str, http_client: httpx.Client) -> tuple[dict, int, int]:
+def call_deepseek(api_key: str, document_text: str, http_client: httpx.Client,
+                   system_prompt: str = None) -> tuple[dict | list, int, int]:
     """Call DeepSeek API. Returns (parsed_json, prompt_tokens, completion_tokens).
 
     Retries on 429/500/503 with exponential backoff.
@@ -152,7 +199,7 @@ def call_deepseek(api_key: str, document_text: str, http_client: httpx.Client) -
         "temperature": 0.0,
         "max_tokens": _MAX_TOKENS,
         "messages": [
-            {"role": "system", "content": _SYSTEM_PROMPT},
+            {"role": "system", "content": system_prompt or _METRICS_PROMPT},
             {"role": "user", "content": document_text},
         ],
     }
@@ -368,8 +415,28 @@ def extract_document(
         text_len = len(doc_text)
         result["text_source"] = "docling" if text_len > 0 else "pdftotext"
 
-        parsed, prompt_tokens, completion_tokens = call_deepseek(api_key, doc_text, http_client)
-        result["cost_usd"] = _estimate_cost(prompt_tokens, completion_tokens)
+        total_prompt_tokens = 0
+        total_completion_tokens = 0
+
+        if text_len >= _SPLIT_THRESHOLD:
+            metrics_raw, pt, ct = call_deepseek(api_key, doc_text, http_client, _METRICS_PROMPT)
+            total_prompt_tokens += pt
+            total_completion_tokens += ct
+            if not isinstance(metrics_raw, list):
+                metrics_raw = metrics_raw.get("metrics", []) if isinstance(metrics_raw, dict) else []
+
+            stories_raw, pt, ct = call_deepseek(api_key, doc_text, http_client, _STORIES_PROMPT)
+            total_prompt_tokens += pt
+            total_completion_tokens += ct
+            if not isinstance(stories_raw, list):
+                stories_raw = stories_raw.get("stories", []) if isinstance(stories_raw, dict) else []
+
+            parsed = {"metrics": metrics_raw, "stories": stories_raw}
+        else:
+            parsed, total_prompt_tokens, total_completion_tokens = call_deepseek(
+                api_key, doc_text, http_client, _COMBINED_PROMPT)
+
+        result["cost_usd"] = _estimate_cost(total_prompt_tokens, total_completion_tokens)
 
         validated = validate_response(parsed, text_len)
         if validated is None:
