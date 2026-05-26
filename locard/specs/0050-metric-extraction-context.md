@@ -56,8 +56,8 @@ CREATE TABLE IF NOT EXISTS lava_vocab.metric_observations (
     unit_hint TEXT,
     snippet TEXT NOT NULL,
     snippet_heading TEXT,
-    heading_context TEXT[],
     section_index INT,
+    source_type TEXT NOT NULL DEFAULT 'narrative',
     archetype_id INT REFERENCES lava_vocab.archetypes(id),
     confidence TEXT NOT NULL DEFAULT 'medium',
     UNIQUE(run_id, content_sha256, term, numeric_value, section_index)
@@ -73,54 +73,98 @@ GRANT USAGE, SELECT ON lava_vocab.metric_observations_id_seq TO research_app;
 ```
 
 Key columns:
-- **`term`**: The vocabulary term associated with the metric (from 0049 observations)
-- **`numeric_value`**: The raw text of the number as it appears ("12,000", "92%", "$1.2M")
-- **`numeric_parsed`**: Best-effort float parse (12000.0, 92.0, 1200000.0) — NULL if ambiguous
-- **`unit_hint`**: Detected unit type: `count`, `percent`, `currency`, `ratio`, or NULL
-- **`snippet`**: The full sentence or passage (up to 500 chars) containing the metric
-- **`snippet_heading`**: The section heading under which this metric appeared
-- **`confidence`**: `high` (term + number in same sentence), `medium` (same section), `low` (heading-inferred)
+- **`term`**: The vocabulary term associated with the metric. Matched via **substring containment**: the lemmatized term from 0049 must appear as a substring of the lemmatized sentence text. No stemming, synonym expansion, or fuzzy matching — exact substring only. This matches the same canonicalization policy from Spec 0049 (lowercase, lemmatize, single-space join).
+- **`numeric_value`**: The raw text of the number exactly as it appears in the source ("12,000", "92%", "$1.2M"). Never normalized or reformatted.
+- **`numeric_parsed`**: Best-effort float parse. Rules: strip commas, parse `%` as the number before it (92% → 92.0), parse `$` prefix and K/M/B suffix (e.g., "$1.2M" → 1200000.0). Set to NULL for: ranges ("10-15"), ordinals ("3rd"), dates ("2024"), ratios ("1:3"), or any ambiguous value. NULL is always preferred over a wrong parse.
+- **`unit_hint`**: One of: `count`, `percent`, `currency`, `ratio`, or NULL. Detected from the numeric pattern, not from context.
+- **`snippet`**: The metric's context passage, max 500 characters. Construction rules below.
+- **`snippet_heading`**: The immediate section heading under which this metric appeared. Stored as-is from `lava_parse.sections.heading`.
+- **`source_type`**: `narrative` (from section body text), `table` (from Docling-extracted table), or `bullet` (from bullet/list item)
+- **`confidence`**: `high` (term + number in same sentence), `medium` (number in sentence, term in section heading), `low` (number in section whose heading matches a term but term not in body text)
+
+### Snippet Construction Rules
+
+The snippet captures the metric in its natural phrasing context. One rule set, no ambiguity:
+
+1. **Start with the sentence** containing the number (detected via spaCy sentencizer or regex fallback on `. ` boundaries)
+2. **If the sentence is < 80 characters** (bullet point, table cell, short fragment): prepend the section heading as `"[heading] — "` prefix, then append up to 150 characters of the following sentence for context
+3. **If the sentence is >= 80 characters**: use the sentence as-is, no padding
+4. **Hard cap at 500 characters** — truncate with `…` if exceeded
+5. **Table cells**: use the format `"[heading] — label: value"` where label is the row/column header and value is the cell content
+
+### Term Matching Rules
+
+A term "matches" a sentence when the term's canonical form (from 0049: lowercase, lemmatized, space-joined) appears as a **contiguous substring** within the sentence's lowercased text. No fuzzy matching, no synonym expansion, no stemming beyond the existing 0049 lemmatization.
+
+When multiple terms match a sentence containing a number, emit one metric observation per (term, number) pair. The UNIQUE constraint on (run_id, content_sha256, term, numeric_value, section_index) prevents exact duplicates.
+
+When multiple numbers appear in a sentence with one term, emit one observation per number. Each gets the same snippet (the full sentence) but a different `numeric_value`.
+
+### Table Metric Extraction
+
+Docling stores tables in `lava_parse.tables` with structured row/column data. Tables are a high-confidence metric source because the label-value pairing is explicit.
+
+Processing rules:
+1. For each table in a program/impact section (heading filter applies):
+   - Identify column headers and row labels
+   - For each cell containing a numeric value:
+     - The term is the row label (or column header if row label is empty)
+     - Match the label against the archetype term list using the same substring rule
+     - If matched: emit with `source_type='table'`, `confidence='high'`
+     - Snippet format: `"[section heading] — {row_label}: {cell_value}"`
+2. Skip tables where > 50% of cells are numeric (likely financial statements)
+3. Skip tables with headers matching the financial heading filter
 
 ### Extraction Algorithm
 
 ```
 For each document in the run:
   1. Look up the org's archetype (from archetype_members)
-  2. Get signature terms for that archetype (lift > 2.0)
-  3. Also include high-TF-IDF terms for the vertical (top 500)
-  4. For each section in the document:
-     a. Skip sections with financial/administrative headings
-     b. Split section body into sentences
-     c. For each sentence:
-        - Find numbers (regex: integers, decimals, percentages, currency)
-        - Find matching terms from the target term list
-        - If both a number and a term appear in the same sentence:
-          → Extract as a metric observation (confidence: high)
-        - If a number appears in a sentence under a heading that matches a term:
-          → Extract with heading as the term (confidence: medium)
-     d. Build snippet: the sentence + up to 150 chars before/after for context
-  5. Write batch to lava_vocab.metric_observations
+  2. Build term set:
+     a. Signature terms for that archetype (lift > 2.0 from compute_lift_per_term)
+     b. Top 500 TF-IDF terms for the vertical (fallback for orgs not in an archetype)
+     c. Union of both, deduplicated
+  3. For each section in the document:
+     a. Classify heading: skip (financial/admin), priority (program/impact), neutral
+     b. Skip sections classified as financial/admin
+     c. Process narrative text:
+        - Split body into sentences
+        - For each sentence containing a number:
+          - Find all matching terms (substring match)
+          - For each (term, number) pair: build snippet, emit observation
+     d. Process tables (if any in this section):
+        - Apply table extraction rules above
+  4. Write batch to lava_vocab.metric_observations (per document, not per section)
 ```
 
 ### Number Detection
 
-Regex patterns for numeric values:
-- Integers with commas: `\b\d{1,3}(,\d{3})*\b` → "12,000"
+Regex patterns applied in order (first match wins per position):
 - Percentages: `\d+(\.\d+)?%` → "92%", "15.3%"
-- Currency: `\$\d[\d,]*(\.\d{1,2})?[KMB]?` → "$1.2M", "$50,000"
-- Spelled fractions: "one-third", "half" (low priority)
+- Currency: `\$\s?\d[\d,]*(\.\d{1,2})?\s?[KMBkmb]?` → "$1.2M", "$50,000"
+- Integers with commas: `\b\d{1,3}(,\d{3})+\b` → "12,000" (requires at least one comma to avoid matching years/IDs)
+- Plain integers 3+ digits: `\b\d{3,}\b` → "500", "1234" (but NOT 1-2 digit numbers — too noisy)
+
+Explicitly excluded:
+- Years (4-digit numbers 1900-2099 not preceded by `$` or followed by `%`)
+- Phone numbers (patterns like `555-1234`, `(555) 555-5555`)
+- Dates (patterns like `05/25/2026`)
+- Page numbers / section references ("page 12", "section 3")
+- ZIP codes (5-digit numbers following state abbreviations)
 
 ### Heading Filter
 
-Skip sections whose headings match financial/administrative patterns:
-- "Auditor", "Financial Statement", "Balance Sheet", "Form 990"
-- "Board of Directors", "Staff List", "Acknowledgments"
-- "Table of Contents", "Notes to Financial"
+**Block list** (case-insensitive substring match — skip these sections entirely):
+- "auditor", "financial statement", "balance sheet", "form 990"
+- "board of directors", "staff list", "acknowledgment"
+- "table of contents", "notes to financial", "independent auditor"
+- "statement of activities", "statement of position"
 
-Prioritize sections whose headings suggest program content:
-- "Program", "Impact", "Outcome", "Achievement", "Result"
-- "Service", "Community", "Client", "Participant"
-- Any heading containing archetype signature terms
+**Priority list** (case-insensitive — process these first and flag with priority):
+- "program", "impact", "outcome", "achievement", "result"
+- "service", "community", "client", "participant", "success"
+
+**Neutral** (all other sections): process normally. This avoids false negatives from inconsistent headings — we extract from all non-blocked sections, not only priority ones.
 
 ### Management Command
 
@@ -132,11 +176,17 @@ Follows the same pattern as `extract_terms`: advisory lock, cursor-based resume,
 
 ### Memory Budget
 
-- Process one document at a time (sections loaded per-doc)
-- Term lookup set: ~2000 terms (same as archetype matrix) — negligible
-- Sentence splitting via spaCy (already loaded for 0049) or simple regex
-- No bulk aggregation — write each batch of metric observations directly
-- Target: < 500MB peak RSS
+- Process one document at a time (sections loaded per-doc, released after)
+- Term lookup set: ~2000 terms in a Python set — negligible
+- Sentence splitting via regex (no spaCy model load required — avoid the 800MB model)
+- No bulk aggregation — write each document's metrics directly
+- Target: < 300MB peak RSS (conservative given OOM history)
+
+### Security and Data Handling
+
+- **Snippet truncation**: Hard cap at 500 characters prevents storage of unexpectedly large content
+- **No PII redaction at extraction time**: Snippets contain org-published report text (already public documents). PII concerns are deferred to the interviewer/display layer where context determines what to show.
+- **Input sanitization**: Snippets are parameterized via SQLAlchemy bind parameters — no SQL injection risk. No user-supplied input enters the extraction pipeline.
 
 ## Output Example
 
@@ -174,11 +224,98 @@ And a second observation for the "87%" comparison point in the same sentence.
 
 ## Testing
 
-1. **Unit tests**: Number regex against known patterns (currencies, percentages, plain integers)
-2. **Integration test**: Run on 5 known Head Start docs, verify school readiness metrics are extracted with correct snippets
-3. **Validation**: Spot-check 20 random metric observations against source documents
-4. **Memory test**: Verify peak RSS stays under 500MB on full P20 run
-5. **Resume test**: Kill mid-run, verify `--resume` picks up correctly
+### T1: Number Detection Unit Tests
+
+Test the number regex patterns against a fixture of known inputs. Minimum fixture:
+
+| Input | Expected match | `numeric_parsed` | `unit_hint` |
+|-------|---------------|-----------------|-------------|
+| `"92%"` | `"92%"` | 92.0 | `percent` |
+| `"$1.2M"` | `"$1.2M"` | 1200000.0 | `currency` |
+| `"$50,000"` | `"$50,000"` | 50000.0 | `currency` |
+| `"12,000"` | `"12,000"` | 12000.0 | `count` |
+| `"500"` | `"500"` | 500.0 | `count` |
+| `"15.3%"` | `"15.3%"` | 15.3 | `percent` |
+
+Non-matches (must NOT be detected as metrics):
+
+| Input | Reason |
+|-------|--------|
+| `"2024"` | Year |
+| `"(555) 555-5555"` | Phone number |
+| `"05/25/2026"` | Date |
+| `"page 12"` | Page reference |
+| `"10-15"` | Range → `numeric_parsed` = NULL |
+
+**Pass criteria**: All matches correct, all non-matches excluded, `numeric_parsed` = NULL for ambiguous values.
+
+### T2: Snippet Construction Unit Tests
+
+Test snippet building against controlled inputs:
+
+1. **Long sentence (>= 80 chars)**: Snippet equals the sentence, no padding
+2. **Short sentence (< 80 chars)**: Snippet prepended with `"[heading] — "` and followed by up to 150 chars of next sentence
+3. **Table cell**: Snippet format is `"[heading] — label: value"`
+4. **500-char truncation**: Input sentence of 600 chars produces snippet of exactly 500 chars ending with `"…"`
+
+**Pass criteria**: All four cases produce snippets matching the construction rules in this spec.
+
+### T3: Term Matching Unit Tests
+
+1. Multi-word term `"school readiness goal"` matches sentence containing `"school readiness goals"` (after lemmatization)
+2. Term `"food bank"` matches `"Our food bank served..."` but NOT `"food banking regulations"`
+3. Multiple terms matching one sentence produce one observation per (term, number) pair
+4. Multiple numbers in one sentence with one term produce one observation per number
+
+**Pass criteria**: Correct match/non-match behavior for all cases.
+
+### T4: Integration Test — Known Documents
+
+Run `extract_metrics` on 5 specific Head Start documents (EINs to be selected from archetype_members where archetype label contains "school readiness"). Verify:
+
+1. At least 3 of 5 documents produce metric observations
+2. At least one observation has `term` containing "school readiness" or "enrollment"
+3. All observations have non-empty `snippet` (length > 0, length <= 500)
+4. All observations have valid `confidence` values (`high`, `medium`, or `low`)
+5. All `snippet_heading` values are non-NULL and correspond to actual section headings in the source document
+6. No observations from headings matching the block list (e.g., "auditor", "financial statement")
+
+**Pass criteria**: All 6 checks pass.
+
+### T5: Heading Filter Test
+
+Process a document known to contain both program and financial sections. Verify:
+
+1. Sections with headings matching the block list produce zero observations
+2. Sections with headings matching the priority list are processed
+3. Sections with neutral headings are also processed (not skipped)
+
+**Pass criteria**: Block list sections excluded, all other sections included.
+
+### T6: Memory Test
+
+Run on full P20 vertical with `--ntee P2%`. Monitor peak RSS via `/proc/self/status` VmHWM.
+
+**Pass criteria**: Peak RSS < 500MB. If exceeded, the run must be aborted, not allowed to OOM.
+
+### T7: Resume Test
+
+1. Start a run on P20
+2. Kill the process after ~30 seconds
+3. Restart with `--resume`
+4. Verify: no duplicate observations (UNIQUE constraint), processing continues from the last completed document
+
+**Pass criteria**: Second run completes without UNIQUE violations, final observation count equals what a full uninterrupted run would produce.
+
+### T8: Table Extraction Test
+
+Process a document containing Docling-extracted tables in a program section. Verify:
+
+1. Table cells with numeric values paired with matching term labels produce observations with `source_type='table'`
+2. Tables where > 50% of cells are numeric (financial statements) are skipped
+3. Table observations have `confidence='high'`
+
+**Pass criteria**: Program tables extracted, financial tables skipped.
 
 ## Risks and Mitigations
 
