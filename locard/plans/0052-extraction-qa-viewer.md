@@ -52,8 +52,30 @@ Build an interactive QA viewer that displays a PDF alongside its LLM-extracted m
    - `LoginRequiredMixin` + `DetailView` on Report model
    - Generate presigned S3 URL (15-min expiry)
    - Query `llm_metrics` and `llm_stories` for (sha, run_id)
-   - Query available runs for this document
-   - Compute prev/next docs for the org (ordered by `report_year DESC, content_sha256 ASC`, filtered to docs with extraction data)
+   - Query available runs for this document (UNION across both metrics and stories tables to catch runs with only one type):
+     ```sql
+     SELECT DISTINCT r.id, r.run_tag, r.created_at
+     FROM lava_vocab.extraction_runs r
+     WHERE r.id IN (
+         SELECT run_id FROM lava_vocab.llm_metrics WHERE content_sha256 = :sha
+         UNION
+         SELECT run_id FROM lava_vocab.llm_stories WHERE content_sha256 = :sha
+     )
+     ORDER BY r.id DESC
+     ```
+   - Compute prev/next docs via `_get_org_docs()` helper:
+     ```sql
+     SELECT DISTINCT c.content_sha256, c.report_year
+     FROM lava_corpus.corpus c
+     WHERE c.source_org_ein = :ein
+       AND c.content_sha256 IN (
+           SELECT content_sha256 FROM lava_vocab.llm_metrics WHERE run_id = :run_id
+           UNION
+           SELECT content_sha256 FROM lava_vocab.llm_stories WHERE run_id = :run_id
+       )
+     ORDER BY c.report_year DESC NULLS LAST, c.content_sha256 ASC
+     ```
+   - From the ordered list, find current doc's index → compute prev/next SHAs and "Doc X of Y" position
    - Get org name from `NonprofitSeed`
 3. Create `OrgExtractionQARedirectView`:
    - Look up the first document for this EIN that has extraction data
@@ -63,10 +85,11 @@ Build an interactive QA viewer that displays a PDF alongside its LLM-extracted m
 
 ### Acceptance Criteria
 - Authenticated GET to `/dashboard/reports/<sha>/qa/` returns 200
-- Context contains: `pdf_url`, `metrics`, `stories`, `available_runs`, `org`, `org_docs`
+- Context contains: `pdf_url`, `metrics`, `stories`, `available_runs`, `org`, `prev_doc`, `next_doc`, `doc_position`, `doc_total`
 - Unauthenticated request redirects to login
 - Response has `Cache-Control: no-store`
 - `/dashboard/orgs/<ein>/qa/` redirects to first extracted doc
+- `available_runs` includes runs that have only metrics or only stories (not just both)
 
 ### Files Modified
 - `lavandula/dashboard/pipeline/urls.py`
@@ -225,21 +248,26 @@ Build an interactive QA viewer that displays a PDF alongside its LLM-extracted m
 ### Steps
 
 1. Create test file `lavandula/dashboard/pipeline/tests/test_extraction_qa.py`
-2. Test cases:
-   - `test_qa_view_authenticated` — 200 response with correct context
+2. Test cases — View logic:
+   - `test_qa_view_authenticated` — 200 response with correct context keys
    - `test_qa_view_unauthenticated` — redirect to login
-   - `test_qa_view_with_run_id` — respects `?run_id=X` parameter
-   - `test_qa_view_default_latest_run` — uses latest run when no run_id
-   - `test_qa_view_no_extractions` — empty metrics/stories in context
-   - `test_qa_view_metrics_only` — metrics present, stories empty
-   - `test_qa_view_stories_only` — stories present, metrics empty
+   - `test_qa_view_with_run_id` — respects `?run_id=X` parameter, returns matching data
+   - `test_qa_view_default_latest_run` — uses highest run_id when no run_id specified
+   - `test_qa_view_no_extractions` — empty metrics/stories in context, right panel message
+   - `test_qa_view_metrics_only` — metrics present, stories empty list
+   - `test_qa_view_stories_only` — stories present, metrics empty list
    - `test_qa_view_nonexistent_doc` — 404
    - `test_qa_view_cache_control` — `Cache-Control: no-store` header present
-   - `test_org_qa_redirect` — redirects to first extracted doc
+3. Test cases — Navigation:
+   - `test_org_qa_redirect` — redirects to first extracted doc for org
    - `test_org_qa_redirect_no_docs` — 404 for org with no extractions
-   - `test_prev_next_navigation` — context contains correct prev/next docs
-   - `test_prev_next_single_doc` — no prev/next when org has one doc
-3. Test fixtures: create test extraction run, metrics, and stories in test setup
+   - `test_prev_next_navigation` — context has correct prev/next SHAs in report_year DESC order
+   - `test_prev_next_single_doc` — prev_doc and next_doc are None when org has one doc
+   - `test_doc_position` — doc_position and doc_total are correct (e.g., 2 of 5)
+4. Test cases — Run selection:
+   - `test_available_runs_union` — run with only metrics + run with only stories both appear
+   - `test_run_switch_returns_different_data` — different run_id returns different metrics/stories
+5. Test fixtures: create test extraction run, metrics, and stories in test setup using direct SQL inserts (mocked S3 for presigned URL generation)
 
 ### Acceptance Criteria
 - All unit tests pass
@@ -251,7 +279,33 @@ Build an interactive QA viewer that displays a PDF alongside its LLM-extracted m
 
 ---
 
-## Phase 8: Manual Validation & Polish
+## Phase 8: Entry Point Links
+
+**Goal:** Add links to the QA viewer from existing dashboard pages.
+
+### Steps
+
+1. Org detail page (`org_detail.html`):
+   - In the Impact Metrics section (added by Spec 0051), add a "QA View" link next to each document that has extraction data
+   - Link format: `/dashboard/reports/<sha>/qa/`
+   - Only show link if the document has at least one metric or story in the latest run
+2. LLM extraction dashboard (`llm_extract.html`):
+   - In the run results / recent runs display, add a "QA" link per document
+3. Update `views.py` context for org detail to include extraction-availability flag per document
+
+### Acceptance Criteria
+- QA link appears on org detail page for docs with extractions
+- QA link appears on LLM extraction dashboard
+- Links navigate to correct QA viewer page
+
+### Files Modified
+- `lavandula/dashboard/pipeline/templates/pipeline/org_detail.html`
+- `lavandula/dashboard/pipeline/templates/pipeline/llm_extract.html`
+- `lavandula/dashboard/pipeline/views.py`
+
+---
+
+## Phase 9: Manual Validation & Polish
 
 **Goal:** End-to-end manual testing with real data, fix edge cases.
 
@@ -260,34 +314,33 @@ Build an interactive QA viewer that displays a PDF alongside its LLM-extracted m
 1. Run the QA viewer against a document from the P20 extraction run
 2. Verify:
    - PDF loads and renders all pages
-   - Metrics list matches database content
+   - Metrics list matches database content (metric_text, metric_type, value+unit, geo_impact all shown)
    - Hover on 5+ metrics → each highlights correctly in PDF
    - Click-to-lock works, clicking another row transfers
    - At least one "not located" case handled gracefully
-   - Run dropdown switches data
+   - Run dropdown switches data and resets locked state
    - Prev/Next navigates correctly
 3. Test with edge cases:
    - Document with 50+ metrics (scrolling right panel)
    - Large PDF (50+ pages) — performance acceptable
-   - Document with no text layer (scanned PDF) — graceful degradation
+   - Document with no text layer (scanned PDF) — graceful degradation (all rows show "not located")
+   - Document with metrics but no stories
+   - Document with stories but no metrics
 4. Fix any issues found
-5. Add entry point links:
-   - From org detail page (if extractions exist for a doc, show "QA" link)
-   - From LLM extraction dashboard (link to QA view per doc)
 
 ### Acceptance Criteria
 - All spec acceptance criteria verified manually
 - No console errors during normal operation
 - Performance acceptable on large documents (< 2s to first interaction)
-- Entry point links work from org detail and extraction dashboard
-
-### Files Modified
-- `lavandula/dashboard/pipeline/templates/pipeline/org_detail.html` (add QA link)
-- `lavandula/dashboard/pipeline/templates/pipeline/llm_extract.html` (add QA link)
+- Entry point links from Phase 8 work end-to-end
 
 ---
 
 ## Implementation Notes
+
+### Design Note: Text Search via PDF.js Only
+
+The spec mentions `lava_parse.sections` as a text source, but for v1 we search **only** via PDF.js's text layer and `findController`. Server-side text search (querying Docling sections or pdftotext output, then mapping character offsets to PDF page/position) adds significant complexity for marginal gain. The 4-step fallback chain (exact → short → number → give up) handles the vast majority of cases. Scanned PDFs with no text layer degrade gracefully per spec AC 29 — all rows show "not located" indicators.
 
 ### Traps to Avoid
 
@@ -313,12 +366,13 @@ Build an interactive QA viewer that displays a PDF alongside its LLM-extracted m
 ### Estimated Effort
 
 - Phase 1 (PDF.js setup): 30 min
-- Phase 2 (Django view): 45 min
+- Phase 2 (Django view): 1 hour
 - Phase 3 (Template): 45 min
 - Phase 4 (CSS): 30 min
 - Phase 5 (JS — PDF.js): 1.5 hours
 - Phase 6 (JS — interaction): 1 hour
-- Phase 7 (Tests): 45 min
-- Phase 8 (Validation): 1 hour
+- Phase 7 (Tests): 1 hour
+- Phase 8 (Entry points): 30 min
+- Phase 9 (Validation): 1 hour
 
-**Total: ~6.5 hours**
+**Total: ~7.5 hours**
