@@ -39,6 +39,12 @@ Extract TWO types of content:
 ## 1. IMPACT METRICS
 Concrete numeric measurements of the organization's impact, reach, or scale.
 
+Extract:
+- Program outcomes (people served, patients supported, hours delivered, meals provided, youth reached)
+- Geographic reach (states, countries, communities, facilities, partner locations)
+- Organizational scale (volunteers, staff, languages spoken, cancer types, referring organizations)
+- Financial summary (total revenue, total expenses — only top-line)
+
 For each metric, return:
 - "metric_text": Short natural language description (e.g., "1,514 cancer patients and caregivers served")
 - "metric_type": Short category label for what is being measured, without the number (e.g., "patients and caregivers supported", "volunteer hours", "meals and snacks", "youth served", "program participants"). Use lowercase.
@@ -47,7 +53,9 @@ For each metric, return:
 - "geo_impact": Geographic scope of this metric. One of: "LOCAL" (single city/county), "STATE" (single state), "NATIONAL" (multi-state or nationwide), or "GLOBAL" (international). Infer from context clues in the text.
 - "source_snippet": The exact phrase from the text containing the metric
 
-Include top-line financial metrics like total revenue, total expenses, and total assets. Skip: detailed financial line items (e.g., individual grant amounts, salary breakdowns), page numbers, years as dates, addresses, phone numbers, ZIP codes, donor names, staff lists, board member counts, photo credits.
+Extract every distinct metric even if the numbers are related (e.g., "11,500 total served" and "1,514 served through matching" are separate metrics). For "20+" or "over 500", use the stated number (20, 500).
+
+Skip: detailed financial breakdowns (individual line items, percentages of budget), page numbers, years as dates, addresses, phone numbers, ZIP codes, individual donor names and gift amounts, biographical details (ages, years of experience).
 
 ## 2. IMPACT STORIES
 Personal narratives, testimonials, and case studies about people helped.
