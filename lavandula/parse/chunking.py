@@ -39,13 +39,17 @@ def extract_sections(doc: Any) -> list[dict]:
 
     sections = []
     for i, chunk in enumerate(chunks):
+        body = chunk.text.replace("\x00", "") if chunk.text else ""
+        heading = _extract_heading(chunk)
+        if heading:
+            heading = heading.replace("\x00", "")
         sections.append(
             {
                 "section_index": i,
-                "heading": _extract_heading(chunk),
+                "heading": heading,
                 "heading_level": _extract_heading_level(chunk),
-                "body_text": chunk.text,
-                "char_count": len(chunk.text),
+                "body_text": body,
+                "char_count": len(body),
                 "page_start": _get_page_start(chunk),
                 "page_end": _get_page_end(chunk),
                 "parent_headings": _get_parent_headings(chunk),

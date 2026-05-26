@@ -52,20 +52,26 @@ def fetch_work_batch(
     retry_errors: bool = False,
     reparse: bool = False,
     min_version: str | None = None,
+    ntee_filter: str | None = None,
 ) -> list[dict]:
     """Fetch next batch of unparsed documents matching priority filter.
 
     Returns list of {content_sha256, source_org_ein}.
     """
+    ntee_join = "JOIN lava_corpus.nonprofits_seed ns ON c.source_org_ein = ns.ein" if ntee_filter else ""
+    ntee_where = "AND ns.ntee_code LIKE %(ntee)s" if ntee_filter else ""
+
     with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
         if reparse and min_version:
             cur.execute(
-                """
+                f"""
                 SELECT c.content_sha256, c.source_org_ein
                 FROM lava_corpus.corpus c
                 JOIN lava_parse.documents d ON d.content_sha256 = c.content_sha256
+                {ntee_join}
                 WHERE d.parse_version < %(min_version)s
                   AND c.classification = ANY(%(priority)s)
+                  {ntee_where}
                 ORDER BY c.source_org_ein, c.content_sha256
                 LIMIT %(limit)s
                 """,
@@ -73,34 +79,39 @@ def fetch_work_batch(
                     "min_version": min_version,
                     "priority": priority_filter,
                     "limit": batch_size,
+                    "ntee": ntee_filter,
                 },
             )
         elif retry_errors:
             cur.execute(
-                """
+                f"""
                 SELECT c.content_sha256, c.source_org_ein
                 FROM lava_corpus.corpus c
                 JOIN lava_parse.documents d ON d.content_sha256 = c.content_sha256
+                {ntee_join}
                 WHERE d.error IS NOT NULL
                   AND c.classification = ANY(%(priority)s)
+                  {ntee_where}
                 ORDER BY c.source_org_ein, c.content_sha256
                 LIMIT %(limit)s
                 """,
-                {"priority": priority_filter, "limit": batch_size},
+                {"priority": priority_filter, "limit": batch_size, "ntee": ntee_filter},
             )
         else:
             cur.execute(
-                """
+                f"""
                 SELECT c.content_sha256, c.source_org_ein
                 FROM lava_corpus.corpus c
+                {ntee_join}
                 WHERE c.content_sha256 NOT IN (
                     SELECT content_sha256 FROM lava_parse.documents
                 )
                   AND c.classification = ANY(%(priority)s)
+                  {ntee_where}
                 ORDER BY c.source_org_ein, c.content_sha256
                 LIMIT %(limit)s
                 """,
-                {"priority": priority_filter, "limit": batch_size},
+                {"priority": priority_filter, "limit": batch_size, "ntee": ntee_filter},
             )
         rows = cur.fetchall()
     return [dict(r) for r in rows]
@@ -295,20 +306,35 @@ def get_run_status(conn, run_tag: str) -> dict | None:
         return dict(row) if row else None
 
 
-def get_eligible_count(conn, priority_filter: list[str]) -> int:
+def get_eligible_count(conn, priority_filter: list[str], ntee_filter: str | None = None) -> int:
     """Count documents eligible for parsing (not yet parsed)."""
     with conn.cursor() as cur:
-        cur.execute(
-            """
-            SELECT COUNT(*)
-            FROM lava_corpus.corpus c
-            WHERE c.content_sha256 NOT IN (
-                SELECT content_sha256 FROM lava_parse.documents
+        if ntee_filter:
+            cur.execute(
+                """
+                SELECT COUNT(*)
+                FROM lava_corpus.corpus c
+                JOIN lava_corpus.nonprofits_seed ns ON c.source_org_ein = ns.ein
+                WHERE c.content_sha256 NOT IN (
+                    SELECT content_sha256 FROM lava_parse.documents
+                )
+                  AND c.classification = ANY(%(priority)s)
+                  AND ns.ntee_code LIKE %(ntee)s
+                """,
+                {"priority": priority_filter, "ntee": ntee_filter},
             )
-              AND c.classification = ANY(%(priority)s)
-            """,
-            {"priority": priority_filter},
-        )
+        else:
+            cur.execute(
+                """
+                SELECT COUNT(*)
+                FROM lava_corpus.corpus c
+                WHERE c.content_sha256 NOT IN (
+                    SELECT content_sha256 FROM lava_parse.documents
+                )
+                  AND c.classification = ANY(%(priority)s)
+                """,
+                {"priority": priority_filter},
+            )
         return cur.fetchone()[0]
 
 

@@ -25,7 +25,7 @@ SECONDS_PER_PAGE = 0.49
 SPOT_RATE_PER_HOUR = 0.60
 ONDEMAND_RATE_PER_HOUR = 0.98
 POLL_INTERVAL_SECONDS = 60
-HEARTBEAT_STALE_MINUTES = 10
+HEARTBEAT_STALE_MINUTES = 20
 MAX_RELAUNCH_ATTEMPTS = 3
 SSM_AMI_PARAM = "/cloud2.lavandulagroup.com/docling-ami-id"
 SUBNET_ID = "subnet-0e2008e48d602e945"
@@ -40,6 +40,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("run_tag", type=str, help="Unique identifier for this parse run")
         parser.add_argument("--priority", default="annual,impact", help="Comma-separated classification filter")
+        parser.add_argument("--ntee", default=None, help="NTEE prefix filter (e.g. 'P2%%' for Human Services)")
         parser.add_argument("--instance-type", default="g6.2xlarge")
         parser.add_argument("--no-spot", action="store_true", default=False, help="Use on-demand instead of spot")
         parser.add_argument("--max-hours", type=int, default=12)
@@ -69,18 +70,22 @@ class Command(BaseCommand):
         if not config.validate_priority_values(priority_values):
             raise CommandError("--priority values must match ^[a-z_]+$")
 
+        ntee_filter = options.get("ntee")
+        if ntee_filter and not all(c.isalnum() or c == '%' for c in ntee_filter):
+            raise CommandError("--ntee must be alphanumeric with optional trailing %")
+
         if options["dry_run"]:
-            return self._dry_run(run_tag, priority_values, options)
+            return self._dry_run(run_tag, priority_values, ntee_filter, options)
         if options["status"]:
             return self._show_status(run_tag)
         if options["terminate"]:
             return self._terminate(run_tag)
-        return self._run(run_tag, priority_values, options)
+        return self._run(run_tag, priority_values, ntee_filter, options)
 
-    def _dry_run(self, run_tag: str, priority: list[str], options: dict) -> None:
+    def _dry_run(self, run_tag: str, priority: list[str], ntee_filter: str | None, options: dict) -> None:
         conn = self._get_conn()
         try:
-            count = db.get_eligible_count(conn, priority)
+            count = db.get_eligible_count(conn, priority, ntee_filter=ntee_filter)
         finally:
             conn.close()
 
@@ -98,6 +103,7 @@ class Command(BaseCommand):
             f"Estimated GPU time: ~{est_hours:.1f} hours\n"
             f"Estimated cost:     ~${est_cost:.0f} ({pricing_label})\n"
             f"Priority filter:    {', '.join(priority)}\n"
+            f"NTEE filter:        {ntee_filter or 'all'}\n"
             f"Instance type:      {options['instance_type']}\n"
         )
 
@@ -150,7 +156,7 @@ class Command(BaseCommand):
         finally:
             conn.close()
 
-    def _run(self, run_tag: str, priority: list[str], options: dict) -> None:
+    def _run(self, run_tag: str, priority: list[str], ntee_filter: str | None, options: dict) -> None:
         import boto3
 
         conn = self._get_conn()
@@ -163,18 +169,19 @@ class Command(BaseCommand):
             )
 
         try:
-            self._execute_run(conn, run_tag, priority, options)
+            self._execute_run(conn, run_tag, priority, ntee_filter, options)
         finally:
             db.release_orchestrator_lock(conn)
             conn.close()
 
-    def _execute_run(self, conn, run_tag: str, priority: list[str], options: dict) -> None:
+    def _execute_run(self, conn, run_tag: str, priority: list[str], ntee_filter: str | None, options: dict) -> None:
         import boto3
 
         ec2 = boto3.client("ec2", region_name="us-east-1")
 
         run_config = {
             "priority": priority,
+            "ntee_filter": ntee_filter,
             "instance_type": options["instance_type"],
             "batch_size": options["batch_size"],
             "max_hours": options["max_hours"],
@@ -199,7 +206,7 @@ class Command(BaseCommand):
         max_seconds = options["max_hours"] * 3600
         relaunch_count = 0
 
-        instance_id = self._launch_and_start(ec2, conn, run_id, run_tag, priority, options)
+        instance_id = self._launch_and_start(ec2, conn, run_id, run_tag, priority, ntee_filter, options)
 
         last_stats_update = time.time()
         last_total = 0
@@ -244,7 +251,7 @@ class Command(BaseCommand):
                     f"Relaunching (attempt {relaunch_count}/{MAX_RELAUNCH_ATTEMPTS}, "
                     f"{remaining:,} docs remaining)...\n"
                 )
-                instance_id = self._launch_and_start(ec2, conn, run_id, run_tag, priority, options)
+                instance_id = self._launch_and_start(ec2, conn, run_id, run_tag, priority, ntee_filter, options)
                 last_stats_update = time.time()
                 continue
 
@@ -282,7 +289,7 @@ class Command(BaseCommand):
                     break
 
                 self.stdout.write(f"Relaunching after stale worker...\n")
-                instance_id = self._launch_and_start(ec2, conn, run_id, run_tag, priority, options)
+                instance_id = self._launch_and_start(ec2, conn, run_id, run_tag, priority, ntee_filter, options)
                 last_stats_update = time.time()
                 continue
 
@@ -293,7 +300,7 @@ class Command(BaseCommand):
 
         self.stdout.write("Parse run complete.\n")
 
-    def _launch_and_start(self, ec2, conn, run_id: int, run_tag: str, priority: list[str], options: dict) -> str:
+    def _launch_and_start(self, ec2, conn, run_id: int, run_tag: str, priority: list[str], ntee_filter: str | None, options: dict) -> str:
         """Launch a spot instance and start the worker. Returns instance_id."""
         # Terminate any existing instance for this purpose
         existing = self._find_instance(ec2, run_tag)
@@ -320,7 +327,7 @@ class Command(BaseCommand):
         self._wait_for_ssm(instance_id)
         self.stdout.write(f"SSM agent connected on {instance_id}\n")
 
-        self._start_worker(ec2, instance_id, run_id, priority, options)
+        self._start_worker(ec2, instance_id, run_id, priority, ntee_filter, options)
         return instance_id
 
     def _safe_terminate(self, ec2, instance_id: str) -> None:
@@ -428,8 +435,8 @@ class Command(BaseCommand):
             return "terminated"
         return instances[0]["State"]["Name"]
 
-    def _start_worker(self, ec2, instance_id: str, run_id: int, priority: list[str], options: dict) -> None:
-        """Start the worker process on the GPU instance via EC2 Instance Connect."""
+    def _start_worker(self, ec2, instance_id: str, run_id: int, priority: list[str], ntee_filter: str | None, options: dict) -> None:
+        """Start the worker process on the GPU instance via SSM."""
         import boto3
 
         from lavandula.common.secrets import get_secret
@@ -439,6 +446,7 @@ class Command(BaseCommand):
         database = get_secret("rds-database")
 
         max_docs_flag = f" --max-docs {options['max_docs']}" if options["max_docs"] else ""
+        ntee_flag = f" --ntee {ntee_filter}" if ntee_filter else ""
         worker_cmd = (
             f"/opt/docling/bin/python -m lavandula.parse.worker "
             f"--run-id {run_id} "
@@ -448,6 +456,7 @@ class Command(BaseCommand):
             f"--priority {','.join(priority)} "
             f"--batch-size {options['batch_size']}"
             f"{max_docs_flag}"
+            f"{ntee_flag}"
         )
 
         # Deploy worker code and start as a background process

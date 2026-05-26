@@ -81,7 +81,7 @@ def _run_loop(conn, args) -> None:
             logger.info("reached max-docs limit", extra={"max_docs": max_docs})
             break
 
-        batch = db.fetch_work_batch(conn, priority, args.batch_size)
+        batch = db.fetch_work_batch(conn, priority, args.batch_size, ntee_filter=args.ntee)
         if not batch:
             logger.info("no more eligible documents")
             break
@@ -345,6 +345,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--batch-size", type=int, default=config.BATCH_SIZE)
     parser.add_argument("--max-docs", type=int, default=None,
                         help="Stop after processing this many documents (required for safety)")
+    parser.add_argument("--ntee", default=None,
+                        help="NTEE prefix filter (e.g. 'P2%%' for Human Services)")
     return parser.parse_args(argv)
 
 
