@@ -778,9 +778,24 @@ projects:
     notes: "Validated via experiment 2026-05-26: DeepSeek combined extraction matched 100% of competitor metrics across CanCare, Think New Mexico, Boys & Girls Club. Also extracts stories. Supersedes Spec 0050 regex approach which produced 750 junk observations per doc."
 ```
 
+```yaml
+  - id: "0052"
+    title: "Extraction QA Viewer (PDF + Metrics/Stories)"
+    summary: "Side-by-side viewer showing source PDF and LLM-extracted metrics/stories with interactive hover-to-highlight and click-to-lock linking between extracted items and their source snippets in the document. Primary QA tool for validating extraction quality at scale."
+    status: conceived
+    priority: high
+    files:
+      spec: locard/specs/0052-extraction-qa-viewer.md
+      plan: null
+      review: null
+    dependencies: ["0044", "0051"]
+    tags: [dashboard, ui, extraction, qa, pdf-viewer, layer-2]
+    notes: "Builds on 0044's PDF viewer infrastructure. Interactive affordance: hover metric → PDF scrolls + highlights source_snippet. Click locks highlight for reading context."
+```
+
 ## Next Available Number
 
-**0052** - Reserve this number for your next project
+**0053** - Reserve this number for your next project
 
 ---
 
