@@ -782,7 +782,7 @@ projects:
   - id: "0052"
     title: "Extraction QA Viewer (PDF + Metrics/Stories)"
     summary: "Side-by-side viewer showing source PDF and LLM-extracted metrics/stories with interactive hover-to-highlight and click-to-lock linking between extracted items and their source snippets in the document. Primary QA tool for validating extraction quality at scale."
-    status: specified
+    status: implementing
     priority: high
     files:
       spec: locard/specs/0052-extraction-qa-viewer.md
