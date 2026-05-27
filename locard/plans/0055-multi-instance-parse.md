@@ -36,7 +36,13 @@ Enable 1–4 concurrent GPU workers for Docling parsing. Workers self-coordinate
 
 **1a. Rename `fetch_work_batch` → `fetch_work_batch_legacy`**
 
-Rename the existing function at line 48. Keep the same signature and behavior. This preserves backward compatibility for any non-dashboard CLI usage.
+Rename the existing function at line 48. Keep the same signature and behavior. This preserves backward compatibility for the worker's legacy mode (when `--worker-id` is not provided).
+
+**Call site audit:** `fetch_work_batch` is called in exactly two places:
+1. `lavandula/parse/worker.py:84` — `_run_loop()` function. This becomes `fetch_work_batch_legacy()` (legacy mode path).
+2. No other callers (verified via `grep -rn "fetch_work_batch" lavandula/`).
+
+The new `fetch_work_batch()` (SKIP LOCKED) is called only from `_run_loop_queue()` (new queue mode path). The two paths are mutually exclusive (selected by `--worker-id` presence), so there is no risk of accidental breakage.
 
 **1b. Add `populate_work_queue(conn, run_id, priority_filter, ntee_filter)`**
 
@@ -303,16 +309,41 @@ if not (1 <= options["workers"] <= 4):
     raise CommandError("--workers must be 1-4")
 ```
 
-**3c. Add `_populate_work_queue()` method**
+**3c. Add `_populate_or_resume_queue()` method**
 
-Call `db.populate_work_queue()`. On resume (run_tag already exists with unfinished run), call `db.reclaim_all_stale_claims()` instead of re-populating.
+Queue population has two modes. The orchestrator detects which by checking existing queue state:
+
+```python
+def _populate_or_resume_queue(self, conn, run_id, priority, ntee_filter):
+    """Populate work queue or resume from existing queue."""
+    # Check if queue already has rows for this run_id
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT COUNT(*) FROM lava_parse.work_queue WHERE run_id = %s",
+            (run_id,),
+        )
+        existing = cur.fetchone()[0]
+
+    if existing > 0:
+        # Resume: reclaim stale claims from previous orchestrator session
+        reclaimed = db.reclaim_all_stale_claims(conn, run_id)
+        self.stdout.write(f"Resuming: {existing} queue items, {reclaimed} stale claims reclaimed\n")
+        return existing
+    else:
+        # Fresh run (or resume where previous attempt failed before populating)
+        count = db.populate_work_queue(conn, run_id, priority, ntee_filter)
+        self.stdout.write(f"Populated work queue: {count} items\n")
+        return count
+```
+
+This handles the edge case Gemini identified: a resumed run where the previous attempt crashed before queue population still gets a fresh populate.
 
 **3d. Refactor `_execute_run()` for multi-instance**
 
 Replace the current single-instance flow (lines 223–405) with:
 
-1. Create/resume parse_run (existing)
-2. Populate work queue (or reclaim stale on resume)
+1. Create/resume parse_run (existing `create_parse_run()`)
+2. Populate or resume queue (call `_populate_or_resume_queue()`)
 3. Get queue size as eligible_count
 4. Initialize slot list: `slots = [{"instance_id": None, "status": "pending", "relaunch_count": 0} for _ in range(workers)]`
 5. Launch N instances concurrently (iterate slots, call `_launch_with_capacity_retry` for each)
@@ -363,13 +394,37 @@ while True:
             continue
 
         # Heartbeat check: worker stale on running instance
+        # State machine for stale detection:
+        #   1. Instance state == "running" (EC2 says it's up)
+        #   2. Worker has claimed work (claimed_by = iid exists in work_queue)
+        #   3. No completed_at update in HEARTBEAT_STALE_MINUTES
+        #   4. Unclaimed work still exists (queue not exhausted)
+        # All 4 conditions must be true → terminate instance + reclaim + relaunch.
+        # If condition 4 is false (no unclaimed work), the worker may be
+        # processing its final batch — stale heartbeat is expected. Don't terminate.
         if slot["status"] == "running":
             last_activity = self._get_worker_last_activity(conn, run_id, iid)
-            if last_activity and (time.time() - last_activity.timestamp()) > HEARTBEAT_STALE_MINUTES * 60:
+            progress = db.get_queue_progress(conn, run_id)
+            unclaimed = progress["total"] - progress["claimed"]
+            has_claimed_work = any(...)  # worker has incomplete claims
+            stale = (
+                last_activity is not None
+                and (time.time() - last_activity.timestamp()) > HEARTBEAT_STALE_MINUTES * 60
+                and unclaimed > 0  # other work exists, so stalling is not "finished"
+            )
+            if stale:
+                self.stdout.write(f"Worker stale on {iid}. Terminating.\n")
                 self._safe_terminate(ec2, iid)
                 db.reclaim_stale_claims(conn, run_id, iid)
-                # Relaunch logic (same as above)
-                ...
+                slot["relaunch_count"] += 1
+                if slot["relaunch_count"] > MAX_RELAUNCH_ATTEMPTS:
+                    slot["status"] = "capacity_exhausted"
+                else:
+                    new_id = self._launch_with_capacity_retry(...)
+                    if new_id:
+                        slot["instance_id"] = new_id
+                    else:
+                        slot["status"] = "capacity_exhausted"
 
     # Aggregate progress
     progress = db.get_queue_progress(conn, run_id)
@@ -489,6 +544,11 @@ Query `db.get_queue_progress()` and `db.get_per_worker_stats()` for running pars
 
 Connection for these queries: use a raw psycopg2 connection (same pattern as existing eligible count queries) since these query `lava_parse` schema.
 
+**Caching:** The progress partial is polled via HTMX every 10 seconds. The `get_queue_progress()` and `get_per_worker_stats()` queries hit the work_queue table which may have 10K–100K rows. To avoid excessive DB load:
+- Cache the per-worker stats in Django's cache framework with a 10-second TTL (matches poll interval)
+- The aggregate progress query (single COUNT with filters) is lightweight and doesn't need caching
+- Use `cache_key = f"parse_progress_{run_id}"` to avoid stale data across runs
+
 **6d. Update `ParseView._reconcile_parse_jobs()`**
 
 No change needed — reconciliation logic uses Job status and PID liveness, not instance count.
@@ -510,11 +570,21 @@ When `workers = 1`, display is identical to current (no fleet cards).
 
 ### Step 8: Tests (`test_parse.py`)
 
-**8a. Unit: SKIP LOCKED claim no overlap**
+**8a. SKIP LOCKED claim no overlap (PostgreSQL integration test)**
 
-Create a work_queue with 10 items. In two concurrent transactions (using threading + SQLite won't work for SKIP LOCKED — use `unittest.mock` to simulate the DB behavior, or mark as PostgreSQL-only integration test with `@skipUnless`).
+This test MUST run against a real PostgreSQL database to validate the `FOR UPDATE SKIP LOCKED` guarantee. It cannot be meaningfully tested with SQLite or mocks.
 
-For SQLite test environment: mock `db.fetch_work_batch` to simulate the CTE behavior. Test that the mock correctly partitions work with no overlap.
+Mark with `@skipUnless(connection.vendor == 'postgresql', 'SKIP LOCKED requires PostgreSQL')`.
+
+Test approach:
+1. Insert 20 work_queue rows for a test run_id
+2. Open two concurrent psycopg2 connections (not Django ORM)
+3. In connection A: call `fetch_work_batch(conn_a, run_id, 10, "worker-a")` inside a transaction (do NOT commit yet)
+4. In connection B: call `fetch_work_batch(conn_b, run_id, 10, "worker-b")` — should return the OTHER 10 rows
+5. Commit both
+6. Assert: union of A's batch + B's batch = all 20 rows, intersection = empty
+
+This is the single most important test in this spec — it validates the core no-overlap guarantee.
 
 **8b. Unit: populate_work_queue**
 
@@ -568,11 +638,24 @@ Test progress partial queries work_queue and returns correct completed/total.
 
 Mock scenario: instance A terminated → reclaim → instance B claims from same pool. Verify no duplicate claims (mocked SKIP LOCKED behavior).
 
-### Step 9: Migration DDL (Documentation Only)
+### Step 9: Migration DDL
 
-The builder does NOT run DDL. Instead, include the migration SQL in the PR description and in a file `lavandula/migrations/0055_work_queue.sql` for the operator to run manually.
+The builder creates `lavandula/migrations/0055_work_queue.sql` containing the full DDL from the spec's Migration section: CREATE TABLE, CREATE INDEX, ALTER TABLE (instance_ids), GRANT, and RLS policies. The builder does NOT run this DDL — the operator applies it manually on RDS before deployment.
 
-Contents: the full DDL from the spec's Migration section (CREATE TABLE, CREATE INDEX, ALTER TABLE, GRANT, RLS policies).
+Additionally, add a Django migration file `lavandula/dashboard/pipeline/migrations/0011_parse_runs_instance_ids.py` that is a **no-op stub** documenting the `parse_runs.instance_ids` column addition. Since `parse_runs` lives in the `lava_parse` schema (not managed by Django), this migration exists solely for documentation and to keep the migration sequence consistent. The actual schema change is in the SQL file above.
+
+```python
+# 0011_parse_runs_instance_ids.py
+class Migration(migrations.Migration):
+    dependencies = [('pipeline', '0010_add_parse_phase')]
+    operations = [
+        migrations.RunSQL(
+            sql=migrations.RunSQL.noop,
+            reverse_sql=migrations.RunSQL.noop,
+            state_operations=[],
+        ),
+    ]
+```
 
 ## Acceptance Criteria Mapping
 
@@ -605,4 +688,15 @@ Contents: the full DDL from the spec's Migration section (CREATE TABLE, CREATE I
 
 ## Consultation Log
 
-(Pending — will be populated during review cycle)
+### Round 1 — Plan Review (2026-05-27)
+
+**Codex (REQUEST_CHANGES, MEDIUM confidence):** 6 findings.
+1. `parse_runs.instance_ids` migration not assigned to a concrete step → **Fixed:** Step 9 now creates both SQL migration file and Django no-op stub migration.
+2. Queue populate/resume semantics ambiguous → **Fixed:** Step 3c rewritten as `_populate_or_resume_queue()` with explicit check: if queue rows exist → reclaim stale; if empty → populate fresh.
+3. Worker changes broader than "minimal" — call site audit needed → **Fixed:** Step 1a now includes explicit call site audit (exactly 1 caller: `worker.py:84`).
+4. Heartbeat/stale detection algorithm needs tighter state machine → **Fixed:** Step 3e stale detection now has 4 explicit conditions, including "unclaimed work still exists" guard to prevent premature termination of a worker processing its final batch.
+5. Need real PostgreSQL integration test for SKIP LOCKED → **Fixed:** Step 8a rewritten as PostgreSQL-only integration test with two concurrent connections.
+6. Dashboard work_queue query volume/caching unspecified → **Fixed:** Step 6c now specifies 10-second cache TTL for per-worker stats.
+
+**Gemini (COMMENT, HIGH confidence):** 1 clarification.
+1. Queue population on resume when queue is empty → **Fixed:** Same as Codex #2 above — `_populate_or_resume_queue()` handles this case.
