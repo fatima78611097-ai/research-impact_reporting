@@ -186,9 +186,36 @@ Throughput = `completed / active_seconds * 3600` (docs/hour). This is robust to 
 
 ### Security Boundaries
 
-- **`docling_writer`**: Full CRUD on `work_queue` (claim, complete, reclaim stale). Workers run as this role on GPU instances. Workers can only modify rows they claimed (`claimed_by = their instance_id`), but this is enforced at the application level, not DB-level RLS. Acceptable because workers are trusted infrastructure (deployed via our AMI/tarball).
-- **`dashboard_reader`**: SELECT only on `work_queue`. Can see `error` text and `claimed_by` (instance IDs). Instance IDs are not sensitive — they're visible in the AWS console and tagged with our project name.
-- Workers cannot reset other workers' claims — the orchestrator (running on cloud2 as `dashboard_user1`) handles reclaim logic, not workers.
+**Principle of least privilege for `docling_writer` (workers):**
+- `SELECT` on `work_queue` — to find unclaimed rows
+- `UPDATE` on `work_queue` — to claim rows and mark completion
+- `INSERT` on `documents`, `sections`, `tables` — existing parse output writes
+- **No `DELETE`** on `work_queue` — only the orchestrator (running as `dashboard_user1` on cloud2) deletes queue rows during cleanup
+- **No `INSERT`** on `work_queue` — only the orchestrator populates the queue
+
+**Row-Level Security (RLS):** Apply an RLS policy so `docling_writer` can only UPDATE rows where `claimed_by IS NULL` (new claims) or `claimed_by = current_setting('app.worker_id')` (completing own claims). The worker sets `SET app.worker_id = '<instance_id>'` at connection time. This prevents a compromised worker from modifying other workers' claims.
+
+```sql
+ALTER TABLE lava_parse.work_queue ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY worker_claim_policy ON lava_parse.work_queue
+    FOR UPDATE TO docling_writer
+    USING (claimed_by IS NULL OR claimed_by = current_setting('app.worker_id', true));
+
+CREATE POLICY worker_select_policy ON lava_parse.work_queue
+    FOR SELECT TO docling_writer
+    USING (true);
+```
+
+**`dashboard_reader`**: SELECT only on `work_queue`. Instance IDs are not sensitive (visible in AWS console). Error text is sanitized (see below).
+
+**`dashboard_user1` (orchestrator)**: Full access including DELETE for cleanup and UPDATE for stale claim reclaim. Not subject to RLS (table owner or superuser).
+
+**Error column sanitization:** Workers must write only a short error classification string to `work_queue.error` (e.g., `"corrupt_pdf"`, `"docling_timeout"`, `"empty_parse"`), not raw exception messages or stack traces. Detailed diagnostics go to the worker's local log file. The `complete_work_item()` function enforces a max 200-character limit and strips any content matching common sensitive patterns (file paths, connection strings).
+
+**Worker argument validation:** The worker validates `--run-id` (positive integer, exists in `parse_runs`) and `--worker-id` (matches EC2 instance ID format `i-[0-9a-f]+`) at startup before any DB operations. Invalid arguments cause immediate exit.
+
+**Encryption:** Data in transit uses `sslmode=require` on all RDS connections (existing). Data at rest uses RDS storage encryption (AES-256, enabled at instance creation). No changes needed — documenting for completeness.
 
 ### Worker Changes (`lavandula/parse/worker.py` + `db.py`)
 
@@ -428,7 +455,7 @@ CREATE TABLE lava_parse.work_queue (
     claimed_by      TEXT,
     claimed_at      TIMESTAMPTZ,
     completed_at    TIMESTAMPTZ,
-    error           TEXT,
+    error           VARCHAR(200),
     UNIQUE (run_id, content_sha256)
 );
 
@@ -437,10 +464,28 @@ CREATE INDEX idx_work_queue_unclaimed ON lava_parse.work_queue (run_id)
 
 ALTER TABLE lava_parse.parse_runs ADD COLUMN instance_ids TEXT[];
 
--- Grant to existing roles
-GRANT SELECT, INSERT, UPDATE, DELETE ON lava_parse.work_queue TO docling_writer;
-GRANT USAGE, SELECT ON SEQUENCE lava_parse.work_queue_id_seq TO docling_writer;
+-- Grants: least privilege
+GRANT SELECT, UPDATE ON lava_parse.work_queue TO docling_writer;
 GRANT SELECT ON lava_parse.work_queue TO dashboard_reader;
+GRANT SELECT, INSERT, UPDATE, DELETE ON lava_parse.work_queue TO dashboard_user1;
+GRANT USAGE, SELECT ON SEQUENCE lava_parse.work_queue_id_seq TO dashboard_user1;
+
+-- Row-Level Security: workers can only claim unclaimed or complete own claims
+ALTER TABLE lava_parse.work_queue ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY worker_select_policy ON lava_parse.work_queue
+    FOR SELECT TO docling_writer
+    USING (true);
+
+CREATE POLICY worker_update_policy ON lava_parse.work_queue
+    FOR UPDATE TO docling_writer
+    USING (claimed_by IS NULL OR claimed_by = current_setting('app.worker_id', true));
+
+-- dashboard_user1 (orchestrator) bypasses RLS as table owner or via:
+ALTER TABLE lava_parse.work_queue FORCE ROW LEVEL SECURITY;
+CREATE POLICY orchestrator_full_access ON lava_parse.work_queue
+    FOR ALL TO dashboard_user1
+    USING (true);
 ```
 
 ## Consultation Log
@@ -452,3 +497,12 @@ GRANT SELECT ON lava_parse.work_queue TO dashboard_reader;
 **Gemini (REQUEST_CHANGES, HIGH confidence):** 1 finding — heartbeat mechanism for detecting unresponsive workers on still-running instances not detailed.
 
 **Actions taken:** Added Worker Heartbeat section (completed_at as heartbeat signal, 20-min staleness threshold), Queue Lifecycle and Resumability section (fixed snapshot, resume semantics, cleanup), Instance Slot Model section (per-slot ownership, relaunch counts, ghost instance protection), parse_runs Column Migration section (dual-column coexistence, source of truth), Per-Instance Throughput section (SQL computation), Security Boundaries section (role-level access, application-level claim ownership), split edge case 3 into instance-running vs instance-terminated variants, added concurrency test #15 for stale-reclaim race.
+
+### Round 2 — Red Team Security Review (2026-05-27)
+
+**Gemini (REQUEST_CHANGES):** 1 CRITICAL, 1 HIGH, 1 MEDIUM, 1 LOW.
+
+- **CRITICAL: Excessive DB privileges for workers** — `docling_writer` granted full CRUD including DELETE; no RLS enforcement. **Fixed:** Revoked DELETE and INSERT from `docling_writer` on work_queue. Added RLS policy restricting UPDATE to unclaimed rows or own claims via `current_setting('app.worker_id')`. Orchestrator (`dashboard_user1`) retains full access for queue population, cleanup, and stale reclaim.
+- **HIGH: Error column could leak sensitive info** — Raw exception text in `work_queue.error`. **Fixed:** Changed to `VARCHAR(200)`, mandated short classification strings only (not stack traces). Detailed diagnostics go to worker log files.
+- **MEDIUM: Missing input validation for worker args** — `--run-id` and `--worker-id` accepted without validation. **Fixed:** Added validation requirements (positive int, exists in parse_runs; EC2 instance ID format).
+- **LOW: Encryption not documented** — **Fixed:** Documented `sslmode=require` (transit) and RDS AES-256 storage encryption (at rest).
