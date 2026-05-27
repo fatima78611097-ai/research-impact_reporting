@@ -95,6 +95,101 @@ The current query (`NOT IN (SELECT content_sha256 FROM documents)`) is a set-dif
 8. Orchestrator terminates all instances and cleans up
 ```
 
+### Worker Heartbeat
+
+Each worker updates a heartbeat timestamp in `work_queue` as it completes each document. The orchestrator uses this to detect stale workers on still-running instances:
+
+```sql
+-- Worker updates after each document completion:
+UPDATE lava_parse.work_queue
+SET completed_at = NOW()
+WHERE run_id = %s AND content_sha256 = %s;
+-- The MAX(completed_at) for a worker_id serves as its heartbeat.
+```
+
+**Orchestrator stale detection (per poll cycle):**
+```python
+# For each active instance, check latest activity:
+SELECT claimed_by, MAX(completed_at) as last_activity
+FROM lava_parse.work_queue
+WHERE run_id = %s AND claimed_by = %s AND completed_at IS NOT NULL
+GROUP BY claimed_by;
+
+# If last_activity is older than HEARTBEAT_STALE_MINUTES (20 min)
+# AND the instance is still running, the worker process has crashed
+# without the instance terminating. Terminate instance + reclaim.
+```
+
+This reuses the existing 20-minute staleness threshold from Spec 0054. No new heartbeat column or table needed — `completed_at` timestamps on work items are the heartbeat signal.
+
+### Queue Lifecycle and Resumability
+
+The work queue snapshot is **fixed at run start** and never refreshed during the run. Documents parsed during the run (by this or any process) don't affect the queue — they're already claimed/completed in `work_queue`.
+
+**Resume after SIGTERM or max-hours:**
+- Run with same `run_tag` → `create_parse_run()` returns existing `run_id` (row not finished)
+- Orchestrator checks `work_queue` for this `run_id`: unclaimed + stale-claimed rows are available work
+- Stale claims (instances from previous run attempt) are reclaimed: `UPDATE SET claimed_by = NULL WHERE run_id = %s AND completed_at IS NULL AND claimed_by IS NOT NULL`
+- No re-population needed — existing queue rows are reused
+
+**New run with different `run_tag`:**
+- Fresh `run_id` → fresh queue population
+- Previous run's queue rows are inert (different `run_id`)
+
+**Cleanup:** After a run finishes (all items completed or errored), the orchestrator deletes the `work_queue` rows for that `run_id`. The queue is ephemeral work-distribution state, not permanent history.
+
+### Instance Slot Model
+
+The orchestrator manages a fixed number of **slots** (0 to N-1). Each slot maps to at most one EC2 instance at a time.
+
+```python
+# slots = [
+#   {"instance_id": "i-abc", "status": "running", "relaunch_count": 0},
+#   {"instance_id": "i-def", "status": "running", "relaunch_count": 0},
+#   {"instance_id": None,    "status": "capacity_exhausted", "relaunch_count": 3},
+# ]
+```
+
+**Per-slot rules:**
+- Each slot has its own `relaunch_count` (max `MAX_RELAUNCH_ATTEMPTS = 3`)
+- When a slot's instance terminates, the orchestrator reclaims that instance's stale claims, then attempts relaunch for that slot
+- A slot is marked `capacity_exhausted` when its relaunch count exceeds the max — it stops trying
+- If ALL slots are `capacity_exhausted` or `None`, the run fails
+- A relaunched instance gets a new instance ID but the same slot index
+
+**Ghost instance protection:** Before launching a replacement in a slot, the orchestrator calls `_safe_terminate()` on the old instance ID (idempotent if already terminated). This prevents ghost instances from accumulating if EC2 state polling shows "terminated" but the instance later reappears briefly.
+
+### parse_runs Column Migration
+
+The existing `instance_id TEXT` column remains for backward compatibility. The new `instance_ids TEXT[]` column tracks the fleet:
+
+- **Single-instance runs (`--workers 1`):** Both `instance_id` (first instance) and `instance_ids` (array with one element) are populated. Existing dashboard code that reads `instance_id` continues to work.
+- **Multi-instance runs:** `instance_id` is set to the first slot's instance. `instance_ids` contains all active instance IDs. New dashboard code reads `instance_ids`.
+- **Source of truth:** `instance_ids` is authoritative for multi-instance. `instance_id` is a convenience alias for the first instance.
+
+### Per-Instance Throughput
+
+The dashboard computes per-instance throughput from `work_queue`:
+
+```sql
+SELECT claimed_by,
+       COUNT(*) FILTER (WHERE completed_at IS NOT NULL) as completed,
+       COUNT(*) FILTER (WHERE completed_at IS NULL) as in_progress,
+       MAX(completed_at) as last_activity,
+       EXTRACT(EPOCH FROM MAX(completed_at) - MIN(claimed_at)) as active_seconds
+FROM lava_parse.work_queue
+WHERE run_id = %s AND claimed_by IS NOT NULL
+GROUP BY claimed_by;
+```
+
+Throughput = `completed / active_seconds * 3600` (docs/hour). This is robust to reclaims and partial batches — it counts only completed items for the worker that completed them.
+
+### Security Boundaries
+
+- **`docling_writer`**: Full CRUD on `work_queue` (claim, complete, reclaim stale). Workers run as this role on GPU instances. Workers can only modify rows they claimed (`claimed_by = their instance_id`), but this is enforced at the application level, not DB-level RLS. Acceptable because workers are trusted infrastructure (deployed via our AMI/tarball).
+- **`dashboard_reader`**: SELECT only on `work_queue`. Can see `error` text and `claimed_by` (instance IDs). Instance IDs are not sensitive — they're visible in the AWS console and tagged with our project name.
+- Workers cannot reset other workers' claims — the orchestrator (running on cloud2 as `dashboard_user1`) handles reclaim logic, not workers.
+
 ### Worker Changes (`lavandula/parse/worker.py` + `db.py`)
 
 **`db.fetch_work_batch()` — new implementation:**
@@ -263,8 +358,8 @@ EC2 instances   → ephemeral (cached 30s, any can be replaced)
 
 1. **Partial launch** — Request 4 workers but only 2 get capacity. Run proceeds with 2. Dashboard shows "2/4 workers active."
 2. **All instances spot-reclaimed simultaneously** — Orchestrator relaunches up to MAX_RELAUNCH_ATTEMPTS per slot. If all slots exhausted, run fails.
-3. **Worker crashes mid-batch** — Claimed but uncompleted rows remain in work_queue. Orchestrator detects via heartbeat staleness, terminates instance, launches replacement. The replacement worker claims NEW unclaimed rows (stale claimed rows are NOT automatically reclaimed — see Stale Claim Recovery).
-4. **Stale claim recovery** — If a worker claims rows but dies before completing them, those rows have `claimed_by` set but no `completed_at`. The orchestrator reclaims these when it detects the worker's instance is terminated: `UPDATE work_queue SET claimed_by = NULL, claimed_at = NULL WHERE claimed_by = %s AND completed_at IS NULL`. This allows a replacement worker to pick them up.
+3. **Worker crashes mid-batch (instance still running)** — Worker process dies but EC2 instance stays up. Orchestrator detects via heartbeat staleness: `MAX(completed_at)` for that `claimed_by` is older than 20 minutes while unclaimed work remains. Orchestrator terminates the instance, reclaims stale claims, and relaunches the slot.
+4. **Worker crashes mid-batch (instance terminates)** — EC2 instance terminated (spot reclaim or crash). Orchestrator detects via `_get_instance_state()`. Reclaims stale claims: `UPDATE work_queue SET claimed_by = NULL, claimed_at = NULL WHERE claimed_by = %s AND completed_at IS NULL`. Launches replacement in that slot.
 5. **Run stopped from dashboard** — SIGTERM to orchestrator. Orchestrator terminates all instances. Uncompleted work remains in queue. A future run with the same filters will re-process them (they're not in `documents` table, so they're still eligible).
 6. **Max hours reached** — Orchestrator terminates all instances. Partial progress is preserved in `documents` table. Next run picks up where this one left off.
 7. **Duplicate work_queue entries** — `ON CONFLICT (run_id, content_sha256) DO NOTHING` prevents duplicates during queue population. If a run is resumed, existing unclaimed entries are reused.
@@ -318,6 +413,7 @@ EC2 instances   → ephemeral (cached 30s, any can be replaced)
 12. **Dashboard: Per-instance status** — Each instance shown with state and throughput
 13. **Dashboard: Aggregate progress** — Total completed/total shown correctly
 14. **Dashboard: Dry run multi-estimate** — Shows wall-clock time for 1/2/4 workers
+15. **Concurrency: Stale reclaim race** — Instance terminated while another worker is actively claiming from the same queue; verify no duplicate claims after reclaim
 
 ## Migration (Operator-Applied DDL)
 
@@ -349,4 +445,10 @@ GRANT SELECT ON lava_parse.work_queue TO dashboard_reader;
 
 ## Consultation Log
 
-(Pending — will be populated during review cycle)
+### Round 1 — Spec Review (2026-05-27)
+
+**Codex (REQUEST_CHANGES, HIGH confidence):** 8 findings — stale claim recovery lacks heartbeat mechanism; work queue lifecycle underspecified for resume/rerun; instance_id→instance_ids migration ambiguous; per-slot relaunch contract incomplete; queue snapshot fixed-vs-refreshed unclear; per-instance throughput computation undefined; security grants need tightening; need concurrency test for stale-claim race.
+
+**Gemini (REQUEST_CHANGES, HIGH confidence):** 1 finding — heartbeat mechanism for detecting unresponsive workers on still-running instances not detailed.
+
+**Actions taken:** Added Worker Heartbeat section (completed_at as heartbeat signal, 20-min staleness threshold), Queue Lifecycle and Resumability section (fixed snapshot, resume semantics, cleanup), Instance Slot Model section (per-slot ownership, relaunch counts, ghost instance protection), parse_runs Column Migration section (dual-column coexistence, source of truth), Per-Instance Throughput section (SQL computation), Security Boundaries section (role-level access, application-level claim ownership), split edge case 3 into instance-running vs instance-terminated variants, added concurrency test #15 for stale-reclaim race.
