@@ -826,7 +826,7 @@ projects:
   - id: "0055"
     title: "Multi-Instance Parse (SKIP LOCKED Work Claiming)"
     summary: "Enable N concurrent GPU workers for Docling parsing via PostgreSQL SKIP LOCKED work claiming. Orchestrator launches/monitors multiple spot instances; workers self-coordinate via DB. Dashboard shows per-instance health and aggregate progress."
-    status: conceived
+    status: specified
     priority: high
     files:
       spec: locard/specs/0055-multi-instance-parse.md
