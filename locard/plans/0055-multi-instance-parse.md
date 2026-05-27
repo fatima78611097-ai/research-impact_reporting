@@ -233,12 +233,27 @@ parser.add_argument("--worker-id", default=None,
                     help="EC2 instance ID (enables SKIP LOCKED queue mode)")
 ```
 
-**2b. Validate `--worker-id` format in `main()`** (after line 43)
+**2b. Validate `--worker-id` and `--run-id` in `main()`** (after line 43)
 
 ```python
 import re
+
+# Validate --run-id (always required, already exists)
+if not (isinstance(args.run_id, int) and args.run_id > 0):
+    logger.error("invalid run-id: must be a positive integer")
+    sys.exit(1)
+
+# Validate --worker-id (only when provided)
 if args.worker_id and not re.match(r'^i-[0-9a-f]+$', args.worker_id):
     logger.error("invalid worker-id format", extra={"worker_id": args.worker_id})
+    sys.exit(1)
+```
+
+Additionally, in queue mode, verify the `run_id` exists in `parse_runs` before starting work:
+```python
+status = db.get_run_status_by_id(conn, args.run_id)
+if status is None:
+    logger.error("run_id does not exist in parse_runs", extra={"run_id": args.run_id})
     sys.exit(1)
 ```
 
@@ -568,6 +583,8 @@ When a parse job is running and has multi-instance data:
 
 When `workers = 1`, display is identical to current (no fleet cards).
 
+**XSS prevention:** All dynamic values in templates (instance IDs, error strings, throughput numbers) are rendered via Django's default auto-escaping. Do NOT use `|safe` filter on any work_queue-derived data. Instance IDs are alphanumeric (`i-[0-9a-f]+`), error strings are short classification labels — both are safe by construction, but auto-escaping is the defense-in-depth layer.
+
 ### Step 8: Tests (`test_parse.py`)
 
 **8a. SKIP LOCKED claim no overlap (PostgreSQL integration test)**
@@ -642,6 +659,15 @@ Mock scenario: instance A terminated → reclaim → instance B claims from same
 
 The builder creates `lavandula/migrations/0055_work_queue.sql` containing the full DDL from the spec's Migration section: CREATE TABLE, CREATE INDEX, ALTER TABLE (instance_ids), GRANT, and RLS policies. The builder does NOT run this DDL — the operator applies it manually on RDS before deployment.
 
+**RLS simplification (from red team review):** Do NOT use `FORCE ROW LEVEL SECURITY` in the DDL. The migration is run by the superuser (table owner), so `dashboard_user1` (non-owner) is already subject to RLS by default. Use a simple permissive policy instead:
+
+```sql
+-- Instead of FORCE ROW LEVEL SECURITY, just add a permissive policy:
+CREATE POLICY orchestrator_full_access ON lava_parse.work_queue
+    FOR ALL TO dashboard_user1
+    USING (true) WITH CHECK (true);
+```
+
 Additionally, add a Django migration file `lavandula/dashboard/pipeline/migrations/0011_parse_runs_instance_ids.py` that is a **no-op stub** documenting the `parse_runs.instance_ids` column addition. Since `parse_runs` lives in the `lava_parse` schema (not managed by Django), this migration exists solely for documentation and to keep the migration sequence consistent. The actual schema change is in the SQL file above.
 
 ```python
@@ -700,3 +726,11 @@ class Migration(migrations.Migration):
 
 **Gemini (COMMENT, HIGH confidence):** 1 clarification.
 1. Queue population on resume when queue is empty → **Fixed:** Same as Codex #2 above — `_populate_or_resume_queue()` handles this case.
+
+### Round 2 — Red Team Security Review (2026-05-27)
+
+**Gemini (REQUEST_CHANGES):** 0 CRITICAL, 1 HIGH, 1 MEDIUM, 1 LOW.
+
+1. **HIGH: `--run-id` validation missing in Step 2b** — Plan's Security Hardening section requires it but Step 2b only validated `--worker-id`. **Fixed:** Step 2b now validates both `--run-id` (positive int + exists in parse_runs) and `--worker-id` (regex).
+2. **MEDIUM: `FORCE ROW LEVEL SECURITY` adds unnecessary complexity** — `dashboard_user1` is non-owner, so RLS applies by default. **Fixed:** Step 9 now explicitly says to NOT use `FORCE ROW LEVEL SECURITY`, use a simple permissive policy instead.
+3. **LOW: XSS confirmation for dashboard templates** — **Fixed:** Step 7b now explicitly documents reliance on Django auto-escaping and prohibits `|safe` filter on work_queue data.
