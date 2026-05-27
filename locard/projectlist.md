@@ -812,7 +812,7 @@ projects:
   - id: "0054"
     title: "Parse Dashboard (Docling GPU Orchestration)"
     summary: "Integrate Docling GPU parse orchestration into the pipeline dashboard. Launch/monitor/stop parse runs via the web UI with pre-flight dry-run, live progress, instance health, cost tracking, and run history. Replaces ad-hoc CLI operation."
-    status: planned
+    status: committed
     priority: high
     files:
       spec: locard/specs/0054-parse-dashboard.md
@@ -820,7 +820,7 @@ projects:
       review: null
     dependencies: ["0030"]
     tags: [dashboard, pipeline, parse, gpu, orchestration]
-    notes: "Motivated by operational incident 2026-05-27: ad-hoc CLI parse runs led to bad status queries and unnecessary kill/restart cycles. Parse is the only pipeline stage not managed through the dashboard."
+    notes: "Motivated by operational incident 2026-05-27: ad-hoc CLI parse runs led to bad status queries and unnecessary kill/restart cycles. Parse is the only pipeline stage not managed through the dashboard. PR #47 merged 2026-05-27."
 ```
 
 ## Next Available Number
