@@ -1,0 +1,153 @@
+{% extends "pipeline/base.html" %}
+{% load humanize pipeline_tags %}
+{% block title %}Docling Parse — Lavandula Pipeline{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold text-gray-900 mb-6">Docling Parse</h1>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="space-y-4">
+    <!-- Launch Form -->
+    <div class="bg-white rounded-lg shadow p-5">
+      <h2 class="text-sm font-semibold text-gray-500 uppercase mb-3">Launch New Run</h2>
+      {% if has_active_run %}
+      <div class="bg-yellow-50 border border-yellow-200 rounded p-3 mb-3 text-sm text-yellow-800">
+        A parse run is already active (tag: {{ active_job.config_json.run_tag|default:"?" }}).
+        Stop it before launching a new one.
+      </div>
+      {% endif %}
+      <form method="post" action="{% url 'parse_job_create' %}">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="mb-3">
+          <label class="block text-xs font-medium text-gray-600 mb-1">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}
+          <p class="text-xs text-gray-400 mt-1">{{ field.help_text }}</p>
+          {% endif %}
+        </div>
+        {% endfor %}
+        <div class="flex gap-2 mt-4">
+          <button type="submit" name="action" value="dry_run"
+                  class="flex-1 bg-blue-600 text-white py-2 rounded text-sm hover:bg-blue-700">
+            Dry Run
+          </button>
+          <button type="submit" name="action" value="launch"
+                  {% if has_active_run %}disabled{% endif %}
+                  class="flex-1 bg-green-600 text-white py-2 rounded text-sm hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  hx-disabled-elt="this">
+            Launch Now
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="lg:col-span-2 space-y-6">
+    <!-- Active Run Panel -->
+    {% if active_job %}
+    <div class="bg-white rounded-lg shadow p-5">
+      <div class="flex justify-between items-center mb-3">
+        <h2 class="text-lg font-semibold text-gray-900">Active Run</h2>
+        <form method="post" action="{% url 'parse_stop' %}" onsubmit="return confirm('Are you sure? This will terminate the GPU instance.')">
+          {% csrf_token %}
+          <button type="submit" class="bg-red-600 text-white px-4 py-1 rounded text-sm hover:bg-red-700">Stop Run</button>
+        </form>
+      </div>
+      <div id="parse-progress"
+           hx-get="{% url 'parse_progress' %}"
+           hx-trigger="every 10s"
+           hx-swap="innerHTML">
+        {% include "pipeline/partials/parse_progress.html" with job=active_job parse_run=parse_run instance_state=instance_state %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Eligible Documents -->
+    {% if eligible_counts %}
+    <div class="bg-white rounded-lg shadow p-5">
+      <h2 class="text-lg font-semibold text-gray-900 mb-3">Eligible Documents (Unparsed)</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left text-gray-500 border-b">
+              <th class="pb-2">NTEE Major</th>
+              <th class="pb-2">Classification</th>
+              <th class="pb-2 text-right">Count</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in eligible_counts %}
+            <tr class="border-b border-gray-100">
+              <td class="py-1 font-mono">{{ row.ntee_major|default:"?" }}</td>
+              <td class="py-1">{{ row.classification }}</td>
+              <td class="py-1 text-right font-mono">{{ row.count|intcomma }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr class="font-semibold">
+              <td class="pt-2" colspan="2">Total</td>
+              <td class="pt-2 text-right font-mono">{{ eligible_total|intcomma }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Run History -->
+    <div class="bg-white rounded-lg shadow p-5">
+      <h2 class="text-lg font-semibold text-gray-900 mb-3">Run History</h2>
+      {% if run_history %}
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left text-gray-500 border-b">
+              <th class="pb-2">Tag</th>
+              <th class="pb-2">Started</th>
+              <th class="pb-2">Duration</th>
+              <th class="pb-2 text-right">Succeeded</th>
+              <th class="pb-2 text-right">Failed</th>
+              <th class="pb-2 text-right">Rate</th>
+              <th class="pb-2 text-right">Cost</th>
+              <th class="pb-2"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for run in run_history %}
+            <tr class="border-b border-gray-100">
+              <td class="py-2 font-mono text-xs">
+                {{ run.run_tag }}
+                {% if run.is_cli_run %}
+                <span class="ml-1 px-1.5 py-0.5 rounded text-xs bg-gray-100 text-gray-600">CLI run</span>
+                {% endif %}
+              </td>
+              <td class="py-2 text-xs text-gray-500">{{ run.started_at|date:"M d, H:i"|default:"-" }}</td>
+              <td class="py-2 text-xs">
+                {% if run.duration_h %}{{ run.duration_h }}h{% else %}-{% endif %}
+              </td>
+              <td class="py-2 text-right font-mono text-xs">{{ run.succeeded|intcomma }}</td>
+              <td class="py-2 text-right font-mono text-xs {% if run.failed %}text-red-600{% endif %}">{{ run.failed|intcomma }}</td>
+              <td class="py-2 text-right text-xs">
+                {% if run.rate %}{{ run.rate }} docs/min{% else %}-{% endif %}
+              </td>
+              <td class="py-2 text-right text-xs">
+                {% if run.cost != None %}${{ run.cost }} ({{ run.pricing_mode }}){% else %}-{% endif %}
+              </td>
+              <td class="py-2 text-right">
+                {% if run.job %}
+                <a href="{% url 'job_detail' run.job.pk %}" class="text-blue-600 text-xs hover:underline">Job #{{ run.job.pk }}</a>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="text-sm text-gray-500">No parse runs recorded yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

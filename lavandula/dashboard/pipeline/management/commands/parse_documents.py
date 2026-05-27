@@ -12,6 +12,8 @@ Usage:
 from __future__ import annotations
 
 import json
+import logging
+import signal
 import sys
 import time
 
@@ -20,6 +22,8 @@ from django.core.management.base import BaseCommand, CommandError
 from lavandula.parse import config, db
 
 
+logger = logging.getLogger("pipeline.parse")
+
 AVG_PAGES_PER_DOC = 30
 SECONDS_PER_PAGE = 0.49
 SPOT_RATE_PER_HOUR = 0.60
@@ -27,6 +31,7 @@ ONDEMAND_RATE_PER_HOUR = 0.98
 POLL_INTERVAL_SECONDS = 60
 HEARTBEAT_STALE_MINUTES = 20
 MAX_RELAUNCH_ATTEMPTS = 3
+CAPACITY_RETRY_INTERVAL = 300
 SSM_AMI_PARAM = "/cloud2.lavandulagroup.com/docling-ami-id"
 SUBNET_ID = "subnet-0e2008e48d602e945"
 SECURITY_GROUP_ID = "sg-0d9a6217a104cfe35"
@@ -53,6 +58,14 @@ class Command(BaseCommand):
         parser.add_argument("--retry-errors", action="store_true")
         parser.add_argument("--reparse", action="store_true")
         parser.add_argument("--min-version", type=str)
+        parser.add_argument("--ami-id", default=None,
+                            help="AMI ID to launch (default: read from SSM)")
+        parser.add_argument("--start-at", default=None,
+                            help="ISO 8601 UTC datetime to delay launch (YYYY-MM-DDTHH:MM)")
+        parser.add_argument("--capacity-wait-hours", type=int, default=1,
+                            help="Hours to retry when no spot capacity (1-12)")
+        parser.add_argument("--job-id", type=int, default=None,
+                            help="Dashboard Job ID to update progress on")
 
     def handle(self, *args, **options):
         run_tag = options["run_tag"]
@@ -73,6 +86,14 @@ class Command(BaseCommand):
         ntee_filter = options.get("ntee")
         if ntee_filter and not all(c.isalnum() or c == '%' for c in ntee_filter):
             raise CommandError("--ntee must be alphanumeric with optional trailing %")
+
+        self._shutdown_requested = False
+
+        def _sigterm_handler(signum, frame):
+            self._shutdown_requested = True
+            self.stderr.write("SIGTERM received — shutting down gracefully\n")
+
+        signal.signal(signal.SIGTERM, _sigterm_handler)
 
         if options["dry_run"]:
             return self._dry_run(run_tag, priority_values, ntee_filter, options)
@@ -174,10 +195,55 @@ class Command(BaseCommand):
             db.release_orchestrator_lock(conn)
             conn.close()
 
+    def _update_job_progress(self, job_id, succeeded, total, status=None):
+        if not job_id:
+            return
+        try:
+            from pipeline.models import Job
+            from django.utils import timezone as tz
+            updates = {
+                "progress_current": succeeded,
+                "progress_total": total,
+                "last_heartbeat": tz.now(),
+            }
+            fields = ["progress_current", "progress_total", "last_heartbeat"]
+            if status:
+                updates["status"] = status
+                fields.append("status")
+                if status == "running":
+                    updates["started_at"] = tz.now()
+                    fields.append("started_at")
+                elif status in ("completed", "failed"):
+                    updates["finished_at"] = tz.now()
+                    fields.append("finished_at")
+            Job.objects.filter(pk=job_id).update(**updates)
+        except Exception:
+            logger.exception("Failed to update Job %s progress", job_id)
+
     def _execute_run(self, conn, run_tag: str, priority: list[str], ntee_filter: str | None, options: dict) -> None:
         import boto3
 
         ec2 = boto3.client("ec2", region_name="us-east-1")
+        job_id = options.get("job_id")
+
+        # Scheduled start: wait until start_at time
+        start_at_str = options.get("start_at")
+        if start_at_str:
+            from datetime import datetime, timezone as tz
+            start_at = datetime.fromisoformat(start_at_str).replace(tzinfo=tz.utc)
+            wait_seconds = (start_at - datetime.now(tz.utc)).total_seconds()
+            if wait_seconds > 0:
+                self.stdout.write(f"Scheduled start: waiting until {start_at.isoformat()} UTC\n")
+                slept = 0
+                while slept < wait_seconds:
+                    if self._shutdown_requested:
+                        self.stdout.write("Shutdown during scheduled wait.\n")
+                        self._update_job_progress(job_id, 0, 0, "cancelled")
+                        return
+                    time.sleep(min(30, wait_seconds - slept))
+                    slept += 30
+
+        self._update_job_progress(job_id, 0, 0, "pending")
 
         run_config = {
             "priority": priority,
@@ -193,6 +259,7 @@ class Command(BaseCommand):
         try:
             run_id = db.create_parse_run(conn, run_tag, run_config)
         except db.RunTagConflict as e:
+            self._update_job_progress(job_id, 0, 0, "failed")
             raise CommandError(str(e))
 
         self.stdout.write(f"Parse run {run_id} created/resumed (tag: {run_tag})\n")
@@ -202,17 +269,30 @@ class Command(BaseCommand):
         if options["reparse"] and options.get("min_version"):
             self._delete_old_version_rows(conn, priority, options["min_version"])
 
+        eligible_count = db.get_eligible_count(conn, priority, ntee_filter=ntee_filter)
+        self._update_job_progress(job_id, 0, eligible_count, "running")
+
         start_time = time.time()
         max_seconds = options["max_hours"] * 3600
         relaunch_count = 0
+        final_status = "completed"
 
-        instance_id = self._launch_and_start(ec2, conn, run_id, run_tag, priority, ntee_filter, options)
+        instance_id = self._launch_with_capacity_retry(ec2, conn, run_id, run_tag, priority, ntee_filter, options)
+        if instance_id is None:
+            self._update_job_progress(job_id, 0, eligible_count, "failed")
+            return
 
         last_stats_update = time.time()
         last_total = 0
 
         while True:
             time.sleep(POLL_INTERVAL_SECONDS)
+
+            if self._shutdown_requested:
+                self.stdout.write("Shutdown requested. Terminating instance.\n")
+                self._safe_terminate(ec2, instance_id)
+                final_status = "cancelled"
+                break
 
             elapsed = time.time() - start_time
             if elapsed >= max_seconds:
@@ -245,29 +325,36 @@ class Command(BaseCommand):
                         f"Exceeded max relaunch attempts ({MAX_RELAUNCH_ATTEMPTS}). "
                         f"Stopping. {remaining:,} docs remain.\n"
                     )
+                    final_status = "failed"
                     break
 
                 self.stdout.write(
                     f"Relaunching (attempt {relaunch_count}/{MAX_RELAUNCH_ATTEMPTS}, "
                     f"{remaining:,} docs remaining)...\n"
                 )
-                instance_id = self._launch_and_start(ec2, conn, run_id, run_tag, priority, ntee_filter, options)
+                instance_id = self._launch_with_capacity_retry(ec2, conn, run_id, run_tag, priority, ntee_filter, options)
+                if instance_id is None:
+                    final_status = "failed"
+                    break
                 last_stats_update = time.time()
                 continue
 
             # Heartbeat: detect stale worker (crash without instance termination)
             stats = status.get("stats_json") if status else None
             current_total = 0
+            succeeded = 0
             if stats:
                 if isinstance(stats, str):
                     stats = json.loads(stats)
                 current_total = stats.get("total", 0)
+                succeeded = stats.get("succeeded", 0)
                 self.stdout.write(
-                    f"  Progress: {stats.get('succeeded', 0):,} ok, "
+                    f"  Progress: {succeeded:,} ok, "
                     f"{stats.get('failed', 0):,} err, "
                     f"{current_total:,} total "
                     f"({elapsed/60:.0f}m elapsed)\n"
                 )
+                self._update_job_progress(job_id, succeeded, eligible_count)
 
             if current_total > last_total:
                 last_stats_update = time.time()
@@ -286,19 +373,79 @@ class Command(BaseCommand):
                 relaunch_count += 1
                 if relaunch_count > MAX_RELAUNCH_ATTEMPTS:
                     self.stderr.write(f"Exceeded max relaunch attempts. Stopping.\n")
+                    final_status = "failed"
                     break
 
                 self.stdout.write(f"Relaunching after stale worker...\n")
-                instance_id = self._launch_and_start(ec2, conn, run_id, run_tag, priority, ntee_filter, options)
+                instance_id = self._launch_with_capacity_retry(ec2, conn, run_id, run_tag, priority, ntee_filter, options)
+                if instance_id is None:
+                    final_status = "failed"
+                    break
                 last_stats_update = time.time()
                 continue
 
         # Mark run finished if not already
         status = db.get_run_status(conn, run_tag)
-        if status and not status.get("finished_at"):
-            db.finish_run(conn, status["id"], status.get("stats_json") or {})
+        final_succeeded = 0
+        if status:
+            if not status.get("finished_at"):
+                db.finish_run(conn, status["id"], status.get("stats_json") or {})
+            s = status.get("stats_json") or {}
+            if isinstance(s, str):
+                s = json.loads(s)
+            final_succeeded = s.get("succeeded", 0)
+
+        if final_status == "cancelled":
+            self._update_job_progress(job_id, final_succeeded, eligible_count, "cancelled")
+        elif final_status == "failed":
+            self._update_job_progress(job_id, final_succeeded, eligible_count, "failed")
+        else:
+            self._update_job_progress(job_id, final_succeeded, eligible_count, "completed")
 
         self.stdout.write("Parse run complete.\n")
+
+    def _launch_with_capacity_retry(self, ec2, conn, run_id, run_tag, priority, ntee_filter, options):
+        """Wrap _launch_and_start with spot capacity retry loop.
+
+        Returns instance_id on success, None if capacity exhausted or shutdown requested.
+        """
+        from botocore.exceptions import ClientError
+
+        capacity_wait_hours = options.get("capacity_wait_hours", 1)
+        max_retries = max(1, (capacity_wait_hours * 3600) // CAPACITY_RETRY_INTERVAL)
+
+        for attempt in range(max_retries + 1):
+            try:
+                return self._launch_and_start(ec2, conn, run_id, run_tag, priority, ntee_filter, options)
+            except (ClientError, CommandError) as e:
+                err_code = ""
+                if isinstance(e, ClientError):
+                    err_code = e.response.get("Error", {}).get("Code", "")
+                is_capacity = err_code in (
+                    "InsufficientInstanceCapacity",
+                    "SpotMaxPriceTooLow",
+                    "MaxSpotInstanceCountExceeded",
+                )
+                if not is_capacity:
+                    raise
+
+                if attempt >= max_retries:
+                    self.stderr.write(
+                        f"No spot capacity after {capacity_wait_hours}h of retries. Giving up.\n"
+                    )
+                    return None
+
+                self.stdout.write(
+                    f"No spot capacity (attempt {attempt + 1}/{max_retries + 1}). "
+                    f"Retrying in {CAPACITY_RETRY_INTERVAL}s...\n"
+                )
+                slept = 0
+                while slept < CAPACITY_RETRY_INTERVAL:
+                    if self._shutdown_requested:
+                        self.stdout.write("Shutdown during capacity wait.\n")
+                        return None
+                    time.sleep(min(30, CAPACITY_RETRY_INTERVAL - slept))
+                    slept += 30
 
     def _launch_and_start(self, ec2, conn, run_id: int, run_tag: str, priority: list[str], ntee_filter: str | None, options: dict) -> str:
         """Launch a spot instance and start the worker. Returns instance_id."""
@@ -340,9 +487,11 @@ class Command(BaseCommand):
     def _launch_instance(self, ec2, run_tag: str, options: dict) -> str:
         import boto3
 
-        ssm = boto3.client("ssm", region_name="us-east-1")
-        ami_resp = ssm.get_parameter(Name=SSM_AMI_PARAM)
-        ami_id = ami_resp["Parameter"]["Value"]
+        ami_id = options.get("ami_id")
+        if not ami_id:
+            ssm = boto3.client("ssm", region_name="us-east-1")
+            ami_resp = ssm.get_parameter(Name=SSM_AMI_PARAM)
+            ami_id = ami_resp["Parameter"]["Value"]
 
         kwargs = dict(
             ImageId=ami_id,

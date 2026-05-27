@@ -166,6 +166,23 @@ COMMAND_MAP: dict[str, dict[str, Any]] = {
             "confirm": {"type": "bool", "flag": "--confirm"},
         },
     },
+    "parse": {
+        "cmd": ["python3", "lavandula/dashboard/manage.py", "parse_documents"],
+        "params": {
+            "run_tag": {"type": "text", "pattern": r"^[a-zA-Z0-9][a-zA-Z0-9_-]*$", "flag": "positional"},
+            "ntee": {"type": "text", "pattern": r"^[A-Z][A-Z0-9%]*$", "flag": "--ntee"},
+            "priority": {"type": "text", "pattern": r"^[a-z_]+(,[a-z_]+)*$", "flag": "--priority"},
+            "instance_type": {"type": "choice", "choices": ["g6.2xlarge", "g6.4xlarge", "g6.8xlarge"], "flag": "--instance-type"},
+            "max_hours": {"type": "int", "min": 1, "max": 24, "flag": "--max-hours"},
+            "batch_size": {"type": "int", "min": 10, "max": 5000, "flag": "--batch-size"},
+            "no_spot": {"type": "bool", "flag": "--no-spot"},
+            "max_docs": {"type": "int", "min": 1, "max": 999999, "flag": "--max-docs"},
+            "retry_errors": {"type": "bool", "flag": "--retry-errors"},
+            "ami_id": {"type": "text", "pattern": r"^ami-[a-f0-9]{8,17}$", "flag": "--ami-id"},
+            "start_at": {"type": "text", "pattern": r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$", "flag": "--start-at"},
+            "capacity_wait_hours": {"type": "int", "min": 1, "max": 12, "flag": "--capacity-wait-hours"},
+        },
+    },
 }
 
 
@@ -234,6 +251,8 @@ def build_argv(phase: str, config_json: dict) -> list[str]:
     argv = list(entry["cmd"])
     allowed = entry["params"]
 
+    positional_args = []
+
     for key, value in config_json.items():
         if key not in allowed:
             raise InvalidParameterError(
@@ -242,6 +261,10 @@ def build_argv(phase: str, config_json: dict) -> list[str]:
             )
 
         spec = allowed[key]
+        if spec.get("flag") == "positional":
+            validated = _validate_param(key, value, spec)
+            positional_args.append(validated)
+            continue
         if spec["type"] == "bool":
             if value in (True, "true", "on"):
                 argv.append(spec["flag"])
@@ -249,6 +272,7 @@ def build_argv(phase: str, config_json: dict) -> list[str]:
             validated = _validate_param(key, value, spec)
             argv.extend([spec["flag"], validated])
 
+    argv.extend(positional_args)
     return argv
 
 
@@ -535,6 +559,59 @@ def create_phone_enrich_job(config_overrides: dict, host: str) -> Job:
             )
         except IntegrityError:
             raise DuplicateJobError("Duplicate phone enrich job (constraint violation)")
+
+
+def create_parse_job(config_overrides: dict, host: str) -> Job:
+    """Create a parse job. Only one active parse job at a time (global)."""
+    _PARSE_JOB_LOCK_ID = 205400
+    with transaction.atomic():
+        from django.db import connection
+        if connection.vendor == "postgresql":
+            with connection.cursor() as cur:
+                cur.execute("SELECT pg_advisory_xact_lock(%s)", [_PARSE_JOB_LOCK_ID])
+        existing = (
+            Job.objects.select_for_update()
+            .filter(phase="parse", status__in=["pending", "scheduled", "running"])
+            .first()
+        )
+        if existing:
+            raise DuplicateJobError(
+                f"A parse run is already active (tag: {(existing.config_json or {}).get('run_tag', '?')}). "
+                f"Stop it before launching a new one."
+            )
+
+        run_tag = config_overrides.get("run_tag")
+        if run_tag:
+            from django.db import connections
+            with connections["default"].cursor() as cur:
+                cur.execute("""
+                    SELECT run_tag, finished_at IS NOT NULL AS is_finished
+                    FROM lava_parse.parse_runs WHERE run_tag = %s
+                """, [run_tag])
+                row = cur.fetchone()
+                if row:
+                    if row[1]:
+                        raise InvalidParameterError(
+                            f"Run tag '{run_tag}' already exists (completed). "
+                            f"Try '{run_tag}-v2' instead."
+                        )
+                    else:
+                        raise DuplicateJobError(
+                            f"Run tag '{run_tag}' is already in progress in parse_runs. "
+                            f"Stop the existing run before reusing this tag."
+                        )
+
+        status = "scheduled" if config_overrides.get("start_at") else "pending"
+        try:
+            return Job.objects.create(
+                state_code=None,
+                phase="parse",
+                status=status,
+                host=host,
+                config_json=config_overrides,
+            )
+        except IntegrityError:
+            raise DuplicateJobError("Duplicate parse job (constraint violation)")
 
 
 _V3_PHASES = frozenset({

@@ -1,4 +1,5 @@
 import socket
+import time
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -47,6 +48,7 @@ from .orchestrator import (
     create_990_parse_job,
     create_classify_job,
     create_crawl_job,
+    create_parse_job,
     create_phone_enrich_job,
     create_resolve_job,
     create_state_jobs,
@@ -131,6 +133,7 @@ _CONFIG_ALLOWLIST = {
     "compare-classify": ["run_tag", "state"],
     "resolve-disagree": ["run_tag", "backend", "state", "sample", "dry_run"],
     "promote-classify": ["run_tag", "state", "confirm"],
+    "parse": ["run_tag", "ntee", "priority", "instance_type", "max_hours", "no_spot", "ami_id", "start_at"],
 }
 
 
@@ -2009,6 +2012,507 @@ class HostCommandStatusPartial(HtmxLoginRequiredMixin, TemplateView):
         ctx["commands"] = recent_commands
         ctx["hostname"] = hostname
         return ctx
+
+
+# ---------------------------------------------------------------------------
+# Docling Parse (Spec 0054)
+# ---------------------------------------------------------------------------
+
+import logging as _logging
+import os as _os
+
+_parse_logger = _logging.getLogger("pipeline.parse")
+
+
+def _pid_alive(pid):
+    try:
+        _os.kill(pid, 0)
+        return True
+    except (ProcessLookupError, PermissionError):
+        return False
+
+
+class ParseView(LoginRequiredMixin, TemplateView):
+    template_name = "pipeline/parse.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        from .forms import ParseRunForm
+
+        self._reconcile_parse_jobs()
+
+        active_job = Job.objects.filter(
+            phase="parse", status__in=["running", "scheduled", "pending"]
+        ).first()
+        if active_job:
+            active_job = _annotate_running_jobs([active_job])[0]
+        ctx["active_job"] = active_job
+
+        ctx["parse_run"] = None
+        ctx["instance_state"] = None
+        if active_job and active_job.status == "running":
+            run_tag = (active_job.config_json or {}).get("run_tag")
+            if run_tag:
+                ctx["parse_run"] = self._get_parse_run(run_tag)
+                instance_id = ctx["parse_run"].get("instance_id") if ctx["parse_run"] else None
+                if instance_id:
+                    ctx["instance_state"] = self._get_cached_instance_state(instance_id)
+
+        eligible_counts = self._get_eligible_counts()
+        ctx["eligible_counts"] = eligible_counts
+        ctx["eligible_total"] = sum(r["count"] for r in eligible_counts)
+
+        form = ParseRunForm()
+        ami_choices = self._get_ami_choices()
+        form.fields["ami_id"].widget.choices = ami_choices
+        ctx["form"] = form
+        ctx["has_active_run"] = active_job is not None
+
+        ctx["run_history"] = self._get_run_history()
+
+        return ctx
+
+    def _reconcile_parse_jobs(self):
+        active_jobs = Job.objects.filter(
+            phase="parse", status__in=["running", "pending"]
+        )
+        for job in active_jobs:
+            run_tag = (job.config_json or {}).get("run_tag")
+
+            if run_tag:
+                from django.db import connections
+                with connections["default"].cursor() as cur:
+                    cur.execute("""
+                        SELECT finished_at FROM lava_parse.parse_runs
+                        WHERE run_tag = %s
+                    """, [run_tag])
+                    row = cur.fetchone()
+                    if row and row[0] is not None:
+                        job.status = "completed"
+                        job.finished_at = row[0]
+                        job.save(update_fields=["status", "finished_at"])
+                        continue
+
+            if job.pid and not _pid_alive(job.pid):
+                if run_tag:
+                    from django.db import connections
+                    with connections["default"].cursor() as cur:
+                        cur.execute("""
+                            SELECT instance_id FROM lava_parse.parse_runs
+                            WHERE run_tag = %s AND finished_at IS NULL
+                        """, [run_tag])
+                        row = cur.fetchone()
+                        if row and row[0]:
+                            try:
+                                import boto3
+                                ec2 = boto3.client("ec2", region_name="us-east-1")
+                                ec2.terminate_instances(InstanceIds=[row[0]])
+                            except Exception:
+                                _parse_logger.exception(
+                                    "Failed to terminate orphan EC2 instance %s during reconciliation", row[0]
+                                )
+                        cur.execute("""
+                            UPDATE lava_parse.parse_runs SET finished_at = NOW()
+                            WHERE run_tag = %s AND finished_at IS NULL
+                        """, [run_tag])
+                job.status = "failed"
+                job.finished_at = timezone.now()
+                job.save(update_fields=["status", "finished_at"])
+
+    def _get_parse_run(self, run_tag):
+        import json as _json
+        from django.db import connections
+        with connections["default"].cursor() as cur:
+            cur.execute("""
+                SELECT id, run_tag, started_at, finished_at, config_json,
+                       stats_json, instance_id
+                FROM lava_parse.parse_runs
+                WHERE run_tag = %s
+            """, [run_tag])
+            row = cur.fetchone()
+            if not row:
+                return None
+            columns = [col[0] for col in cur.description]
+            result = dict(zip(columns, row))
+            stats = result.get("stats_json") or {}
+            if isinstance(stats, str):
+                stats = _json.loads(stats)
+            result["stats"] = stats
+            return result
+
+    def _get_cached_instance_state(self, instance_id):
+        from django.core.cache import cache
+        cache_key = f"ec2_state_{instance_id}"
+        state = cache.get(cache_key)
+        if state is None:
+            try:
+                import boto3
+                ec2 = boto3.client("ec2", region_name="us-east-1")
+                resp = ec2.describe_instances(InstanceIds=[instance_id])
+                reservations = resp.get("Reservations", [])
+                if reservations and reservations[0].get("Instances"):
+                    inst = reservations[0]["Instances"][0]
+                    state = {
+                        "state": inst["State"]["Name"],
+                        "az": inst.get("Placement", {}).get("AvailabilityZone", "unknown"),
+                        "instance_type": inst.get("InstanceType", "unknown"),
+                    }
+                else:
+                    state = {"state": "terminated", "az": "unknown", "instance_type": "unknown"}
+            except Exception:
+                _parse_logger.exception("EC2 describe_instances failed for %s", instance_id)
+                state = {"state": "unavailable", "az": "unknown", "instance_type": "unknown"}
+            cache.set(cache_key, state, 30)
+        return state
+
+    def _get_eligible_counts(self):
+        from django.db import connections
+        try:
+            with connections["default"].cursor() as cur:
+                cur.execute("""
+                    SELECT
+                        LEFT(ns.ntee_code, 1) AS ntee_major,
+                        c.classification,
+                        COUNT(*) AS eligible
+                    FROM lava_corpus.corpus c
+                    JOIN lava_corpus.nonprofits_seed ns ON c.source_org_ein = ns.ein
+                    WHERE c.classification IN ('annual', 'impact', 'hybrid')
+                      AND c.content_sha256 NOT IN (
+                          SELECT content_sha256 FROM lava_parse.documents
+                      )
+                    GROUP BY LEFT(ns.ntee_code, 1), c.classification
+                    ORDER BY COUNT(*) DESC
+                """)
+                rows = []
+                for ntee_major, classification, count in cur.fetchall():
+                    rows.append({"ntee_major": ntee_major, "classification": classification, "count": count})
+            return rows
+        except Exception:
+            _parse_logger.exception("Failed to query eligible counts")
+            return []
+
+    def _get_ami_choices(self):
+        try:
+            import boto3
+            ec2 = boto3.client("ec2", region_name="us-east-1")
+            resp = ec2.describe_images(
+                Owners=["self"],
+                Filters=[{"Name": "tag:Purpose", "Values": ["docling-worker"]}],
+            )
+            images = sorted(resp.get("Images", []), key=lambda i: i.get("CreationDate", ""), reverse=True)
+
+            ssm = boto3.client("ssm", region_name="us-east-1")
+            try:
+                default_ami = ssm.get_parameter(Name="/cloud2.lavandulagroup.com/docling-ami-id")["Parameter"]["Value"]
+            except Exception:
+                default_ami = None
+
+            choices = []
+            for img in images:
+                ami_id = img["ImageId"]
+                name = img.get("Name", ami_id)
+                date = img.get("CreationDate", "")[:10]
+                label = f"{name} ({ami_id}) — {date}"
+                if ami_id == default_ami:
+                    label += " [default]"
+                choices.append((ami_id, label))
+
+            if not choices:
+                if default_ami:
+                    choices = [(default_ami, f"{default_ami} (from SSM)")]
+                else:
+                    choices = [("", "No AMIs available")]
+            return choices
+        except Exception:
+            _parse_logger.exception("Failed to load AMI list from EC2/SSM")
+            return [("", "Error loading AMIs")]
+
+    def _get_run_history(self):
+        import json as _json
+        from django.db import connections
+        try:
+            with connections["default"].cursor() as cur:
+                cur.execute("""
+                    SELECT pr.id, pr.run_tag, pr.started_at, pr.finished_at,
+                           pr.config_json, pr.stats_json, pr.instance_id
+                    FROM lava_parse.parse_runs pr
+                    ORDER BY pr.id DESC
+                    LIMIT 20
+                """)
+                columns = [col[0] for col in cur.description]
+                runs = []
+                for row in cur.fetchall():
+                    run = dict(zip(columns, row))
+                    stats = run.get("stats_json") or {}
+                    if isinstance(stats, str):
+                        stats = _json.loads(stats)
+                    run["succeeded"] = stats.get("succeeded", 0)
+                    run["failed"] = stats.get("failed", 0)
+                    run["total"] = stats.get("total", 0)
+                    duration_s = stats.get("duration_seconds", 0)
+                    run["duration_h"] = round(duration_s / 3600, 1) if duration_s else None
+                    config = run.get("config_json") or {}
+                    if isinstance(config, str):
+                        config = _json.loads(config)
+                    is_spot = not config.get("no_spot", False)
+                    rate = 0.60 if is_spot else 0.98
+                    run["cost"] = round((duration_s / 3600) * rate, 2) if duration_s else None
+                    run["pricing_mode"] = "spot" if is_spot else "on-demand"
+
+                    job = Job.objects.filter(
+                        phase="parse", config_json__run_tag=run["run_tag"]
+                    ).first()
+                    run["job"] = job
+                    run["is_cli_run"] = job is None
+
+                    # Compute rate (docs/min)
+                    if duration_s and run["succeeded"]:
+                        run["rate"] = round(run["succeeded"] / (duration_s / 60), 1)
+                    else:
+                        run["rate"] = None
+
+                    runs.append(run)
+            return runs
+        except Exception:
+            _parse_logger.exception("Failed to query run history")
+            return []
+
+
+class ParseJobCreateView(LoginRequiredMixin, View):
+    def post(self, request):
+        from .forms import ParseRunForm
+
+        action = request.POST.get("action", "launch")
+        form = ParseRunForm(request.POST)
+
+        ami_choices = ParseView._get_ami_choices(None)
+        form.fields["ami_id"].widget.choices = ami_choices
+
+        if not form.is_valid():
+            messages.error(request, f"Invalid form: {form.errors.as_text()}")
+            return redirect("parse")
+
+        config = {k: v for k, v in form.cleaned_data.items() if v not in (None, "", False)}
+
+        if action == "dry_run":
+            return self._dry_run(request, config)
+        return self._launch(request, config)
+
+    def _dry_run(self, request, config):
+        from lavandula.parse import db as parse_db
+
+        priority = [v.strip() for v in config.get("priority", "annual,impact").split(",")]
+        ntee = config.get("ntee")
+
+        try:
+            conn = self._get_parse_conn()
+            count = parse_db.get_eligible_count(conn, priority, ntee_filter=ntee)
+            conn.close()
+        except Exception:
+            _parse_logger.exception("Eligible count query failed")
+            messages.error(request, "Failed to query eligible document count. Check dashboard logs.")
+            return redirect("parse")
+
+        max_docs = config.get("max_docs")
+        if max_docs:
+            count = min(count, max_docs)
+
+        est_pages = count * 30
+        est_hours = (est_pages * 0.49) / 3600
+        use_spot = not config.get("no_spot", False)
+        rate = 0.60 if use_spot else 0.98
+        est_cost = est_hours * rate
+
+        max_hours = config.get("max_hours", 24)
+        capped = est_hours > max_hours
+
+        messages.info(
+            request,
+            f"Dry run: {count:,} eligible docs, ~{est_pages:,.0f} pages, "
+            f"~{min(est_hours, max_hours):.1f}h GPU time, "
+            f"~${min(est_cost, max_hours * rate):.0f} "
+            f"({'spot' if use_spot else 'on-demand'})"
+            + (" — will not complete in one run" if capped else "")
+        )
+        return redirect("parse")
+
+    def _launch(self, request, config):
+        import subprocess
+        from pathlib import Path
+        from .orchestrator import build_argv, LOG_DIR
+
+        host = _get_hostname()
+        try:
+            job = create_parse_job(config, host)
+        except DuplicateJobError as e:
+            messages.error(request, str(e))
+            return redirect("parse")
+        except InvalidParameterError as e:
+            messages.error(request, str(e))
+            return redirect("parse")
+
+        try:
+            argv = build_argv("parse", config)
+            argv.extend(["--job-id", str(job.pk)])
+
+            LOG_DIR.mkdir(parents=True, exist_ok=True)
+            log_path = LOG_DIR / f"parse_{config['run_tag']}_{int(time.time())}.log"
+
+            proc = subprocess.Popen(
+                argv,
+                cwd=str(Path(__file__).resolve().parents[3]),
+                stdout=open(str(log_path), "w"),
+                stderr=subprocess.STDOUT,
+                start_new_session=True,
+            )
+
+            job.pid = proc.pid
+            job.log_file = str(log_path)
+            job.save(update_fields=["pid", "log_file"])
+
+            _log_audit(request, "parse_launch", "parse", {
+                "job_id": job.pk, "run_tag": config["run_tag"],
+                "pid": proc.pid,
+            })
+            messages.success(request, f"Launched parse run '{config['run_tag']}' (Job #{job.pk})")
+        except Exception:
+            _parse_logger.exception("Orchestrator launch failed for job %s", job.pk)
+            job.status = "failed"
+            job.error_message = "Orchestrator launch failed — see logs"
+            job.finished_at = timezone.now()
+            job.save(update_fields=["status", "error_message", "finished_at"])
+            messages.error(request, "Failed to start the parse orchestrator. Check dashboard logs.")
+
+        return redirect("parse")
+
+    def _get_parse_conn(self):
+        from lavandula.common.secrets import get_secret
+        import boto3
+        from lavandula.parse import db as parse_db
+
+        host = get_secret("rds-endpoint")
+        port = int(get_secret("rds-port"))
+        database = get_secret("rds-database")
+        rds_client = boto3.client("rds", region_name="us-east-1")
+
+        def _get_token():
+            return rds_client.generate_db_auth_token(
+                DBHostname=host, Port=port, DBUsername="research_app", Region="us-east-1"
+            )
+
+        return parse_db.get_connection(
+            host=host, port=port, database=database,
+            user="research_app", iam_token_fn=_get_token,
+        )
+
+
+class ParseProgressPartial(HtmxLoginRequiredMixin, View):
+    def get(self, request):
+        import json as _json
+        from django.db import connections
+
+        active_job = Job.objects.filter(
+            phase="parse", status__in=["running", "scheduled", "pending"]
+        ).first()
+
+        if not active_job:
+            return HttpResponse('<div id="parse-progress">No active run</div>')
+
+        run_tag = (active_job.config_json or {}).get("run_tag")
+        parse_run = None
+        instance_state = None
+
+        if run_tag:
+            with connections["default"].cursor() as cur:
+                cur.execute("""
+                    SELECT stats_json, instance_id, started_at
+                    FROM lava_parse.parse_runs WHERE run_tag = %s
+                """, [run_tag])
+                row = cur.fetchone()
+                if row:
+                    stats = row[0] if isinstance(row[0], dict) else _json.loads(row[0] or "{}")
+                    parse_run = {
+                        "stats": stats,
+                        "instance_id": row[1],
+                        "started_at": row[2],
+                    }
+
+            if parse_run and parse_run["instance_id"]:
+                from django.core.cache import cache
+                cache_key = f"ec2_state_{parse_run['instance_id']}"
+                instance_state = cache.get(cache_key)
+                if instance_state is None:
+                    try:
+                        import boto3
+                        ec2 = boto3.client("ec2", region_name="us-east-1")
+                        resp = ec2.describe_instances(InstanceIds=[parse_run["instance_id"]])
+                        reservations = resp.get("Reservations", [])
+                        if reservations and reservations[0].get("Instances"):
+                            inst = reservations[0]["Instances"][0]
+                            instance_state = {"state": inst["State"]["Name"],
+                                              "az": inst.get("Placement", {}).get("AvailabilityZone", "")}
+                        else:
+                            instance_state = {"state": "terminated"}
+                    except Exception:
+                        instance_state = {"state": "unavailable"}
+                    cache.set(cache_key, instance_state, 30)
+
+        context = {
+            "job": active_job,
+            "parse_run": parse_run,
+            "instance_state": instance_state,
+        }
+        return render(request, "pipeline/partials/parse_progress.html", context)
+
+
+class ParseStopView(LoginRequiredMixin, View):
+    def post(self, request):
+        active_job = Job.objects.filter(
+            phase="parse", status__in=["running", "scheduled", "pending"]
+        ).first()
+
+        if not active_job:
+            messages.error(request, "No active parse run to stop")
+            return redirect("parse")
+
+        if active_job.pid:
+            from .orchestrator import _local_kill
+            _local_kill(active_job.pid)
+
+        run_tag = (active_job.config_json or {}).get("run_tag")
+        if run_tag:
+            from django.db import connections
+            with connections["default"].cursor() as cur:
+                cur.execute("""
+                    SELECT instance_id FROM lava_parse.parse_runs
+                    WHERE run_tag = %s AND finished_at IS NULL
+                """, [run_tag])
+                row = cur.fetchone()
+                if row and row[0]:
+                    try:
+                        import boto3
+                        ec2 = boto3.client("ec2", region_name="us-east-1")
+                        ec2.terminate_instances(InstanceIds=[row[0]])
+                    except Exception:
+                        _parse_logger.exception(
+                            "Failed to terminate EC2 instance %s during stop", row[0]
+                        )
+
+                cur.execute("""
+                    UPDATE lava_parse.parse_runs
+                    SET finished_at = NOW()
+                    WHERE run_tag = %s AND finished_at IS NULL
+                """, [run_tag])
+
+        active_job.status = "cancelled"
+        active_job.finished_at = timezone.now()
+        active_job.save(update_fields=["status", "finished_at"])
+
+        _log_audit(request, "parse_stop", "parse", {
+            "job_id": active_job.pk, "run_tag": run_tag,
+        })
+        messages.success(request, f"Stopped parse run '{run_tag}' (Job #{active_job.pk})")
+        return redirect("parse")
 
 
 # ---------------------------------------------------------------------------

@@ -165,6 +165,7 @@ class Job(models.Model):
         ("compare-classify", "Compare Classify"),
         ("resolve-disagree", "Resolve Disagreements"),
         ("promote-classify", "Promote Classification"),
+        ("parse", "Parse"),
     ]
     STATUS_CHOICES = [
         ("pending", "Pending"),

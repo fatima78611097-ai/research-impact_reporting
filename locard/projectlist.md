@@ -489,7 +489,7 @@ projects:
   - id: "0030"
     title: "990 Filing Index Automation & S3 Archive"
     summary: "Bulk-load the complete IRS TEOS 990 index (2017-2026, ~2.6M rows), store batch zips and per-org XMLs in S3 instead of EBS, and automatically maintain 990 data for all orgs in nonprofits_seed via nightly refresh and auto-process worker."
-    status: implementing
+    status: integrated
     priority: high
     files:
       spec: locard/specs/0030-990-index-automation.md
@@ -644,7 +644,7 @@ projects:
   - id: "0042"
     title: "Classifier V3 State Progress Grid"
     summary: "Add a state × step progress matrix to the classifier v3 dashboard page showing per-state completion across all 5 pipeline steps (extract, reclassify, compare, resolve, promote). Same live-query pattern as the crawler/resolver state grids, adapted for the v3 pipeline's sequential multi-step structure."
-    status: committed
+    status: integrated
     priority: high
     files:
       spec: locard/specs/0042-classifier-v3-state-progress.md
@@ -696,7 +696,7 @@ projects:
   - id: "0046"
     title: "Docling Full-Document Parsing"
     summary: "GPU-accelerated structured text extraction from corpus PDFs via Docling. Produces section-labeled, table-aware, full-document text that feeds the NLP vocabulary extraction pipeline. Prerequisite for all Layer 2 work."
-    status: implementing
+    status: integrated
     priority: high
     files:
       spec: locard/specs/0046-docling-parsing.md
@@ -752,15 +752,15 @@ projects:
   - id: "0050"
     title: "Metric Extraction with Context Snippets"
     summary: "Extract performance metrics (term + number pairs) from parsed document sections, preserving full sentence/paragraph context, section heading, and source provenance. Builds on archetype vocabulary (0049) to identify metrics per org type. Feeds the AI interviewer with real phrasing patterns and metric templates."
-    status: implementing
-    priority: high
+    status: abandoned
+    priority: low
     files:
       spec: locard/specs/0050-metric-extraction-context.md
       plan: locard/plans/0050-metric-extraction-context.md
       review: null
     dependencies: ["0049"]
     tags: [layer-2, nlp, metrics, extraction, interviewer]
-    notes: "Next step after archetype discovery. Ties vocabulary to actual reported numbers with full context snippets for phrasing patterns."
+    notes: "Abandoned: regex approach produced ~750 junk observations per doc. Lesson: statistical methods work for vocabulary discovery, not per-document metric extraction. Superseded by 0051 (LLM extraction via DeepSeek)."
 ```
 
 ```yaml
@@ -808,9 +808,24 @@ projects:
     notes: "Requires enough extraction data to observe natural clusters (P20 run will produce ~5K+ metric_type values). Pattern: observe → cluster → curate YAML → constrain prompt with pick list + 'suggest new' escape hatch."
 ```
 
+```yaml
+  - id: "0054"
+    title: "Parse Dashboard (Docling GPU Orchestration)"
+    summary: "Integrate Docling GPU parse orchestration into the pipeline dashboard. Launch/monitor/stop parse runs via the web UI with pre-flight dry-run, live progress, instance health, cost tracking, and run history. Replaces ad-hoc CLI operation."
+    status: planned
+    priority: high
+    files:
+      spec: locard/specs/0054-parse-dashboard.md
+      plan: locard/plans/0054-parse-dashboard.md
+      review: null
+    dependencies: ["0030"]
+    tags: [dashboard, pipeline, parse, gpu, orchestration]
+    notes: "Motivated by operational incident 2026-05-27: ad-hoc CLI parse runs led to bad status queries and unnecessary kill/restart cycles. Parse is the only pipeline stage not managed through the dashboard."
+```
+
 ## Next Available Number
 
-**0054** - Reserve this number for your next project
+**0055** - Reserve this number for your next project
 
 ---
 

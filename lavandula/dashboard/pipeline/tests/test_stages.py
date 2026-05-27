@@ -22,6 +22,7 @@ class TestStageRegistry(SimpleTestCase):
         expected = {
             "seed", "resolve", "crawl", "classify", "990-index", "990-parse", "enrich-phone",
             "extract-context", "reclassify", "compare-classify", "resolve-disagree", "promote-classify",
+            "parse",
         }
         self.assertEqual(set(STAGE_REGISTRY.keys()), expected)
 

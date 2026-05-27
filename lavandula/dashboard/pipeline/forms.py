@@ -359,3 +359,110 @@ class PromoteClassifyForm(forms.Form):
     state = forms.ChoiceField(choices=[("", "All states")] + STATE_CHOICES, required=False,
         widget=forms.Select(attrs={"class": _SELECT}), label="State filter")
     confirm = forms.BooleanField(required=False, label="Confirm promotion")
+
+
+INSTANCE_TYPE_CHOICES = [
+    ("g6.2xlarge", "g6.2xlarge (1 GPU, $0.60/hr spot)"),
+    ("g6.4xlarge", "g6.4xlarge (1 GPU, $1.01/hr spot)"),
+    ("g6.8xlarge", "g6.8xlarge (1 GPU, $1.61/hr spot)"),
+]
+
+CLASSIFICATION_CHOICES = [
+    ("annual,impact", "Annual + Impact (default)"),
+    ("annual,impact,hybrid", "Annual + Impact + Hybrid"),
+    ("annual", "Annual only"),
+    ("impact", "Impact only"),
+]
+
+
+class ParseRunForm(forms.Form):
+    run_tag = forms.CharField(
+        max_length=64,
+        widget=forms.TextInput(attrs={
+            "class": _SELECT,
+            "placeholder": "e.g. edu-b1, national-v2",
+            "pattern": r"^[a-zA-Z0-9][a-zA-Z0-9_-]*$",
+        }),
+        label="Run Tag",
+    )
+    ntee = forms.CharField(
+        max_length=10, required=False,
+        widget=forms.TextInput(attrs={
+            "class": _SELECT,
+            "placeholder": "e.g. B% (blank = all)",
+        }),
+        label="NTEE Filter",
+    )
+    priority = forms.ChoiceField(
+        choices=CLASSIFICATION_CHOICES,
+        initial="annual,impact",
+        widget=forms.Select(attrs={"class": _SELECT}),
+        label="Classifications",
+    )
+    instance_type = forms.ChoiceField(
+        choices=INSTANCE_TYPE_CHOICES,
+        initial="g6.2xlarge",
+        widget=forms.Select(attrs={"class": _SELECT}),
+        label="Instance Type",
+    )
+    no_spot = forms.BooleanField(
+        required=False,
+        label="Use on-demand (not spot)",
+    )
+    ami_id = forms.CharField(
+        required=False, max_length=25,
+        widget=forms.Select(attrs={"class": _SELECT}),
+        label="AMI",
+    )
+    max_hours = forms.IntegerField(
+        initial=24, min_value=1, max_value=24,
+        widget=forms.NumberInput(attrs={"class": _SELECT}),
+        label="Max Hours",
+    )
+    batch_size = forms.IntegerField(
+        initial=500, min_value=10, max_value=5000,
+        widget=forms.NumberInput(attrs={"class": _SELECT}),
+        label="Batch Size",
+    )
+    max_docs = forms.IntegerField(
+        required=False, min_value=1, max_value=999999,
+        widget=forms.NumberInput(attrs={"class": _SELECT, "placeholder": "blank = all eligible"}),
+        label="Max Documents",
+    )
+    retry_errors = forms.BooleanField(
+        required=False,
+        label="Retry previous errors",
+    )
+    start_at = forms.CharField(
+        required=False, max_length=16,
+        widget=forms.TextInput(attrs={
+            "class": _SELECT,
+            "type": "datetime-local",
+        }),
+        label="Start At (UTC)",
+        help_text="Leave blank to launch immediately",
+    )
+    capacity_wait_hours = forms.IntegerField(
+        initial=1, min_value=1, max_value=12, required=False,
+        widget=forms.NumberInput(attrs={"class": _SELECT}),
+        label="Capacity Wait (hours)",
+        help_text="How long to retry if no spot capacity",
+    )
+
+    def clean_run_tag(self):
+        tag = self.cleaned_data["run_tag"]
+        if not re.match(r"^[a-zA-Z0-9][a-zA-Z0-9_-]*$", tag):
+            raise forms.ValidationError("Run tag must be alphanumeric with hyphens/underscores")
+        return tag
+
+    def clean_ntee(self):
+        ntee = self.cleaned_data.get("ntee", "").strip()
+        if ntee and not re.match(r"^[A-Z][A-Z0-9%]*$", ntee):
+            raise forms.ValidationError("NTEE filter must start with a capital letter (e.g. B%, P2%)")
+        return ntee or None
+
+    def clean_ami_id(self):
+        ami = self.cleaned_data.get("ami_id", "").strip()
+        if ami and not re.match(r"^ami-[a-f0-9]{8,17}$", ami):
+            raise forms.ValidationError("Invalid AMI ID format")
+        return ami or None

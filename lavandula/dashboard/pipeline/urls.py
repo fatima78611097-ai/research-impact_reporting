@@ -38,6 +38,12 @@ urlpatterns = [
     path("phone-enrich/", views.PhoneEnrichView.as_view(), name="phone_enrich"),
     path("phone-enrich/queue/", views.PhoneEnrichJobCreateView.as_view(), name="phone_enrich_job_create"),
 
+    # Parse (Docling GPU)
+    path("parse/", views.ParseView.as_view(), name="parse"),
+    path("parse/queue/", views.ParseJobCreateView.as_view(), name="parse_job_create"),
+    path("parse/progress/", views.ParseProgressPartial.as_view(), name="parse_progress"),
+    path("parse/stop/", views.ParseStopView.as_view(), name="parse_stop"),
+
     # 990 Pipeline Controls
     path("990-index/", views.EnrichIndexView.as_view(), name="enrich_index"),
     path("990-index/queue/", views.EnrichIndexJobCreateView.as_view(), name="enrich_index_job_create"),
