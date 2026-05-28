@@ -16,6 +16,7 @@ import logging
 import signal
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from django.core.management.base import BaseCommand, CommandError
 
@@ -33,7 +34,13 @@ HEARTBEAT_STALE_MINUTES = 20
 MAX_RELAUNCH_ATTEMPTS = 3
 CAPACITY_RETRY_INTERVAL = 300
 SSM_AMI_PARAM = "/cloud2.lavandulagroup.com/docling-ami-id"
-SUBNET_ID = "subnet-0e2008e48d602e945"
+SUBNET_AZ = [
+    ("subnet-0e2008e48d602e945", "us-east-1a"),
+    ("subnet-0f77191c6900e912d", "us-east-1b"),
+    ("subnet-0f80a930457d062d5", "us-east-1d"),
+    ("subnet-0a92608217981d266", "us-east-1c"),
+    ("subnet-0f2ce8c36edfe58f5", "us-east-1f"),
+]
 SECURITY_GROUP_ID = "sg-0d9a6217a104cfe35"
 IAM_PROFILE_NAME = "cloud2_lavandulagroup"
 INSTANCE_TAG_PURPOSE = "docling-parse"
@@ -93,10 +100,22 @@ class Command(BaseCommand):
             raise CommandError("--ntee must be alphanumeric with optional trailing %")
 
         self._shutdown_requested = False
+        self._ec2 = None
+        self._slots = []
+        self._deploy_cmds = {}
 
         def _sigterm_handler(signum, frame):
             self._shutdown_requested = True
             self.stderr.write("SIGTERM received — shutting down gracefully\n")
+            if self._ec2 and self._slots:
+                for slot in self._slots:
+                    iid = slot.get("instance_id")
+                    if iid and slot.get("status") == "running":
+                        try:
+                            self._ec2.terminate_instances(InstanceIds=[iid])
+                            self.stderr.write(f"SIGTERM: terminated {iid}\n")
+                        except Exception:
+                            pass
 
         signal.signal(signal.SIGTERM, _sigterm_handler)
 
@@ -220,6 +239,17 @@ class Command(BaseCommand):
         try:
             self._execute_run(conn, run_tag, priority, ntee_filter, options)
         finally:
+            # B5: guarantee GPU instances are terminated even if _execute_run
+            # raises (an uncaught poll-loop error would otherwise orphan the
+            # whole fleet running with no max_hours backstop). _terminate_all is
+            # idempotent, and the tag-based reaper catches instances whose id
+            # never made it onto a slot (e.g. a launch that failed mid-way).
+            try:
+                if self._ec2 is not None and self._slots:
+                    self._terminate_all(self._ec2, self._slots)
+                    self._reap_orphans(self._ec2, run_tag, self._slots, options.get("workers", 1))
+            except Exception:
+                logger.exception("instance cleanup in _run finally failed")
             db.release_orchestrator_lock(conn)
             conn.close()
 
@@ -275,6 +305,24 @@ class Command(BaseCommand):
                 self._safe_terminate(ec2, slot["instance_id"])
                 slot["status"] = "terminated"
 
+    def _reap_orphans(self, ec2, run_tag, slots, workers):
+        """Tag-based backstop: terminate any instance tagged for this run that
+        is not tracked in a slot (e.g. created by a launch that failed before
+        its id was recorded). Scoped tightly to this run_tag's per-slot tags so
+        it never reaps a concurrent run's instances."""
+        known = {s.get("instance_id") for s in slots if s.get("instance_id")}
+        for slot_idx in range(max(int(workers), len(slots))):
+            try:
+                iid = self._find_instance(ec2, run_tag, slot_index=slot_idx)
+            except Exception:
+                continue
+            if iid and iid not in known:
+                self.stderr.write(f"Reaping orphan instance {iid} (slot {slot_idx})\n")
+                try:
+                    ec2.terminate_instances(InstanceIds=[iid])
+                except Exception:
+                    logger.exception("failed to reap orphan %s", iid)
+
     def _get_worker_last_activity(self, conn, run_id, worker_id):
         """Get the most recent completed_at for a worker (heartbeat signal)."""
         with conn.cursor() as cur:
@@ -283,6 +331,25 @@ class Command(BaseCommand):
                 SELECT MAX(completed_at)
                 FROM lava_parse.work_queue
                 WHERE run_id = %s AND claimed_by = %s AND completed_at IS NOT NULL
+                """,
+                (run_id, worker_id),
+            )
+            row = cur.fetchone()
+            return row[0] if row else None
+
+    def _get_worker_open_claim_age(self, conn, run_id, worker_id):
+        """Oldest still-open (claimed, not completed) claim for a worker.
+
+        Liveness fallback for a worker with zero completions: a worker that dies
+        before its first completion has no MAX(completed_at) heartbeat, so without
+        this it would never be flagged stale and would idle until max_hours.
+        """
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT MIN(claimed_at)
+                FROM lava_parse.work_queue
+                WHERE run_id = %s AND claimed_by = %s AND completed_at IS NULL
                 """,
                 (run_id, worker_id),
             )
@@ -304,6 +371,7 @@ class Command(BaseCommand):
         import boto3
 
         ec2 = boto3.client("ec2", region_name="us-east-1")
+        self._ec2 = ec2
         job_id = options.get("job_id")
         workers = options.get("workers", 1)
 
@@ -326,11 +394,19 @@ class Command(BaseCommand):
 
         self._update_job_progress(job_id, 0, 0, "pending")
 
+        batch_size = options["batch_size"]
+        if workers > 1 and batch_size > 200:
+            batch_size = max(50, batch_size // workers)
+            self.stdout.write(
+                f"Batch size adjusted to {batch_size} for {workers} workers\n"
+            )
+        options["batch_size"] = batch_size
+
         run_config = {
             "priority": priority,
             "ntee_filter": ntee_filter,
             "instance_type": options["instance_type"],
-            "batch_size": options["batch_size"],
+            "batch_size": batch_size,
             "max_hours": options["max_hours"],
             "retry_errors": options["retry_errors"],
             "reparse": options["reparse"],
@@ -365,24 +441,53 @@ class Command(BaseCommand):
         max_seconds = options["max_hours"] * 3600
         final_status = "completed"
 
-        # Initialize slots
+        # Initialize slots (also stored on self for SIGTERM handler access)
         slots = [
-            {"instance_id": None, "status": "pending", "relaunch_count": 0}
+            {"instance_id": None, "status": "pending", "relaunch_count": 0, "deploy_ok": False}
             for _ in range(workers)
         ]
+        self._slots = slots
 
-        # Launch N instances
+        # Launch N instances (parallel across AZs)
+        self.stdout.write(f"Launching {workers} worker(s) across AZs...\n")
         launched = 0
-        for idx, slot in enumerate(slots):
+        if workers == 1:
             iid = self._launch_with_capacity_retry(
-                ec2, conn, run_id, run_tag, priority, ntee_filter, options, slot_index=idx
+                ec2, conn, run_id, run_tag, priority, ntee_filter, options, slot_index=0
             )
             if iid:
-                slot["instance_id"] = iid
-                slot["status"] = "running"
-                launched += 1
+                slots[0]["instance_id"] = iid
+                slots[0]["status"] = "running"
+                launched = 1
             else:
-                slot["status"] = "capacity_exhausted"
+                slots[0]["status"] = "capacity_exhausted"
+                self.stderr.write("[slot 0] Failed to launch — capacity exhausted\n")
+        else:
+            with ThreadPoolExecutor(max_workers=workers) as pool:
+                futures = {
+                    pool.submit(
+                        self._launch_with_capacity_retry,
+                        ec2, conn, run_id, run_tag, priority, ntee_filter, options,
+                        slot_index=idx,
+                    ): idx
+                    for idx in range(workers)
+                }
+                for future in as_completed(futures):
+                    idx = futures[future]
+                    try:
+                        iid = future.result()
+                    except Exception as e:
+                        self.stderr.write(f"[slot {idx}] Launch error: {e}\n")
+                        iid = None
+                    if iid:
+                        slots[idx]["instance_id"] = iid
+                        slots[idx]["status"] = "running"
+                        launched += 1
+                    else:
+                        slots[idx]["status"] = "capacity_exhausted"
+                        self.stderr.write(f"[slot {idx}] Failed to launch — capacity exhausted\n")
+
+        self.stdout.write(f"Launch complete: {launched}/{workers} workers active\n")
 
         if launched == 0:
             self.stderr.write("Failed to launch any instances. Run failed.\n")
@@ -411,6 +516,7 @@ class Command(BaseCommand):
             if elapsed >= max_seconds:
                 self.stdout.write(f"Max hours ({options['max_hours']}) reached. Terminating all.\n")
                 self._terminate_all(ec2, slots)
+                final_status = "timeout"
                 break
 
             # Check each slot
@@ -447,19 +553,57 @@ class Command(BaseCommand):
                     if new_id:
                         slot["instance_id"] = new_id
                         slot["status"] = "running"
+                        slot["deploy_ok"] = False
                         self._update_instance_ids(conn, run_id, slots)
                     else:
                         slot["status"] = "capacity_exhausted"
                     continue
 
-                # Heartbeat: detect stale worker on running instance
+                # B7: detect a failed code-deploy / worker-start. Such a worker
+                # never claims anything, so it has no open claim for the stale
+                # check to catch (oldest_open is None) — it would idle to
+                # max_hours. Best-effort: get_command_invocation may be denied
+                # (returns None), in which case we simply skip this check.
+                if not slot.get("deploy_ok"):
+                    dstatus = self._check_deploy_status(iid)
+                    if dstatus in ("Failed", "Cancelled", "TimedOut"):
+                        self.stderr.write(
+                            f"Worker deploy {dstatus} on {iid}. Terminating + relaunching.\n"
+                        )
+                        self._safe_terminate(ec2, iid)
+                        db.reclaim_stale_claims(conn, run_id, iid)
+                        slot["relaunch_count"] += 1
+                        if slot["relaunch_count"] > MAX_RELAUNCH_ATTEMPTS:
+                            slot["status"] = "capacity_exhausted"
+                        else:
+                            new_id = self._launch_with_capacity_retry(
+                                ec2, conn, run_id, run_tag, priority, ntee_filter, options,
+                                slot_index=slots.index(slot),
+                            )
+                            if new_id:
+                                slot["instance_id"] = new_id
+                                slot["status"] = "running"
+                                slot["deploy_ok"] = False
+                                self._update_instance_ids(conn, run_id, slots)
+                            else:
+                                slot["status"] = "capacity_exhausted"
+                        continue
+                    if dstatus == "Success":
+                        slot["deploy_ok"] = True
+
+                # Heartbeat: detect stale worker on running instance.
+                # Liveness = most recent completion, or (if the worker has not
+                # completed anything yet) the age of its oldest outstanding claim.
+                # This catches a worker that dies before its first completion
+                # (the run-30 zombie) and end-of-run all-claimed stalls, without
+                # depending on the global unclaimed count.
                 last_activity = self._get_worker_last_activity(conn, run_id, iid)
-                progress = db.get_queue_progress(conn, run_id)
-                unclaimed = progress["total"] - progress["claimed"]
+                oldest_open = self._get_worker_open_claim_age(conn, run_id, iid)
+                heartbeat = last_activity or oldest_open
                 stale = (
-                    last_activity is not None
-                    and (time.time() - last_activity.timestamp()) > HEARTBEAT_STALE_MINUTES * 60
-                    and unclaimed > 0
+                    heartbeat is not None
+                    and (time.time() - heartbeat.timestamp()) > HEARTBEAT_STALE_MINUTES * 60
+                    and oldest_open is not None
                 )
                 if stale:
                     self.stderr.write(f"Worker stale on {iid}. Terminating.\n")
@@ -476,6 +620,7 @@ class Command(BaseCommand):
                         if new_id:
                             slot["instance_id"] = new_id
                             slot["status"] = "running"
+                            slot["deploy_ok"] = False
                             self._update_instance_ids(conn, run_id, slots)
                         else:
                             slot["status"] = "capacity_exhausted"
@@ -491,6 +636,14 @@ class Command(BaseCommand):
                 f"{total:,} total ({elapsed/60:.0f}m elapsed)\n"
             )
             self._update_job_progress(job_id, completed, total)
+
+            # B8: release the per-poll read snapshot so this long-lived
+            # connection does not sit "idle in transaction" for the whole run
+            # (which invites an idle-in-transaction timeout / failover drop).
+            try:
+                conn.rollback()
+            except Exception:
+                pass
 
             # All work done?
             if completed + errored >= total:
@@ -511,8 +664,23 @@ class Command(BaseCommand):
         progress = db.get_queue_progress(conn, run_id)
         final_completed = progress["completed"]
         final_errored = progress["errored"]
+        final_total = progress["total"]
+        incomplete = final_total - (final_completed + final_errored)
 
-        db.cleanup_work_queue(conn, run_id)
+        # B4: only report success and delete the queue if every item is
+        # accounted for. If items are stuck (a silent stall), keep the queue
+        # rows for post-mortem and report a non-success status instead of a
+        # false green "completed".
+        if incomplete > 0:
+            self.stderr.write(
+                f"Run ended with {incomplete} item(s) not completed "
+                f"(completed={final_completed}, errored={final_errored}, "
+                f"total={final_total}). Leaving work_queue intact for diagnosis.\n"
+            )
+            if final_status not in ("cancelled", "timeout"):
+                final_status = "failed"
+        else:
+            db.cleanup_work_queue(conn, run_id)
 
         status = db.get_run_status(conn, run_tag)
         if status and not status.get("finished_at"):
@@ -522,79 +690,126 @@ class Command(BaseCommand):
                 "total": final_completed + final_errored,
             })
 
+        # Map internal final_status to a Job status (Job has no "timeout").
         if final_status == "cancelled":
-            self._update_job_progress(job_id, final_completed, eligible_count, "cancelled")
-        elif final_status == "failed":
-            self._update_job_progress(job_id, final_completed, eligible_count, "failed")
+            job_status = "cancelled"
+        elif final_status in ("failed", "timeout") or incomplete > 0:
+            job_status = "failed"
         else:
-            self._update_job_progress(job_id, final_completed, eligible_count, "completed")
+            job_status = "completed"
+        self._update_job_progress(job_id, final_completed, eligible_count, job_status)
 
-        self.stdout.write("Parse run complete.\n")
+        self.stdout.write(
+            f"Parse run finished: status={final_status}, "
+            f"completed={final_completed}, errored={final_errored}, "
+            f"incomplete={incomplete}.\n"
+        )
 
     def _launch_with_capacity_retry(self, ec2, conn, run_id, run_tag, priority, ntee_filter, options, slot_index=0):
-        """Wrap _launch_and_start with spot capacity retry loop.
+        """Wrap _launch_and_start with AZ rotation and capacity retry.
 
-        Returns instance_id on success, None if capacity exhausted or shutdown requested.
+        Tries all AZs starting from the slot's preferred AZ. Only sleeps
+        after exhausting every AZ. Returns instance_id or None.
         """
         from botocore.exceptions import ClientError
 
         capacity_wait_hours = options.get("capacity_wait_hours", 1)
         max_retries = max(1, (capacity_wait_hours * 3600) // CAPACITY_RETRY_INTERVAL)
+        num_azs = len(SUBNET_AZ)
+        start_az = slot_index % num_azs
 
+        self.stdout.write(f"[slot {slot_index}] Starting launch (preferred AZ: {SUBNET_AZ[start_az][1]})...\n")
         for attempt in range(max_retries + 1):
-            try:
-                return self._launch_and_start(ec2, conn, run_id, run_tag, priority, ntee_filter, options, slot_index=slot_index)
-            except (ClientError, CommandError) as e:
-                err_code = ""
-                if isinstance(e, ClientError):
-                    err_code = e.response.get("Error", {}).get("Code", "")
-                is_capacity = err_code in (
-                    "InsufficientInstanceCapacity",
-                    "SpotMaxPriceTooLow",
-                    "MaxSpotInstanceCountExceeded",
-                )
-                if not is_capacity:
-                    raise
-
-                if attempt >= max_retries:
-                    self.stderr.write(
-                        f"No spot capacity after {capacity_wait_hours}h of retries. Giving up.\n"
-                    )
+            for az_offset in range(num_azs):
+                if self._shutdown_requested:
+                    self.stdout.write(f"[slot {slot_index}] Shutdown requested.\n")
                     return None
 
-                self.stdout.write(
-                    f"No spot capacity (attempt {attempt + 1}/{max_retries + 1}). "
-                    f"Retrying in {CAPACITY_RETRY_INTERVAL}s...\n"
-                )
-                slept = 0
-                while slept < CAPACITY_RETRY_INTERVAL:
-                    if self._shutdown_requested:
-                        self.stdout.write("Shutdown during capacity wait.\n")
-                        return None
-                    time.sleep(min(30, CAPACITY_RETRY_INTERVAL - slept))
-                    slept += 30
+                az_idx = (start_az + az_offset) % num_azs
+                subnet_id, az_name = SUBNET_AZ[az_idx]
 
-    def _launch_and_start(self, ec2, conn, run_id: int, run_tag: str, priority: list[str], ntee_filter: str | None, options: dict, slot_index: int = 0) -> str:
+                try:
+                    self.stdout.write(f"[slot {slot_index}] Trying {az_name}...\n")
+                    return self._launch_and_start(
+                        ec2, conn, run_id, run_tag, priority, ntee_filter, options,
+                        slot_index=slot_index, subnet_id=subnet_id,
+                    )
+                except (ClientError, CommandError) as e:
+                    err_code = ""
+                    if isinstance(e, ClientError):
+                        err_code = e.response.get("Error", {}).get("Code", "")
+                    is_retryable = err_code in (
+                        "InsufficientInstanceCapacity",
+                        "SpotMaxPriceTooLow",
+                        "MaxSpotInstanceCountExceeded",
+                        "Unsupported",
+                    )
+                    if not is_retryable:
+                        self.stderr.write(f"[slot {slot_index}] Launch failed in {az_name}: {e}\n")
+                        raise
+
+                    is_quota = err_code == "MaxSpotInstanceCountExceeded"
+                    if is_quota:
+                        running_count = sum(
+                            1 for s in self._slots
+                            if s.get("instance_id") and s.get("status") == "running"
+                        )
+                        if running_count > 0:
+                            self.stdout.write(
+                                f"[slot {slot_index}] Spot vCPU quota reached "
+                                f"({running_count} instance(s) already running)\n"
+                            )
+                            return None
+                        self.stdout.write(
+                            f"[slot {slot_index}] Spot vCPU quota rejected but no instances running "
+                            f"— quota may be propagating, will retry\n"
+                        )
+                        break  # skip remaining AZs, go to sleep/retry
+
+                    self.stdout.write(f"[slot {slot_index}] No capacity in {az_name} ({err_code})\n")
+
+            if attempt >= max_retries:
+                self.stderr.write(
+                    f"[slot {slot_index}] No spot capacity in any AZ after {capacity_wait_hours}h. Giving up.\n"
+                )
+                return None
+
+            self.stdout.write(
+                f"[slot {slot_index}] All AZs exhausted (round {attempt + 1}/{max_retries + 1}). "
+                f"Retrying in {CAPACITY_RETRY_INTERVAL}s...\n"
+            )
+            slept = 0
+            while slept < CAPACITY_RETRY_INTERVAL:
+                if self._shutdown_requested:
+                    self.stdout.write(f"[slot {slot_index}] Shutdown during capacity wait.\n")
+                    return None
+                time.sleep(min(30, CAPACITY_RETRY_INTERVAL - slept))
+                slept += 30
+
+    def _launch_and_start(self, ec2, conn, run_id: int, run_tag: str, priority: list[str], ntee_filter: str | None, options: dict, slot_index: int = 0, subnet_id: str | None = None) -> str:
         """Launch a spot instance and start the worker. Returns instance_id."""
-        # Terminate any existing instance for this slot
         existing = self._find_instance(ec2, run_tag, slot_index=slot_index)
         if existing:
-            self.stdout.write(f"Terminating existing instance {existing}\n")
+            self.stdout.write(f"[slot {slot_index}] Terminating existing instance {existing}\n")
             ec2.terminate_instances(InstanceIds=[existing])
             self._wait_for_termination(ec2, existing)
+            self.stdout.write(f"[slot {slot_index}] Existing instance terminated\n")
 
-        instance_id = self._launch_instance(ec2, run_tag, options, slot_index=slot_index)
+        instance_id = self._launch_instance(ec2, run_tag, options, slot_index=slot_index, subnet_id=subnet_id)
         mode = "on-demand" if options["no_spot"] else "spot"
-        self.stdout.write(f"Launched {mode} instance {instance_id} (slot {slot_index})\n")
+        self.stdout.write(f"[slot {slot_index}] Launched {mode} instance {instance_id}\n")
 
-        time.sleep(5)  # EC2 eventual consistency — wait before polling
+        time.sleep(5)
+        self.stdout.write(f"[slot {slot_index}] Waiting for running state...\n")
         self._wait_for_running(ec2, instance_id)
-        self.stdout.write(f"Instance {instance_id} is running\n")
+        self.stdout.write(f"[slot {slot_index}] Instance {instance_id} is running\n")
 
+        self.stdout.write(f"[slot {slot_index}] Waiting for SSM agent...\n")
         self._wait_for_ssm(instance_id)
-        self.stdout.write(f"SSM agent connected on {instance_id}\n")
+        self.stdout.write(f"[slot {slot_index}] SSM connected on {instance_id}\n")
 
         self._start_worker(ec2, instance_id, run_id, priority, ntee_filter, options)
+        self.stdout.write(f"[slot {slot_index}] Worker started on {instance_id}\n")
         return instance_id
 
     def _safe_terminate(self, ec2, instance_id: str) -> None:
@@ -604,7 +819,7 @@ class Command(BaseCommand):
             ec2.terminate_instances(InstanceIds=[instance_id])
             self.stdout.write(f"Terminated instance {instance_id}\n")
 
-    def _launch_instance(self, ec2, run_tag: str, options: dict, slot_index: int = 0) -> str:
+    def _launch_instance(self, ec2, run_tag: str, options: dict, slot_index: int = 0, subnet_id: str | None = None) -> str:
         import boto3
 
         ami_id = options.get("ami_id")
@@ -613,13 +828,15 @@ class Command(BaseCommand):
             ami_resp = ssm.get_parameter(Name=SSM_AMI_PARAM)
             ami_id = ami_resp["Parameter"]["Value"]
 
+        if subnet_id is None:
+            subnet_id = SUBNET_AZ[slot_index % len(SUBNET_AZ)][0]
         kwargs = dict(
             ImageId=ami_id,
             InstanceType=options["instance_type"],
             MinCount=1,
             MaxCount=1,
             IamInstanceProfile={"Name": IAM_PROFILE_NAME},
-            SubnetId=SUBNET_ID,
+            SubnetId=subnet_id,
             SecurityGroupIds=[SECURITY_GROUP_ID],
             TagSpecifications=[
                 {
@@ -748,14 +965,37 @@ class Command(BaseCommand):
             f"nohup {worker_cmd} > /var/log/docling-worker.log 2>&1 &",
         ]
 
-        ssm.send_command(
+        resp = ssm.send_command(
             InstanceIds=[instance_id],
             DocumentName="AWS-RunShellScript",
             Parameters={
                 "commands": deploy_commands,
             },
         )
+        try:
+            self._deploy_cmds[instance_id] = resp["Command"]["CommandId"]
+        except (KeyError, TypeError, AttributeError):
+            pass
         self.stdout.write(f"Worker started via SSM on {instance_id}\n")
+
+    def _check_deploy_status(self, instance_id: str) -> str | None:
+        """Best-effort SSM deploy/start status for an instance.
+
+        Returns the SSM command Status ('Success'/'Failed'/'InProgress'/...),
+        or None if unknown (no command id recorded, or ssm:GetCommandInvocation
+        not permitted). Callers must treat None as "no signal", never as failure.
+        """
+        cmd_id = self._deploy_cmds.get(instance_id)
+        if not cmd_id:
+            return None
+        import boto3
+
+        ssm = boto3.client("ssm", region_name="us-east-1")
+        try:
+            inv = ssm.get_command_invocation(CommandId=cmd_id, InstanceId=instance_id)
+            return inv.get("Status")
+        except Exception:
+            return None
 
     def _delete_error_rows(self, conn, priority: list[str]) -> None:
         """Delete error rows so they can be retried."""

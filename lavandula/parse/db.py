@@ -453,6 +453,27 @@ def complete_work_item(
             )
 
 
+def unclaim_work_item(conn, run_id: int, content_sha256: str) -> None:
+    """Release a single claim so the item returns to the unclaimed pool.
+
+    Only affects rows that are not yet completed. Safe under the worker RLS
+    claim policy: a worker may reset its own claim (claimed_by -> NULL).
+    Used for bounded transient/download-failure retry so failed-to-download
+    items are not left stranded as claimed-but-incomplete rows.
+    """
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE lava_parse.work_queue
+                SET claimed_by = NULL, claimed_at = NULL
+                WHERE run_id = %(run_id)s AND content_sha256 = %(sha)s
+                  AND completed_at IS NULL
+                """,
+                {"run_id": run_id, "sha": content_sha256},
+            )
+
+
 def reclaim_stale_claims(conn, run_id: int, worker_id: str) -> int:
     """Reset claims for a terminated worker so they can be picked up again."""
     with conn:
