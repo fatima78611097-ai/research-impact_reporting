@@ -31,6 +31,15 @@ The investigation consumed significant time and reached no definitive conclusion
 - Changes to the worker's processing logic or error handling
 - Dashboard log viewer UI (the log file URL is enough for now)
 
+## IAM Prerequisites
+
+The GPU instances use the `cloud2_lavandulagroup` IAM role. This role already grants:
+- `s3:GetObject` on `lavandula-nonprofit-collaterals` (used for PDF downloads and worker-code.tar.gz)
+
+**Required addition:** `s3:PutObject` on `s3://lavandula-nonprofit-collaterals/logs/parse/*` must be confirmed or added to the role policy. This is needed for both the orchestrator-driven log pull (SSM command runs `aws s3 cp` on the GPU instance) and the worker's `atexit` fallback.
+
+The AWS CLI is pre-installed on the GPU AMI (used by SSM agent and S3 downloads). No additional tooling is needed.
+
 ## Technical Design
 
 ### Component 1: Exit Reason in `parse_runs`
@@ -49,15 +58,19 @@ COMMENT ON COLUMN lava_parse.parse_runs.exit_reason IS
 
 **Exit reason values:**
 
-| Value | Meaning |
-|-------|---------|
-| `empty_batch` | `fetch_work_batch` returned no rows — worker believes all work is done |
-| `spot_termination` | Worker detected EC2 spot termination notice via instance metadata |
-| `max_docs` | `--max-docs` safety cap reached |
-| `max_hours` | Orchestrator terminated because `--max-hours` elapsed |
-| `cancelled` | Orchestrator received SIGTERM (user stop) |
-| `error` | Worker crashed with unhandled exception |
-| `unknown` | Worker exited without setting a reason (legacy code, crash before exit handler) |
+| Value | Set by | Meaning |
+|-------|--------|---------|
+| `empty_batch` | Worker | `fetch_work_batch` returned no rows — worker believes all work is done |
+| `spot_termination` | Worker | Worker detected EC2 spot termination notice via instance metadata |
+| `max_docs` | Worker | `--max-docs` safety cap reached |
+| `max_hours` | Orchestrator | Orchestrator terminated because `--max-hours` elapsed |
+| `cancelled` | Orchestrator | Orchestrator received SIGTERM (user stop via dashboard) |
+| `error` | Worker | Worker's top-level try/except caught an unhandled exception before exit |
+| `unknown` | Nobody | Default — worker exited without setting a reason (crash, OOM kill, legacy code) |
+
+**Write precedence:** The worker writes `exit_reason` via `finish_run()`. The orchestrator may OVERRIDE it with `max_hours` or `cancelled` via `set_exit_reason()`. Orchestrator writes win because they represent an external decision to stop the run, regardless of the worker's internal state. The column is nullable; `NULL` means the run predates this feature (legacy) and is displayed as "N/A" in the dashboard.
+
+**Crash semantics:** If the worker crashes before calling `finish_run()`, `exit_reason` remains `NULL` and `finished_at` remains `NULL`. The orchestrator detects this via instance state (terminated/shutting-down) and sets `exit_reason = 'error'` directly. The `finished_at` is set by the orchestrator in this case. This means `exit_reason = 'unknown'` should never appear for new runs — it exists only as the `finish_run()` default for defense-in-depth.
 
 **Worker changes (`lavandula/parse/worker.py`):**
 
@@ -142,9 +155,16 @@ s3://lavandula-nonprofit-collaterals/logs/parse/
 
 Example: `s3://lavandula-nonprofit-collaterals/logs/parse/P-all-24h_max/i-011f2b0beef2444d1/worker.log`
 
-**Implementation — orchestrator-driven (preferred):**
+**Log shipping hierarchy (two layers, clear ownership):**
 
-The orchestrator pulls the log via SSM BEFORE terminating the instance. This is more reliable than having the worker self-ship (which fails on hard crashes or spot reclaims with < 2s warning).
+1. **Primary: Orchestrator-driven pull via SSM** — the orchestrator sends an SSM command to upload the log BEFORE terminating the instance. This is the authoritative mechanism. It works for all normal exits (empty_batch, max_docs, worker completion) because the instance is still running when the orchestrator decides to terminate.
+2. **Fallback: Worker `atexit` self-ship** — the worker registers an `atexit` handler that uploads the log on exit. This covers the case where the worker exits on its own (spot termination detected) before the orchestrator can pull. It is best-effort and may fail on hard crashes.
+
+If both mechanisms succeed, the S3 key is the same so the second write is a no-op overwrite. No conflict.
+
+**Implementation — orchestrator-driven (primary):**
+
+The orchestrator pulls the log via SSM BEFORE terminating the instance.
 
 ```python
 # In the orchestrator, before _safe_terminate:
@@ -205,7 +225,7 @@ The orchestrator log on cloud2 already persists, but its exit messages are ambig
 
 **New:** `"Worker reported completion (reason: empty_batch). 10,180 docs remain.\n"` — includes exit reason AND remaining count.
 
-The orchestrator already calls `get_eligible_count` in its spot-reclaim branch. Add it to the normal completion branch too:
+The orchestrator already calls `get_eligible_count` in its spot-reclaim branch. Add it to the normal completion branch too, using the SAME priority and ntee_filter parameters that the worker used (passed to the orchestrator at run start and stored in `config_json`):
 
 ```python
 if status and status.get("finished_at"):
@@ -222,20 +242,27 @@ if status and status.get("finished_at"):
         )
 ```
 
+The `priority` and `ntee_filter` are the same variables used throughout `_execute_run` — they originate from the Job's `config_json` and are passed identically to both the worker (via SSM command args) and `get_eligible_count`. No filter mismatch is possible.
+
 This would have immediately flagged the run 15 issue.
 
 ## Migration
 
-**DDL (operator applies manually):**
+**Single operational path:** The operator runs the DDL file `lavandula/migrations/parse/004_exit_reason.sql` manually against RDS, the same as all `lava_parse` schema changes. No Django migration is involved because `parse_runs` is not a Django model — it is accessed via raw psycopg2 from both the worker and the orchestrator.
+
+**DDL file (`lavandula/migrations/parse/004_exit_reason.sql`):**
 
 ```sql
--- 0056: Parse observability
+-- Spec 0056: Parse observability — exit reason tracking
 ALTER TABLE lava_parse.parse_runs ADD COLUMN exit_reason TEXT;
 COMMENT ON COLUMN lava_parse.parse_runs.exit_reason IS
   'Why the run ended: empty_batch, spot_termination, max_docs, max_hours, error, cancelled, unknown';
+
+-- Grant to docling_writer (worker writes exit_reason via finish_run)
+GRANT UPDATE (exit_reason) ON lava_parse.parse_runs TO docling_writer;
 ```
 
-**No Django migration needed** — `parse_runs` is accessed via raw psycopg2, not Django ORM.
+**Rollback:** `ALTER TABLE lava_parse.parse_runs DROP COLUMN exit_reason;`
 
 ## Files Changed
 
@@ -251,9 +278,12 @@ COMMENT ON COLUMN lava_parse.parse_runs.exit_reason IS
 
 1. **Unit test:** `finish_run` writes `exit_reason` correctly
 2. **Unit test:** Worker sets correct exit_reason for each break condition
-3. **Integration test:** Start a parse run with `--max-docs 5`, verify exit_reason is `max_docs` in `parse_runs`
-4. **Manual test:** After a real run, verify worker log exists in S3 at the expected path
-5. **Manual test:** Dashboard shows human-readable exit reason for completed runs
+3. **Unit test:** `set_exit_reason` (orchestrator path) overrides worker-set value
+4. **Unit test:** Dashboard template renders all exit_reason values correctly, including `NULL` (legacy runs) as "N/A"
+5. **Integration test:** Start a parse run with `--max-docs 5`, verify exit_reason is `max_docs` in `parse_runs`
+6. **Integration test:** Verify `_pull_worker_log` handles SSM failure gracefully (logs warning, does not crash orchestrator)
+7. **Manual test:** After a real run, verify worker log exists in S3 at the expected path
+8. **Manual test:** Dashboard shows human-readable exit reason for completed runs
 
 ## Traps to Avoid
 
