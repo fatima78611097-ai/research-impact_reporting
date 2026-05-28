@@ -155,6 +155,12 @@ s3://lavandula-nonprofit-collaterals/logs/parse/
 
 Example: `s3://lavandula-nonprofit-collaterals/logs/parse/P-all-24h_max/i-011f2b0beef2444d1/worker.log`
 
+**run_tag sanitization:** The `run_tag` is user-provided (dashboard form) and is interpolated into a shell command (`aws s3 cp ... /{run_tag}/...`). To prevent command injection, `run_tag` MUST be validated at creation time (in `ParseJobCreateView`) to contain only `[a-zA-Z0-9_-]`. This validation already exists in the form's `clean_run_tag()` method but must be confirmed or hardened. The `_pull_worker_log` method must also reject any `run_tag` not matching this pattern as a defense-in-depth measure.
+
+**S3 access control:** The `lavandula-nonprofit-collaterals` bucket is private (no public access). Read/write is restricted to the `cloud2_lavandulagroup` IAM role. No additional access policy changes are needed for the `logs/parse/` prefix.
+
+**Log lifecycle:** Add an S3 lifecycle rule to expire objects under `logs/parse/` after 90 days. This limits long-term storage of potentially sensitive log content (error messages may contain file paths or org identifiers). The lifecycle rule is applied by the operator via the S3 console or CLI, not by code.
+
 **Log shipping hierarchy (two layers, clear ownership):**
 
 1. **Primary: Orchestrator-driven pull via SSM** — the orchestrator sends an SSM command to upload the log BEFORE terminating the instance. This is the authoritative mechanism. It works for all normal exits (empty_batch, max_docs, worker completion) because the instance is still running when the orchestrator decides to terminate.
@@ -175,8 +181,15 @@ self._safe_terminate(ec2, instance_id)
 `_pull_worker_log` sends an SSM command to upload the log:
 
 ```python
+import re
+
+_SAFE_TAG_RE = re.compile(r"^[a-zA-Z0-9_-]+$")
+
 def _pull_worker_log(self, ssm, instance_id, run_tag):
     """Upload worker log to S3 before terminating the instance."""
+    if not _SAFE_TAG_RE.match(run_tag):
+        self.stderr.write(f"Warning: refusing to ship log — unsafe run_tag: {run_tag!r}\n")
+        return
     try:
         ssm.send_command(
             InstanceIds=[instance_id],
@@ -291,3 +304,4 @@ GRANT UPDATE (exit_reason) ON lava_parse.parse_runs TO docling_writer;
 2. **Spot reclaim race** — If AWS reclaims the instance before the orchestrator can pull the log, the SSM command fails silently. The `atexit` handler in the worker is the fallback, but it also races against the 2-minute spot warning. Accept that some logs may be lost on hard spot reclaims — the `exit_reason` column is the guaranteed minimum.
 3. **Log file size** — Worker logs are ~50KB for a 500-doc batch. Even a 10,000-doc run produces < 1MB. S3 upload is fast.
 4. **Backward compatibility** — The `exit_reason` column is nullable. Old runs (before this change) will have `NULL`, which the dashboard should display as "—" or "N/A", not as an error.
+5. **run_tag injection** — The `run_tag` is interpolated into shell commands (both SSM worker start and log pull). Validate it matches `^[a-zA-Z0-9_-]+$` at creation time (form validation) AND at use time (defense-in-depth in `_pull_worker_log`). Never trust the value without checking.
