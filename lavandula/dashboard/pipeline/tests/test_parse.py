@@ -744,3 +744,114 @@ class TestParseConfigAllowlist(SimpleTestCase):
     def test_workers_in_parse_allowlist(self):
         from pipeline.views import _CONFIG_ALLOWLIST
         self.assertIn("workers", _CONFIG_ALLOWLIST["parse"])
+
+
+# ---------------------------------------------------------------------------
+# Spec 0055: Multi-Instance Parse — PostgreSQL SKIP LOCKED integration test
+# ---------------------------------------------------------------------------
+
+import unittest
+from django.db import connection as django_connection
+
+
+@unittest.skipUnless(
+    django_connection.vendor == "postgresql",
+    "SKIP LOCKED requires PostgreSQL",
+)
+class TestSkipLockedNoOverlap(TestCase):
+    """Validate that FOR UPDATE SKIP LOCKED produces non-overlapping batches.
+
+    This is the single most important test in Spec 0055: it proves the core
+    no-double-processing guarantee. Requires a real PostgreSQL backend.
+    """
+
+    def setUp(self):
+        from django.db import connections
+
+        self.conn = connections["default"]
+        with self.conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS lava_parse.work_queue_test (
+                    id BIGSERIAL PRIMARY KEY,
+                    run_id INTEGER NOT NULL,
+                    content_sha256 TEXT NOT NULL,
+                    source_org_ein TEXT NOT NULL,
+                    claimed_by TEXT,
+                    claimed_at TIMESTAMPTZ,
+                    completed_at TIMESTAMPTZ,
+                    error TEXT,
+                    UNIQUE (run_id, content_sha256)
+                )
+            """)
+            cur.execute("DELETE FROM lava_parse.work_queue_test")
+            for i in range(20):
+                cur.execute(
+                    "INSERT INTO lava_parse.work_queue_test "
+                    "(run_id, content_sha256, source_org_ein) "
+                    "VALUES (%s, %s, %s)",
+                    (999, f"sha_{i:04d}", "12-3456789"),
+                )
+
+    def tearDown(self):
+        with self.conn.cursor() as cur:
+            cur.execute("DROP TABLE IF EXISTS lava_parse.work_queue_test")
+
+    def test_concurrent_claims_no_overlap(self):
+        import psycopg2
+        import psycopg2.extras
+
+        db_settings = django_connection.settings_dict
+        connect_kwargs = {
+            "host": db_settings["HOST"],
+            "port": db_settings.get("PORT", 5432),
+            "dbname": db_settings["NAME"],
+            "user": db_settings["USER"],
+            "password": db_settings.get("PASSWORD", ""),
+        }
+
+        conn_a = psycopg2.connect(**connect_kwargs)
+        conn_b = psycopg2.connect(**connect_kwargs)
+        conn_a.autocommit = False
+        conn_b.autocommit = False
+
+        try:
+            claim_sql = """
+                WITH claimed AS (
+                    SELECT id, content_sha256
+                    FROM lava_parse.work_queue_test
+                    WHERE run_id = 999 AND claimed_by IS NULL
+                    ORDER BY id
+                    LIMIT 10
+                    FOR UPDATE SKIP LOCKED
+                )
+                UPDATE lava_parse.work_queue_test wq
+                SET claimed_by = %(worker)s, claimed_at = NOW()
+                FROM claimed
+                WHERE wq.id = claimed.id
+                RETURNING wq.content_sha256
+            """
+
+            with conn_a.cursor() as cur_a:
+                cur_a.execute(claim_sql, {"worker": "worker-a"})
+                batch_a = {row[0] for row in cur_a.fetchall()}
+
+            with conn_b.cursor() as cur_b:
+                cur_b.execute(claim_sql, {"worker": "worker-b"})
+                batch_b = {row[0] for row in cur_b.fetchall()}
+
+            conn_a.commit()
+            conn_b.commit()
+
+            self.assertEqual(len(batch_a), 10, "Worker A should claim 10 rows")
+            self.assertEqual(len(batch_b), 10, "Worker B should claim 10 rows")
+            self.assertEqual(
+                batch_a & batch_b, set(),
+                "SKIP LOCKED must produce non-overlapping batches"
+            )
+            self.assertEqual(
+                len(batch_a | batch_b), 20,
+                "Together, both workers should cover all 20 rows"
+            )
+        finally:
+            conn_a.close()
+            conn_b.close()

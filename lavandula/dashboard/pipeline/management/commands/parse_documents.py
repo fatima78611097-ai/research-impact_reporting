@@ -641,13 +641,15 @@ class Command(BaseCommand):
 
     def _find_instance(self, ec2, run_tag: str, slot_index: int | None = None) -> str | None:
         """Find running/pending instance tagged for docling-parse."""
-        name_pattern = f"docling-worker-{run_tag}-{slot_index}" if slot_index is not None else f"docling-worker-{run_tag}*"
         filters = [
             {"Name": "tag:Purpose", "Values": [INSTANCE_TAG_PURPOSE]},
             {"Name": "instance-state-name", "Values": ["running", "pending"]},
         ]
         if slot_index is not None:
+            filters.append({"Name": "tag:Name", "Values": [f"docling-worker-{run_tag}-{slot_index}"]})
             filters.append({"Name": "tag:Slot", "Values": [str(slot_index)]})
+        else:
+            filters.append({"Name": "tag:Name", "Values": [f"docling-worker-{run_tag}"]})
         response = ec2.describe_instances(Filters=filters)
         for reservation in response.get("Reservations", []):
             for instance in reservation.get("Instances", []):

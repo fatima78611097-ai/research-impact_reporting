@@ -2551,19 +2551,22 @@ class ParseStopView(LoginRequiredMixin, View):
             from django.db import connections
             with connections["default"].cursor() as cur:
                 cur.execute("""
-                    SELECT instance_id FROM lava_parse.parse_runs
+                    SELECT instance_ids, instance_id FROM lava_parse.parse_runs
                     WHERE run_tag = %s AND finished_at IS NULL
                 """, [run_tag])
                 row = cur.fetchone()
-                if row and row[0]:
-                    try:
-                        import boto3
-                        ec2 = boto3.client("ec2", region_name="us-east-1")
-                        ec2.terminate_instances(InstanceIds=[row[0]])
-                    except Exception:
-                        _parse_logger.exception(
-                            "Failed to terminate EC2 instance %s during stop", row[0]
-                        )
+                if row:
+                    ids_to_terminate = row[0] or ([row[1]] if row[1] else [])
+                    if ids_to_terminate:
+                        try:
+                            import boto3
+                            ec2 = boto3.client("ec2", region_name="us-east-1")
+                            ec2.terminate_instances(InstanceIds=ids_to_terminate)
+                        except Exception:
+                            _parse_logger.exception(
+                                "Failed to terminate EC2 instances %s during stop",
+                                ids_to_terminate,
+                            )
 
                 cur.execute("""
                     UPDATE lava_parse.parse_runs
