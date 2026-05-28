@@ -133,7 +133,7 @@ _CONFIG_ALLOWLIST = {
     "compare-classify": ["run_tag", "state"],
     "resolve-disagree": ["run_tag", "backend", "state", "sample", "dry_run"],
     "promote-classify": ["run_tag", "state", "confirm"],
-    "parse": ["run_tag", "ntee", "priority", "instance_type", "max_hours", "no_spot", "ami_id", "start_at"],
+    "parse": ["run_tag", "ntee", "priority", "instance_type", "max_hours", "no_spot", "ami_id", "start_at", "workers"],
 }
 
 
@@ -2322,9 +2322,18 @@ class ParseJobCreateView(LoginRequiredMixin, View):
         use_spot = not config.get("no_spot", False)
         rate = 0.60 if use_spot else 0.98
         est_cost = est_hours * rate
+        workers = config.get("workers", 1)
 
         max_hours = config.get("max_hours", 24)
         capped = est_hours > max_hours
+
+        worker_estimates = ""
+        if count > 0:
+            parts = []
+            for n in (1, 2, 4):
+                wall = est_hours / n
+                parts.append(f"{n} worker{'s' if n > 1 else ''}: ~{wall:.1f}h wall time")
+            worker_estimates = " | " + " | ".join(parts)
 
         messages.info(
             request,
@@ -2332,6 +2341,8 @@ class ParseJobCreateView(LoginRequiredMixin, View):
             f"~{min(est_hours, max_hours):.1f}h GPU time, "
             f"~${min(est_cost, max_hours * rate):.0f} "
             f"({'spot' if use_spot else 'on-demand'})"
+            + (f" [{workers} worker{'s' if workers > 1 else ''}]")
+            + worker_estimates
             + (" — will not complete in one run" if capped else "")
         )
         return redirect("parse")
@@ -2410,6 +2421,7 @@ class ParseProgressPartial(HtmxLoginRequiredMixin, View):
     def get(self, request):
         import json as _json
         from django.db import connections
+        from django.core.cache import cache
 
         active_job = Job.objects.filter(
             phase="parse", status__in=["running", "scheduled", "pending"]
@@ -2421,31 +2433,84 @@ class ParseProgressPartial(HtmxLoginRequiredMixin, View):
         run_tag = (active_job.config_json or {}).get("run_tag")
         parse_run = None
         instance_state = None
+        queue_progress = None
+        worker_stats = None
 
         if run_tag:
             with connections["default"].cursor() as cur:
                 cur.execute("""
-                    SELECT stats_json, instance_id, started_at
+                    SELECT id, stats_json, instance_id, instance_ids, started_at
                     FROM lava_parse.parse_runs WHERE run_tag = %s
                 """, [run_tag])
                 row = cur.fetchone()
                 if row:
-                    stats = row[0] if isinstance(row[0], dict) else _json.loads(row[0] or "{}")
+                    stats = row[1] if isinstance(row[1], dict) else _json.loads(row[1] or "{}")
                     parse_run = {
+                        "id": row[0],
                         "stats": stats,
-                        "instance_id": row[1],
-                        "started_at": row[2],
+                        "instance_id": row[2],
+                        "instance_ids": row[3] or [],
+                        "started_at": row[4],
                     }
 
-            if parse_run and parse_run["instance_id"]:
-                from django.core.cache import cache
-                cache_key = f"ec2_state_{parse_run['instance_id']}"
+            # Query work_queue for aggregate progress and per-worker stats
+            if parse_run:
+                run_id = parse_run["id"]
+                try:
+                    with connections["default"].cursor() as cur:
+                        cur.execute("""
+                            SELECT
+                                COUNT(*) as total,
+                                COUNT(*) FILTER (WHERE claimed_by IS NOT NULL) as claimed,
+                                COUNT(*) FILTER (WHERE completed_at IS NOT NULL AND error IS NULL) as completed,
+                                COUNT(*) FILTER (WHERE completed_at IS NOT NULL AND error IS NOT NULL) as errored
+                            FROM lava_parse.work_queue
+                            WHERE run_id = %s
+                        """, [run_id])
+                        qrow = cur.fetchone()
+                        if qrow and qrow[0] > 0:
+                            queue_progress = {
+                                "total": qrow[0],
+                                "claimed": qrow[1],
+                                "completed": qrow[2],
+                                "errored": qrow[3],
+                            }
+
+                    cache_key = f"parse_worker_stats_{run_id}"
+                    worker_stats = cache.get(cache_key)
+                    if worker_stats is None:
+                        with connections["default"].cursor() as cur:
+                            cur.execute("""
+                                SELECT claimed_by,
+                                       COUNT(*) FILTER (WHERE completed_at IS NOT NULL) as completed,
+                                       COUNT(*) FILTER (WHERE completed_at IS NULL) as in_progress,
+                                       MAX(completed_at) as last_activity,
+                                       EXTRACT(EPOCH FROM MAX(completed_at) - MIN(claimed_at)) as active_seconds
+                                FROM lava_parse.work_queue
+                                WHERE run_id = %s AND claimed_by IS NOT NULL
+                                GROUP BY claimed_by
+                            """, [run_id])
+                            columns = [col[0] for col in cur.description]
+                            worker_stats = [dict(zip(columns, r)) for r in cur.fetchall()]
+                            for ws in worker_stats:
+                                if ws["active_seconds"] and ws["active_seconds"] > 0 and ws["completed"]:
+                                    ws["throughput"] = round(ws["completed"] / ws["active_seconds"] * 3600, 1)
+                                else:
+                                    ws["throughput"] = None
+                        cache.set(cache_key, worker_stats, 10)
+                except Exception:
+                    _parse_logger.exception("Failed to query work_queue progress")
+
+            # Instance state for primary instance (backward compat for single-worker)
+            primary_id = parse_run.get("instance_id") if parse_run else None
+            if primary_id:
+                cache_key = f"ec2_state_{primary_id}"
                 instance_state = cache.get(cache_key)
                 if instance_state is None:
                     try:
                         import boto3
                         ec2 = boto3.client("ec2", region_name="us-east-1")
-                        resp = ec2.describe_instances(InstanceIds=[parse_run["instance_id"]])
+                        resp = ec2.describe_instances(InstanceIds=[primary_id])
                         reservations = resp.get("Reservations", [])
                         if reservations and reservations[0].get("Instances"):
                             inst = reservations[0]["Instances"][0]
@@ -2461,6 +2526,8 @@ class ParseProgressPartial(HtmxLoginRequiredMixin, View):
             "job": active_job,
             "parse_run": parse_run,
             "instance_state": instance_state,
+            "queue_progress": queue_progress,
+            "worker_stats": worker_stats or [],
         }
         return render(request, "pipeline/partials/parse_progress.html", context)
 
@@ -2484,19 +2551,22 @@ class ParseStopView(LoginRequiredMixin, View):
             from django.db import connections
             with connections["default"].cursor() as cur:
                 cur.execute("""
-                    SELECT instance_id FROM lava_parse.parse_runs
+                    SELECT instance_ids, instance_id FROM lava_parse.parse_runs
                     WHERE run_tag = %s AND finished_at IS NULL
                 """, [run_tag])
                 row = cur.fetchone()
-                if row and row[0]:
-                    try:
-                        import boto3
-                        ec2 = boto3.client("ec2", region_name="us-east-1")
-                        ec2.terminate_instances(InstanceIds=[row[0]])
-                    except Exception:
-                        _parse_logger.exception(
-                            "Failed to terminate EC2 instance %s during stop", row[0]
-                        )
+                if row:
+                    ids_to_terminate = row[0] or ([row[1]] if row[1] else [])
+                    if ids_to_terminate:
+                        try:
+                            import boto3
+                            ec2 = boto3.client("ec2", region_name="us-east-1")
+                            ec2.terminate_instances(InstanceIds=ids_to_terminate)
+                        except Exception:
+                            _parse_logger.exception(
+                                "Failed to terminate EC2 instances %s during stop",
+                                ids_to_terminate,
+                            )
 
                 cur.execute("""
                     UPDATE lava_parse.parse_runs

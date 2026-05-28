@@ -181,6 +181,7 @@ COMMAND_MAP: dict[str, dict[str, Any]] = {
             "ami_id": {"type": "text", "pattern": r"^ami-[a-f0-9]{8,17}$", "flag": "--ami-id"},
             "start_at": {"type": "text", "pattern": r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$", "flag": "--start-at"},
             "capacity_wait_hours": {"type": "int", "min": 1, "max": 12, "flag": "--capacity-wait-hours"},
+            "workers": {"type": "int", "min": 1, "max": 4, "flag": "--workers"},
         },
     },
 }

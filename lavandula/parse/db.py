@@ -45,7 +45,7 @@ def get_connection(
     return conn
 
 
-def fetch_work_batch(
+def fetch_work_batch_legacy(
     conn,
     priority_filter: list[str],
     batch_size: int,
@@ -370,3 +370,184 @@ def release_worker_lock(conn) -> None:
         cur.execute(
             "SELECT pg_advisory_unlock(%s)", (DOCLING_PARSE_WORKER,)
         )
+
+
+# ---------------------------------------------------------------------------
+# Work queue functions (Spec 0055: multi-instance SKIP LOCKED)
+# ---------------------------------------------------------------------------
+
+
+def populate_work_queue(
+    conn, run_id: int, priority_filter: list[str], ntee_filter: str | None = None
+) -> int:
+    """Materialize eligible docs into work_queue. Returns count inserted."""
+    ntee_join = (
+        "JOIN lava_corpus.nonprofits_seed ns ON c.source_org_ein = ns.ein"
+        if ntee_filter
+        else ""
+    )
+    ntee_where = "AND ns.ntee_code LIKE %(ntee)s" if ntee_filter else ""
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                f"""
+                INSERT INTO lava_parse.work_queue (run_id, content_sha256, source_org_ein)
+                SELECT %(run_id)s, c.content_sha256, c.source_org_ein
+                FROM lava_corpus.corpus c
+                {ntee_join}
+                WHERE c.content_sha256 NOT IN (
+                    SELECT content_sha256 FROM lava_parse.documents
+                )
+                  AND c.classification = ANY(%(priority)s)
+                  {ntee_where}
+                ON CONFLICT (run_id, content_sha256) DO NOTHING
+                """,
+                {"run_id": run_id, "priority": priority_filter, "ntee": ntee_filter},
+            )
+            return cur.rowcount
+
+
+def fetch_work_batch(
+    conn, run_id: int, batch_size: int, worker_id: str
+) -> list[dict]:
+    """Claim next batch of unclaimed work items using SKIP LOCKED."""
+    with conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+            cur.execute(
+                """
+                WITH claimed AS (
+                    SELECT id, content_sha256, source_org_ein
+                    FROM lava_parse.work_queue
+                    WHERE run_id = %(run_id)s AND claimed_by IS NULL
+                    ORDER BY id
+                    LIMIT %(limit)s
+                    FOR UPDATE SKIP LOCKED
+                )
+                UPDATE lava_parse.work_queue wq
+                SET claimed_by = %(worker_id)s, claimed_at = NOW()
+                FROM claimed
+                WHERE wq.id = claimed.id
+                RETURNING wq.content_sha256, wq.source_org_ein
+                """,
+                {"run_id": run_id, "limit": batch_size, "worker_id": worker_id},
+            )
+            rows = cur.fetchall()
+    return [dict(r) for r in rows]
+
+
+def complete_work_item(
+    conn, run_id: int, content_sha256: str, error: str | None = None
+) -> None:
+    """Mark a work queue item as completed (or errored)."""
+    if error and len(error) > 200:
+        error = error[:200]
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE lava_parse.work_queue
+                SET completed_at = NOW(), error = %(error)s
+                WHERE run_id = %(run_id)s AND content_sha256 = %(sha)s
+                """,
+                {"run_id": run_id, "sha": content_sha256, "error": error},
+            )
+
+
+def reclaim_stale_claims(conn, run_id: int, worker_id: str) -> int:
+    """Reset claims for a terminated worker so they can be picked up again."""
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE lava_parse.work_queue
+                SET claimed_by = NULL, claimed_at = NULL
+                WHERE run_id = %(run_id)s AND claimed_by = %(worker)s AND completed_at IS NULL
+                """,
+                {"run_id": run_id, "worker": worker_id},
+            )
+            return cur.rowcount
+
+
+def reclaim_all_stale_claims(conn, run_id: int) -> int:
+    """For run resume: reclaim all incomplete claims from previous attempt."""
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE lava_parse.work_queue
+                SET claimed_by = NULL, claimed_at = NULL
+                WHERE run_id = %(run_id)s AND claimed_by IS NOT NULL AND completed_at IS NULL
+                """,
+                {"run_id": run_id},
+            )
+            return cur.rowcount
+
+
+def get_queue_progress(conn, run_id: int) -> dict:
+    """Returns aggregate progress for the orchestrator poll loop."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                COUNT(*) as total,
+                COUNT(*) FILTER (WHERE claimed_by IS NOT NULL) as claimed,
+                COUNT(*) FILTER (WHERE completed_at IS NOT NULL AND error IS NULL) as completed,
+                COUNT(*) FILTER (WHERE completed_at IS NOT NULL AND error IS NOT NULL) as errored
+            FROM lava_parse.work_queue
+            WHERE run_id = %(run_id)s
+            """,
+            {"run_id": run_id},
+        )
+        row = cur.fetchone()
+        return {
+            "total": row[0],
+            "claimed": row[1],
+            "completed": row[2],
+            "errored": row[3],
+        }
+
+
+def get_per_worker_stats(conn, run_id: int) -> list[dict]:
+    """Returns per-instance throughput for dashboard display."""
+    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+        cur.execute(
+            """
+            SELECT claimed_by,
+                   COUNT(*) FILTER (WHERE completed_at IS NOT NULL) as completed,
+                   COUNT(*) FILTER (WHERE completed_at IS NULL) as in_progress,
+                   MAX(completed_at) as last_activity,
+                   EXTRACT(EPOCH FROM MAX(completed_at) - MIN(claimed_at)) as active_seconds
+            FROM lava_parse.work_queue
+            WHERE run_id = %(run_id)s AND claimed_by IS NOT NULL
+            GROUP BY claimed_by
+            """,
+            {"run_id": run_id},
+        )
+        return [dict(r) for r in cur.fetchall()]
+
+
+def cleanup_work_queue(conn, run_id: int) -> int:
+    """Delete queue rows after run completion."""
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "DELETE FROM lava_parse.work_queue WHERE run_id = %(run_id)s",
+                {"run_id": run_id},
+            )
+            return cur.rowcount
+
+
+def get_run_status_by_id(conn, run_id: int) -> dict | None:
+    """Get status of a parse run by ID."""
+    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+        cur.execute(
+            """
+            SELECT id, run_tag, started_at, finished_at, config_json,
+                   stats_json, instance_id
+            FROM lava_parse.parse_runs
+            WHERE id = %s
+            """,
+            (run_id,),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
