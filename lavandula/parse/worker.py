@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import re
 import sys
 import tempfile
 import time
@@ -43,20 +44,40 @@ def main() -> None:
     args = parse_args()
     _setup_logging()
 
+    if args.worker_id and not re.match(r"^i-[0-9a-f]+$", args.worker_id):
+        logger.error("invalid worker-id format", extra={"worker_id": args.worker_id})
+        sys.exit(1)
+
+    if not (isinstance(args.run_id, int) and args.run_id > 0):
+        logger.error("invalid run-id: must be a positive integer")
+        sys.exit(1)
+
     logger.info("worker starting", extra={"run_id": args.run_id, "priority": args.priority})
 
     conn = _connect(args)
 
-    if not db.acquire_worker_lock(conn):
-        logger.error("another worker is already running (advisory lock held)")
-        sys.exit(1)
+    if args.worker_id:
+        with conn.cursor() as cur:
+            cur.execute("SET app.worker_id = %s", (args.worker_id,))
 
-    try:
-        _run_loop(conn, args)
-    finally:
-        db.release_worker_lock(conn)
-        conn.close()
+        status = db.get_run_status_by_id(conn, args.run_id)
+        if status is None:
+            logger.error("run_id does not exist in parse_runs", extra={"run_id": args.run_id})
+            conn.close()
+            sys.exit(1)
 
+        _run_loop_queue(conn, args)
+    else:
+        if not db.acquire_worker_lock(conn):
+            logger.error("another worker is already running (advisory lock held)")
+            conn.close()
+            sys.exit(1)
+        try:
+            _run_loop(conn, args)
+        finally:
+            db.release_worker_lock(conn)
+
+    conn.close()
     logger.info("worker finished")
 
 
@@ -81,7 +102,7 @@ def _run_loop(conn, args) -> None:
             logger.info("reached max-docs limit", extra={"max_docs": max_docs})
             break
 
-        batch = db.fetch_work_batch(conn, priority, args.batch_size, ntee_filter=args.ntee)
+        batch = db.fetch_work_batch_legacy(conn, priority, args.batch_size, ntee_filter=args.ntee)
         if not batch:
             logger.info("no more eligible documents")
             break
@@ -141,6 +162,88 @@ def _run_loop(conn, args) -> None:
     stats["end_time"] = time.time()
     stats["duration_seconds"] = stats["end_time"] - stats["start_time"]
     db.finish_run(conn, args.run_id, stats)
+
+
+def _run_loop_queue(conn, args) -> None:
+    """Queue mode: claim work via SKIP LOCKED, complete items individually."""
+    import boto3
+
+    s3 = boto3.client("s3")
+
+    stats = {
+        "total": 0,
+        "succeeded": 0,
+        "failed": 0,
+        "skipped": 0,
+        "start_time": time.time(),
+    }
+
+    max_docs = args.max_docs
+
+    while True:
+        if max_docs is not None and stats["total"] >= max_docs:
+            logger.info("reached max-docs limit", extra={"max_docs": max_docs})
+            break
+
+        batch = db.fetch_work_batch(conn, args.run_id, args.batch_size, args.worker_id)
+        if not batch:
+            logger.info("no more unclaimed work items")
+            break
+
+        with tempfile.TemporaryDirectory(prefix="docling-work-") as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            pdf_paths = _download_batch(s3, batch, tmp_path)
+
+            for item in batch:
+                sha = item["content_sha256"]
+
+                if not config.validate_sha256(sha):
+                    logger.warning("invalid sha256 in work queue", extra={"sha": sha[:20]})
+                    db.complete_work_item(conn, args.run_id, sha, error="invalid_sha256")
+                    stats["skipped"] += 1
+                    stats["total"] += 1
+                    continue
+
+                pdf_path = pdf_paths.get(sha)
+
+                if pdf_path is None:
+                    logger.warning("download failed after retries, skipping", extra={"sha": sha[:16]})
+                    stats["transient_skipped"] = stats.get("transient_skipped", 0) + 1
+                    stats["total"] += 1
+                    continue
+
+                try:
+                    result = _process_one(pdf_path, item)
+                    db.insert_document(conn, result)
+                    _generate_thumbnail(s3, pdf_path, sha)
+                    db.complete_work_item(conn, args.run_id, sha)
+                    stats["succeeded"] += 1
+                except TransientError as e:
+                    logger.warning("transient error, skipping", extra={"sha": sha[:16], "err": str(e)[:100]})
+                    stats["transient_skipped"] = stats.get("transient_skipped", 0) + 1
+                except PermanentError as e:
+                    error_label = str(e)[:200] if str(e) else "unknown_error"
+                    _record_error(conn, item, e)
+                    db.complete_work_item(conn, args.run_id, sha, error=error_label)
+                    stats["failed"] += 1
+                finally:
+                    stats["total"] += 1
+                    if pdf_path and pdf_path.exists():
+                        pdf_path.unlink()
+
+                if stats["total"] % config.STATS_UPDATE_INTERVAL == 0:
+                    db.update_run_stats(conn, args.run_id, stats)
+
+                if _spot_termination_pending():
+                    logger.warning("spot termination notice received, exiting gracefully")
+                    break
+
+        if _spot_termination_pending():
+            break
+
+    stats["end_time"] = time.time()
+    stats["duration_seconds"] = stats["end_time"] - stats["start_time"]
+    db.update_run_stats(conn, args.run_id, stats)
 
 
 def _process_one(pdf_path: Path, item: dict) -> dict:
@@ -347,6 +450,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
                         help="Stop after processing this many documents (required for safety)")
     parser.add_argument("--ntee", default=None,
                         help="NTEE prefix filter (e.g. 'P2%%' for Human Services)")
+    parser.add_argument("--worker-id", default=None,
+                        help="EC2 instance ID (enables SKIP LOCKED queue mode)")
     return parser.parse_args(argv)
 
 

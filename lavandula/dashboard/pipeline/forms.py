@@ -405,6 +405,12 @@ class ParseRunForm(forms.Form):
         widget=forms.Select(attrs={"class": _SELECT}),
         label="Instance Type",
     )
+    workers = forms.IntegerField(
+        initial=1, min_value=1, max_value=4,
+        widget=forms.NumberInput(attrs={"class": _SELECT}),
+        label="Workers",
+        help_text="Concurrent GPU instances (1-4)",
+    )
     no_spot = forms.BooleanField(
         required=False,
         label="Use on-demand (not spot)",

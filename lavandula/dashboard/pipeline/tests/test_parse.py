@@ -131,6 +131,7 @@ class TestParseRunForm(SimpleTestCase):
             "instance_type": "g6.2xlarge",
             "max_hours": 24,
             "batch_size": 500,
+            "workers": 1,
         }
         data.update(overrides)
         return ParseRunForm(data)
@@ -303,6 +304,7 @@ class TestParseLaunch(ParseViewTestBase):
             "instance_type": "g6.2xlarge",
             "max_hours": 24,
             "batch_size": 500,
+            "workers": 1,
         })
         self.assertEqual(resp.status_code, 302)
         mock_create.assert_called_once()
@@ -318,6 +320,7 @@ class TestParseLaunch(ParseViewTestBase):
             "instance_type": "g6.2xlarge",
             "max_hours": 24,
             "batch_size": 500,
+            "workers": 1,
         })
         self.assertEqual(resp.status_code, 302)
 
@@ -329,6 +332,7 @@ class TestParseLaunch(ParseViewTestBase):
             "instance_type": "g6.2xlarge",
             "max_hours": 24,
             "batch_size": 500,
+            "workers": 1,
         })
         self.assertEqual(resp.status_code, 302)
 
@@ -456,3 +460,287 @@ class TestParseNavigation(ParseViewTestBase):
     def test_nav_link_present(self, *mocks):
         resp = self.client.get(reverse("parse"))
         self.assertContains(resp, "Docling Parse")
+
+
+# ---------------------------------------------------------------------------
+# Spec 0055: Multi-Instance Parse — build_argv workers flag
+# ---------------------------------------------------------------------------
+
+class TestBuildArgvParseWorkers(SimpleTestCase):
+    def test_workers_flag_in_argv(self):
+        argv = build_argv("parse", {"run_tag": "t", "workers": 2})
+        idx = argv.index("--workers")
+        self.assertEqual(argv[idx + 1], "2")
+
+    def test_workers_default_omitted(self):
+        argv = build_argv("parse", {"run_tag": "t"})
+        self.assertNotIn("--workers", argv)
+
+    def test_workers_max_valid(self):
+        argv = build_argv("parse", {"run_tag": "t", "workers": 4})
+        self.assertIn("--workers", argv)
+        self.assertIn("4", argv)
+
+    def test_workers_over_max_rejected(self):
+        with self.assertRaises(InvalidParameterError):
+            build_argv("parse", {"run_tag": "t", "workers": 5})
+
+    def test_workers_under_min_rejected(self):
+        with self.assertRaises(InvalidParameterError):
+            build_argv("parse", {"run_tag": "t", "workers": 0})
+
+
+# ---------------------------------------------------------------------------
+# Spec 0055: Multi-Instance Parse — Form workers field
+# ---------------------------------------------------------------------------
+
+class TestParseRunFormWorkers(SimpleTestCase):
+    def _form(self, **overrides):
+        data = {
+            "run_tag": "test-run",
+            "priority": "annual,impact",
+            "instance_type": "g6.2xlarge",
+            "max_hours": 24,
+            "batch_size": 500,
+            "workers": 1,
+        }
+        data.update(overrides)
+        return ParseRunForm(data)
+
+    def test_workers_default_valid(self):
+        self.assertTrue(self._form(workers=1).is_valid())
+
+    def test_workers_2_valid(self):
+        self.assertTrue(self._form(workers=2).is_valid())
+
+    def test_workers_4_valid(self):
+        self.assertTrue(self._form(workers=4).is_valid())
+
+    def test_workers_0_rejected(self):
+        self.assertFalse(self._form(workers=0).is_valid())
+
+    def test_workers_5_rejected(self):
+        self.assertFalse(self._form(workers=5).is_valid())
+
+    def test_workers_negative_rejected(self):
+        self.assertFalse(self._form(workers=-1).is_valid())
+
+
+# ---------------------------------------------------------------------------
+# Spec 0055: Multi-Instance Parse — DB function unit tests
+# ---------------------------------------------------------------------------
+
+class TestCompleteWorkItemErrorTruncation(SimpleTestCase):
+    @patch("lavandula.parse.db.psycopg2")
+    def test_error_truncated_to_200(self, mock_pg):
+        from lavandula.parse import db as parse_db
+
+        mock_conn = MagicMock()
+        mock_cur = MagicMock()
+        mock_cur.__enter__ = lambda self: self
+        mock_cur.__exit__ = MagicMock(return_value=False)
+        mock_conn.cursor.return_value = mock_cur
+        mock_conn.__enter__ = lambda self: self
+        mock_conn.__exit__ = MagicMock(return_value=False)
+
+        long_error = "x" * 300
+        parse_db.complete_work_item(mock_conn, 1, "abc123", error=long_error)
+
+        call_args = mock_cur.execute.call_args
+        params = call_args[0][1]
+        self.assertEqual(len(params["error"]), 200)
+
+    @patch("lavandula.parse.db.psycopg2")
+    def test_short_error_preserved(self, mock_pg):
+        from lavandula.parse import db as parse_db
+
+        mock_conn = MagicMock()
+        mock_cur = MagicMock()
+        mock_cur.__enter__ = lambda self: self
+        mock_cur.__exit__ = MagicMock(return_value=False)
+        mock_conn.cursor.return_value = mock_cur
+        mock_conn.__enter__ = lambda self: self
+        mock_conn.__exit__ = MagicMock(return_value=False)
+
+        parse_db.complete_work_item(mock_conn, 1, "abc123", error="corrupt_pdf")
+
+        call_args = mock_cur.execute.call_args
+        params = call_args[0][1]
+        self.assertEqual(params["error"], "corrupt_pdf")
+
+    @patch("lavandula.parse.db.psycopg2")
+    def test_no_error_passes_none(self, mock_pg):
+        from lavandula.parse import db as parse_db
+
+        mock_conn = MagicMock()
+        mock_cur = MagicMock()
+        mock_cur.__enter__ = lambda self: self
+        mock_cur.__exit__ = MagicMock(return_value=False)
+        mock_conn.cursor.return_value = mock_cur
+        mock_conn.__enter__ = lambda self: self
+        mock_conn.__exit__ = MagicMock(return_value=False)
+
+        parse_db.complete_work_item(mock_conn, 1, "abc123")
+
+        call_args = mock_cur.execute.call_args
+        params = call_args[0][1]
+        self.assertIsNone(params["error"])
+
+
+class TestGetQueueProgress(SimpleTestCase):
+    def test_returns_dict_keys(self):
+        from lavandula.parse import db as parse_db
+
+        mock_conn = MagicMock()
+        mock_cur = MagicMock()
+        mock_cur.__enter__ = lambda self: self
+        mock_cur.__exit__ = MagicMock(return_value=False)
+        mock_cur.fetchone.return_value = (100, 30, 20, 5)
+        mock_conn.cursor.return_value = mock_cur
+
+        result = parse_db.get_queue_progress(mock_conn, 1)
+        self.assertEqual(result, {
+            "total": 100, "claimed": 30, "completed": 20, "errored": 5,
+        })
+
+
+class TestReclaimStaleClaims(SimpleTestCase):
+    def test_reclaim_returns_rowcount(self):
+        from lavandula.parse import db as parse_db
+
+        mock_conn = MagicMock()
+        mock_cur = MagicMock()
+        mock_cur.__enter__ = lambda self: self
+        mock_cur.__exit__ = MagicMock(return_value=False)
+        mock_cur.rowcount = 7
+        mock_conn.cursor.return_value = mock_cur
+        mock_conn.__enter__ = lambda self: self
+        mock_conn.__exit__ = MagicMock(return_value=False)
+
+        result = parse_db.reclaim_stale_claims(mock_conn, 1, "i-abc123")
+        self.assertEqual(result, 7)
+
+    def test_reclaim_uses_worker_id_in_query(self):
+        from lavandula.parse import db as parse_db
+
+        mock_conn = MagicMock()
+        mock_cur = MagicMock()
+        mock_cur.__enter__ = lambda self: self
+        mock_cur.__exit__ = MagicMock(return_value=False)
+        mock_cur.rowcount = 0
+        mock_conn.cursor.return_value = mock_cur
+        mock_conn.__enter__ = lambda self: self
+        mock_conn.__exit__ = MagicMock(return_value=False)
+
+        parse_db.reclaim_stale_claims(mock_conn, 42, "i-deadbeef")
+
+        call_args = mock_cur.execute.call_args
+        params = call_args[0][1]
+        self.assertEqual(params["run_id"], 42)
+        self.assertEqual(params["worker"], "i-deadbeef")
+
+
+class TestReclaimAllStaleClaims(SimpleTestCase):
+    def test_reclaim_all_returns_rowcount(self):
+        from lavandula.parse import db as parse_db
+
+        mock_conn = MagicMock()
+        mock_cur = MagicMock()
+        mock_cur.__enter__ = lambda self: self
+        mock_cur.__exit__ = MagicMock(return_value=False)
+        mock_cur.rowcount = 15
+        mock_conn.cursor.return_value = mock_cur
+        mock_conn.__enter__ = lambda self: self
+        mock_conn.__exit__ = MagicMock(return_value=False)
+
+        result = parse_db.reclaim_all_stale_claims(mock_conn, 1)
+        self.assertEqual(result, 15)
+
+
+class TestCleanupWorkQueue(SimpleTestCase):
+    def test_cleanup_returns_rowcount(self):
+        from lavandula.parse import db as parse_db
+
+        mock_conn = MagicMock()
+        mock_cur = MagicMock()
+        mock_cur.__enter__ = lambda self: self
+        mock_cur.__exit__ = MagicMock(return_value=False)
+        mock_cur.rowcount = 500
+        mock_conn.cursor.return_value = mock_cur
+        mock_conn.__enter__ = lambda self: self
+        mock_conn.__exit__ = MagicMock(return_value=False)
+
+        result = parse_db.cleanup_work_queue(mock_conn, 1)
+        self.assertEqual(result, 500)
+
+
+# ---------------------------------------------------------------------------
+# Spec 0055: Multi-Instance Parse — Dashboard dry run multi-estimate
+# ---------------------------------------------------------------------------
+
+class TestParseDryRunMultiEstimate(ParseViewTestBase):
+    @patch.object(
+        __import__("pipeline.views", fromlist=["ParseJobCreateView"]).ParseJobCreateView,
+        "_get_parse_conn",
+    )
+    def test_dry_run_shows_worker_estimates(self, mock_get_conn):
+        mock_conn = MagicMock()
+        mock_cur = MagicMock()
+        mock_cur.fetchone.return_value = (1000,)
+        mock_cur.__enter__ = lambda self: self
+        mock_cur.__exit__ = MagicMock(return_value=False)
+        mock_conn.cursor.return_value = mock_cur
+        mock_get_conn.return_value = mock_conn
+
+        resp = self.client.post(reverse("parse_job_create"), {
+            "action": "dry_run",
+            "run_tag": "est-test",
+            "priority": "annual,impact",
+            "instance_type": "g6.2xlarge",
+            "max_hours": 24,
+            "batch_size": 500,
+            "workers": 2,
+        }, follow=True)
+        self.assertEqual(resp.status_code, 200)
+        msg_texts = [str(m) for m in resp.context["messages"]]
+        combined = " ".join(msg_texts)
+        self.assertIn("2 workers", combined)
+        self.assertIn("1 worker:", combined)
+        self.assertIn("4 workers:", combined)
+
+    @patch.object(
+        __import__("pipeline.views", fromlist=["ParseJobCreateView"]).ParseJobCreateView,
+        "_get_parse_conn",
+    )
+    def test_dry_run_shows_worker_count_label(self, mock_get_conn):
+        mock_conn = MagicMock()
+        mock_cur = MagicMock()
+        mock_cur.fetchone.return_value = (500,)
+        mock_cur.__enter__ = lambda self: self
+        mock_cur.__exit__ = MagicMock(return_value=False)
+        mock_conn.cursor.return_value = mock_cur
+        mock_get_conn.return_value = mock_conn
+
+        resp = self.client.post(reverse("parse_job_create"), {
+            "action": "dry_run",
+            "run_tag": "w-test",
+            "priority": "annual,impact",
+            "instance_type": "g6.2xlarge",
+            "max_hours": 24,
+            "batch_size": 500,
+            "workers": 3,
+        }, follow=True)
+        self.assertEqual(resp.status_code, 200)
+        msg_texts = [str(m) for m in resp.context["messages"]]
+        combined = " ".join(msg_texts)
+        self.assertIn("[3 workers]", combined)
+
+
+# ---------------------------------------------------------------------------
+# Spec 0055: Multi-Instance Parse — Config allowlist includes workers
+# ---------------------------------------------------------------------------
+
+class TestParseConfigAllowlist(SimpleTestCase):
+    def test_workers_in_parse_allowlist(self):
+        from pipeline.views import _CONFIG_ALLOWLIST
+        self.assertIn("workers", _CONFIG_ALLOWLIST["parse"])
