@@ -835,11 +835,24 @@ projects:
     dependencies: ["0054"]
     tags: [dashboard, pipeline, parse, gpu, concurrency]
     notes: "Motivated by 45h+ single-instance backlog for P-category alone. Full corpus will be 100K+ docs. Builder spawned 2026-05-28. PR #48 merged 2026-05-28."
+
+  - id: "0056"
+    title: "Parse Run Observability (Log Shipping + Exit Reason)"
+    summary: "Ship GPU worker logs to S3/CloudWatch so they survive instance termination. Add exit_reason to parse_runs for at-a-glance diagnosis. Motivated by run 15 early termination where worker log was lost with the spot instance."
+    status: conceived
+    priority: high
+    files:
+      spec: locard/specs/0056-parse-observability.md
+      plan: null
+      review: null
+    dependencies: ["0054"]
+    tags: [dashboard, pipeline, parse, observability, operations]
+    notes: "Motivated by run 15 (P-all-24h_max) early termination investigation 2026-05-28. Spent significant time diagnosing without the worker log."
 ```
 
 ## Next Available Number
 
-**0056** - Reserve this number for your next project
+**0057** - Reserve this number for your next project
 
 ---
 
