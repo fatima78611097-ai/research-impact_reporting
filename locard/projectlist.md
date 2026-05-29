@@ -847,7 +847,7 @@ projects:
       review: null
     dependencies: ["0054"]
     tags: [dashboard, pipeline, parse, observability, operations]
-    notes: "Motivated by run 15 (P-all-24h_max) early termination investigation 2026-05-28. Spent significant time diagnosing without the worker log."
+    notes: "Motivated by run 15 (P-all-24h_max) early termination investigation 2026-05-28. Spent significant time diagnosing without the worker log. WORKER HEARTBEAT (added 2026-05-29): the orchestrator currently infers worker liveness ONLY from MAX(completed_at) in the work_queue, so a worker grinding a slow/long doc (parse times up to 646s observed, and the full corpus likely has worse) is indistinguishable from a hung/dead one. Result on run 31: B1 stale-detection fired twice in ~15 min (slots 0 and 2, each after ~21 min with no completion vs HEARTBEAT_STALE_MINUTES=20), relaunching workers that may have been healthy-but-slow — each false relaunch costs ~6 min model warmup + a reclaimed/redone batch. NOTE: A1's per-item catch-all only handles docs that ERROR; a doc that HANGS Docling (no exception) still needs B1 to terminate, so we cannot remove B1 — we need to make it accurate. FIX: have the worker emit a lightweight periodic heartbeat (a timestamp updated independent of doc completion, e.g. lava_parse.parse_runs or a worker_heartbeat row) so the orchestrator can distinguish 'hung' from 'slow'; B1 should key off the heartbeat (+ raise/timeout per-doc) instead of completions alone. Pairs with 0058 long-tail per-doc timeout."
 
   - id: "0057"
     title: "LLM Extraction Faithfulness Verification (Snippet Grounding)"
