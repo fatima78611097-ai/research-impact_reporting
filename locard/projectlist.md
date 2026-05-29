@@ -848,11 +848,24 @@ projects:
     dependencies: ["0054"]
     tags: [dashboard, pipeline, parse, observability, operations]
     notes: "Motivated by run 15 (P-all-24h_max) early termination investigation 2026-05-28. Spent significant time diagnosing without the worker log."
+
+  - id: "0057"
+    title: "LLM Extraction Faithfulness Verification (Snippet Grounding)"
+    summary: "Verification pass that runs after the LLM metric/story extraction. Confirms every source_snippet — and the metric value/unit tied to it — appears verbatim (character-for-character) in the parsed source document text, so we can prove zero hallucination/fabrication. Quarantines or flags any LLM output not grounded in the source."
+    status: conceived
+    priority: high
+    files:
+      spec: null
+      plan: null
+      review: null
+    dependencies: []
+    tags: [extraction, llm, quality, verification]
+    notes: "Added 2026-05-29. VERY IMPORTANT — quality-first; this data will be heavily scrutinized by mature competitors, so LLM output must be defensibly grounded. Mechanics: for each lava_vocab.llm_metrics.source_snippet and lava_vocab.llm_stories.source_snippet, verify it is an exact substring of the document's parsed text (concat of lava_parse.sections.body_text for that content_sha256), and that metric_value/unit appear in / are derivable from the snippet; emit a per-run faithfulness score and quarantine non-matching rows. KEY SPEC DECISION: define the matching policy — strict char-for-char vs normalized (collapse whitespace / Unicode NFC) — because the text the LLM saw may differ subtly from our parsed sections; strict is the strongest claim but may false-positive on whitespace. Depends on the LLM metric/story extraction pass that populates llm_metrics/llm_stories (run_tag p20-*)."
 ```
 
 ## Next Available Number
 
-**0057** - Reserve this number for your next project
+**0058** - Reserve this number for your next project
 
 ---
 
