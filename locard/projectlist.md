@@ -874,11 +874,24 @@ projects:
     dependencies: ["0055"]
     tags: [pipeline, parse, gpu, performance, quality]
     notes: "Added 2026-05-29. Grounded in measured profiling (g6/L4, docling 2.93.0, 6 docs 1-44pg). FINDINGS: per-doc parse avg 15.5s (p50 11.4, p90 27.9, MAX 646s); GPU util only ~12%; ~all time is inside Docling convert() (our chunking/extract/DB inserts and per-doc DocumentConverter() build are ~0s — build-once is a NON-win, models cache globally). Cost is split between OCR and TableFormer, varying by doc. QUALITY-GATED A/B RESULTS: (1) TableFormer FAST = 1.5x on table-heavy docs, 2.6x combined on 44pg, with NO loss in cell/char COUNTS (slightly higher) and keeps OCR on -> KEEP CANDIDATE, but MUST validate cell-CONTENT correctness (not just counts) on a larger table-heavy sample before ship. (2) Blanket OCR-off = CUT: quality-neutral on the digital-native majority but DESTROYED 88% of table cells + 6% of text on a scanned 13pg doc -> must instead be CONDITIONAL OCR (skip only when an embedded text layer is present; candidate signals: corpus.first_page_text / pdf_* columns or pdfminer text-layer detection), preserving OCR for scanned docs. (3) FP16/BF16 + intra-worker concurrency = SECONDARY (cut the work first; feeding the 88%-idle GPU is a later multiplier). (4) Long tail: add a per-doc timeout / page cap (646s monster docs dominate total compute). ACCEPTANCE CRITERIA must include a quality A/B methodology with cell-CONTENT diffs, not just counts (competitor-scrutiny / quality-first). Intersects 0057 (faithfulness verification) — OCR'd text is where char-for-char grounding is hardest."
+
+  - id: "0059"
+    title: "Housecleaning: Deprecate Superseded Metric-Pipeline Tables & Code"
+    summary: "Inventory and retire obsolete artifacts superseded by the LLM extraction + planned extractive/faithfulness work — the statistical/market-basket per-doc extractor (metric_observations), fixture runs, stale tests, dead worker paths. Inventory-FIRST: verify references before dropping; RDS table drops are operator-run DDL migrations."
+    status: conceived
+    priority: medium
+    files:
+      spec: null
+      plan: null
+      review: null
+    dependencies: []
+    tags: [maintenance, cleanup, database, tech-debt]
+    notes: "Added 2026-05-29. Use MAINTAIN protocol. CANDIDATES (UNVERIFIED — confirm nothing still reads each before dropping): (1) lava_vocab.metric_observations — the statistical/market-basket 'first attempt' per-doc extractor (extract_metrics.py); produced ~750 noisy observations for ONE Think New Mexico doc (a Library of Congress photo-catalog number became 5 'metrics'); superseded by llm_metrics. (2) fixture extraction_runs (run 8 fixture-bgcsm2, run 11 fixture-cancare-split) + their rows. (3) stale TestFetchWorkBatch tests (assert a removed fetch_work_batch API: retry_errors/reparse/min_version params). (4) legacy non-queue worker path in worker.py (advisory-lock _run_loop) if single-instance mode is retired. KEEP (do NOT deprecate): the statistical DISCOVERY pipeline (extract_terms / discover_archetypes / keyness) — still the right tool for vocabulary/archetype discovery per the discovery-vs-extraction lesson; only the stat EXTRACTION (metric_observations) is dead. DISCIPLINE: read-only inventory first (what writes/reads each artifact); nothing deleted without verification + operator confirmation; table drops are operator-run migrations (Claude cannot apply DDL)."
 ```
 
 ## Next Available Number
 
-**0059** - Reserve this number for your next project
+**0060** - Reserve this number for your next project
 
 ---
 
