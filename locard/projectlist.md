@@ -861,11 +861,24 @@ projects:
     dependencies: []
     tags: [extraction, llm, quality, verification]
     notes: "Added 2026-05-29. VERY IMPORTANT — quality-first; this data will be heavily scrutinized by mature competitors, so LLM output must be defensibly grounded. Mechanics: for each lava_vocab.llm_metrics.source_snippet and lava_vocab.llm_stories.source_snippet, verify it is an exact substring of the document's parsed text (concat of lava_parse.sections.body_text for that content_sha256), and that metric_value/unit appear in / are derivable from the snippet; emit a per-run faithfulness score and quarantine non-matching rows. KEY SPEC DECISION: define the matching policy — strict char-for-char vs normalized (collapse whitespace / Unicode NFC) — because the text the LLM saw may differ subtly from our parsed sections; strict is the strongest claim but may false-positive on whitespace. Depends on the LLM metric/story extraction pass that populates llm_metrics/llm_stories (run_tag p20-*)."
+
+  - id: "0058"
+    title: "Parse Performance Optimization (TableFormer FAST + Conditional OCR)"
+    summary: "Cut Docling per-doc parse time (currently ~15.5s/doc avg with the L4 GPU only ~12% utilized) via TableFormer FAST mode and conditional OCR, each gated by an extraction-quality A/B so no speedup is shipped at the cost of accuracy."
+    status: conceived
+    priority: high
+    files:
+      spec: null
+      plan: null
+      review: null
+    dependencies: ["0055"]
+    tags: [pipeline, parse, gpu, performance, quality]
+    notes: "Added 2026-05-29. Grounded in measured profiling (g6/L4, docling 2.93.0, 6 docs 1-44pg). FINDINGS: per-doc parse avg 15.5s (p50 11.4, p90 27.9, MAX 646s); GPU util only ~12%; ~all time is inside Docling convert() (our chunking/extract/DB inserts and per-doc DocumentConverter() build are ~0s — build-once is a NON-win, models cache globally). Cost is split between OCR and TableFormer, varying by doc. QUALITY-GATED A/B RESULTS: (1) TableFormer FAST = 1.5x on table-heavy docs, 2.6x combined on 44pg, with NO loss in cell/char COUNTS (slightly higher) and keeps OCR on -> KEEP CANDIDATE, but MUST validate cell-CONTENT correctness (not just counts) on a larger table-heavy sample before ship. (2) Blanket OCR-off = CUT: quality-neutral on the digital-native majority but DESTROYED 88% of table cells + 6% of text on a scanned 13pg doc -> must instead be CONDITIONAL OCR (skip only when an embedded text layer is present; candidate signals: corpus.first_page_text / pdf_* columns or pdfminer text-layer detection), preserving OCR for scanned docs. (3) FP16/BF16 + intra-worker concurrency = SECONDARY (cut the work first; feeding the 88%-idle GPU is a later multiplier). (4) Long tail: add a per-doc timeout / page cap (646s monster docs dominate total compute). ACCEPTANCE CRITERIA must include a quality A/B methodology with cell-CONTENT diffs, not just counts (competitor-scrutiny / quality-first). Intersects 0057 (faithfulness verification) — OCR'd text is where char-for-char grounding is hardest."
 ```
 
 ## Next Available Number
 
-**0058** - Reserve this number for your next project
+**0059** - Reserve this number for your next project
 
 ---
 
