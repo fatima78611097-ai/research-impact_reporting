@@ -2406,12 +2406,14 @@ class ParseJobCreateView(LoginRequiredMixin, View):
             LOG_DIR.mkdir(parents=True, exist_ok=True)
             log_path = LOG_DIR / f"parse_{config['run_tag']}_{int(time.time())}.log"
 
+            env = {**_os.environ, "PYTHONUNBUFFERED": "1"}
             proc = subprocess.Popen(
                 argv,
                 cwd=str(Path(__file__).resolve().parents[3]),
                 stdout=open(str(log_path), "w"),
                 stderr=subprocess.STDOUT,
                 start_new_session=True,
+                env=env,
             )
 
             job.pid = proc.pid
