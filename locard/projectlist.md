@@ -855,7 +855,7 @@ projects:
     status: conceived
     priority: high
     files:
-      spec: null
+      spec: locard/specs/0057-llm-faithfulness-verification.md
       plan: null
       review: null
     dependencies: []
