@@ -1,0 +1,158 @@
+{% extends "pipeline/base.html" %}
+{% block title %}Faithfulness Gate — Lavandula Pipeline{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold text-gray-900 mb-2">Faithfulness Verification Gate</h1>
+<p class="text-sm text-gray-500 mb-6">Verify LLM-extracted metrics and stories are grounded in source document text. Assigns verification tiers (A/B/C) and quarantines ungrounded facts.</p>
+
+{% if active_verification %}
+<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6" id="active-verify">
+  <div class="flex items-center justify-between mb-2">
+    <div class="flex items-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+      <span class="font-semibold text-blue-900">Verifying: {{ active_verification.run_tag }}</span>
+    </div>
+  </div>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm" id="verify-stats">
+    <div><span class="text-gray-500">Docs:</span> <span class="font-mono" id="vstat-docs">{{ active_verification.docs_processed }}</span></div>
+    <div><span class="text-gray-500">Metrics verified:</span> <span class="font-mono" id="vstat-mverified">{{ active_verification.metrics_verified }}</span>/<span class="font-mono" id="vstat-mtotal">{{ active_verification.total_metrics }}</span></div>
+    <div><span class="text-gray-500">Stories verified:</span> <span class="font-mono" id="vstat-sverified">{{ active_verification.stories_verified }}</span>/<span class="font-mono" id="vstat-stotal">{{ active_verification.total_stories }}</span></div>
+    <div><span class="text-gray-500">Elapsed:</span> <span class="font-mono" id="vstat-elapsed">{{ active_verification.elapsed_s }}s</span></div>
+  </div>
+</div>
+<script>
+(function() {
+  function poll() {
+    fetch("{% url 'faithfulness_status' %}?run_id={{ active_verification.run_id }}")
+      .then(r => r.json())
+      .then(d => {
+        if (d.done) { location.reload(); return; }
+        document.getElementById("vstat-docs").textContent = d.docs_processed || 0;
+        document.getElementById("vstat-mverified").textContent = d.metrics_verified || 0;
+        document.getElementById("vstat-mtotal").textContent = d.total_metrics || 0;
+        document.getElementById("vstat-sverified").textContent = d.stories_verified || 0;
+        document.getElementById("vstat-stotal").textContent = d.total_stories || 0;
+        document.getElementById("vstat-elapsed").textContent = (d.elapsed_s || 0).toFixed(0) + "s";
+        setTimeout(poll, 3000);
+      })
+      .catch(() => setTimeout(poll, 5000));
+  }
+  setTimeout(poll, 3000);
+})();
+</script>
+{% endif %}
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+  <!-- Verify a Run -->
+  <div class="bg-white rounded-lg shadow p-5">
+    <h2 class="text-sm font-semibold text-gray-500 uppercase mb-3">Verify Extraction Run</h2>
+    <form method="post" action="{% url 'faithfulness_verify' %}">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="block text-xs font-medium text-gray-600 mb-1">Extraction Run</label>
+        <select name="run_id" required class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+          {% for run in unverified_runs %}
+          <option value="{{ run.id }}">{{ run.run_tag }} — {{ run.metric_count }} metrics, {{ run.story_count }} stories</option>
+          {% empty %}
+          <option disabled>No unverified runs</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded text-sm hover:bg-blue-700" {% if active_verification or not unverified_runs %}disabled{% endif %}>
+        Run Verification Gate
+      </button>
+    </form>
+  </div>
+
+  <!-- Summary Stats -->
+  <div class="lg:col-span-2 bg-white rounded-lg shadow p-5">
+    <h2 class="text-sm font-semibold text-gray-500 uppercase mb-3">Corpus Faithfulness</h2>
+    {% if corpus_stats %}
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+      <div>
+        <div class="text-2xl font-bold text-green-600">{{ corpus_stats.verified|default:"—" }}</div>
+        <div class="text-xs text-gray-500">Tier A (Verified)</div>
+      </div>
+      <div>
+        <div class="text-2xl font-bold text-yellow-600">{{ corpus_stats.ocr|default:"0" }}</div>
+        <div class="text-xs text-gray-500">Tier B (OCR)</div>
+      </div>
+      <div>
+        <div class="text-2xl font-bold text-red-600">{{ corpus_stats.quarantined|default:"0" }}</div>
+        <div class="text-xs text-gray-500">Tier C (Quarantine)</div>
+      </div>
+      <div>
+        <div class="text-2xl font-bold text-gray-400">{{ corpus_stats.legacy|default:"0" }}</div>
+        <div class="text-xs text-gray-500">Unverified Legacy</div>
+      </div>
+    </div>
+    {% if corpus_stats.grounding_rate %}
+    <div class="mt-4">
+      <div class="flex justify-between text-xs text-gray-500 mb-1">
+        <span>Grounding Rate (Metrics)</span>
+        <span>{{ corpus_stats.grounding_rate }}%</span>
+      </div>
+      <div class="w-full bg-gray-200 rounded-full h-2">
+        <div class="bg-green-500 h-2 rounded-full" style="width: {{ corpus_stats.grounding_rate }}%"></div>
+      </div>
+    </div>
+    {% endif %}
+    {% else %}
+    <p class="text-gray-500 text-sm">No verified runs yet. Run the gate on an extraction run to see results.</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Run History -->
+<div class="bg-white rounded-lg shadow p-5">
+  <h2 class="text-sm font-semibold text-gray-500 uppercase mb-3">Verification History</h2>
+  {% if runs %}
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead><tr class="text-left text-gray-500 border-b">
+        <th class="pb-2">Run Tag</th>
+        <th class="pb-2">Verified</th>
+        <th class="pb-2 text-right">Metrics</th>
+        <th class="pb-2 text-right">Tier A</th>
+        <th class="pb-2 text-right">Tier B</th>
+        <th class="pb-2 text-right">Tier C</th>
+        <th class="pb-2 text-right">Rate</th>
+        <th class="pb-2 text-right">Stories</th>
+        <th class="pb-2 text-right">Duration</th>
+      </tr></thead>
+      <tbody>
+        {% for run in runs %}
+        <tr class="border-b hover:bg-gray-50">
+          <td class="py-2 font-mono text-xs">{{ run.run_tag }}</td>
+          <td class="py-2 text-xs text-gray-500">{{ run.verified_at|default:"—" }}</td>
+          <td class="py-2 text-right">{{ run.total_metrics }}</td>
+          <td class="py-2 text-right text-green-600 font-medium">{{ run.metrics_verified }}</td>
+          <td class="py-2 text-right text-yellow-600">{{ run.metrics_ocr }}</td>
+          <td class="py-2 text-right text-red-600">{{ run.metrics_quarantined }}</td>
+          <td class="py-2 text-right font-mono">
+            {% if run.metrics_grounding_rate is not None %}
+            <span class="{% if run.metrics_grounding_rate >= 0.95 %}text-green-600{% elif run.metrics_grounding_rate >= 0.80 %}text-yellow-600{% else %}text-red-600{% endif %}">
+              {{ run.metrics_grounding_rate_pct }}%
+            </span>
+            {% else %}—{% endif %}
+          </td>
+          <td class="py-2 text-right">{{ run.total_stories }} <span class="text-gray-400">({{ run.stories_verified }}✓)</span></td>
+          <td class="py-2 text-right text-gray-500">{{ run.elapsed_s|default:"—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="text-gray-500 text-sm">No verification runs yet.</p>
+  {% endif %}
+</div>
+
+<!-- Tier Legend -->
+<div class="mt-4 bg-gray-50 rounded-lg p-4 text-xs text-gray-600">
+  <span class="font-semibold">Tier Legend:</span>
+  <span class="ml-2 text-green-600">A — Verified</span> (snippet grounded in source, publishable) ·
+  <span class="text-yellow-600">B — OCR</span> (grounded but OCR source, publishable with label) ·
+  <span class="text-red-600">C — Quarantine</span> (not grounded, never published) ·
+  <span class="text-gray-400">Legacy</span> (not yet verified)
+</div>
+{% endblock %}

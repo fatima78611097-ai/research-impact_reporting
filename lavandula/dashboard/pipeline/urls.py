@@ -80,6 +80,11 @@ urlpatterns = [
     path("llm-extract/status/", views.LlmExtractStatusPartial.as_view(), name="llm_extract_status"),
     path("llm-extract/stop/", views.LlmExtractStopView.as_view(), name="llm_extract_stop"),
 
+    # Faithfulness Verification Gate (Spec 0057)
+    path("faithfulness/", views.FaithfulnessView.as_view(), name="faithfulness"),
+    path("faithfulness/verify/", views.FaithfulnessVerifyView.as_view(), name="faithfulness_verify"),
+    path("faithfulness/status/", views.FaithfulnessStatusPartial.as_view(), name="faithfulness_status"),
+
     # Control Panel
     path("control/", views.ControlPanelView.as_view(), name="control_panel"),
     path("control/queue/pause/", views.QueuePauseView.as_view(), name="queue_pause"),
