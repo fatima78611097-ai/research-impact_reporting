@@ -47,7 +47,7 @@ For each metric, return:
 - "metric_value": The numeric value as a number
 - "unit": What is being counted (e.g., "people", "hours", "states", "languages")
 - "geo_impact": Geographic scope of this metric. One of: "LOCAL" (single city/county), "STATE" (single state), "NATIONAL" (multi-state or nationwide), or "GLOBAL" (international). Infer from context clues in the text.
-- "source_snippet": The exact phrase from the text containing the metric
+- "source_snippet": A VERBATIM copy-paste from the source text that contains this metric. Must be a contiguous span — copy it character-for-character, including original punctuation, capitalization, and spacing. NEVER rephrase, reformat numbers (e.g., "$2.8M" when the source says "$2.8 million"), compose from separate parts of the document, or add words not in the source. If the metric appears in a table, copy the relevant cell text.
 
 Extract every distinct metric even if the numbers are related (e.g., "11,500 total served" and "1,514 served through matching" are separate metrics). For "20+" or "over 500", use the stated number (20, 500).
 
@@ -55,7 +55,7 @@ Skip: detailed financial breakdowns (individual line items, percentages of budge
 
 Return a JSON array of metric objects. If no metrics found, return [].
 
-IMPORTANT: Only extract metrics explicitly present in the text. Never invent or fabricate.
+IMPORTANT: Only extract metrics explicitly present in the text. Never invent or fabricate. The source_snippet MUST be a verbatim substring of the input text — if you cannot locate a contiguous span for a metric, do not extract it.
 
 Return ONLY the JSON array, no other text."""
 
@@ -67,13 +67,13 @@ For each story found, return:
 - "people_mentioned": Names of people featured (first names only, or "Anonymous" if unnamed)
 - "program": Which program or service, if identifiable
 - "themes": Array of 1-3 theme tags
-- "source_snippet": Key 1-2 sentences anchoring the story
+- "source_snippet": A VERBATIM copy-paste of 1-2 key sentences from the source text that anchor this story. Must be a contiguous span — copy character-for-character from the source. NEVER rephrase or compose.
 
 Skip: organizational founding history, board/staff listings, event recaps with only dates/numbers.
 
 Return a JSON array of story objects. If no stories found, return [].
 
-IMPORTANT: Only extract stories explicitly present in the text. Never invent or fabricate.
+IMPORTANT: Only extract stories explicitly present in the text. Never invent or fabricate. The source_snippet MUST be a verbatim substring of the input text.
 
 Return ONLY the JSON array, no other text."""
 
@@ -95,7 +95,7 @@ For each metric, return:
 - "metric_value": The numeric value as a number
 - "unit": What is being counted (e.g., "people", "hours", "states", "languages")
 - "geo_impact": Geographic scope of this metric. One of: "LOCAL" (single city/county), "STATE" (single state), "NATIONAL" (multi-state or nationwide), or "GLOBAL" (international). Infer from context clues in the text.
-- "source_snippet": The exact phrase from the text containing the metric
+- "source_snippet": A VERBATIM copy-paste from the source text that contains this metric. Must be a contiguous span — copy it character-for-character, including original punctuation, capitalization, and spacing. NEVER rephrase, reformat numbers (e.g., "$2.8M" when the source says "$2.8 million"), compose from separate parts of the document, or add words not in the source. If the metric appears in a table, copy the relevant cell text.
 
 Extract every distinct metric even if the numbers are related (e.g., "11,500 total served" and "1,514 served through matching" are separate metrics). For "20+" or "over 500", use the stated number (20, 500).
 
@@ -110,7 +110,7 @@ For each story, return:
 - "people_mentioned": Names of people featured (first names only, or "Anonymous" if unnamed)
 - "program": Which program or service, if identifiable
 - "themes": Array of 1-3 theme tags
-- "source_snippet": Key 1-2 sentences anchoring the story
+- "source_snippet": A VERBATIM copy-paste of 1-2 key sentences from the source text that anchor this story. Must be a contiguous span — copy character-for-character from the source. NEVER rephrase or compose.
 
 Skip: organizational founding history, board/staff listings, event recaps with only dates/numbers.
 
@@ -121,7 +121,7 @@ Return a single JSON object with two keys:
   "stories": [ ... array of story objects ... ]
 }
 
-IMPORTANT: Only extract content explicitly present in the text. Never invent or fabricate. If none found for a category, use an empty array.
+IMPORTANT: Only extract content explicitly present in the text. Never invent or fabricate. If none found for a category, use an empty array. Every source_snippet MUST be a verbatim substring of the input text — if you cannot locate a contiguous span, do not extract that item.
 
 Return ONLY the JSON object, no other text."""
 
