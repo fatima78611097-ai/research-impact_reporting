@@ -30,8 +30,10 @@ SECONDS_PER_PAGE = 0.49
 SPOT_RATE_PER_HOUR = 0.60
 ONDEMAND_RATE_PER_HOUR = 0.98
 POLL_INTERVAL_SECONDS = 60
-HEARTBEAT_STALE_MINUTES = 20
-MAX_RELAUNCH_ATTEMPTS = 3
+HEARTBEAT_STALE_MINUTES = 5
+HEARTBEAT_LEGACY_STALE_MINUTES = 30
+MAX_CONSECUTIVE_FAILURES = 3
+LOG_S3_BUCKET = "lavandula-nonprofit-collaterals"
 CAPACITY_RETRY_INTERVAL = 300
 SSM_AMI_PARAM = "/cloud2.lavandulagroup.com/docling-ami-id"
 SUBNET_AZ = [
@@ -443,7 +445,12 @@ class Command(BaseCommand):
 
         # Initialize slots (also stored on self for SIGTERM handler access)
         slots = [
-            {"instance_id": None, "status": "pending", "relaunch_count": 0, "deploy_ok": False}
+            {
+                "instance_id": None,
+                "status": "pending",
+                "consecutive_failures": 0,
+                "deploy_ok": False,
+            }
             for _ in range(workers)
         ]
         self._slots = slots
@@ -502,12 +509,16 @@ class Command(BaseCommand):
                 f"Partial launch: {launched}/{workers} workers active\n"
             )
 
+        # Track last-known completed count per slot for progress-reset logic
+        slot_last_completed = [0] * len(slots)
+
         # Multi-instance poll loop
         while True:
             time.sleep(POLL_INTERVAL_SECONDS)
 
             if self._shutdown_requested:
                 self.stdout.write("Shutdown requested. Terminating all instances.\n")
+                db.set_exit_reason(conn, run_id, "cancelled")
                 self._terminate_all(ec2, slots)
                 final_status = "cancelled"
                 break
@@ -515,19 +526,68 @@ class Command(BaseCommand):
             elapsed = time.time() - start_time
             if elapsed >= max_seconds:
                 self.stdout.write(f"Max hours ({options['max_hours']}) reached. Terminating all.\n")
+                db.set_exit_reason(conn, run_id, "max_hours")
                 self._terminate_all(ec2, slots)
                 final_status = "timeout"
                 break
 
+            # DB health check: if our own connection is broken, skip stale
+            # detection this cycle (we can't distinguish worker-stale from
+            # orchestrator-DB-down).
+            db_healthy = self._db_healthy(conn)
+
             # Check each slot
-            for slot in slots:
+            for slot_idx, slot in enumerate(slots):
                 if slot["status"] != "running":
                     continue
                 iid = slot["instance_id"]
+
+                # 1. Check instance state — is it still running?
                 state = self._get_instance_state(ec2, iid)
 
                 if state in ("terminated", "shutting-down"):
-                    self.stdout.write(f"Instance {iid} terminated.\n")
+                    # Check if worker set exit_reason (graceful exit)
+                    exit_reason = None
+                    try:
+                        exit_reason = db.get_exit_reason(conn, run_id)
+                    except Exception:
+                        pass
+
+                    if exit_reason:
+                        classification = "graceful_exit"
+                        self.stdout.write(
+                            f"[slot {slot_idx}] Worker exited: {exit_reason} "
+                            f"(classification={classification})\n"
+                        )
+                        self._pull_worker_log(iid, run_tag)
+                        db.reclaim_stale_claims(conn, run_id, iid)
+
+                        # Cross-check: worker claims empty_batch but queue has work
+                        if exit_reason == "empty_batch":
+                            progress = db.get_queue_progress(conn, run_id)
+                            remaining = progress["total"] - progress["completed"] - progress["errored"]
+                            if remaining > 0:
+                                logger.warning(
+                                    "Worker claimed empty_batch but %d items remain — relaunching",
+                                    remaining,
+                                )
+                                self._relaunch_slot(
+                                    ec2, conn, run_id, run_tag, priority, ntee_filter,
+                                    options, slot, slot_idx, "empty_batch_mismatch",
+                                )
+                                continue
+
+                        slot["status"] = "done"
+                        continue
+
+                    # No exit_reason — classify the termination
+                    classification = self._classify_terminated(ec2, iid)
+                    self.stdout.write(
+                        f"[slot {slot_idx}] Instance {iid} {state} "
+                        f"(classification={classification})\n"
+                    )
+
+                    self._pull_worker_log(iid, run_tag)
                     db.reclaim_stale_claims(conn, run_id, iid)
 
                     progress = db.get_queue_progress(conn, run_id)
@@ -536,94 +596,79 @@ class Command(BaseCommand):
                         slot["status"] = "done"
                         continue
 
-                    slot["relaunch_count"] += 1
-                    if slot["relaunch_count"] > MAX_RELAUNCH_ATTEMPTS:
-                        slot["status"] = "capacity_exhausted"
-                        self.stderr.write(f"Slot exceeded max relaunches.\n")
-                        continue
-
-                    self.stdout.write(
-                        f"Relaunching slot (attempt {slot['relaunch_count']}/{MAX_RELAUNCH_ATTEMPTS})...\n"
+                    slot["consecutive_failures"] += 1
+                    self._relaunch_slot(
+                        ec2, conn, run_id, run_tag, priority, ntee_filter,
+                        options, slot, slot_idx, classification,
                     )
-                    self._safe_terminate(ec2, iid)
-                    new_id = self._launch_with_capacity_retry(
-                        ec2, conn, run_id, run_tag, priority, ntee_filter, options,
-                        slot_index=slots.index(slot),
-                    )
-                    if new_id:
-                        slot["instance_id"] = new_id
-                        slot["status"] = "running"
-                        slot["deploy_ok"] = False
-                        self._update_instance_ids(conn, run_id, slots)
-                    else:
-                        slot["status"] = "capacity_exhausted"
                     continue
 
-                # B7: detect a failed code-deploy / worker-start. Such a worker
-                # never claims anything, so it has no open claim for the stale
-                # check to catch (oldest_open is None) — it would idle to
-                # max_hours. Best-effort: get_command_invocation may be denied
-                # (returns None), in which case we simply skip this check.
+                # B7: detect failed code-deploy / worker-start
                 if not slot.get("deploy_ok"):
                     dstatus = self._check_deploy_status(iid)
                     if dstatus in ("Failed", "Cancelled", "TimedOut"):
                         self.stderr.write(
-                            f"Worker deploy {dstatus} on {iid}. Terminating + relaunching.\n"
+                            f"[slot {slot_idx}] Worker deploy {dstatus} on {iid}. "
+                            f"Terminating + relaunching.\n"
                         )
                         self._safe_terminate(ec2, iid)
                         db.reclaim_stale_claims(conn, run_id, iid)
-                        slot["relaunch_count"] += 1
-                        if slot["relaunch_count"] > MAX_RELAUNCH_ATTEMPTS:
-                            slot["status"] = "capacity_exhausted"
-                        else:
-                            new_id = self._launch_with_capacity_retry(
-                                ec2, conn, run_id, run_tag, priority, ntee_filter, options,
-                                slot_index=slots.index(slot),
-                            )
-                            if new_id:
-                                slot["instance_id"] = new_id
-                                slot["status"] = "running"
-                                slot["deploy_ok"] = False
-                                self._update_instance_ids(conn, run_id, slots)
-                            else:
-                                slot["status"] = "capacity_exhausted"
+                        slot["consecutive_failures"] += 1
+                        self._relaunch_slot(
+                            ec2, conn, run_id, run_tag, priority, ntee_filter,
+                            options, slot, slot_idx, "deploy_failed",
+                        )
                         continue
                     if dstatus == "Success":
                         slot["deploy_ok"] = True
 
-                # Heartbeat: detect stale worker on running instance.
-                # Liveness = most recent completion, or (if the worker has not
-                # completed anything yet) the age of its oldest outstanding claim.
-                # This catches a worker that dies before its first completion
-                # (the run-30 zombie) and end-of-run all-claimed stalls, without
-                # depending on the global unclaimed count.
-                last_activity = self._get_worker_last_activity(conn, run_id, iid)
-                oldest_open = self._get_worker_open_claim_age(conn, run_id, iid)
-                heartbeat = last_activity or oldest_open
-                stale = (
-                    heartbeat is not None
-                    and (time.time() - heartbeat.timestamp()) > HEARTBEAT_STALE_MINUTES * 60
-                    and oldest_open is not None
-                )
-                if stale:
-                    self.stderr.write(f"Worker stale on {iid}. Terminating.\n")
-                    self._safe_terminate(ec2, iid)
-                    db.reclaim_stale_claims(conn, run_id, iid)
-                    slot["relaunch_count"] += 1
-                    if slot["relaunch_count"] > MAX_RELAUNCH_ATTEMPTS:
-                        slot["status"] = "capacity_exhausted"
+                # 3. Check heartbeat (only if DB is healthy)
+                if db_healthy:
+                    heartbeat_age = db.get_heartbeat_age(conn, iid, run_id)
+
+                    if heartbeat_age is not None:
+                        if heartbeat_age > HEARTBEAT_STALE_MINUTES * 60:
+                            self.stderr.write(
+                                f"[slot {slot_idx}] Worker stale on {iid} "
+                                f"(heartbeat age={heartbeat_age:.0f}s). Terminating.\n"
+                            )
+                            self._pull_worker_log(iid, run_tag)
+                            self._safe_terminate(ec2, iid)
+                            db.reclaim_stale_claims(conn, run_id, iid)
+                            slot["consecutive_failures"] += 1
+                            self._relaunch_slot(
+                                ec2, conn, run_id, run_tag, priority, ntee_filter,
+                                options, slot, slot_idx, "hang",
+                            )
                     else:
-                        new_id = self._launch_with_capacity_retry(
-                            ec2, conn, run_id, run_tag, priority, ntee_filter, options,
-                            slot_index=slots.index(slot),
+                        # No heartbeat row — legacy worker fallback
+                        last_activity = self._get_worker_last_activity(conn, run_id, iid)
+                        oldest_open = self._get_worker_open_claim_age(conn, run_id, iid)
+                        heartbeat = last_activity or oldest_open
+                        stale = (
+                            heartbeat is not None
+                            and (time.time() - heartbeat.timestamp()) > HEARTBEAT_LEGACY_STALE_MINUTES * 60
+                            and oldest_open is not None
                         )
-                        if new_id:
-                            slot["instance_id"] = new_id
-                            slot["status"] = "running"
-                            slot["deploy_ok"] = False
-                            self._update_instance_ids(conn, run_id, slots)
-                        else:
-                            slot["status"] = "capacity_exhausted"
+                        if stale:
+                            self.stderr.write(
+                                f"[slot {slot_idx}] Worker stale on {iid} "
+                                f"(legacy fallback). Terminating.\n"
+                            )
+                            self._safe_terminate(ec2, iid)
+                            db.reclaim_stale_claims(conn, run_id, iid)
+                            slot["consecutive_failures"] += 1
+                            self._relaunch_slot(
+                                ec2, conn, run_id, run_tag, priority, ntee_filter,
+                                options, slot, slot_idx, "hang",
+                            )
+
+                # Reset consecutive_failures on progress
+                progress = db.get_queue_progress(conn, run_id)
+                current_completed = progress["completed"]
+                if current_completed > slot_last_completed[slot_idx]:
+                    slot["consecutive_failures"] = 0
+                    slot_last_completed[slot_idx] = current_completed
 
             # Aggregate progress
             progress = db.get_queue_progress(conn, run_id)
@@ -637,9 +682,6 @@ class Command(BaseCommand):
             )
             self._update_job_progress(job_id, completed, total)
 
-            # B8: release the per-poll read snapshot so this long-lived
-            # connection does not sit "idle in transaction" for the whole run
-            # (which invites an idle-in-transaction timeout / failover drop).
             try:
                 conn.rollback()
             except Exception:
@@ -651,7 +693,7 @@ class Command(BaseCommand):
                 self._terminate_all(ec2, slots)
                 break
 
-            # All slots dead?
+            # All slots dead/abandoned?
             active = [s for s in slots if s["status"] == "running"]
             if not active:
                 self.stderr.write("All worker slots exhausted or done. Stopping.\n")
@@ -667,10 +709,6 @@ class Command(BaseCommand):
         final_total = progress["total"]
         incomplete = final_total - (final_completed + final_errored)
 
-        # B4: only report success and delete the queue if every item is
-        # accounted for. If items are stuck (a silent stall), keep the queue
-        # rows for post-mortem and report a non-success status instead of a
-        # false green "completed".
         if incomplete > 0:
             self.stderr.write(
                 f"Run ended with {incomplete} item(s) not completed "
@@ -682,15 +720,35 @@ class Command(BaseCommand):
         else:
             db.cleanup_work_queue(conn, run_id)
 
+        # Store log paths in stats_json for dashboard
+        log_paths = {}
+        for slot in slots:
+            iid = slot.get("instance_id")
+            if iid and run_tag:
+                log_paths[iid] = f"logs/parse/{run_tag}/{iid}/worker.log"
+
+        final_stats = {
+            "succeeded": final_completed,
+            "failed": final_errored,
+            "total": final_completed + final_errored,
+            "log_paths": log_paths,
+        }
+
         status = db.get_run_status(conn, run_tag)
         if status and not status.get("finished_at"):
-            db.finish_run(conn, status["id"], {
-                "succeeded": final_completed,
-                "failed": final_errored,
-                "total": final_completed + final_errored,
-            })
+            exit_reason = db.get_exit_reason(conn, run_id)
+            if not exit_reason:
+                if final_status == "cancelled":
+                    exit_reason = "cancelled"
+                elif final_status == "timeout":
+                    exit_reason = "max_hours"
+                elif final_status == "completed":
+                    exit_reason = "empty_batch"
+                else:
+                    exit_reason = "unknown"
+            db.finish_run_with_reason(conn, status["id"], final_stats, exit_reason)
 
-        # Map internal final_status to a Job status (Job has no "timeout").
+        # Map internal final_status to a Job status
         if final_status == "cancelled":
             job_status = "cancelled"
         elif final_status in ("failed", "timeout") or incomplete > 0:
@@ -818,6 +876,99 @@ class Command(BaseCommand):
         if state not in ("terminated", "shutting-down"):
             ec2.terminate_instances(InstanceIds=[instance_id])
             self.stdout.write(f"Terminated instance {instance_id}\n")
+
+    def _relaunch_slot(self, ec2, conn, run_id, run_tag, priority, ntee_filter,
+                       options, slot, slot_idx, classification):
+        """Decide whether to relaunch a slot based on consecutive_failures."""
+        if slot["consecutive_failures"] >= MAX_CONSECUTIVE_FAILURES:
+            slot["status"] = "abandoned"
+            self.stderr.write(
+                f"[slot {slot_idx}] Abandoned after {MAX_CONSECUTIVE_FAILURES} "
+                f"consecutive failures (last: {classification})\n"
+            )
+            return
+
+        self.stdout.write(
+            f"[slot {slot_idx}] Relaunching (failures={slot['consecutive_failures']}"
+            f"/{MAX_CONSECUTIVE_FAILURES}, reason={classification})...\n"
+        )
+        new_id = self._launch_with_capacity_retry(
+            ec2, conn, run_id, run_tag, priority, ntee_filter, options,
+            slot_index=slot_idx,
+        )
+        if new_id:
+            slot["instance_id"] = new_id
+            slot["status"] = "running"
+            slot["deploy_ok"] = False
+            self._update_instance_ids(conn, run_id, self._slots)
+        else:
+            slot["status"] = "capacity_exhausted"
+
+    def _classify_terminated(self, ec2, instance_id: str) -> str:
+        """Classify why a terminated instance died: spot_reclaim or crash_or_oom."""
+        from botocore.exceptions import ClientError
+
+        try:
+            resp = ec2.describe_instances(InstanceIds=[instance_id])
+            reservations = resp.get("Reservations", [])
+            if not reservations:
+                return "crash_or_oom"
+            inst = reservations[0]["Instances"][0]
+            lifecycle = inst.get("InstanceLifecycle", "")
+            if lifecycle != "spot":
+                return "crash_or_oom"
+
+            # Check for spot interruption
+            try:
+                sir_resp = ec2.describe_spot_instance_requests(
+                    Filters=[{"Name": "instance-id", "Values": [instance_id]}]
+                )
+                for req in sir_resp.get("SpotInstanceRequests", []):
+                    status_code = req.get("Status", {}).get("Code", "")
+                    if "instance-terminated" in status_code:
+                        return "spot_reclaim"
+            except ClientError:
+                pass
+
+            return "crash_or_oom"
+        except Exception:
+            return "crash_or_oom"
+
+    def _pull_worker_log(self, instance_id: str, run_tag: str) -> None:
+        """Pull worker log from instance via SSM before termination. Best-effort."""
+        if not run_tag or not config.validate_run_tag(run_tag):
+            logger.warning("invalid or missing run_tag for log pull")
+            return
+        try:
+            import boto3
+
+            ssm = boto3.client("ssm", region_name="us-east-1")
+            s3_path = f"s3://{LOG_S3_BUCKET}/logs/parse/{run_tag}/{instance_id}/worker.log"
+            ssm.send_command(
+                InstanceIds=[instance_id],
+                DocumentName="AWS-RunShellScript",
+                Parameters={
+                    "commands": [f"aws s3 cp /var/log/docling-worker.log {s3_path}"],
+                },
+            )
+            time.sleep(5)
+        except Exception:
+            logger.warning("SSM log pull failed for %s (best-effort)", instance_id)
+
+    def _db_healthy(self, conn) -> bool:
+        """Quick check that the orchestrator's own DB connection is working."""
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT 1")
+                cur.fetchone()
+            return True
+        except Exception:
+            logger.warning("DB health check failed — skipping stale detection this cycle")
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            return False
 
     def _launch_instance(self, ec2, run_tag: str, options: dict, slot_index: int = 0, subnet_id: str | None = None) -> str:
         import boto3

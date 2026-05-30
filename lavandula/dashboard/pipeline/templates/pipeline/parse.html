@@ -110,6 +110,7 @@
               <th class="pb-2 text-right">Failed</th>
               <th class="pb-2 text-right">Rate</th>
               <th class="pb-2 text-right">Cost</th>
+              <th class="pb-2">Exit</th>
               <th class="pb-2"></th>
             </tr>
           </thead>
@@ -134,6 +135,7 @@
               <td class="py-2 text-right text-xs">
                 {% if run.cost != None %}${{ run.cost }} ({{ run.pricing_mode }}){% else %}-{% endif %}
               </td>
+              <td class="py-2 text-xs">{{ run.exit_reason|default:"—" }}</td>
               <td class="py-2 text-right">
                 {% if run.job %}
                 <a href="{% url 'job_detail' run.job.pk %}" class="text-blue-600 text-xs hover:underline">Job #{{ run.job.pk }}</a>

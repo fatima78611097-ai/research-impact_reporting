@@ -15,11 +15,13 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import atexit
 import json
 import logging
 import re
 import sys
 import tempfile
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -40,6 +42,60 @@ class PermanentError(Exception):
     """Non-retriable error (corrupt PDF, parse crash). Recorded in documents.error."""
 
 
+class HeartbeatThread(threading.Thread):
+    """Daemon thread that writes heartbeat to DB every `interval` seconds.
+
+    Shares docs_completed and current_doc_sha with the main processing loop
+    via a simple lock. Never crashes the worker — all DB errors are swallowed.
+    """
+
+    def __init__(self, conn_factory, instance_id: str, run_id: int, interval: int = 60):
+        super().__init__(daemon=True, name="heartbeat")
+        self._conn_factory = conn_factory
+        self._instance_id = instance_id
+        self._run_id = run_id
+        self._interval = interval
+        self._lock = threading.Lock()
+        self._docs_completed = 0
+        self._current_doc_sha: str | None = None
+        self._stop_event = threading.Event()
+
+    def update(self, docs_completed: int, current_doc_sha: str | None) -> None:
+        with self._lock:
+            self._docs_completed = docs_completed
+            self._current_doc_sha = current_doc_sha
+
+    def stop(self) -> None:
+        self._stop_event.set()
+
+    def run(self) -> None:
+        conn = None
+        while not self._stop_event.is_set():
+            self._stop_event.wait(self._interval)
+            if self._stop_event.is_set():
+                break
+            with self._lock:
+                docs = self._docs_completed
+                sha = self._current_doc_sha
+            try:
+                if conn is None:
+                    conn = self._conn_factory()
+                db.upsert_heartbeat(conn, self._instance_id, self._run_id, docs, sha)
+            except Exception:
+                logger.warning("heartbeat write failed, will retry next cycle")
+                try:
+                    if conn is not None:
+                        conn.close()
+                except Exception:
+                    pass
+                conn = None
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
+
+
 def _parse_version() -> str:
     """Resolve the installed docling version string. Never raises.
 
@@ -53,6 +109,24 @@ def _parse_version() -> str:
         return f"docling-{_pkg_version('docling')}"
     except Exception:
         return "docling-unknown"
+
+
+def _ship_log_on_exit(run_tag: str | None, instance_id: str | None) -> None:
+    """Best-effort atexit: upload worker log to S3."""
+    if not run_tag or not instance_id:
+        return
+    log_path = Path("/var/log/docling-worker.log")
+    if not log_path.exists():
+        return
+    try:
+        import boto3
+
+        s3 = boto3.client("s3")
+        s3_key = f"logs/parse/{run_tag}/{instance_id}/worker.log"
+        s3.upload_file(str(log_path), config.S3_BUCKET, s3_key)
+        logger.info("shipped worker log to S3", extra={"s3_key": s3_key})
+    except Exception:
+        pass
 
 
 def main() -> None:
@@ -71,6 +145,10 @@ def main() -> None:
 
     conn = _connect(args)
 
+    run_tag = _get_run_tag(conn, args.run_id)
+    if args.worker_id and run_tag:
+        atexit.register(_ship_log_on_exit, run_tag, args.worker_id)
+
     if args.worker_id:
         with conn.cursor() as cur:
             cur.execute("SET app.worker_id = %s", (args.worker_id,))
@@ -81,13 +159,21 @@ def main() -> None:
             conn.close()
             sys.exit(1)
 
+        heartbeat = HeartbeatThread(
+            conn_factory=lambda: _connect(args),
+            instance_id=args.worker_id,
+            run_id=args.run_id,
+        )
+        heartbeat.start()
+
         try:
-            _run_loop_queue(conn, args)
+            _run_loop_queue(conn, args, heartbeat=heartbeat)
         except Exception:
-            # Last-resort boundary: with the per-item catch-all in place this
-            # should rarely fire, but if it does, release in-flight claims so the
-            # orphaned rows return to the pool instead of wedging the run.
             logger.exception("worker fatal error in queue loop")
+            try:
+                db.set_exit_reason(conn, args.run_id, "error")
+            except Exception:
+                pass
             try:
                 db.reclaim_stale_claims(conn, args.run_id, args.worker_id)
             except Exception:
@@ -97,6 +183,8 @@ def main() -> None:
             except Exception:
                 pass
             sys.exit(1)
+        finally:
+            heartbeat.stop()
     else:
         if not db.acquire_worker_lock(conn):
             logger.error("another worker is already running (advisory lock held)")
@@ -194,7 +282,7 @@ def _run_loop(conn, args) -> None:
     db.finish_run(conn, args.run_id, stats)
 
 
-def _run_loop_queue(conn, args) -> None:
+def _run_loop_queue(conn, args, heartbeat: HeartbeatThread | None = None) -> None:
     """Queue mode: claim work via SKIP LOCKED, complete items individually."""
     import boto3
 
@@ -209,10 +297,8 @@ def _run_loop_queue(conn, args) -> None:
     }
 
     max_docs = args.max_docs
+    exit_reason = "unknown"
 
-    # Bounded in-memory retry tracking for transient/download failures, so a
-    # permanently-failing "transient" item is recorded as errored after N tries
-    # instead of being unclaimed -> re-fetched -> failed forever (a hot loop).
     transient_attempts: dict[str, int] = {}
     max_transient_attempts = getattr(config, "MAX_TRANSIENT_ATTEMPTS", 3)
     consecutive_fetch_errors = 0
@@ -220,10 +306,9 @@ def _run_loop_queue(conn, args) -> None:
     while True:
         if max_docs is not None and stats["total"] >= max_docs:
             logger.info("reached max-docs limit", extra={"max_docs": max_docs})
+            exit_reason = "max_docs"
             break
 
-        # A5: a dropped RDS connection here must not kill the worker. Retry a
-        # bounded number of times, then give up cleanly.
         try:
             batch = db.fetch_work_batch(conn, args.run_id, args.batch_size, args.worker_id)
             consecutive_fetch_errors = 0
@@ -236,12 +321,14 @@ def _run_loop_queue(conn, args) -> None:
             _safe_rollback(conn)
             if consecutive_fetch_errors >= 5:
                 logger.error("giving up after repeated fetch failures")
+                exit_reason = "error"
                 break
             time.sleep(config.TRANSIENT_RETRY_BASE_SECONDS * consecutive_fetch_errors)
             continue
 
         if not batch:
             logger.info("no more unclaimed work items")
+            exit_reason = "empty_batch"
             break
 
         with tempfile.TemporaryDirectory(prefix="docling-work-") as tmp_dir:
@@ -250,6 +337,9 @@ def _run_loop_queue(conn, args) -> None:
 
             for item in batch:
                 sha = item["content_sha256"]
+
+                if heartbeat:
+                    heartbeat.update(stats["succeeded"], sha)
 
                 if not config.validate_sha256(sha):
                     logger.warning("invalid sha256 in work queue", extra={"sha": sha[:20]})
@@ -283,8 +373,6 @@ def _run_loop_queue(conn, args) -> None:
                                       transient_attempts, max_transient_attempts, stats)
                 except PermanentError as e:
                     error_label = str(e)[:200] if str(e) else "unknown_error"
-                    # Record-error must never prevent the item from being completed,
-                    # else the row stays claimed/incomplete and wedges the run.
                     try:
                         _record_error(conn, item, e)
                     except Exception as rec_exc:
@@ -297,11 +385,6 @@ def _run_loop_queue(conn, args) -> None:
                         _safe_rollback(conn)
                     stats["failed"] += 1
                 except Exception as exc:
-                    # A1 catch-all: any unexpected error (psycopg2 DataError/
-                    # UniqueViolation/OperationalError, KeyError from malformed
-                    # chunking output, an unclassified CUDA RuntimeError, ...) must
-                    # NOT kill the worker. Roll back the aborted txn, mark the item
-                    # failed, and continue the batch.
                     logger.error("unexpected error, marking item failed",
                                  extra={"sha": sha[:16], "err": str(exc)[:200]})
                     _safe_rollback(conn)
@@ -316,7 +399,6 @@ def _run_loop_queue(conn, args) -> None:
                     if pdf_path and pdf_path.exists():
                         pdf_path.unlink()
 
-                # Stats are advisory — never let a stats write kill the worker.
                 try:
                     if stats["total"] % config.STATS_UPDATE_INTERVAL == 0:
                         db.update_run_stats(conn, args.run_id, stats)
@@ -326,9 +408,11 @@ def _run_loop_queue(conn, args) -> None:
 
                 if _spot_termination_pending():
                     logger.warning("spot termination notice received, exiting gracefully")
+                    exit_reason = "spot_termination"
                     break
 
         if _spot_termination_pending():
+            exit_reason = "spot_termination"
             break
 
     stats["end_time"] = time.time()
@@ -337,6 +421,12 @@ def _run_loop_queue(conn, args) -> None:
         db.update_run_stats(conn, args.run_id, stats)
     except Exception as exc:
         logger.warning("final update_run_stats failed", extra={"err": str(exc)[:100]})
+        _safe_rollback(conn)
+
+    try:
+        db.set_exit_reason(conn, args.run_id, exit_reason)
+    except Exception:
+        logger.warning("failed to set exit_reason", extra={"exit_reason": exit_reason})
         _safe_rollback(conn)
 
 
@@ -507,6 +597,15 @@ def _record_error(conn, item: dict, error) -> None:
             "failed to record error row",
             extra={"sha": item["content_sha256"][:16], "err": str(exc)[:100]},
         )
+
+
+def _get_run_tag(conn, run_id: int) -> str | None:
+    """Look up the run_tag for a run_id. Used for log shipping path."""
+    try:
+        status = db.get_run_status_by_id(conn, run_id)
+        return status.get("run_tag") if status else None
+    except Exception:
+        return None
 
 
 def _spot_termination_pending() -> bool:
