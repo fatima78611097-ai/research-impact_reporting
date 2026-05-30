@@ -78,39 +78,31 @@ def extract_text(pdf_input: bytes) -> ExtractResult:
         )
 
     try:
-        proc.stdin.write(pdf_input)
-        proc.stdin.close()
+        raw_output, stderr_out = proc.communicate(
+            input=pdf_input, timeout=TIMEOUT_SECONDS,
+        )
 
-        raw_output = proc.stdout.read(MAX_OUTPUT_BYTES + 1)
+        if stderr_out:
+            log.debug("pdftotext stderr: %s", stderr_out[:500])
 
         if len(raw_output) > MAX_OUTPUT_BYTES:
-            proc.kill()
-            proc.wait()
-            log.warning("pdftotext output exceeded %d bytes, killed", MAX_OUTPUT_BYTES)
+            log.warning("pdftotext output exceeded %d bytes", MAX_OUTPUT_BYTES)
             return ExtractResult(
                 text="", version=version, char_count=0,
                 is_scanned=False, failed=True,
                 error="output_exceeded_10mb",
             )
 
-        proc.stdout.close()
-        proc.wait(timeout=TIMEOUT_SECONDS)
-
-        stderr_out = proc.stderr.read(4096)
-        proc.stderr.close()
-        if stderr_out:
-            log.debug("pdftotext stderr: %s", stderr_out[:500])
-
     except subprocess.TimeoutExpired:
         proc.kill()
-        proc.wait()
+        proc.communicate()
         return ExtractResult(
             text="", version=version, char_count=0,
             is_scanned=False, failed=True, error="timeout",
         )
     except OSError as exc:
         proc.kill()
-        proc.wait()
+        proc.communicate()
         return ExtractResult(
             text="", version=version, char_count=0,
             is_scanned=False, failed=True, error=str(exc),
