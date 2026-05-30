@@ -1,7 +1,7 @@
 # Spec 0056 — Parse Orchestrator Reliability & Observability
 
 - **Project:** 0056
-- **Status:** conceived (initial draft)
+- **Status:** conceived (multi-agent review incorporated)
 - **Depends on:** 0054 (Parse Dashboard), 0055 (Multi-Instance Parse)
 - **Author:** Architect, 2026-05-30
 
@@ -69,7 +69,13 @@ PRIMARY KEY (instance_id, run_id)
 
 The worker calls `UPDATE ... SET last_heartbeat = now(), docs_completed = N, current_doc_sha = :sha` every 60 seconds in its main loop (between doc processing, not during). If the worker is blocked inside `Docling.convert()`, the heartbeat thread (a separate daemon thread) sends the update.
 
-**Heartbeat thread:** A lightweight daemon thread that wakes every 60s and writes the heartbeat. The main processing loop updates `docs_completed` and `current_doc_sha` in shared state; the heartbeat thread reads and writes them. If the main thread is hung inside Docling, the heartbeat thread still fires — this is the key distinction from completion-based liveness.
+**Heartbeat thread:** A lightweight daemon thread that wakes every 60s and writes the heartbeat. The main processing loop updates `docs_completed` and `current_doc_sha` in shared state; the heartbeat thread reads and writes them.
+
+**What the heartbeat CAN and CANNOT detect (Codex review):**
+- **CAN detect:** process crash (heartbeat stops), instance termination (heartbeat stops), OOM kill (heartbeat stops), network failure (heartbeat DB write fails → stale from orchestrator's perspective)
+- **CAN detect (key case):** Docling `convert()` blocking the main thread for 600+ seconds. The heartbeat thread is a separate Python thread — it still fires even while the main thread is blocked in a C extension (Docling/PyTorch). The GIL releases during I/O and C extension calls. So a worker grinding a slow doc sends heartbeats → NOT stale. A worker stuck in an infinite loop in pure Python → GIL blocks the heartbeat thread → heartbeat stops → detected as stale after 5 min. This is the correct behavior: the infinite-loop case IS a hang.
+- **CANNOT detect:** a Docling hang that holds the GIL indefinitely in pure Python without releasing (rare — most heavy work is in C/CUDA extensions that release the GIL). In this edge case, the heartbeat thread is also blocked, and the worker appears stale after 5 min → the orchestrator terminates and relaunches, which is the safe behavior (kill what might be hung).
+- **Summary:** heartbeat distinguishes "slow but alive" (GIL-releasing, heartbeat fires) from "stuck or dead" (heartbeat stops). The remaining ambiguity (is it truly hung or just holding the GIL?) resolves toward termination, which is fail-safe.
 
 ### 3.2 Stale detection rewrite (B1 replacement)
 
@@ -102,13 +108,23 @@ Replace `MAX_RELAUNCH_ATTEMPTS=3` (hard per-run cap, never resets) with a progre
 
 When a worker dies, classify the death before deciding whether to relaunch:
 
-| Classification | How detected | Relaunch policy |
+**Detection ordering (deterministic, Codex review):** the orchestrator checks in this exact sequence on each poll cycle. First match wins:
+
+1. **Check exit_reason** — if `exit_reason` is set in `parse_runs`, the worker exited intentionally. Classification = `graceful_exit`. Don't relaunch.
+2. **Check instance state** — if the EC2 instance is `terminated` or `shutting-down`:
+   a. Check spot interruption notice (instance metadata or CloudTrail) → classification = `spot_reclaim`. Always relaunch.
+   b. Otherwise → classification = `crash_or_oom`. Relaunch, increment counter.
+3. **Check heartbeat** — if instance is `running`:
+   a. Heartbeat exists and age < `HEARTBEAT_STALE_MINUTES` → worker is alive. No action.
+   b. Heartbeat exists and age ≥ `HEARTBEAT_STALE_MINUTES` → classification = `hang`. Terminate + relaunch, increment counter.
+   c. No heartbeat row (legacy worker) → fall back to completion-based check with 30-min timeout.
+
+| Classification | Detection (per ordering above) | Relaunch policy |
 |---|---|---|
-| **Spot reclaim** | Instance state = `shutting-down` + spot interruption notice in instance metadata | Always relaunch (counter increments but this is normal) |
-| **Graceful exit** | Instance state = `terminated`, exit_reason set by worker | Don't relaunch — worker finished normally |
-| **Crash/OOM** | Instance state = `terminated`, no exit_reason, heartbeat was recent | Relaunch, increment counter |
-| **Hang** | Instance running but heartbeat stale (>5 min) | Terminate + relaunch, increment counter |
-| **Network/DB** | Heartbeat stale but instance healthy (running, SSH responds) | Log warning, don't terminate yet, retry heartbeat check next poll |
+| **Graceful exit** | exit_reason set by worker | Don't relaunch |
+| **Spot reclaim** | Instance terminated + spot interruption | Always relaunch, increment counter |
+| **Crash/OOM** | Instance terminated, no exit_reason | Relaunch, increment counter |
+| **Hang** | Instance running, heartbeat stale | Terminate + relaunch, increment counter |
 
 ### 3.5 Exit reason tracking
 
