@@ -1,7 +1,7 @@
 # Plan 0056 — Parse Orchestrator Reliability & Observability
 
 - **Project:** 0056   **Spec:** `locard/specs/0056-parse-observability.md` (specified)
-- **Status:** conceived (plan-review incorporated)
+- **Status:** conceived (plan-review + red-team incorporated)
 - **Author:** Architect, 2026-05-30
 
 > Builder-executable plan. Heartbeat thread, smart relaunch budget, death classification, exit reason, log shipping, dashboard integration. Worker-side changes require tarball rebuild + deploy.
@@ -199,3 +199,6 @@ Worker-side phases (1, 5, 6) can proceed in parallel. Orchestrator-side phases (
 - SSM log pull before termination — wait 5s for upload
 - Worker tarball deploy while a run is active = disaster — check first
 - `exit_reason` cross-check is critical — without it, a buggy worker claiming `empty_batch` silently kills the run
+- **Upstream failure (Codex red-team):** if heartbeat DB write fails because the DB is down, the worker is healthy but appears stale. Death classification must check: is the orchestrator's OWN DB connection working? If the orchestrator can't read heartbeats because the DB is down, don't terminate workers — the problem is upstream. Add a `_db_healthy()` check before stale-detection: if the orchestrator's own query fails, skip the stale check this poll cycle and log a warning.
+- **Deploy rollback (Codex red-team):** if the new tarball causes workers to crash on launch, the operator can restore from `deploy/backups/worker-code.{timestamp}.tar.gz`. The backup is created before the new tarball is uploaded (Phase 9). No automatic rollback — operator decision.
+- **Log EIN redaction (Gemini red-team):** worker logs may contain org EINs in file paths and error messages. These are not PII in the legal sense (EINs are public IRS data), but as defense-in-depth, the log shipper can strip EINs from error messages before upload. Plan-phase detail — implement if feasible without complexity.
