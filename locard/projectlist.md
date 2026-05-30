@@ -839,11 +839,11 @@ projects:
   - id: "0056"
     title: "Parse Orchestrator Reliability & Observability"
     summary: "Make the parse control plane production-grade so long runs reliably FINISH — the gate before the next full-corpus/national run. Covers: worker heartbeat (liveness independent of completions), relaunch budget that resets on progress (not a hard per-run cap), capacity-death vs bug-death distinction, PLUS the original observability (ship worker logs to S3/CloudWatch so they survive termination; exit_reason on parse_runs)."
-    status: conceived
+    status: implementing
     priority: high
     files:
       spec: locard/specs/0056-parse-observability.md
-      plan: null
+      plan: locard/plans/0056-parse-observability.md
       review: null
     dependencies: ["0054"]
     tags: [dashboard, pipeline, parse, reliability, observability, operations]

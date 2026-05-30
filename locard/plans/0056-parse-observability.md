@@ -1,7 +1,7 @@
 # Plan 0056 — Parse Orchestrator Reliability & Observability
 
 - **Project:** 0056   **Spec:** `locard/specs/0056-parse-observability.md` (specified)
-- **Status:** conceived (plan-review + red-team incorporated)
+- **Status:** planned (plan-review + red-team incorporated; human-approved 2026-05-30)
 - **Author:** Architect, 2026-05-30
 
 > Builder-executable plan. Heartbeat thread, smart relaunch budget, death classification, exit reason, log shipping, dashboard integration. Worker-side changes require tarball rebuild + deploy.
