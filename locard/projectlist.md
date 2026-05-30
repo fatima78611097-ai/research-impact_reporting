@@ -852,7 +852,7 @@ projects:
   - id: "0057"
     title: "LLM Extraction Faithfulness Verification (Snippet Grounding)"
     summary: "Verification pass that runs after the LLM metric/story extraction. Confirms every source_snippet — and the metric value/unit tied to it — appears verbatim (character-for-character) in the parsed source document text, so we can prove zero hallucination/fabrication. Quarantines or flags any LLM output not grounded in the source."
-    status: conceived
+    status: specified
     priority: high
     files:
       spec: locard/specs/0057-llm-faithfulness-verification.md

@@ -1,7 +1,7 @@
 # Spec 0057 — LLM Extraction Faithfulness Verification (Snippet Grounding)
 
 - **Project:** 0057
-- **Status:** conceived (draft — incorporated multi-agent review; awaiting red-team + human approval)
+- **Status:** specified (multi-agent review + red-team incorporated; human-approved 2026-05-29)
 - **Depends on:** 0060 (Parse Fidelity Verification)
 - **Author:** Architect, 2026-05-29
 
@@ -101,7 +101,13 @@ Source documents are external/untrusted input to a gate that controls publicatio
 - **Offset integrity:** validate `grounding_offsets` are in-bounds of the source; never trust extractor-supplied offsets without re-checking the span at those offsets (offset-injection guard).
 - **Determinism / DoS:** R2 table search bounded to the doc's own rows; no super-linear blowup on adversarial input.
 - **Metadata leakage:** the disclosed tier/label/confidence must not expose anything beyond "OCR-derived / confidence N" — no raw source structure or internal scoring internals in public surfaces.
-- (Red-team pass to follow this review per workflow.)
+
+**Red-team additions (incorporated 2026-05-29; Gemini 0 CRITICAL / 2 HIGH):**
+- **0060 input integrity (HIGH):** 0057 grounds against 0060-*repaired* text, so 0057 is only as trustworthy as 0060's repair. The repaired text 0057 consumes must itself be tier-stamped/verified by 0060; an unverified or compromised repair would let a "verified" grounding rest on bad text. The gate records *which* source (Docling vs pdftotext-repaired) each verdict grounded against.
+- **Numeric reformat (HIGH):** "$2.8M" vs "$2.8 million" is a **defect by default**; any numeric-normalization allowlist (plan phase) must be explicit, bounded, and unit-preserving — never open-ended "smart" number parsing.
+- **`context_window` is unverified display context, not evidence:** it is bounded in length, **never** counted toward grounding, and flagged display-only; if surfaced it carries its own offsets so it can be independently checked — it must not become a backdoor for ungrounded text riding along with a verified fact.
+- **Multi-span bound:** the offsets list is capped at a small N (plan-set); a fact claiming support from many tiny scattered spans is rejected (anti-gaming / anti-DoS), and "required spans" is explicitly defined.
+- **Control characters:** reject **all** non-printable characters except the whitespace produced by normalization; the allowed set is the explicit, enumerated output of N — not "whatever survives."
 
 ## 9. Failure & Error Scenarios (must be defined, fail-safe)
 - **Source text missing/unloadable** → cannot verify → **Tier C (quarantine)** if text-native expected, or **Tier B** if known-OCR; never default to "verified."
