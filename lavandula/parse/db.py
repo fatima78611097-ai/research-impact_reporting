@@ -572,3 +572,98 @@ def get_run_status_by_id(conn, run_id: int) -> dict | None:
         )
         row = cur.fetchone()
         return dict(row) if row else None
+
+
+# ---------------------------------------------------------------------------
+# Heartbeat functions (Spec 0056: worker heartbeat)
+# ---------------------------------------------------------------------------
+
+
+def upsert_heartbeat(
+    conn, instance_id: str, run_id: int, docs_completed: int, current_doc_sha: str | None
+) -> None:
+    """Insert or update worker heartbeat row."""
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO lava_parse.worker_heartbeats
+                    (instance_id, run_id, last_heartbeat, docs_completed, current_doc_sha)
+                VALUES (%s, %s, NOW(), %s, %s)
+                ON CONFLICT (instance_id, run_id) DO UPDATE
+                SET last_heartbeat = NOW(),
+                    docs_completed = EXCLUDED.docs_completed,
+                    current_doc_sha = EXCLUDED.current_doc_sha
+                """,
+                (instance_id, run_id, docs_completed, current_doc_sha),
+            )
+
+
+def get_heartbeat_age(conn, instance_id: str, run_id: int) -> float | None:
+    """Return heartbeat age in seconds, or None if no heartbeat row exists."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT EXTRACT(EPOCH FROM NOW() - last_heartbeat)
+            FROM lava_parse.worker_heartbeats
+            WHERE instance_id = %s AND run_id = %s
+            """,
+            (instance_id, run_id),
+        )
+        row = cur.fetchone()
+        return row[0] if row else None
+
+
+def get_worker_heartbeats(conn, run_id: int) -> list[dict]:
+    """Return all heartbeat rows for a run (for dashboard display)."""
+    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+        cur.execute(
+            """
+            SELECT instance_id, last_heartbeat, docs_completed, current_doc_sha,
+                   EXTRACT(EPOCH FROM NOW() - last_heartbeat) AS age_seconds
+            FROM lava_parse.worker_heartbeats
+            WHERE run_id = %s
+            """,
+            (run_id,),
+        )
+        return [dict(r) for r in cur.fetchall()]
+
+
+# ---------------------------------------------------------------------------
+# Exit reason functions (Spec 0056: exit reason tracking)
+# ---------------------------------------------------------------------------
+
+
+def finish_run_with_reason(conn, run_id: int, stats: dict, exit_reason: str = "unknown") -> None:
+    """Mark a parse run as finished with exit reason."""
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE lava_parse.parse_runs
+                SET finished_at = NOW(), stats_json = %s, exit_reason = %s
+                WHERE id = %s
+                """,
+                (json.dumps(stats), exit_reason, run_id),
+            )
+
+
+def set_exit_reason(conn, run_id: int, reason: str) -> None:
+    """Set or override exit_reason on a parse run."""
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE lava_parse.parse_runs SET exit_reason = %s WHERE id = %s",
+                (reason, run_id),
+            )
+
+
+def get_exit_reason(conn, run_id: int) -> str | None:
+    """Read exit_reason for a parse run."""
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT exit_reason FROM lava_parse.parse_runs WHERE id = %s",
+            (run_id,),
+        )
+        row = cur.fetchone()
+        return row[0] if row else None
