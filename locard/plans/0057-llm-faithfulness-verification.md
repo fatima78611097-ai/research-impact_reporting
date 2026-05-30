@@ -1,7 +1,7 @@
 # Plan 0057 — LLM Extraction Faithfulness Verification
 
 - **Project:** 0057   **Spec:** `locard/specs/0057-llm-faithfulness-verification.md` (specified)
-- **Status:** conceived (initial plan draft — awaiting plan-review, red-team-plan, human approval)
+- **Status:** conceived (plan-review incorporated; awaiting red-team-plan + human approval)
 - **Author:** Architect, 2026-05-30
 
 > Builder-executable plan. Phases are sequenced; each lists deliverables, tests, and acceptance. Resolves the red-team plan-phase checklist (multi-span semantics, R2 tie-breaks, value normalization, 0060-trust, determinism).
@@ -13,6 +13,9 @@
 4. **Numeric normalization v1 = defect-by-default.** No "$2.8M"↔"$2.8 million" allowlist in v1 (revisit with catalog data). Normalization N alters neither digits nor units.
 5. **Quarantine = a flag, never a delete.** Tier-C rows stay in the DB with `verification_tier='quarantine'`, excluded from published surfaces by query.
 6. **DDL is operator-run.** Claude cannot apply RDS migrations; the plan produces the migration SQL for the operator (single-operator DB, no zero-downtime needed).
+7. **Story rule (restated from spec §4.5, so the builder does not metric-ize stories):** a `story_summary` **may be abstractive** (composed) — do NOT apply R1/R2 to the summary prose. BUT (a) the story's **`source_snippet`** must be grounded R1/R2 like a metric; (b) any **direct quote** (text in quotation marks) inside the summary must be verbatim-grounded; (c) no grounded `source_snippet` → Tier C.
+8. **"Required spans" defined operationally:** the gate **re-derives** the required spans from the fact's own `source_snippet`/value (it does not trust extractor-supplied offsets — those are re-validated against the source, never accepted as-is; offset-injection guard). A "required span" = each contiguous snippet fragment the fact asserts; all must match (≤ N=8).
+9. **R2 "row" defined against our storage:** `lava_parse.tables` holds `data_json` (structured cells) + `markdown`. A **row** = one record's cell-set from `data_json` (preferred — unambiguous), falling back to a single markdown table line. R2 matches when the snippet's label-tokens AND value all appear within one such row. Tests use `data_json` rows as the oracle.
 
 ## Phase 0 — Decisions frozen + provider interface
 - Freeze the decisions above; define `SourceTextProvider` (returns normalized-ready section+table text for a `content_sha256`, with a `source` tag = `docling` | `pdftotext-repaired`).
@@ -29,6 +32,7 @@
 
 ## Phase 3 — The gate runner (batch + score)
 - Management command `verify_faithfulness <run_tag>`: iterate the run's `llm_metrics`/`llm_stories`, pull source text via the provider, run the Phase-1 verifier, write `verification_tier`/`grounding_rule`/`grounding_offsets`, set Tier-C for failures, set Tier-B for OCR sources (from the provider's `source`/0060 signal), emit a **per-run faithfulness score** to `extraction_runs.stats_json`.
+- **Record provenance source per verdict** (Codex review): write `grounding_source ∈ {docling, pdftotext-repaired}` on each fact — *which* text the verdict grounded against. **Tier decision when 0060 has not certified the text:** if the provider returns un-certified text, the verdict is **Tier-B-pending** (treated as unverified, not Tier-A) until 0060 certifies it — Tier-A requires a 0060-certified text-native source. Fail-safe: absence of certification never yields Tier-A.
 - **Tests:** integration on a fixture run (mixed grounded/defect/OCR); determinism (re-run = identical tiers); idempotency.
 - **Acceptance:** every fact gets a tier; Tier-C never appears in the "published" query; score emitted + trended.
 
