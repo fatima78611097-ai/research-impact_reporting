@@ -1,7 +1,7 @@
 # Plan 0060 — Parse Fidelity Verification & pdftotext Repair
 
 - **Project:** 0060   **Spec:** `locard/specs/0060-parse-fidelity-verification.md` (specified)
-- **Status:** conceived (plan-review incorporated)
+- **Status:** conceived (plan-review + red-team incorporated)
 - **Author:** Architect, 2026-05-30
 
 > Builder-executable plan. pdftotext extraction + fidelity scoring + PdftextSourceProvider + crawler inline hook + backfill batch runner + dashboard integration.
@@ -18,14 +18,16 @@
 ## Phase 1 — pdftotext extractor module (pure, no DB)
 
 `lavandula/faithfulness/pdftotext_extract.py`:
-- `extract_text(pdf_bytes: bytes) -> ExtractResult` — runs `/usr/bin/pdftotext -layout - -` via subprocess, timeout 30s, stdout cap 10MB, strips NUL bytes, returns `ExtractResult(text, version, char_count, is_scanned)`.
+- `extract_text(pdf_bytes: bytes) -> ExtractResult` — runs `/usr/bin/pdftotext -layout - -` via `subprocess.Popen`, timeout 30s, strips NUL bytes, returns `ExtractResult(text, version, char_count, is_scanned)`.
+- **Bounded output read (red-team CRITICAL — Codex):** uses `Popen` + manual `stdout.read(MAX_OUTPUT + 1)` instead of `subprocess.run(stdout=PIPE)` to enforce the 10MB cap without buffering unbounded output in memory. If output exceeds 10MB, the process is killed and the doc is marked `pdftotext_failed`.
 - `is_scanned` = True when output is empty or <50 chars after whitespace strip.
 - `get_pdftotext_version() -> str` — runs `pdftotext -v`, caches result.
 - Fails fast if `/usr/bin/pdftotext` doesn't exist.
+- **SQL injection prevention (red-team CRITICAL — Gemini):** all DB writes use parameterized queries (SQLAlchemy `text()` with `:param` bindings), never string interpolation. pdftotext output is untrusted text treated as a data parameter, never as SQL.
 
-**Tests:** empty PDF → scanned; text-native PDF → non-empty text; timeout on hung subprocess; NUL byte stripped; version string parsed.
+**Tests:** empty PDF → scanned; text-native PDF → non-empty text; timeout on hung subprocess; NUL byte stripped; version string parsed; oversized output (>10MB) → killed + pdftotext_failed.
 
-**Acceptance:** pure module, no DB deps, handles all error cases from spec §8.
+**Acceptance:** pure module, no DB deps, handles all error cases from spec §8. Bounded memory usage.
 
 ## Phase 2 — Fidelity scoring module (pure, no DB)
 
@@ -149,3 +151,5 @@ Phase 1 (extractor) → Phase 2 (fidelity) → Phase 3 (migration, hand to opera
 - Do NOT replace Docling tables — always use Docling tables for R2.
 - The inline crawl hook must be fire-and-forget — never block the crawl on a pdftotext failure.
 - pdftotext stdin mode (`-layout - -`) must be verified to work with poppler 24.02.0 on cloud2.
+- All DB writes of pdftotext output use parameterized queries — never interpolate untrusted text into SQL.
+- Dashboard batch trigger uses POST + CSRF token (Django middleware) + `_log_audit()` — same pattern as all other pipeline controls.
