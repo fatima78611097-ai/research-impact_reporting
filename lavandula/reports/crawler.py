@@ -222,6 +222,22 @@ def _close_thread_clients() -> None:
         _thread_clients.clear()
 
 
+def _store_pdftotext_inline(engine: Engine, sha: str, result) -> None:
+    """Best-effort store of pdftotext result during crawl (Spec 0060)."""
+    with engine.begin() as conn:
+        conn.execute(text("""
+            INSERT INTO lava_parse.pdftotext
+                (content_sha256, pdftotext_version, full_text, char_count)
+            VALUES (:sha, :version, :text, :chars)
+            ON CONFLICT (content_sha256) DO NOTHING
+        """), {
+            "sha": sha,
+            "version": result.version,
+            "text": result.text,
+            "chars": result.char_count,
+        })
+
+
 def process_org(
     *,
     ein: str,
@@ -368,6 +384,16 @@ def process_org(
         except Exception as exc:  # noqa: BLE001
             extract_status = "server_error"
             extract_note = sanitize(str(exc))
+
+        # 0060: inline pdftotext extraction — best-effort, never blocks crawl
+        try:
+            from lavandula.faithfulness.pdftotext_extract import extract_text as _extract_pdftotext
+            _pt_result = _extract_pdftotext(outcome.body)
+            if not _pt_result.failed:
+                _store_pdftotext_inline(engine, outcome.content_sha256, _pt_result)
+        except Exception:  # noqa: BLE001
+            log.debug("pdftotext inline failed sha=%s, backfill will catch it",
+                      outcome.content_sha256[:16] if outcome.content_sha256 else "?")
 
         archive_metadata = {
             "source-url": outcome.final_url or cand.url,

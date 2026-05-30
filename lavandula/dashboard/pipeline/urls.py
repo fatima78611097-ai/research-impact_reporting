@@ -85,6 +85,10 @@ urlpatterns = [
     path("faithfulness/verify/", views.FaithfulnessVerifyView.as_view(), name="faithfulness_verify"),
     path("faithfulness/status/", views.FaithfulnessStatusPartial.as_view(), name="faithfulness_status"),
 
+    # pdftotext Backfill & Re-verify (Spec 0060)
+    path("faithfulness/pdftotext-backfill/", views.PdftextBackfillView.as_view(), name="pdftotext_backfill"),
+    path("faithfulness/pdftotext-status/", views.PdftextBackfillStatusPartial.as_view(), name="pdftotext_backfill_status"),
+
     # Control Panel
     path("control/", views.ControlPanelView.as_view(), name="control_panel"),
     path("control/queue/pause/", views.QueuePauseView.as_view(), name="queue_pause"),

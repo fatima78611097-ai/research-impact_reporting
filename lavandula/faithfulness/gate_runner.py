@@ -88,6 +88,7 @@ def _assign_tier(
     """Assign verification tier based on verdict and source provenance.
 
     Fail-safe: absence of source or certification never yields 'verified'.
+    When the provider sets tier_hint, that overrides the default mapping.
     """
     if source is None:
         return TIER_QUARANTINE
@@ -95,8 +96,8 @@ def _assign_tier(
     if not verdict.grounded:
         return TIER_QUARANTINE
 
-    if source.source == "pdftotext-repaired":
-        return TIER_UNVERIFIED_OCR
+    if source.tier_hint is not None:
+        return source.tier_hint
 
     return TIER_VERIFIED
 

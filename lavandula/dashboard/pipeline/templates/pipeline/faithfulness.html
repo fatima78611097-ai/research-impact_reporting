@@ -55,9 +55,19 @@
           {% empty %}
           <option disabled>No unverified runs</option>
           {% endfor %}
+          {% for run in verified_runs %}
+          <option value="{{ run.id }}">{{ run.run_tag }} (re-verify) — {{ run.total_metrics }} metrics</option>
+          {% endfor %}
         </select>
       </div>
-      <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded text-sm hover:bg-blue-700" {% if active_verification or not unverified_runs %}disabled{% endif %}>
+      <div class="mb-3">
+        <label class="block text-xs font-medium text-gray-600 mb-1">Source Provider</label>
+        <select name="source_provider" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+          <option value="docling">Docling (default)</option>
+          <option value="pdftotext">pdftotext-repaired (0060)</option>
+        </select>
+      </div>
+      <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded text-sm hover:bg-blue-700" {% if active_verification %}disabled{% endif %}>
         Run Verification Gate
       </button>
     </form>
@@ -100,6 +110,78 @@
     <p class="text-gray-500 text-sm">No verified runs yet. Run the gate on an extraction run to see results.</p>
     {% endif %}
   </div>
+</div>
+
+<!-- pdftotext Extraction (Spec 0060) -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+  <div class="bg-white rounded-lg shadow p-5">
+    <h2 class="text-sm font-semibold text-gray-500 uppercase mb-3">pdftotext Extraction</h2>
+    {% if pdftotext_stats %}
+    <div class="grid grid-cols-2 gap-3 text-sm mb-3">
+      <div><span class="text-gray-500">Extracted:</span> <span class="font-mono font-medium">{{ pdftotext_stats.total_extracted }}</span> / {{ pdftotext_stats.total_parsed }}</div>
+      <div><span class="text-gray-500">Coverage:</span> <span class="font-mono">{{ pdftotext_stats.pct }}%</span></div>
+      <div><span class="text-green-600">Text-native:</span> <span class="font-mono">{{ pdftotext_stats.text_native }}</span></div>
+      <div><span class="text-yellow-600">Scanned:</span> <span class="font-mono">{{ pdftotext_stats.scanned }}</span></div>
+      <div><span class="text-red-600">Failed:</span> <span class="font-mono">{{ pdftotext_stats.failed }}</span></div>
+      <div><span class="text-gray-400">Pending:</span> <span class="font-mono">{{ pdftotext_stats.pending }}</span></div>
+    </div>
+    {% if pdftotext_stats.total_parsed > 0 %}
+    <div class="mb-3">
+      <div class="flex justify-between text-xs text-gray-500 mb-1">
+        <span>Extraction Progress</span>
+        <span>{{ pdftotext_stats.pct }}%</span>
+      </div>
+      <div class="w-full bg-gray-200 rounded-full h-2">
+        <div class="bg-blue-500 h-2 rounded-full" style="width: {{ pdftotext_stats.pct }}%"></div>
+      </div>
+    </div>
+    {% endif %}
+    {% else %}
+    <p class="text-gray-500 text-sm mb-3">pdftotext table not yet created. Run the migration first.</p>
+    {% endif %}
+    <form method="post" action="{% url 'pdftotext_backfill' %}">
+      {% csrf_token %}
+      <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded text-sm hover:bg-indigo-700" {% if active_pdftotext %}disabled{% endif %}>
+        Run pdftotext Backfill
+      </button>
+    </form>
+  </div>
+
+  {% if active_pdftotext %}
+  <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4" id="active-pdftotext">
+    <div class="flex items-center gap-2 mb-2">
+      <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+      <span class="font-semibold text-indigo-900">pdftotext Backfill Running</span>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm" id="pt-stats">
+      <div><span class="text-gray-500">Progress:</span> <span class="font-mono" id="pt-processed">{{ active_pdftotext.processed }}</span>/<span class="font-mono" id="pt-total">{{ active_pdftotext.total }}</span></div>
+      <div><span class="text-green-600">Extracted:</span> <span class="font-mono" id="pt-extracted">{{ active_pdftotext.extracted }}</span></div>
+      <div><span class="text-yellow-600">Scanned:</span> <span class="font-mono" id="pt-scanned">{{ active_pdftotext.scanned }}</span></div>
+      <div><span class="text-red-600">Failed:</span> <span class="font-mono" id="pt-failed">{{ active_pdftotext.failed }}</span></div>
+      <div><span class="text-gray-500">Elapsed:</span> <span class="font-mono" id="pt-elapsed">{{ active_pdftotext.elapsed_s }}s</span></div>
+    </div>
+  </div>
+  <script>
+  (function() {
+    function pollPt() {
+      fetch("{% url 'pdftotext_backfill_status' %}")
+        .then(r => r.json())
+        .then(d => {
+          if (d.done) { location.reload(); return; }
+          document.getElementById("pt-processed").textContent = d.processed || 0;
+          document.getElementById("pt-total").textContent = d.total || 0;
+          document.getElementById("pt-extracted").textContent = d.extracted || 0;
+          document.getElementById("pt-scanned").textContent = d.scanned || 0;
+          document.getElementById("pt-failed").textContent = d.failed || 0;
+          document.getElementById("pt-elapsed").textContent = (d.elapsed_s || 0).toFixed(0) + "s";
+          setTimeout(pollPt, 3000);
+        })
+        .catch(() => setTimeout(pollPt, 5000));
+    }
+    setTimeout(pollPt, 3000);
+  })();
+  </script>
+  {% endif %}
 </div>
 
 <!-- Run History -->

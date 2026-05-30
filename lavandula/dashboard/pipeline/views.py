@@ -3051,10 +3051,42 @@ class FaithfulnessView(LoginRequiredMixin, TemplateView):
 
         ctx["runs"] = all_runs
         ctx["unverified_runs"] = unverified_runs
+        ctx["verified_runs"] = all_runs
 
         with _VERIFY_LOCK:
             active = {k: v for k, v in _VERIFY_PROGRESS.items() if not v.get("done")}
         ctx["active_verification"] = list(active.values())[0] if active else None
+
+        # 0060: pdftotext backfill stats
+        try:
+            with connections["default"].cursor() as cur:
+                cur.execute("SELECT COUNT(*) FROM lava_parse.documents")
+                total_parsed = cur.fetchone()[0]
+                cur.execute("SELECT COUNT(*) FROM lava_parse.pdftotext")
+                total_pdftotext = cur.fetchone()[0]
+                cur.execute("""
+                    SELECT text_source, COUNT(*)
+                    FROM lava_parse.documents
+                    WHERE text_source IS NOT NULL
+                    GROUP BY text_source
+                """)
+                text_source_counts = dict(cur.fetchall())
+            ctx["pdftotext_stats"] = {
+                "total_parsed": total_parsed,
+                "total_extracted": total_pdftotext,
+                "text_native": text_source_counts.get("text_native", 0),
+                "scanned": text_source_counts.get("scanned", 0),
+                "failed": text_source_counts.get("pdftotext_failed", 0),
+                "pending": total_parsed - sum(text_source_counts.values()) if text_source_counts else total_parsed,
+                "pct": f"{total_pdftotext / total_parsed * 100:.1f}" if total_parsed > 0 else "0",
+            }
+        except Exception:
+            ctx["pdftotext_stats"] = None
+
+        # 0060: active pdftotext backfill
+        with _PDFTOTEXT_LOCK:
+            pt_active = {k: v for k, v in _PDFTOTEXT_PROGRESS.items() if not v.get("done")}
+        ctx["active_pdftotext"] = list(pt_active.values())[0] if pt_active else None
 
         # Corpus-wide stats
         with connections["default"].cursor() as cur:
@@ -3114,16 +3146,18 @@ class FaithfulnessVerifyView(LoginRequiredMixin, View):
                 "total_stories": 0, "stories_verified": 0, "elapsed_s": 0, "done": False,
             }
 
+        use_pdftotext = request.POST.get("source_provider") == "pdftotext"
+
         def _run_verification():
             from lavandula.common.db import make_app_engine
             from lavandula.faithfulness.gate_runner import verify_run
-            from lavandula.faithfulness.source_provider import DoclingSourceProvider
+            from lavandula.faithfulness.source_provider import DoclingSourceProvider, PdftextSourceProvider
             import logging
             log = logging.getLogger("faithfulness.dashboard")
 
             try:
                 engine = make_app_engine()
-                provider = DoclingSourceProvider(engine)
+                provider = PdftextSourceProvider(engine) if use_pdftotext else DoclingSourceProvider(engine)
 
                 def on_progress(stats):
                     with _VERIFY_LOCK:
@@ -3170,4 +3204,154 @@ class FaithfulnessStatusPartial(HtmxLoginRequiredMixin, View):
         with _VERIFY_LOCK:
             progress = _VERIFY_PROGRESS.get(progress_key, {})
 
+        return HttpResponse(_json.dumps(progress), content_type="application/json")
+
+
+# ---------------------------------------------------------------------------
+# pdftotext Backfill (Spec 0060)
+# ---------------------------------------------------------------------------
+
+_PDFTOTEXT_PROGRESS = {}
+_PDFTOTEXT_LOCK = threading.Lock()
+
+
+class PdftextBackfillView(LoginRequiredMixin, View):
+    def post(self, request):
+        with _PDFTOTEXT_LOCK:
+            active = {k: v for k, v in _PDFTOTEXT_PROGRESS.items() if not v.get("done")}
+            if active:
+                messages.error(request, "A pdftotext backfill is already running")
+                return redirect("faithfulness")
+
+        progress_key = "pdftotext_backfill"
+        with _PDFTOTEXT_LOCK:
+            _PDFTOTEXT_PROGRESS[progress_key] = {
+                "processed": 0, "extracted": 0, "scanned": 0,
+                "failed": 0, "total": 0, "elapsed_s": 0, "done": False,
+            }
+
+        def _run_backfill():
+            import logging
+            import time
+            from lavandula.common.db import make_app_engine
+            from lavandula.faithfulness.pdftotext_extract import extract_text, get_pdftotext_version
+            from lavandula.faithfulness.fidelity import score_fidelity, classify_text_source
+            from lavandula.reports.s3_archive import S3Archive
+            from sqlalchemy import text as sa_text
+
+            _log = logging.getLogger("pdftotext.dashboard")
+
+            try:
+                engine = make_app_engine()
+                archive = S3Archive("lavandula-nonprofit-collaterals", "pdfs")
+                version = get_pdftotext_version()
+
+                with engine.connect() as conn:
+                    rows = conn.execute(sa_text("""
+                        SELECT d.content_sha256
+                        FROM lava_parse.documents d
+                        LEFT JOIN lava_parse.pdftotext p ON d.content_sha256 = p.content_sha256
+                        WHERE p.content_sha256 IS NULL
+                        ORDER BY d.content_sha256
+                    """)).fetchall()
+
+                shas = [r[0] for r in rows]
+                with _PDFTOTEXT_LOCK:
+                    _PDFTOTEXT_PROGRESS[progress_key]["total"] = len(shas)
+
+                t0 = time.monotonic()
+                for i, sha in enumerate(shas):
+                    try:
+                        pdf_bytes = archive.get(sha)
+                        result = extract_text(pdf_bytes)
+
+                        docling_text = None
+                        with engine.connect() as conn:
+                            sec_rows = conn.execute(sa_text("""
+                                SELECT heading, body_text
+                                FROM lava_parse.sections
+                                WHERE content_sha256 = :sha
+                                ORDER BY section_index
+                            """), {"sha": sha}).fetchall()
+                        if sec_rows:
+                            parts = []
+                            for heading, body in sec_rows:
+                                if heading:
+                                    parts.append(heading)
+                                parts.append(body)
+                            docling_text = "\n\n".join(parts)
+
+                        fidelity = None
+                        if docling_text and not result.failed and not result.is_scanned:
+                            fidelity = score_fidelity(docling_text, result.text)
+
+                        text_source = classify_text_source(result, fidelity)
+
+                        with engine.begin() as conn:
+                            conn.execute(sa_text("""
+                                INSERT INTO lava_parse.pdftotext
+                                    (content_sha256, pdftotext_version, full_text, char_count)
+                                VALUES (:sha, :version, :text, :chars)
+                                ON CONFLICT (content_sha256) DO UPDATE SET
+                                    pdftotext_version = EXCLUDED.pdftotext_version,
+                                    full_text = EXCLUDED.full_text,
+                                    char_count = EXCLUDED.char_count,
+                                    extracted_at = now()
+                            """), {
+                                "sha": sha, "version": version,
+                                "text": result.text, "chars": result.char_count,
+                            })
+                            conn.execute(sa_text("""
+                                UPDATE lava_parse.documents
+                                SET pdftotext_coverage = :fwd,
+                                    pdftotext_reverse = :rev,
+                                    text_source = :src
+                                WHERE content_sha256 = :sha
+                            """), {
+                                "sha": sha,
+                                "fwd": fidelity.forward if fidelity else None,
+                                "rev": fidelity.reverse if fidelity else None,
+                                "src": text_source,
+                            })
+
+                        with _PDFTOTEXT_LOCK:
+                            p = _PDFTOTEXT_PROGRESS[progress_key]
+                            p["processed"] = i + 1
+                            if text_source == "text_native":
+                                p["extracted"] += 1
+                            elif text_source == "scanned":
+                                p["scanned"] += 1
+                            else:
+                                p["failed"] += 1
+                            p["elapsed_s"] = time.monotonic() - t0
+
+                    except Exception:
+                        _log.exception("pdftotext backfill error sha=%s", sha[:16])
+                        with _PDFTOTEXT_LOCK:
+                            _PDFTOTEXT_PROGRESS[progress_key]["failed"] += 1
+                            _PDFTOTEXT_PROGRESS[progress_key]["processed"] = i + 1
+
+                with _PDFTOTEXT_LOCK:
+                    _PDFTOTEXT_PROGRESS[progress_key]["done"] = True
+                    _PDFTOTEXT_PROGRESS[progress_key]["elapsed_s"] = time.monotonic() - t0
+                _log.info("pdftotext backfill complete: %s", _PDFTOTEXT_PROGRESS[progress_key])
+
+            except Exception:
+                _log.exception("pdftotext backfill failed")
+                with _PDFTOTEXT_LOCK:
+                    _PDFTOTEXT_PROGRESS[progress_key]["done"] = True
+
+        t = threading.Thread(target=_run_backfill, daemon=True)
+        t.start()
+
+        _log_audit(request, "pdftotext_backfill", "faithfulness", {})
+        messages.success(request, "pdftotext backfill started")
+        return redirect("faithfulness")
+
+
+class PdftextBackfillStatusPartial(HtmxLoginRequiredMixin, View):
+    def get(self, request):
+        import json as _json
+        with _PDFTOTEXT_LOCK:
+            progress = _PDFTOTEXT_PROGRESS.get("pdftotext_backfill", {})
         return HttpResponse(_json.dumps(progress), content_type="application/json")

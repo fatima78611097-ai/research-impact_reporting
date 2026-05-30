@@ -241,10 +241,18 @@ class TestTierRegressionFixtures:
         source = SourceText(section_text=source_text, tables=[], source="docling")
         assert _assign_tier(verdict, source) == TIER_QUARANTINE
 
-    def test_ocr_metric_gets_tier_b(self):
+    def test_certified_pdftotext_gets_tier_a(self):
+        """0060: certified pdftotext-repaired → Tier A (verified)."""
         source_text = "Total revenue was $5,000,000."
         verdict = check("Total revenue was $5,000,000", source_text, [])
         source = SourceText(section_text=source_text, tables=[], source="pdftotext-repaired")
+        assert _assign_tier(verdict, source) == TIER_VERIFIED
+
+    def test_scanned_fallback_gets_tier_b(self):
+        """0060: scanned doc with tier_hint → Tier B."""
+        source_text = "Total revenue was $5,000,000."
+        verdict = check("Total revenue was $5,000,000", source_text, [])
+        source = SourceText(section_text=source_text, tables=[], source="docling", tier_hint=TIER_UNVERIFIED_OCR)
         assert _assign_tier(verdict, source) == TIER_UNVERIFIED_OCR
 
     def test_missing_source_gets_tier_c(self):

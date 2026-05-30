@@ -29,9 +29,16 @@ class TestAssignTier:
         source = SourceText(section_text="x", tables=[], source="docling")
         assert _assign_tier(verdict, source) == TIER_VERIFIED
 
-    def test_grounded_pdftotext_is_ocr(self):
+    def test_grounded_pdftotext_certified_is_verified(self):
+        """0060: certified pdftotext source (no tier_hint) → Tier A."""
         verdict = Verdict(grounded=True, rule="R1", offsets=[(0, 10)])
         source = SourceText(section_text="x", tables=[], source="pdftotext-repaired")
+        assert _assign_tier(verdict, source) == TIER_VERIFIED
+
+    def test_grounded_pdftotext_scanned_is_ocr(self):
+        """0060: scanned fallback (tier_hint=unverified_ocr) → Tier B."""
+        verdict = Verdict(grounded=True, rule="R1", offsets=[(0, 10)])
+        source = SourceText(section_text="x", tables=[], source="docling", tier_hint=TIER_UNVERIFIED_OCR)
         assert _assign_tier(verdict, source) == TIER_UNVERIFIED_OCR
 
     def test_ungrounded_is_quarantine(self):
@@ -94,13 +101,19 @@ class TestStoryTierAssignment:
 # ============================================================
 
 class TestTrustBoundary:
-    def test_uncertified_source_never_verified(self):
-        """Un-certified source → never 'verified', even if grounded."""
+    def test_tier_hint_unverified_pending(self):
+        """0060: provider-set unverified_pending → never 'verified'."""
         verdict = Verdict(grounded=True, rule="R1", offsets=[(0, 10)])
-        source = SourceText(section_text="x", tables=[], source="pdftotext-repaired")
+        source = SourceText(section_text="x", tables=[], source="docling", tier_hint=TIER_UNVERIFIED_PENDING)
         tier = _assign_tier(verdict, source)
         assert tier != TIER_VERIFIED
-        assert tier == TIER_UNVERIFIED_OCR
+        assert tier == TIER_UNVERIFIED_PENDING
+
+    def test_tier_hint_quarantine(self):
+        """0060: provider-set quarantine is respected."""
+        verdict = Verdict(grounded=True, rule="R1", offsets=[(0, 10)])
+        source = SourceText(section_text="x", tables=[], source="docling", tier_hint=TIER_QUARANTINE)
+        assert _assign_tier(verdict, source) == TIER_QUARANTINE
 
 
 # ============================================================
@@ -152,9 +165,18 @@ class TestMixedFixture:
         tier = _assign_tier(verdict, source)
         assert tier == TIER_QUARANTINE
 
-    def test_ocr_grounded_metric(self):
+    def test_pdftotext_certified_metric(self):
+        """0060: certified pdftotext grounded metric → Tier A."""
         source_text = "Total revenue was $5,000,000 for the fiscal year."
         source = SourceText(section_text=source_text, tables=[], source="pdftotext-repaired")
+        verdict = check("Total revenue was $5,000,000", source_text, [])
+        tier = _assign_tier(verdict, source)
+        assert tier == TIER_VERIFIED
+
+    def test_scanned_fallback_metric(self):
+        """0060: scanned doc falls back to Docling → Tier B."""
+        source_text = "Total revenue was $5,000,000 for the fiscal year."
+        source = SourceText(section_text=source_text, tables=[], source="docling", tier_hint=TIER_UNVERIFIED_OCR)
         verdict = check("Total revenue was $5,000,000", source_text, [])
         tier = _assign_tier(verdict, source)
         assert tier == TIER_UNVERIFIED_OCR
