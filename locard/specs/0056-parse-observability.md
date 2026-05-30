@@ -1,7 +1,7 @@
 # Spec 0056 — Parse Orchestrator Reliability & Observability
 
 - **Project:** 0056
-- **Status:** conceived (multi-agent review + red-team incorporated)
+- **Status:** specified (multi-agent review + red-team incorporated; human-approved 2026-05-30)
 - **Depends on:** 0054 (Parse Dashboard), 0055 (Multi-Instance Parse)
 - **Author:** Architect, 2026-05-30
 
