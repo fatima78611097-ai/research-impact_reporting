@@ -542,48 +542,45 @@ class Command(BaseCommand):
                     continue
                 iid = slot["instance_id"]
 
-                # 1. Check exit_reason — worker exited intentionally
-                exit_reason = None
-                try:
-                    exit_reason = db.get_exit_reason(conn, run_id)
-                except Exception:
-                    pass
-
-                if exit_reason:
-                    classification = "graceful_exit"
-                    self.stdout.write(
-                        f"[slot {slot_idx}] Worker exited: {exit_reason} "
-                        f"(classification={classification})\n"
-                    )
-                    db.reclaim_stale_claims(conn, run_id, iid)
-
-                    # Cross-check: if worker claims empty_batch but queue has work
-                    if exit_reason == "empty_batch":
-                        progress = db.get_queue_progress(conn, run_id)
-                        remaining = progress["total"] - progress["completed"] - progress["errored"]
-                        if remaining > 0:
-                            logger.warning(
-                                "Worker claimed empty_batch but %d items remain — relaunching",
-                                remaining,
-                            )
-                            self._relaunch_slot(
-                                ec2, conn, run_id, run_tag, priority, ntee_filter,
-                                options, slot, slot_idx, "empty_batch_mismatch",
-                            )
-                            continue
-
-                    progress = db.get_queue_progress(conn, run_id)
-                    remaining = progress["total"] - progress["completed"] - progress["errored"]
-                    if remaining == 0:
-                        slot["status"] = "done"
-                    else:
-                        slot["status"] = "done"
-                    continue
-
-                # 2. Check instance state
+                # 1. Check instance state — is it still running?
                 state = self._get_instance_state(ec2, iid)
 
                 if state in ("terminated", "shutting-down"):
+                    # Check if worker set exit_reason (graceful exit)
+                    exit_reason = None
+                    try:
+                        exit_reason = db.get_exit_reason(conn, run_id)
+                    except Exception:
+                        pass
+
+                    if exit_reason:
+                        classification = "graceful_exit"
+                        self.stdout.write(
+                            f"[slot {slot_idx}] Worker exited: {exit_reason} "
+                            f"(classification={classification})\n"
+                        )
+                        self._pull_worker_log(iid, run_tag)
+                        db.reclaim_stale_claims(conn, run_id, iid)
+
+                        # Cross-check: worker claims empty_batch but queue has work
+                        if exit_reason == "empty_batch":
+                            progress = db.get_queue_progress(conn, run_id)
+                            remaining = progress["total"] - progress["completed"] - progress["errored"]
+                            if remaining > 0:
+                                logger.warning(
+                                    "Worker claimed empty_batch but %d items remain — relaunching",
+                                    remaining,
+                                )
+                                self._relaunch_slot(
+                                    ec2, conn, run_id, run_tag, priority, ntee_filter,
+                                    options, slot, slot_idx, "empty_batch_mismatch",
+                                )
+                                continue
+
+                        slot["status"] = "done"
+                        continue
+
+                    # No exit_reason — classify the termination
                     classification = self._classify_terminated(ec2, iid)
                     self.stdout.write(
                         f"[slot {slot_idx}] Instance {iid} {state} "
@@ -599,11 +596,7 @@ class Command(BaseCommand):
                         slot["status"] = "done"
                         continue
 
-                    if classification == "spot_reclaim":
-                        slot["consecutive_failures"] += 1
-                    else:
-                        slot["consecutive_failures"] += 1
-
+                    slot["consecutive_failures"] += 1
                     self._relaunch_slot(
                         ec2, conn, run_id, run_tag, priority, ntee_filter,
                         options, slot, slot_idx, classification,
