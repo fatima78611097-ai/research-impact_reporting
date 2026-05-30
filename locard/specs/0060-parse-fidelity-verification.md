@@ -1,7 +1,7 @@
 # Spec 0060 — Parse Fidelity Verification & pdftotext Repair
 
 - **Project:** 0060
-- **Status:** conceived (multi-agent review + red-team incorporated)
+- **Status:** specified (multi-agent review + red-team incorporated; human-approved 2026-05-30)
 - **Depends on:** none (0057 consumes 0060's output via SourceTextProvider)
 - **Author:** Architect, 2026-05-30
 
