@@ -418,6 +418,28 @@ async def _download_worker(
             download_queue.task_done()
 
 
+def _run_pdftotext_inline(engine, sha: str, body: bytes) -> None:
+    """Sync helper for inline pdftotext extraction (Spec 0060)."""
+    from lavandula.faithfulness.pdftotext_extract import extract_text
+    from sqlalchemy import text as sa_text
+
+    result = extract_text(body)
+    if result.failed:
+        return
+    with engine.begin() as conn:
+        conn.execute(sa_text("""
+            INSERT INTO lava_parse.pdftotext
+                (content_sha256, pdftotext_version, full_text, char_count)
+            VALUES (:sha, :version, :text, :chars)
+            ON CONFLICT (content_sha256) DO NOTHING
+        """), {
+            "sha": sha,
+            "version": result.version,
+            "text": result.text,
+            "chars": result.char_count,
+        })
+
+
 async def _process_download(
     *,
     ein: str,
@@ -493,6 +515,17 @@ async def _process_download(
     except Exception as exc:  # noqa: BLE001
         extract_status = "server_error"
         extract_note = sanitize(str(exc))
+
+    # 0060: inline pdftotext extraction — best-effort, never blocks crawl
+    try:
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(
+            pdf_thread_pool,
+            _run_pdftotext_inline, db_actor._engine, outcome.content_sha256, outcome.body,
+        )
+    except Exception:  # noqa: BLE001
+        _log.debug("pdftotext inline failed sha=%s, backfill will catch it",
+                   outcome.content_sha256[:16] if outcome.content_sha256 else "?")
 
     import datetime
     archive_metadata = {

@@ -852,7 +852,7 @@ projects:
   - id: "0057"
     title: "LLM Extraction Faithfulness Verification (Snippet Grounding)"
     summary: "Verification pass that runs after the LLM metric/story extraction. Confirms every source_snippet — and the metric value/unit tied to it — appears verbatim (character-for-character) in the parsed source document text, so we can prove zero hallucination/fabrication. Quarantines or flags any LLM output not grounded in the source."
-    status: implementing
+    status: committed
     priority: high
     files:
       spec: locard/specs/0057-llm-faithfulness-verification.md
@@ -889,13 +889,13 @@ projects:
     notes: "Added 2026-05-29. Use MAINTAIN protocol. CANDIDATES (UNVERIFIED — confirm nothing still reads each before dropping): (1) lava_vocab.metric_observations — the statistical/market-basket 'first attempt' per-doc extractor (extract_metrics.py); produced ~750 noisy observations for ONE Think New Mexico doc (a Library of Congress photo-catalog number became 5 'metrics'); superseded by llm_metrics. (2) fixture extraction_runs (run 8 fixture-bgcsm2, run 11 fixture-cancare-split) + their rows. (3) stale TestFetchWorkBatch tests (assert a removed fetch_work_batch API: retry_errors/reparse/min_version params). (4) legacy non-queue worker path in worker.py (advisory-lock _run_loop) if single-instance mode is retired. KEEP (do NOT deprecate): the statistical DISCOVERY pipeline (extract_terms / discover_archetypes / keyness) — still the right tool for vocabulary/archetype discovery per the discovery-vs-extraction lesson; only the stat EXTRACTION (metric_observations) is dead. DISCIPLINE: read-only inventory first (what writes/reads each artifact); nothing deleted without verification + operator confirmation; table drops are operator-run migrations (Claude cannot apply DDL)."
 
   - id: "0060"
-    title: "Parse Fidelity Verification (Docling output vs source PDF)"
+    title: "Parse Fidelity Verification & pdftotext Repair"
     summary: "Verify the extracted text is true to the source PDF — don't trust the parser, check it. Cross-check Docling output against the PDF's embedded text layer via an independent deterministic extractor (pdftotext/poppler, present on cloud2): coverage (Docling dropped nothing) + inverse (Docling invented nothing). The foundation link beneath 0057 — together they form an unbroken PDF->text->snippet->published chain of custody."
-    status: conceived
+    status: implementing
     priority: high
     files:
-      spec: null
-      plan: null
+      spec: locard/specs/0060-parse-fidelity-verification.md
+      plan: locard/plans/0060-parse-fidelity-verification.md
       review: null
     dependencies: []
     tags: [pipeline, parse, quality, verification, integrity]
