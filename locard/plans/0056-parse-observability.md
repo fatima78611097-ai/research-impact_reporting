@@ -1,7 +1,7 @@
 # Plan 0056 — Parse Orchestrator Reliability & Observability
 
 - **Project:** 0056   **Spec:** `locard/specs/0056-parse-observability.md` (specified)
-- **Status:** conceived (initial draft)
+- **Status:** conceived (plan-review incorporated)
 - **Author:** Architect, 2026-05-30
 
 > Builder-executable plan. Heartbeat thread, smart relaunch budget, death classification, exit reason, log shipping, dashboard integration. Worker-side changes require tarball rebuild + deploy.
@@ -71,7 +71,14 @@
 - Map classification to relaunch policy per spec table.
 - Log the classification for each death event.
 
-**Spot detection simplified:** check if instance `InstanceLifecycle == 'spot'` and state is terminated without an orchestrator-initiated termination → likely spot reclaim. Don't need instance metadata query (SSM may fail on a terminated instance). If unsure, classify as `crash_or_oom` — fail-safe (relaunches).
+**Spot detection (Codex review — match spec's detection ordering):**
+1. Check `describe_instances` for `InstanceLifecycle == 'spot'`
+2. If spot instance AND terminated without orchestrator-initiated termination → check `describe_spot_instance_requests` for `status.code == 'instance-terminated-by-price'` or similar interruption status
+3. If interruption confirmed → `spot_reclaim`
+4. If spot instance but no interruption status → `crash_or_oom` (fail-safe — relaunches)
+5. If not a spot instance → `crash_or_oom`
+
+This satisfies the spec's required detection ordering. SSM metadata query is not needed (instance may already be terminated). `describe_spot_instance_requests` is available from the orchestrator's IAM role on cloud2.
 
 **Tests:** mock EC2 responses for each classification; spot reclaim detected; crash detected; hang detected; graceful exit skipped.
 
@@ -170,7 +177,11 @@ After phases 1, 5, 6 are complete:
 
 ## Build sequence
 
-Phase 1 (heartbeat worker) + Phase 5 (exit reason worker) + Phase 6 (log shipping worker) → Phase 9 (tarball) → Phase 7 (migration, hand to operator) → Phase 2 (stale rewrite) + Phase 3 (relaunch budget) + Phase 4 (death classification) → Phase 8 (dashboard).
+**Deployment ordering (Codex review — migration BEFORE tarball):**
+
+Phase 1 (heartbeat worker) + Phase 5 (exit reason worker) + Phase 6 (log shipping worker) → Phase 7 (migration, hand to operator) → **operator confirms migration applied** → Phase 9 (tarball rebuild + deploy) → Phase 2 (stale rewrite) + Phase 3 (relaunch budget) + Phase 4 (death classification) → Phase 8 (dashboard).
+
+**Critical gate:** Phase 9 (tarball deploy) MUST NOT happen before Phase 7 (migration) is applied. The new worker code writes to `worker_heartbeats` and `exit_reason` — if those don't exist, the worker fails on first heartbeat/exit. The builder produces the tarball but does NOT upload it until the operator confirms the migration is applied. The builder sets the tarball path in the PR description for the operator to deploy.
 
 Worker-side phases (1, 5, 6) can proceed in parallel. Orchestrator-side phases (2, 3, 4) can proceed in parallel after migration. Dashboard (8) is last.
 
