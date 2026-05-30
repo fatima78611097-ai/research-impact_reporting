@@ -1,7 +1,7 @@
 # Spec 0056 — Parse Orchestrator Reliability & Observability
 
 - **Project:** 0056
-- **Status:** conceived (multi-agent review incorporated)
+- **Status:** conceived (multi-agent review + red-team incorporated)
 - **Depends on:** 0054 (Parse Dashboard), 0055 (Multi-Instance Parse)
 - **Author:** Architect, 2026-05-30
 
@@ -155,8 +155,13 @@ S3 path: `s3://lavandula-nonprofit-collaterals/logs/parse/{run_tag}/{instance_id
 
 - **run_tag injection:** validated `^[a-zA-Z0-9_-]+$` at creation AND at use (defense-in-depth in `_pull_worker_log`). Never interpolated into shell commands without validation.
 - **Heartbeat writes:** worker uses parameterized queries (psycopg2 `%s` bindings), never string interpolation. `current_doc_sha` is untrusted (comes from the work queue) but stored as data parameter.
-- **S3 log shipping:** uses AWS SDK (`boto3`), not shell commands. No path injection risk.
+- **S3 log shipping:** uses AWS SDK (`boto3`), not shell commands. No path injection risk. S3 bucket is private (no public access); logs accessible only via IAM role. Dashboard displays log link as an S3 presigned URL (time-limited) or operator copies from S3 directly. No raw S3 paths exposed to untrusted users (single-operator system, but defense-in-depth).
+- **S3 log retention:** add lifecycle rule to expire `logs/parse/` objects after 90 days. Operator applies via S3 console.
 - **Heartbeat thread:** daemon thread dies with the main process. No zombie risk. Shared state access uses a simple lock (not performance-critical at 60s intervals).
+- **Worker identity for heartbeats (red-team HIGH — Gemini):** the `instance_id` is set by the orchestrator when it launches the worker via SSM (passed as a command-line argument). The worker cannot choose its own identity. A compromised worker could write heartbeats for another instance_id, but: (a) the worker runs on an isolated GPU instance with no access to other instances; (b) the DB role (`docling_writer`) has no cross-instance privilege; (c) this is a single-operator system with no untrusted workers. The risk is accepted as negligible.
+- **exit_reason trust boundary (red-team — Codex):** a buggy worker could set `exit_reason = 'empty_batch'` and suppress relaunch. Mitigation: the orchestrator ALWAYS cross-checks exit_reason against remaining queue count. If `exit_reason = 'empty_batch'` but `get_eligible_count() > 0`, the orchestrator logs a WARNING and relaunches (overriding the worker's claim). This check already exists in the existing spec draft (§Component 3 of the original spec).
+- **Relaunch state durability (red-team — Codex):** per-slot failure counters are stored in-memory in the orchestrator process. If the orchestrator restarts mid-run, counters reset to 0. This is acceptable: (a) orchestrator restarts mid-run are rare (operator-initiated, not automatic); (b) resetting counters is fail-safe (allows relaunches, doesn't suppress them); (c) the run can be manually stopped if a slot is genuinely broken. Plan-phase detail: if durability is needed, store counters in `parse_runs.stats_json`.
+- **stderr/log sanitization:** worker logs may contain org EINs and file paths. Logs are stored in private S3, not exposed publicly. Dashboard log link is behind auth.
 
 ## 5. Failure & Error Scenarios
 
