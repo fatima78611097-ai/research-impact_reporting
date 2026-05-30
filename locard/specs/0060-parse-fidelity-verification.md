@@ -41,10 +41,14 @@ Docling produces structured text (sections + tables) from PDF documents. We trus
 ## 3. The Integrity Chain (updated)
 
 ```
-PDF ─[0060: pdftotext fidelity check]→ certified text ─[0057: deterministic grounding]→ metric/story ─[disclosure]→ published
+Crawl ─[0060 inline: pdftotext at archive time]→ certified text in DB
+                                                         ↓
+PDF ─[Docling parse]→ structured sections/tables          ↓
+                                                         ↓
+                              ─[0057: deterministic grounding against pdftotext text]→ metric/story ─[disclosure]→ published
 ```
 
-0060 certifies link 1 by providing **two things to 0057:**
+pdftotext runs at crawl time (no Docling dependency). Fidelity scoring runs after both pdftotext and Docling exist. 0060 provides **two things to 0057:**
 - The pdftotext text (a more faithful rendering of the PDF for grounding)
 - A certification flag (text-native vs scanned) that determines Tier A vs Tier B
 
@@ -52,11 +56,16 @@ PDF ─[0060: pdftotext fidelity check]→ certified text ─[0057: deterministi
 
 ### 4.1 pdftotext extraction
 
-For each document in the corpus (by `content_sha256`):
-1. Download the PDF from S3 (`s3://lavandula-nonprofit-collaterals/pdfs/{sha}.pdf`)
-2. Run `pdftotext -layout {pdf_path} -` to extract the embedded text layer
-3. Store the full text in `lava_parse.pdftotext` keyed by `content_sha256`
-4. If pdftotext produces zero or near-zero output (<50 chars) on a PDF with pages, classify as **scanned** (no embedded text layer)
+**Two paths — inline at crawl time (primary) + backfill for existing corpus:**
+
+**Primary (inline at crawl):** During the crawl pipeline, the PDF bytes are already on disk before S3 upload. Run `pdftotext -layout {pdf_path} -` on the local file at that point — adds ~0.1s per doc, zero S3 download needed. Store the text in `lava_parse.pdftotext` alongside the S3 archive step. All future crawled docs get pdftotext text captured for free.
+
+**Backfill (one-time batch):** For the ~16K+ documents already crawled and archived in S3, a batch runner downloads from S3 and runs pdftotext. This is a one-time catch-up; once complete, the inline path handles all new docs.
+
+In both paths:
+1. Run `pdftotext -layout {pdf_path} -` to extract the embedded text layer
+2. Store the full text in `lava_parse.pdftotext` keyed by `content_sha256`
+3. If pdftotext produces zero or near-zero output (<50 chars) on a PDF with pages, classify as **scanned** (no embedded text layer)
 
 **pdftotext is deterministic:** same PDF + same pdftotext version → identical output. No AI, no model, no randomness.
 
@@ -154,7 +163,7 @@ Located in `lavandula/dashboard/pipeline/management/commands/extract_pdftotext.p
 
 **Resource limits:** per-document subprocess timeout (30s), output capture capped at 10MB, temp file in `/tmp` (not accumulating).
 
-**Performance:** pdftotext is fast (~0.1s/doc). The bottleneck is S3 download. For 3,242 docs in p20-v1, expect ~10-15 minutes. For full corpus (~100K), a few hours with parallel downloads.
+**Performance:** pdftotext is fast (~0.1s/doc). For the inline path, it adds negligible time to the crawl pipeline. For the backfill path, S3 download is the bottleneck: ~16K docs in ~1-2 hours, full corpus (~333K) in ~6-8 hours single-threaded.
 
 ## 5. Integration with 0057
 
