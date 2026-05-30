@@ -1,7 +1,7 @@
 # Plan 0060 — Parse Fidelity Verification & pdftotext Repair
 
 - **Project:** 0060   **Spec:** `locard/specs/0060-parse-fidelity-verification.md` (specified)
-- **Status:** conceived (initial draft)
+- **Status:** conceived (plan-review incorporated)
 - **Author:** Architect, 2026-05-30
 
 > Builder-executable plan. pdftotext extraction + fidelity scoring + PdftextSourceProvider + crawler inline hook + backfill batch runner + dashboard integration.
@@ -49,17 +49,23 @@
 
 **Acceptance:** columns present, existing rows unaffected, backward compatible.
 
-## Phase 4 — PdftextSourceProvider
+## Phase 4 — PdftextSourceProvider (with certification logic)
 
 `lavandula/faithfulness/source_provider.py` — add `PdftextSourceProvider` class alongside existing `DoclingSourceProvider`:
 - Implements `SourceTextProvider` protocol (same interface).
-- Per-document fallback per the spec's decision table (§4.3).
-- Returns pdftotext `full_text` as `section_text`, Docling tables from `lava_parse.tables`, `source = "pdftotext-repaired"`.
-- Falls back to `DoclingSourceProvider` when no pdftotext row or not text_native.
+- **Certification logic is first-class** (not just a fallback — it drives the tier decision):
+  - `_is_certified(text_source, forward_coverage, reverse_coverage) -> bool` — returns True only when `text_source = 'text_native'` AND both coverage ≥ 0.50.
+  - `_get_tier_eligibility(text_source, certified) -> str` — returns `"tier_a" | "tier_b" | "unverified_pending" | "quarantine"` per the spec's decision table.
+- Per-document logic per the spec's decision table (§4.3):
+  - Certified → returns pdftotext `full_text` as `section_text`, `source = "pdftotext-repaired"`
+  - Scanned → falls back to Docling, signals Tier B
+  - Uncertified / missing → falls back to Docling, signals `unverified_pending`
+- Tables always come from `lava_parse.tables` (Docling structured data).
+- Low-coverage borderline cases (< 0.50) → deterministically fall back to Docling AND set `text_source = 'pdftotext_failed'` so they're flagged for manual review.
 
-**Tests:** all 10 decision-table rows from spec §4.3; certified doc returns pdftotext text; scanned doc falls back to Docling with Tier B; missing pdftotext falls back to Docling; borderline coverage falls back.
+**Tests:** all 7 decision-table rows from spec §4.3 as parametrized tests; certification function edge cases (exactly 0.50, below 0.50, NULL coverage); tier eligibility mapping exhaustive.
 
-**Acceptance:** provider passes the spec's decision table exhaustively.
+**Acceptance:** provider passes the spec's decision table exhaustively. Certification logic is explicit, testable, and deterministic.
 
 ## Phase 5 — Backfill batch runner
 
@@ -80,25 +86,31 @@
 
 Inject pdftotext extraction into both crawlers, right after `fetch_pdf.download()` succeeds:
 
+**Spec alignment note (Codex review):** the spec says "run pdftotext on the local file before S3 upload." In the current codebase, the S3 archive path never writes a local file — `outcome.body` is bytes in memory streamed directly to S3 via `put_object()`. The `LocalArchive` path does write a temp file, but that's only used in non-S3 mode. Therefore the inline hook uses **stdin mode** (`input=outcome.body`), which is functionally equivalent to "on the local file" and avoids an unnecessary temp file write. The spec's intent (extract before archive, using the same bytes, no re-download) is preserved.
+
 **`lavandula/reports/crawler.py`** (sync, ~line 350):
 ```python
-# After outcome = fetch_pdf.download(...)
+# After outcome = fetch_pdf.download(...), before archive.put()
 if outcome.status == "ok" and outcome.body:
     from lavandula.faithfulness.pdftotext_extract import extract_text
     extract_result = extract_text(outcome.body)
-    # Store in lava_parse.pdftotext (fire-and-forget, don't block crawl on DB failure)
+    # Store in lava_parse.pdftotext — best-effort, don't block crawl on DB failure
+    try:
+        _store_pdftotext(engine, outcome.content_sha256, extract_result)
+    except Exception:
+        log.warning("pdftotext store failed for %s, backfill will catch it", sha[:16])
 ```
 
 **`lavandula/reports/async_crawler.py`** (async, ~line 440):
 ```python
-# Same, wrapped in loop.run_in_executor() for the subprocess call
+# Same logic, subprocess wrapped in loop.run_in_executor()
 ```
 
-pdftotext stdin accepts bytes directly — no temp file. The DB write is best-effort (log and continue if it fails, backfill catches it later).
+pdftotext stdin accepts bytes directly — no temp file needed. The DB write is best-effort: if it fails, the backfill runner (Phase 5) catches it on the next run. The crawl pipeline is never blocked by a pdftotext failure.
 
-**Tests:** mock subprocess, verify extract called during crawl; DB failure doesn't block crawl.
+**Tests:** mock subprocess, verify extract called during crawl; DB failure doesn't block crawl; verify extraction happens before `archive.put()`.
 
-**Acceptance:** new crawled docs get pdftotext text stored automatically.
+**Acceptance:** new crawled docs get pdftotext text stored automatically. Crawl throughput is not degraded (pdftotext adds ~0.1s/doc).
 
 ## Phase 7 — Dashboard integration
 
