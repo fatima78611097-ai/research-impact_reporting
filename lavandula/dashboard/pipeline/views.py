@@ -2162,7 +2162,7 @@ class ParseView(LoginRequiredMixin, TemplateView):
         with connections["default"].cursor() as cur:
             cur.execute("""
                 SELECT id, run_tag, started_at, finished_at, config_json,
-                       stats_json, instance_id
+                       stats_json, instance_id, exit_reason
                 FROM lava_parse.parse_runs
                 WHERE run_tag = %s
             """, [run_tag])
@@ -2271,7 +2271,7 @@ class ParseView(LoginRequiredMixin, TemplateView):
             with connections["default"].cursor() as cur:
                 cur.execute("""
                     SELECT pr.id, pr.run_tag, pr.started_at, pr.finished_at,
-                           pr.config_json, pr.stats_json, pr.instance_id
+                           pr.config_json, pr.stats_json, pr.instance_id, pr.exit_reason
                     FROM lava_parse.parse_runs pr
                     ORDER BY pr.id DESC
                     LIMIT 20
@@ -2475,10 +2475,12 @@ class ParseProgressPartial(HtmxLoginRequiredMixin, View):
         queue_progress = None
         worker_stats = None
 
+        heartbeats = []
+
         if run_tag:
             with connections["default"].cursor() as cur:
                 cur.execute("""
-                    SELECT id, stats_json, instance_id, instance_ids, started_at
+                    SELECT id, stats_json, instance_id, instance_ids, started_at, exit_reason
                     FROM lava_parse.parse_runs WHERE run_tag = %s
                 """, [run_tag])
                 row = cur.fetchone()
@@ -2490,6 +2492,7 @@ class ParseProgressPartial(HtmxLoginRequiredMixin, View):
                         "instance_id": row[2],
                         "instance_ids": row[3] or [],
                         "started_at": row[4],
+                        "exit_reason": row[5],
                     }
 
             # Query work_queue for aggregate progress and per-worker stats
@@ -2537,6 +2540,28 @@ class ParseProgressPartial(HtmxLoginRequiredMixin, View):
                                 else:
                                     ws["throughput"] = None
                         cache.set(cache_key, worker_stats, 10)
+                    # Query heartbeat data for per-worker display
+                    try:
+                        with connections["default"].cursor() as cur:
+                            cur.execute("""
+                                SELECT instance_id, last_heartbeat, docs_completed,
+                                       current_doc_sha,
+                                       EXTRACT(EPOCH FROM NOW() - last_heartbeat) AS age_seconds
+                                FROM lava_parse.worker_heartbeats
+                                WHERE run_id = %s
+                            """, [run_id])
+                            columns = [col[0] for col in cur.description]
+                            heartbeats = [dict(zip(columns, r)) for r in cur.fetchall()]
+                            for hb in heartbeats:
+                                age = hb.get("age_seconds") or 0
+                                if age < 120:
+                                    hb["status"] = "healthy"
+                                elif age < 300:
+                                    hb["status"] = "slow"
+                                else:
+                                    hb["status"] = "stale"
+                    except Exception:
+                        pass
                 except Exception:
                     _parse_logger.exception("Failed to query work_queue progress")
 
@@ -2567,6 +2592,7 @@ class ParseProgressPartial(HtmxLoginRequiredMixin, View):
             "instance_state": instance_state,
             "queue_progress": queue_progress,
             "worker_stats": worker_stats or [],
+            "heartbeats": heartbeats,
         }
         return render(request, "pipeline/partials/parse_progress.html", context)
 
