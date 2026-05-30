@@ -1,7 +1,7 @@
 # Plan 0057 — LLM Extraction Faithfulness Verification
 
 - **Project:** 0057   **Spec:** `locard/specs/0057-llm-faithfulness-verification.md` (specified)
-- **Status:** conceived (plan-review incorporated; awaiting red-team-plan + human approval)
+- **Status:** conceived (plan-review + red-team-plan incorporated; awaiting human approval)
 - **Author:** Architect, 2026-05-30
 
 > Builder-executable plan. Phases are sequenced; each lists deliverables, tests, and acceptance. Resolves the red-team plan-phase checklist (multi-span semantics, R2 tie-breaks, value normalization, 0060-trust, determinism).
@@ -27,13 +27,13 @@
 - **Acceptance:** 100% of the spec §4.2 counterexamples produce the spec's verdict; module has no DB/network deps (pure).
 
 ## Phase 2 — Data-model migration (operator-run)
-- Migration SQL adding to `lava_vocab.llm_metrics` (+ provenance fields on `llm_stories`): `verification_tier` enum, `grounding_rule` text, `grounding_offsets` jsonb, `context_window` text, `tier_b_confidence` numeric NULL, `modality` enum (`achieved|proposed|advocated|projected|unspecified`), `numerator`/`denominator` numeric NULL (ratio preservation). All **nullable**, default `verification_tier='unverified-legacy'`; index on `verification_tier`.
+- Migration SQL adding to `lava_vocab.llm_metrics` (+ provenance fields on `llm_stories`): `verification_tier` enum (`verified | unverified_ocr | unverified_pending | quarantine | unverified_legacy`), `grounding_rule` text, `grounding_source` text, `grounding_offsets` jsonb, `context_window` text (display-only — **explicitly NOT used in grounding checks**; bounded in length; carries its own offsets for independent verification), `tier_b_confidence` numeric NULL, `modality` enum (`achieved|proposed|advocated|projected|unspecified`), `numerator`/`denominator` numeric NULL (ratio preservation). All **nullable**, default `verification_tier='unverified_legacy'`; index on `verification_tier`. `unverified_pending` is the durable state for facts whose source text is not yet 0060-certified — they are treated as unverified in all published surfaces and **cannot be promoted to `verified` without a 0060-certified source**, enforced in the gate runner (not by convention).
 - **Deliverable:** `lavandula/migrations/0057_faithfulness_fields.sql` + a rollback. **Operator applies it.** **Acceptance:** columns present, existing rows default-tiered, backward compatible (no existing query breaks).
 
 ## Phase 3 — The gate runner (batch + score)
 - Management command `verify_faithfulness <run_tag>`: iterate the run's `llm_metrics`/`llm_stories`, pull source text via the provider, run the Phase-1 verifier, write `verification_tier`/`grounding_rule`/`grounding_offsets`, set Tier-C for failures, set Tier-B for OCR sources (from the provider's `source`/0060 signal), emit a **per-run faithfulness score** to `extraction_runs.stats_json`.
 - **Record provenance source per verdict** (Codex review): write `grounding_source ∈ {docling, pdftotext-repaired}` on each fact — *which* text the verdict grounded against. **Tier decision when 0060 has not certified the text:** if the provider returns un-certified text, the verdict is **Tier-B-pending** (treated as unverified, not Tier-A) until 0060 certifies it — Tier-A requires a 0060-certified text-native source. Fail-safe: absence of certification never yields Tier-A.
-- **Tests:** integration on a fixture run (mixed grounded/defect/OCR); determinism (re-run = identical tiers); idempotency.
+- **Tests:** integration on a fixture run (mixed grounded/defect/OCR); determinism (re-run = identical tiers); idempotency; **story-specific**: summary prose NOT rejected, but source_snippet grounded + direct quotes verbatim + no-snippet = Tier C; **0060 trust boundary**: un-certified source → `unverified_pending` (never `verified`) + promotion requires certified source; **context_window exclusion**: context_window content has NO effect on the grounding verdict (a fact whose snippet fails R1/R2 must be Tier C even if context_window contains matching text).
 - **Acceptance:** every fact gets a tier; Tier-C never appears in the "published" query; score emitted + trended.
 
 ## Phase 4 — Run on existing data → failure catalog (test→fix Phase 1)
