@@ -1,7 +1,7 @@
 # Plan 0057 — LLM Extraction Faithfulness Verification
 
 - **Project:** 0057   **Spec:** `locard/specs/0057-llm-faithfulness-verification.md` (specified)
-- **Status:** conceived (plan-review + red-team-plan incorporated; awaiting human approval)
+- **Status:** conceived (plan-review + red-team-plan incorporated; human-approved 2026-05-30; spawning builder)
 - **Author:** Architect, 2026-05-30
 
 > Builder-executable plan. Phases are sequenced; each lists deliverables, tests, and acceptance. Resolves the red-team plan-phase checklist (multi-span semantics, R2 tie-breaks, value normalization, 0060-trust, determinism).
