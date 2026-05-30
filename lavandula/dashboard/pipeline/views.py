@@ -1548,6 +1548,43 @@ class ReportDownloadView(LoginRequiredMixin, View):
         return HttpResponseRedirect(url)
 
 
+class ReportPdfProxyView(LoginRequiredMixin, View):
+    """Stream a report PDF from S3 through the app, served same-origin.
+
+    The QA viewer's PDF.js fetches this URL. Serving it same-origin avoids the
+    S3 CORS block that happens when the browser fetches a presigned S3 URL from
+    the dashboard origin (the bucket has no CORS policy for this origin, and we
+    cannot set one from here).
+    """
+
+    def get(self, request, sha):
+        import re as _re
+        import boto3
+        from django.conf import settings
+        from django.http import StreamingHttpResponse, Http404
+
+        if not _re.fullmatch(r"[0-9a-f]{64}", sha or ""):
+            return HttpResponse("invalid sha", status=400)
+
+        s3 = boto3.client("s3")
+        key = f"pdfs/{sha}.pdf"
+        try:
+            obj = s3.get_object(Bucket=settings.S3_COLLATERAL_BUCKET, Key=key)
+        except Exception:
+            raise Http404("PDF not found")
+
+        resp = StreamingHttpResponse(
+            obj["Body"].iter_chunks(chunk_size=65536),
+            content_type="application/pdf",
+        )
+        content_length = obj.get("ContentLength")
+        if content_length is not None:
+            resp["Content-Length"] = str(content_length)
+        resp["Content-Disposition"] = f'inline; filename="{sha}.pdf"'
+        resp["Cache-Control"] = "private, max-age=300"
+        return resp
+
+
 class ProvenanceView(LoginRequiredMixin, ListView):
     model = OrgProvenance
     template_name = "pipeline/provenance.html"
@@ -2369,12 +2406,14 @@ class ParseJobCreateView(LoginRequiredMixin, View):
             LOG_DIR.mkdir(parents=True, exist_ok=True)
             log_path = LOG_DIR / f"parse_{config['run_tag']}_{int(time.time())}.log"
 
+            env = {**_os.environ, "PYTHONUNBUFFERED": "1"}
             proc = subprocess.Popen(
                 argv,
                 cwd=str(Path(__file__).resolve().parents[3]),
                 stdout=open(str(log_path), "w"),
                 stderr=subprocess.STDOUT,
                 start_new_session=True,
+                env=env,
             )
 
             job.pid = proc.pid
@@ -2776,7 +2815,7 @@ def _qa_get_runs(sha):
     from django.db import connections
     with connections["default"].cursor() as cur:
         cur.execute("""
-            SELECT DISTINCT r.id, r.run_tag, r.created_at
+            SELECT DISTINCT r.id, r.run_tag, r.started_at AS created_at
             FROM lava_vocab.extraction_runs r
             WHERE r.id IN (
                 SELECT run_id FROM lava_vocab.llm_metrics WHERE content_sha256 = %s
@@ -2888,16 +2927,9 @@ class ExtractionQAView(LoginRequiredMixin, DetailView):
         ctx["metrics_json"] = []
         ctx["stories_json"] = []
 
-        # Presigned PDF URL (15-min expiry)
-        try:
-            s3 = boto3.client("s3")
-            ctx["pdf_url"] = s3.generate_presigned_url(
-                "get_object",
-                Params={"Bucket": settings.S3_COLLATERAL_BUCKET, "Key": f"pdfs/{sha}.pdf"},
-                ExpiresIn=900,
-            )
-        except Exception:
-            ctx["pdf_url"] = ""
+        # Serve the PDF same-origin via a streaming proxy so PDF.js is not
+        # blocked by S3 CORS (the bucket has no CORS policy for this origin).
+        ctx["pdf_url"] = reverse("report_pdf", kwargs={"sha": sha})
 
         runs = _qa_get_runs(sha)
         ctx["available_runs"] = runs

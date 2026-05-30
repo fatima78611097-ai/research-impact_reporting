@@ -37,7 +37,7 @@ def start_process(name: str, config_json: dict) -> PipelineProcess:
         ts = timezone.now().strftime("%Y%m%d_%H%M%S")
         log_path = LOG_DIR / f"{name}_{ts}.log"
 
-        env = {**os.environ, "PYTHONPATH": str(PROJECT_ROOT)}
+        env = {**os.environ, "PYTHONPATH": str(PROJECT_ROOT), "PYTHONUNBUFFERED": "1"}
 
         try:
             log_fh = open(log_path, "w")

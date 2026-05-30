@@ -40,6 +40,21 @@ class PermanentError(Exception):
     """Non-retriable error (corrupt PDF, parse crash). Recorded in documents.error."""
 
 
+def _parse_version() -> str:
+    """Resolve the installed docling version string. Never raises.
+
+    Used by BOTH the success path (_process_one) and the error path
+    (_record_error) so they cannot diverge — a divergence here previously
+    crashed the whole worker on the first PermanentError doc.
+    """
+    from importlib.metadata import version as _pkg_version
+
+    try:
+        return f"docling-{_pkg_version('docling')}"
+    except Exception:
+        return "docling-unknown"
+
+
 def main() -> None:
     args = parse_args()
     _setup_logging()
@@ -66,7 +81,22 @@ def main() -> None:
             conn.close()
             sys.exit(1)
 
-        _run_loop_queue(conn, args)
+        try:
+            _run_loop_queue(conn, args)
+        except Exception:
+            # Last-resort boundary: with the per-item catch-all in place this
+            # should rarely fire, but if it does, release in-flight claims so the
+            # orphaned rows return to the pool instead of wedging the run.
+            logger.exception("worker fatal error in queue loop")
+            try:
+                db.reclaim_stale_claims(conn, args.run_id, args.worker_id)
+            except Exception:
+                pass
+            try:
+                conn.close()
+            except Exception:
+                pass
+            sys.exit(1)
     else:
         if not db.acquire_worker_lock(conn):
             logger.error("another worker is already running (advisory lock held)")
@@ -180,12 +210,36 @@ def _run_loop_queue(conn, args) -> None:
 
     max_docs = args.max_docs
 
+    # Bounded in-memory retry tracking for transient/download failures, so a
+    # permanently-failing "transient" item is recorded as errored after N tries
+    # instead of being unclaimed -> re-fetched -> failed forever (a hot loop).
+    transient_attempts: dict[str, int] = {}
+    max_transient_attempts = getattr(config, "MAX_TRANSIENT_ATTEMPTS", 3)
+    consecutive_fetch_errors = 0
+
     while True:
         if max_docs is not None and stats["total"] >= max_docs:
             logger.info("reached max-docs limit", extra={"max_docs": max_docs})
             break
 
-        batch = db.fetch_work_batch(conn, args.run_id, args.batch_size, args.worker_id)
+        # A5: a dropped RDS connection here must not kill the worker. Retry a
+        # bounded number of times, then give up cleanly.
+        try:
+            batch = db.fetch_work_batch(conn, args.run_id, args.batch_size, args.worker_id)
+            consecutive_fetch_errors = 0
+        except Exception as exc:
+            consecutive_fetch_errors += 1
+            logger.error(
+                "fetch_work_batch failed",
+                extra={"err": str(exc)[:150], "attempt": consecutive_fetch_errors},
+            )
+            _safe_rollback(conn)
+            if consecutive_fetch_errors >= 5:
+                logger.error("giving up after repeated fetch failures")
+                break
+            time.sleep(config.TRANSIENT_RETRY_BASE_SECONDS * consecutive_fetch_errors)
+            continue
+
         if not batch:
             logger.info("no more unclaimed work items")
             break
@@ -199,7 +253,10 @@ def _run_loop_queue(conn, args) -> None:
 
                 if not config.validate_sha256(sha):
                     logger.warning("invalid sha256 in work queue", extra={"sha": sha[:20]})
-                    db.complete_work_item(conn, args.run_id, sha, error="invalid_sha256")
+                    try:
+                        db.complete_work_item(conn, args.run_id, sha, error="invalid_sha256")
+                    except Exception:
+                        _safe_rollback(conn)
                     stats["skipped"] += 1
                     stats["total"] += 1
                     continue
@@ -207,8 +264,9 @@ def _run_loop_queue(conn, args) -> None:
                 pdf_path = pdf_paths.get(sha)
 
                 if pdf_path is None:
-                    logger.warning("download failed after retries, skipping", extra={"sha": sha[:16]})
-                    stats["transient_skipped"] = stats.get("transient_skipped", 0) + 1
+                    logger.warning("download failed after retries", extra={"sha": sha[:16]})
+                    _handle_transient(conn, args, sha, "download_failed",
+                                      transient_attempts, max_transient_attempts, stats)
                     stats["total"] += 1
                     continue
 
@@ -219,20 +277,52 @@ def _run_loop_queue(conn, args) -> None:
                     db.complete_work_item(conn, args.run_id, sha)
                     stats["succeeded"] += 1
                 except TransientError as e:
-                    logger.warning("transient error, skipping", extra={"sha": sha[:16], "err": str(e)[:100]})
-                    stats["transient_skipped"] = stats.get("transient_skipped", 0) + 1
+                    logger.warning("transient error", extra={"sha": sha[:16], "err": str(e)[:100]})
+                    _safe_rollback(conn)
+                    _handle_transient(conn, args, sha, str(e)[:100],
+                                      transient_attempts, max_transient_attempts, stats)
                 except PermanentError as e:
                     error_label = str(e)[:200] if str(e) else "unknown_error"
-                    _record_error(conn, item, e)
-                    db.complete_work_item(conn, args.run_id, sha, error=error_label)
+                    # Record-error must never prevent the item from being completed,
+                    # else the row stays claimed/incomplete and wedges the run.
+                    try:
+                        _record_error(conn, item, e)
+                    except Exception as rec_exc:
+                        logger.error("record_error failed",
+                                     extra={"sha": sha[:16], "err": str(rec_exc)[:120]})
+                        _safe_rollback(conn)
+                    try:
+                        db.complete_work_item(conn, args.run_id, sha, error=error_label)
+                    except Exception:
+                        _safe_rollback(conn)
+                    stats["failed"] += 1
+                except Exception as exc:
+                    # A1 catch-all: any unexpected error (psycopg2 DataError/
+                    # UniqueViolation/OperationalError, KeyError from malformed
+                    # chunking output, an unclassified CUDA RuntimeError, ...) must
+                    # NOT kill the worker. Roll back the aborted txn, mark the item
+                    # failed, and continue the batch.
+                    logger.error("unexpected error, marking item failed",
+                                 extra={"sha": sha[:16], "err": str(exc)[:200]})
+                    _safe_rollback(conn)
+                    try:
+                        db.complete_work_item(conn, args.run_id, sha,
+                                              error=f"unexpected:{type(exc).__name__}")
+                    except Exception:
+                        _safe_rollback(conn)
                     stats["failed"] += 1
                 finally:
                     stats["total"] += 1
                     if pdf_path and pdf_path.exists():
                         pdf_path.unlink()
 
-                if stats["total"] % config.STATS_UPDATE_INTERVAL == 0:
-                    db.update_run_stats(conn, args.run_id, stats)
+                # Stats are advisory — never let a stats write kill the worker.
+                try:
+                    if stats["total"] % config.STATS_UPDATE_INTERVAL == 0:
+                        db.update_run_stats(conn, args.run_id, stats)
+                except Exception as exc:
+                    logger.warning("update_run_stats failed", extra={"err": str(exc)[:100]})
+                    _safe_rollback(conn)
 
                 if _spot_termination_pending():
                     logger.warning("spot termination notice received, exiting gracefully")
@@ -243,7 +333,48 @@ def _run_loop_queue(conn, args) -> None:
 
     stats["end_time"] = time.time()
     stats["duration_seconds"] = stats["end_time"] - stats["start_time"]
-    db.update_run_stats(conn, args.run_id, stats)
+    try:
+        db.update_run_stats(conn, args.run_id, stats)
+    except Exception as exc:
+        logger.warning("final update_run_stats failed", extra={"err": str(exc)[:100]})
+        _safe_rollback(conn)
+
+
+def _safe_rollback(conn) -> None:
+    """Roll back the current transaction, swallowing any error.
+
+    Required after an aborted statement under autocommit=False so the shared
+    connection is usable for the next item instead of stuck 'in failed txn'.
+    """
+    try:
+        conn.rollback()
+    except Exception:
+        pass
+
+
+def _handle_transient(conn, args, sha, reason, attempts, max_attempts, stats) -> None:
+    """Bounded retry for transient / download failures.
+
+    Below the attempt cap: unclaim the row so it returns to the pool for retry.
+    At/above the cap: record it as errored so it never stays stranded as a
+    claimed-but-incomplete row (which would silently wedge the run tail).
+    """
+    attempts[sha] = attempts.get(sha, 0) + 1
+    if attempts[sha] >= max_attempts:
+        logger.warning("transient retries exhausted, marking errored",
+                       extra={"sha": sha[:16], "err": reason})
+        try:
+            db.complete_work_item(conn, args.run_id, sha,
+                                  error=f"transient_exhausted:{reason}"[:200])
+        except Exception:
+            _safe_rollback(conn)
+        stats["failed"] += 1
+    else:
+        try:
+            db.unclaim_work_item(conn, args.run_id, sha)
+        except Exception:
+            _safe_rollback(conn)
+        stats["transient_skipped"] = stats.get("transient_skipped", 0) + 1
 
 
 def _process_one(pdf_path: Path, item: dict) -> dict:
@@ -255,9 +386,18 @@ def _process_one(pdf_path: Path, item: dict) -> dict:
     except Exception as exc:
         raise PermanentError(f"docling_parse_failed: {type(exc).__name__}") from exc
 
-    sections = chunking.extract_sections(doc)
-    tables = chunking.extract_tables(doc, sections)
-    meta = chunking.get_document_metadata(doc)
+    # A3: post-parse extraction can also fault (CUDA/OOM from OCR, malformed
+    # chunking output). Reclassify so these route through the handled error
+    # paths instead of escaping as a raw exception that kills the worker.
+    try:
+        sections = chunking.extract_sections(doc)
+        tables = chunking.extract_tables(doc, sections)
+        meta = chunking.get_document_metadata(doc)
+    except Exception as exc:
+        msg = str(exc).lower()
+        if any(k in msg for k in ("cuda", "device-side assert", "out of memory", "nvml", "cublas")):
+            raise TransientError(f"gpu_fault: {type(exc).__name__}") from exc
+        raise PermanentError(f"docling_postparse_failed: {type(exc).__name__}") from exc
 
     total_text_chars = sum(s["char_count"] for s in sections)
 
@@ -266,12 +406,10 @@ def _process_one(pdf_path: Path, item: dict) -> dict:
 
     duration_ms = int((time.time() - start) * 1000)
 
-    from importlib.metadata import version as _pkg_version
-
     return {
         "sha": item["content_sha256"],
         "org_ein": item["source_org_ein"],
-        "parse_version": f"docling-{_pkg_version('docling')}",
+        "parse_version": _parse_version(),
         "page_count": meta["page_count"],
         "section_count": len(sections),
         "table_count": len(tables),
@@ -345,14 +483,12 @@ def _download_batch(s3, batch: list[dict], tmp_dir: Path) -> dict[str, Path]:
 
 def _record_error(conn, item: dict, error) -> None:
     """Insert document row with error field set."""
-    import docling
-
     error_str = config.sanitize_error(error) if isinstance(error, Exception) else str(error)[:config.MAX_ERROR_LEN]
 
     doc = {
         "sha": item["content_sha256"],
         "org_ein": item["source_org_ein"],
-        "parse_version": f"docling-{docling.__version__}",
+        "parse_version": _parse_version(),
         "page_count": 0,
         "section_count": 0,
         "table_count": 0,

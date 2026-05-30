@@ -9,8 +9,11 @@ import pytest
 
 # Pre-inject docling and httpx mocks so worker module can be imported
 import types
+# NOTE: deliberately do NOT set _mock_docling.__version__ — the real installed
+# docling has no __version__ attribute. Version is resolved via
+# importlib.metadata.version('docling') in worker._parse_version(). Setting a
+# fake __version__ here previously masked a crash (BUG 1) in the error path.
 _mock_docling = types.ModuleType("docling")
-_mock_docling.__version__ = "2.93.0"
 sys.modules["docling"] = _mock_docling
 sys.modules.setdefault("docling.document_converter", MagicMock())
 sys.modules.setdefault("docling.chunking", MagicMock())
@@ -21,6 +24,8 @@ from lavandula.parse.worker import (
     _download_batch,
     _spot_termination_pending,
     _record_error,
+    _parse_version,
+    _handle_transient,
     parse_args,
     PermanentError,
     TransientError,
@@ -67,7 +72,9 @@ class TestProcessOne:
 
         assert result["sha"] == "a" * 64
         assert result["org_ein"] == "12-345"
-        assert result["parse_version"] == "docling-2.93.0"
+        # Version comes from importlib.metadata (or "docling-unknown" fallback) —
+        # never from docling.__version__, which does not exist in production.
+        assert result["parse_version"].startswith("docling-")
         assert result["page_count"] == 5
         assert result["section_count"] == 1
         assert result["table_count"] == 0
@@ -177,3 +184,52 @@ class TestRecordError:
         assert doc["page_count"] == 0
         assert doc["sections"] == []
         assert doc["tables"] == []
+        # Regression guard for BUG 1: the error path must resolve a version
+        # without touching docling.__version__ (which would raise AttributeError
+        # in production and kill the worker on the first failed document).
+        assert doc["parse_version"].startswith("docling-")
+
+
+class TestParseVersion:
+    def test_returns_docling_prefixed_string(self):
+        # Never touches docling.__version__; uses importlib.metadata with a
+        # safe fallback, so it must always return a "docling-" prefixed string.
+        v = _parse_version()
+        assert isinstance(v, str)
+        assert v.startswith("docling-")
+
+    def test_never_raises_when_metadata_missing(self):
+        with patch("importlib.metadata.version", side_effect=Exception("boom")):
+            assert _parse_version() == "docling-unknown"
+
+
+class TestHandleTransient:
+    def _args(self):
+        a = MagicMock()
+        a.run_id = 7
+        return a
+
+    @patch("lavandula.parse.worker.db")
+    def test_unclaims_below_cap(self, mock_db):
+        # Mirror the production stats dict, which always pre-seeds these keys.
+        stats = {"failed": 0, "transient_skipped": 0}
+        attempts = {}
+        _handle_transient(MagicMock(), self._args(), "a" * 64, "download_failed",
+                          attempts, max_attempts=3, stats=stats)
+        # First failure: row returned to pool for retry, not completed.
+        mock_db.unclaim_work_item.assert_called_once()
+        mock_db.complete_work_item.assert_not_called()
+        assert attempts["a" * 64] == 1
+        assert stats["transient_skipped"] == 1
+
+    @patch("lavandula.parse.worker.db")
+    def test_marks_errored_at_cap(self, mock_db):
+        sha = "b" * 64
+        stats = {"failed": 0, "transient_skipped": 0}
+        attempts = {sha: 2}  # already failed twice; this is the 3rd
+        _handle_transient(MagicMock(), self._args(), sha, "download_failed",
+                          attempts, max_attempts=3, stats=stats)
+        # At the cap: recorded as errored so it is never left stranded.
+        mock_db.complete_work_item.assert_called_once()
+        assert "transient_exhausted" in mock_db.complete_work_item.call_args[1]["error"]
+        assert stats["failed"] == 1

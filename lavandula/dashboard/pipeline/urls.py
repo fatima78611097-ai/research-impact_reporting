@@ -68,6 +68,7 @@ urlpatterns = [
     path("reports/", views.ReportListView.as_view(), name="report_list"),
     path("reports/<str:sha>/", views.ReportDetailView.as_view(), name="report_detail"),
     path("reports/<str:sha>/download/", views.ReportDownloadView.as_view(), name="report_download"),
+    path("reports/<str:sha>/pdf/", views.ReportPdfProxyView.as_view(), name="report_pdf"),
 
     # Extraction QA Viewer (Spec 0052)
     path("reports/<str:sha>/qa/", views.ExtractionQAView.as_view(), name="extraction_qa"),
