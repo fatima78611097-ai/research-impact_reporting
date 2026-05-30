@@ -120,3 +120,11 @@ Source documents are external/untrusted input to a gate that controls publicatio
 - Number-reformatting ("$2.8M" vs "$2.8 million") — defect-by-default now; decide whether to add a bounded numeric-normalization allowlist in the plan.
 - Structured-value representation — numerator/denominator columns vs structured JSON (DDL choice, plan).
 - Exact `tier_b_confidence` formula (which 0060 signal) — plan, once 0060's repair/agreement output is finalized.
+
+### Plan-phase hardening checklist (from red-team — Gemini + Codex, both REQUEST_CHANGES / 0 CRITICAL)
+These are implementation-specification items to nail in the **0057 plan** (not spec-design blockers):
+- **Multi-span grounding semantics** — exact rule for "required spans," the max-N cap, and the all-must-match logic; performance/anti-gaming bounds.
+- **R2 table matching + tie-breaks** — precise label/value tokenization, multi-row handling, and the deterministic R1-before-R2 resolution order.
+- **Numeric/value normalization** — finalize the defect-by-default rule and any bounded, unit-preserving allowlist.
+- **0060 trust chain** — exact handling of the repaired-vs-Docling source per verdict; what happens if 0060 has not tier-stamped the source.
+- **Determinism acceptance criteria** — tighten to explicit, testable ambiguity-resolution rules.
