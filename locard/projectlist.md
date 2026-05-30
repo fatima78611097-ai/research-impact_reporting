@@ -856,7 +856,7 @@ projects:
     priority: high
     files:
       spec: locard/specs/0057-llm-faithfulness-verification.md
-      plan: null
+      plan: locard/plans/0057-llm-faithfulness-verification.md
       review: null
     dependencies: []
     tags: [extraction, llm, quality, verification]
