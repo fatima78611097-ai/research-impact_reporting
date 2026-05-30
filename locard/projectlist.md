@@ -913,11 +913,23 @@ projects:
     tags: [crawl, integrity, verification, viewer, operations]
     notes: "Added 2026-05-29. Folds into a NEW search-engine-grade crawl pipeline the operator intends to build; runs BOTH continuously and AT REQUEST TIME. TIERED LADDER (cost->certainty; escalate only on doubt): T0 HEAD / conditional GET (If-None-Match/If-Modified-Since) -> exists? + cheap CHANGE HINT (ETag/Last-Modified/Content-Length); LIMIT: ETag != content hash (hint, not proof). T1 RFC 9530 Content-Digest/Repr-Digest -> server sha vs ours, identity with NO body; LIMIT: ~unimplemented on org sites -> opportunistic. T2 Range bytes=0-N + partial hash + Content-Length -> cheap change-detect; LIMIT: partial != full identity, Range spotty, needs precomputed partial-hash+size per corpus doc. T3 FULL STREAM-HASH -> stream the body, hash on the fly (no buffering), gated behind a Content-Length pre-check (size differs => changed, skip; size matches => stream-hash to confirm byte-identity) -> authoritative; expensive, only on suspicion/audit. STATE MACHINE: OK->serve link; CHANGED->stop serving under our label, fall back to S3 copy OR hide+flag (product/legal call for unclaimed) + queue re-crawl (swap may be a newer report to ingest); GONE(404/410)->fall back/flag; MOVED(3xx)->follow+re-verify+update source_url; UNREACHABLE->backoff. GOTCHA 1 (resolve FIRST, may reshape approach) — CORS: org servers won't send ACAO for impactreporting.com, so PDF.js can't embed/fetch their PDF cross-origin (SAME wall fixed in 0052) -> likely LINK OUT (new tab) not embed, OR proxy (reintroduces redistribution). GOTCHA 2 — politeness at ~89K-org scale: reuse existing crawl infra (lavandula/reports: host_throttle.py, robots.py, wayback_validation.py, wayback_fallback.py, s3_archive.py). DATA: corpus.source_url_redacted, content_sha256, file_size_bytes, archived_at. PREREQ for T2: backfill partial-hash(first-N-bytes)+size per corpus doc."
 
+  - id: "0062"
+    title: "Search-Engine-Grade Crawl & Intelligence Pipeline"
+    summary: "Ground-up rebuild of the crawl engine using production search patterns. URL frontier with change-rate estimation, per-host politeness, inline pdftotext at archive time, continuous link verification (absorbs 0061), conditional re-crawl on content change. Expands beyond PDFs to HTML pages (news, press releases, blog posts about the org) and site-level intelligence. Includes corpus URL and document validation — tiered integrity checks (HEAD/conditional GET → partial hash → full stream-hash) to detect changed/removed documents and trigger re-crawl or fallback to S3 copy."
+    status: conceived
+    priority: high
+    files:
+      spec: null
+      plan: null
+      review: null
+    dependencies: []
+    tags: [crawl, search-engine, infrastructure, integrity, html, news, national-scale]
+    notes: "Reserved 2026-05-30. Absorbs 0061 (link verification) as a re-verify mode of the same URL frontier. Scope: (1) URL frontier + seen-set (Bloom/cuckoo filter) + per-host rate limiting + robots.txt; (2) PDF + HTML fetch with inline pdftotext (0060 pattern); (3) content change detection via tiered integrity ladder (HEAD → Range+partial-hash → full stream-hash); (4) news/press/blog HTML intelligence — extract org mentions, sentiment, events from HTML pages; (5) site-level intelligence — technology stack detection, CMS identification, update cadence estimation for crawl scheduling. Architecture reference: search engine conversation (crawl→process→index→serve). Open question: is the HTML/news intelligence a separate runtime process or a mode of the same crawler? Likely same frontier, different processing pipeline per content-type."
 ```
 
 ## Next Available Number
 
-**0062** - Reserve this number for your next project
+**0063** - Reserve this number for your next project
 
 ---
 
