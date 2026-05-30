@@ -1,7 +1,7 @@
 # Plan 0060 — Parse Fidelity Verification & pdftotext Repair
 
 - **Project:** 0060   **Spec:** `locard/specs/0060-parse-fidelity-verification.md` (specified)
-- **Status:** conceived (plan-review + red-team incorporated)
+- **Status:** planned (plan-review + red-team incorporated; human-approved 2026-05-30)
 - **Author:** Architect, 2026-05-30
 
 > Builder-executable plan. pdftotext extraction + fidelity scoring + PdftextSourceProvider + crawler inline hook + backfill batch runner + dashboard integration.
