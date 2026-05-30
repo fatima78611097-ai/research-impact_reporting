@@ -1,7 +1,7 @@
 # Spec 0060 — Parse Fidelity Verification & pdftotext Repair
 
 - **Project:** 0060
-- **Status:** conceived (multi-agent review incorporated)
+- **Status:** conceived (multi-agent review + red-team incorporated)
 - **Depends on:** none (0057 consumes 0060's output via SourceTextProvider)
 - **Author:** Architect, 2026-05-30
 
@@ -97,10 +97,22 @@ A new `SourceTextProvider` implementation for 0057's faithfulness gate.
 
 **Scanned documents route to Tier B in 0057** (published with OCR label), not `unverified_pending`. This matches the 0057 spec §4.3: Tier B = scanned/image source, published WITH a label. `unverified_pending` is reserved for docs where 0060 hasn't run yet (pdftotext not extracted).
 
-**Borderline cases:**
+**Provider decision table (precise, covers every combination):**
+
+| pdftotext row | text_source | coverage ≥ 0.50 | Docling sections | Provider returns | 0057 tier eligibility |
+|---|---|---|---|---|---|
+| exists | text_native | yes | any | pdftotext text, `source="pdftotext-repaired"` | Tier A (certified) |
+| exists | text_native | no | exist | Docling text, `source="docling"` | `unverified_pending` |
+| exists | scanned | — | exist | Docling text, `source="docling"` | Tier B (OCR label) |
+| exists | scanned | — | missing | None | quarantine |
+| exists | pdftotext_failed | — | exist | Docling text, `source="docling"` | `unverified_pending` |
+| missing | NULL | — | exist | Docling text, `source="docling"` | `unverified_pending` |
+| missing | NULL | — | missing | None | quarantine |
+
+**Borderline cases (narrative):**
 - pdftotext exists but coverage < 0.50 in either direction → treat as `pdftotext_failed` (both parsers disagree so severely that neither is trustworthy alone); fall back to Docling; flag for manual review
 - pdftotext exists but Docling sections are missing → use pdftotext text directly; this document was never fully parsed by Docling but has a text layer
-- Docling exists but pdftotext row is missing → use Docling (0060 hasn't processed this doc yet); set `unverified_pending` until 0060 runs
+- Docling exists but pdftotext row is missing → use Docling (0060 hasn't processed this doc yet); `unverified_pending` until 0060 runs
 
 ### 4.4 Data model additions
 
@@ -177,24 +189,43 @@ After 0060 runs:
 - end-to-end rescue: a metric quarantined under Docling source verifies as Tier A under pdftotext source
 - end-to-end no-regression: a metric verified under Docling source remains verified under pdftotext source
 - borderline coverage (<0.50) → falls back to Docling, not pdftotext
+- malformed PDF handling (pdftotext timeout/crash → `pdftotext_failed`, batch continues)
+- `--force` re-extraction overwrites existing pdftotext row
+- `--force --version-mismatch` only re-extracts version-mismatched rows
+- audit log entry created for dashboard-triggered batch runs
 
 ## 7. Security & Abuse Considerations
 
-- **PDF input is untrusted**: pdftotext runs on externally-sourced PDFs. Use `subprocess.run()` with `timeout=30`, `shell=False`, bounded `stdout` capture (10MB cap via `subprocess.PIPE` + length check). No `shell=True`.
-- **Malformed PDFs causing runaway CPU/disk:** the 30s timeout covers CPU; the 10MB stdout cap covers memory; temp files use `delete=True` for disk. If a PDF causes pdftotext to write excessive temp files internally, the subprocess timeout kills it.
-- **S3 download**: validate SHA format (`^[a-f0-9]{64}$`) before constructing S3 key. Stream to `NamedTemporaryFile`, don't hold full PDF in memory.
+- **PDF input is untrusted**: pdftotext runs on externally-sourced PDFs. Use `subprocess.run()` with `timeout=30`, `shell=False`, bounded `stdout` capture (10MB cap via `subprocess.PIPE` + length check). No `shell=True`. Use the **absolute path** `/usr/bin/pdftotext` (not a bare `pdftotext` PATH lookup) to prevent path injection.
+- **Subprocess isolation (red-team CRITICAL — Codex):** pdftotext runs as a subprocess on cloud2 processing untrusted PDFs. Full container isolation is disproportionate for this single-operator system with no multi-tenant exposure. Mitigations: (a) `subprocess.run()` with `timeout=30` kills runaway processes; (b) `shell=False` prevents injection; (c) absolute binary path prevents PATH hijacking; (d) temp files in a dedicated subdirectory (`/tmp/pdftotext-0060/`) with `NamedTemporaryFile(delete=True)`; (e) set `TMPDIR` env var for the subprocess to the same isolated directory, bounding internal temp file writes; (f) `ulimit` on the subprocess is a plan-phase detail if needed. The operator runs this system; there is no untrusted user access to the dashboard.
+- **Malformed PDFs causing runaway CPU/disk:** the 30s timeout covers CPU; the 10MB stdout cap covers memory; the isolated `TMPDIR` bounds disk writes. If pdftotext writes excessive internal temp files, timeout kills it and `TMPDIR` is cleaned up.
+- **S3 download**: validate SHA format (`^[a-f0-9]{64}$`) before constructing S3 key. Stream to `NamedTemporaryFile`, don't hold full PDF in memory. S3 bucket has versioning enabled and IAM least-privilege access.
 - **Stored text**: strip NUL bytes (0x00) before INSERT — PostgreSQL rejects them in TEXT columns. Same pattern as the parse worker's known fix.
 - **No new external access**: pdftotext is a local binary (`/usr/bin/pdftotext`), S3 access uses existing IAM role. No new network calls.
-- **Temp file cleanup:** `NamedTemporaryFile(delete=True)` ensures cleanup on normal exit, exception, or crash. No manual cleanup needed.
+- **Temp file cleanup:** `NamedTemporaryFile(delete=True)` in the isolated `TMPDIR` ensures cleanup on normal exit, exception, or crash.
+- **Dashboard authorization (red-team HIGH — Gemini):** the dashboard is behind Tailscale VPN + Django login. Only the operator (`ron`) has access. The batch runner button uses the same `LoginRequiredMixin` + `_log_audit()` pattern as all other pipeline controls. No additional RBAC is needed for this single-operator system.
+- **stderr sanitization:** capture `stderr` from pdftotext but do NOT log raw stderr to user-facing surfaces. Log to the server log only, where it's available for debugging but not exposed.
+- **Version exposure (red-team HIGH — Gemini):** `pdftotext_version` in the DB is internal (not exposed via API or public surfaces). It serves reproducibility. Keep `poppler-utils` patched per standard system maintenance.
 
 ## 8. Failure & Error Scenarios
 
 - **pdftotext crashes/hangs on a PDF** → subprocess timeout after 30s, mark `text_source = 'pdftotext_failed'`, continue batch
 - **S3 download fails** → retry once, then skip with error logged, continue batch
-- **pdftotext produces empty output on a multi-page PDF** → classify as `scanned`, not `pdftotext_failed` (the PDF has pages but no embedded text layer)
+- **pdftotext produces empty output on a multi-page PDF** → classify as `scanned`, not `pdftotext_failed` (the PDF has pages but no embedded text layer). Page count determined from `lava_parse.documents.page_count` (set by Docling parse).
 - **pdftotext produces empty output on a zero-page PDF** → classify as `pdftotext_failed` (corrupt PDF)
+- **Whitespace-only output** → treated as empty (classify as `scanned` or `pdftotext_failed` per page count)
 - **Extremely low fidelity score** (< 0.50 both directions) → classify as `pdftotext_failed`; flag for manual review but don't block the batch
 - **NUL bytes in output** → strip before INSERT (known issue from parse worker)
+- **Encrypted/password-protected PDFs** → pdftotext returns empty or error; classify as `pdftotext_failed`
+
+### 8.1 Version invalidation & re-extraction (red-team HIGH — Codex)
+
+The batch runner's `--force` flag re-extracts documents even if a `lava_parse.pdftotext` row exists. Use cases:
+- **pdftotext upgrade:** `--force --version-mismatch` re-extracts only rows where `pdftotext_version` differs from the current binary version
+- **Known-bad document:** `--sha SHA --force` re-extracts a specific document
+- **Full re-extraction:** `--force` re-extracts all documents (operator decision, not automatic)
+
+The batch runner **always** stores the current `pdftotext_version` on write, so stale versions are detectable. No automatic invalidation — the operator decides when to re-extract. This matches the single-operator model.
 - **pdftotext binary missing** → fail fast at command startup with clear error message ("poppler-utils not installed")
 
 ## 9. Traps to Avoid
