@@ -891,7 +891,7 @@ projects:
   - id: "0060"
     title: "Parse Fidelity Verification & pdftotext Repair"
     summary: "Verify the extracted text is true to the source PDF — don't trust the parser, check it. Cross-check Docling output against the PDF's embedded text layer via an independent deterministic extractor (pdftotext/poppler, present on cloud2): coverage (Docling dropped nothing) + inverse (Docling invented nothing). The foundation link beneath 0057 — together they form an unbroken PDF->text->snippet->published chain of custody."
-    status: implementing
+    status: committed
     priority: high
     files:
       spec: locard/specs/0060-parse-fidelity-verification.md
