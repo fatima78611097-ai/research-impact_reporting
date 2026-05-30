@@ -3156,7 +3156,7 @@ class FaithfulnessVerifyView(LoginRequiredMixin, View):
         t = threading.Thread(target=_run_verification, daemon=True)
         t.start()
 
-        _log_audit(request, "faithfulness_verify_start", "faithfulness", {"run_id": run_id, "run_tag": run_tag})
+        _log_audit(request, "faith_verify", "faithfulness", {"run_id": run_id, "run_tag": run_tag})
         messages.success(request, f"Verification started for run: {run_tag}")
         return redirect("faithfulness")
 
