@@ -1,0 +1,36 @@
+{% load humanize %}
+{# Spec 0058 §3.5 — quarantine review: provenance + one-step un-quarantine. #}
+{% if quarantined %}
+<table class="w-full text-sm">
+  <thead>
+    <tr class="text-left text-gray-500 border-b">
+      <th class="pb-2">SHA</th>
+      <th class="pb-2">Reason</th>
+      <th class="pb-2">By</th>
+      <th class="pb-2">When</th>
+      <th class="pb-2"></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for q in quarantined %}
+    <tr class="border-b border-gray-100">
+      <td class="py-1 font-mono" title="{{ q.content_sha256 }}">{{ q.content_sha256|truncatechars:18 }}</td>
+      <td class="py-1">{{ q.reason }}</td>
+      <td class="py-1 text-gray-600">{{ q.quarantined_by }}</td>
+      <td class="py-1 text-gray-500">{{ q.quarantined_at|naturaltime }}</td>
+      <td class="py-1 text-right">
+        <form method="post" action="{% url 'parse_quarantine_remove' %}"
+              onsubmit="return confirm('Un-quarantine this doc? It will be eligible for parsing again.')">
+          {% csrf_token %}
+          <input type="hidden" name="sha" value="{{ q.content_sha256 }}">
+          <button type="submit" class="text-xs text-blue-600 hover:underline">un-quarantine</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<div class="mt-2 text-xs text-gray-500">{{ quarantined|length }} quarantined doc{{ quarantined|length|pluralize }}</div>
+{% else %}
+<div class="text-sm text-gray-500">No quarantined docs.</div>
+{% endif %}

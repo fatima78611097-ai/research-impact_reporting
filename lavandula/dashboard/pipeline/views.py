@@ -1,3 +1,4 @@
+import re
 import socket
 import time
 
@@ -2474,6 +2475,8 @@ class ParseProgressPartial(HtmxLoginRequiredMixin, View):
         instance_state = None
         queue_progress = None
         worker_stats = None
+        outcome_rollup = None      # Spec 0058: per-run parse_outcome counts
+        error_breakdown = []       # Spec 0058: fine error-label counts
 
         heartbeats = []
 
@@ -2562,6 +2565,38 @@ class ParseProgressPartial(HtmxLoginRequiredMixin, View):
                                     hb["status"] = "stale"
                     except Exception:
                         pass
+
+                    # Spec 0058: per-run parse_outcome rollup + fine error
+                    # breakdown (timeout/crash/oom/...) over this run's docs.
+                    try:
+                        with connections["default"].cursor() as cur:
+                            cur.execute("""
+                                SELECT COALESCE(d.parse_outcome, 'legacy') AS outcome,
+                                       COUNT(*) AS n
+                                FROM lava_parse.documents d
+                                JOIN lava_parse.work_queue wq
+                                  ON wq.content_sha256 = d.content_sha256
+                                 AND wq.run_id = %s
+                                GROUP BY COALESCE(d.parse_outcome, 'legacy')
+                            """, [run_id])
+                            outcome_rollup = {r[0]: r[1] for r in cur.fetchall()}
+
+                            cur.execute("""
+                                SELECT d.error, COUNT(*) AS n
+                                FROM lava_parse.documents d
+                                JOIN lava_parse.work_queue wq
+                                  ON wq.content_sha256 = d.content_sha256
+                                 AND wq.run_id = %s
+                                WHERE d.error IS NOT NULL
+                                GROUP BY d.error
+                                ORDER BY n DESC
+                                LIMIT 15
+                            """, [run_id])
+                            error_breakdown = [
+                                {"error": r[0], "count": r[1]} for r in cur.fetchall()
+                            ]
+                    except Exception:
+                        pass
                 except Exception:
                     _parse_logger.exception("Failed to query work_queue progress")
 
@@ -2593,6 +2628,8 @@ class ParseProgressPartial(HtmxLoginRequiredMixin, View):
             "queue_progress": queue_progress,
             "worker_stats": worker_stats or [],
             "heartbeats": heartbeats,
+            "outcome_rollup": outcome_rollup,
+            "error_breakdown": error_breakdown,
         }
         return render(request, "pipeline/partials/parse_progress.html", context)
 
@@ -2647,6 +2684,62 @@ class ParseStopView(LoginRequiredMixin, View):
             "job_id": active_job.pk, "run_tag": run_tag,
         })
         messages.success(request, f"Stopped parse run '{run_tag}' (Job #{active_job.pk})")
+        return redirect("parse")
+
+
+_QUARANTINE_SHA_RE = re.compile(r"^[a-f0-9]{64}$")
+
+
+class QuarantineReviewPartial(HtmxLoginRequiredMixin, View):
+    """Spec 0058 §3.5 — list quarantined (blocklisted) parse docs for review."""
+
+    def get(self, request):
+        from django.db import connections
+
+        rows = []
+        try:
+            with connections["default"].cursor() as cur:
+                cur.execute("""
+                    SELECT content_sha256, reason, quarantined_at, quarantined_by
+                    FROM lava_parse.parse_blocklist
+                    ORDER BY quarantined_at DESC
+                    LIMIT 200
+                """)
+                cols = [c[0] for c in cur.description]
+                rows = [dict(zip(cols, r)) for r in cur.fetchall()]
+        except Exception:
+            _parse_logger.exception("Failed to list parse_blocklist")
+        return render(request, "pipeline/partials/quarantine_review.html",
+                      {"quarantined": rows})
+
+
+class QuarantineRemoveView(LoginRequiredMixin, View):
+    """Spec 0058 §3.5 — un-quarantine a doc (one-step, audited recovery)."""
+
+    def post(self, request):
+        from django.db import connections
+
+        sha = (request.POST.get("sha") or "").strip()
+        if not _QUARANTINE_SHA_RE.match(sha):
+            messages.error(request, "Invalid sha256")
+            return redirect("parse")
+        try:
+            with connections["default"].cursor() as cur:
+                cur.execute(
+                    "DELETE FROM lava_parse.parse_blocklist WHERE content_sha256 = %s",
+                    [sha],
+                )
+                removed = cur.rowcount
+        except Exception:
+            _parse_logger.exception("Failed to un-quarantine %s", sha[:16])
+            messages.error(request, "Un-quarantine failed")
+            return redirect("parse")
+
+        _log_audit(request, "parse_unquarantine", "parse", {"sha": sha})
+        if removed:
+            messages.success(request, f"Un-quarantined {sha[:16]}…")
+        else:
+            messages.info(request, f"{sha[:16]}… was not quarantined")
         return redirect("parse")
 
 
