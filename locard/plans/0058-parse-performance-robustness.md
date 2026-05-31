@@ -1,7 +1,7 @@
 # Plan 0058 — Parse Performance & Robustness
 
 - **Project:** 0058   **Spec:** `locard/specs/0058-parse-performance-robustness.md` (specified)
-- **Status:** conceived (initial draft)
+- **Status:** conceived (plan-review incorporated)
 - **Author:** Architect, 2026-05-31
 
 > Builder-executable plan. Phase 0 is a SPIKE that gates the architecture (native timeout vs subprocess). Everything else is sequenced behind it. Worker-side changes require a tarball rebuild (bundles the already-committed NUL `_scrub` fix) + operator deploy. Quality A/B + integration tests are operator-run before the tarball ships to a full run.
@@ -51,6 +51,8 @@ Add to `chunking.py` (pure, unit-testable):
 
 **If spike PASS (native):** set `document_timeout` in the Phase-1 options. `chunking.parse_pdf` catches Docling's timeout exception → raises `DoclingParseError`. Done — minimal code.
 
+**Branch boundary (plan-review — Codex):** Phase 2 builds EXACTLY ONE path, chosen by the recorded `locard/spikes/0058/RESULTS.md` verdict. The builder MUST NOT implement both in parallel. The two paths share one seam: `chunking.parse_pdf(pdf_path, options)` is the single call site `worker._process_one` uses; the native path sets `document_timeout` inside it, the subprocess path routes it through `PersistentParseChild`. Worker code above that seam is identical either way, so the branch is contained to `chunking.py`.
+
 **If spike FAIL (subprocess):** build `chunking.PersistentParseChild`:
 - `multiprocessing.get_context("spawn")`, one child per worker, model loaded once.
 - Child loop: receive `(pdf_path, options)` → run `convert` + `extract_sections`/`extract_tables`/`get_document_metadata` **inside the child** → return the small JSON-serializable dicts (NOT the DoclingDocument).
@@ -60,7 +62,9 @@ Add to `chunking.py` (pure, unit-testable):
 
 **Tests:** native path — timeout option set + exception mapped (mock); subprocess path — timeout→respawn, OOM→parse_oom, child returns dicts, windowed+consecutive breaker (mocked multiprocessing).
 
-**Acceptance:** the poison doc cannot wedge the worker beyond `T + kill margin` (proven in Phase 6 integration test).
+**Core regression integration test (plan-review — Codex):** for whichever branch ships, an integration test must prove **"poison doc times out/errors, THEN a normal doc parses successfully immediately after on the same worker"** — this is the central risk (a timeout that leaves GPU state corrupted would silently fail every subsequent doc). Required for the native path (GPU state intact after Docling's own timeout) and the subprocess path (respawned child parses the next doc).
+
+**Acceptance:** the poison doc cannot wedge the worker beyond `T + kill margin`, AND the worker recovers to parse the next doc (proven in Phase 6 integration test).
 
 ## Phase 3 — Error contract + observability (worker.py, db.py, migration)
 
@@ -74,7 +78,8 @@ Add to `chunking.py` (pure, unit-testable):
 
 ## Phase 4 — Quarantine (DB-persisted, governed)
 
-- Migration (same file or sibling): quarantine flag — plan chooses `lava_parse.parse_blocklist(content_sha256 PK, reason, quarantined_at, quarantined_by, evidence_json)` (cleaner than a corpus column; corpus is shared).
+- Migration (same file or sibling): quarantine flag — `lava_parse.parse_blocklist(content_sha256 PK, reason, quarantined_at, quarantined_by, evidence_json)` (cleaner than a corpus column; corpus is shared with the flipbook project).
+- **Single source of truth (plan-review — Codex):** `parse_blocklist` is the ONLY exclusion mechanism — no corpus-side flag, to avoid a split-brain exclusion path. `populate_work_queue` does one `NOT IN (SELECT content_sha256 FROM lava_parse.parse_blocklist)` (or anti-join). If a corpus-side signal ever matters, it must be reconciled INTO the blocklist, not checked independently.
 - `populate_work_queue` excludes blocklisted shas at enqueue.
 - `db.quarantine_doc(sha, reason, by, evidence)` / `db.unquarantine_doc(sha)` — audited, reversible.
 - Flag `e038a9e75317ff86` now (operator inserts the row, or a one-shot management command).
@@ -92,7 +97,8 @@ Add to `chunking.py` (pure, unit-testable):
 - Compare with the spec §4 metrics: normalized cell-content **set coverage** (bidirectional, NOT sequence alignment), row preservation (Jaccard), OCR word-set coverage on scanned, and **run the real shipped 0057 gate** on both variants' markdown → compare Tier-A vs Tier-C.
 - Emit a results table + PASS/CONDITIONAL/FAIL against the frozen thresholds (text-native cell parity ≥0.9999, zero lost rows, zero grounding regression; scanned ≥0.95; poison completes within timeout).
 
-**Deliverable:** `locard/operations/0058-ab-results.md`. **Acceptance:** Variant B passes the frozen gates on the sample, OR the failing knob is reverted and re-tested.
+**Persisted deliverable (plan-review — Codex):** `locard/operations/0058-ab-results.md` MUST contain, per doc: sha, doc-type stratum, variant, `docling_convert_ms`, table_count, total_cells, cell-content coverage (both directions), lost-row count, 0057 Tier-A/Tier-C counts; plus per-stratum aggregates and the final PASS/CONDITIONAL/FAIL verdict against each frozen threshold. (Raw per-cell diffs may stay operator-visible/transient; the committed file is the summary table + verdict — enough to reproduce the decision.)
+**Acceptance:** Variant B passes the frozen gates on the sample, OR the failing knob is reverted and re-tested.
 
 ## Phase 6 — Worker tarball rebuild + deploy + smoke test
 
