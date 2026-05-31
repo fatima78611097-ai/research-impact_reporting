@@ -19,8 +19,10 @@ sys.modules.setdefault("docling.document_converter", MagicMock())
 sys.modules.setdefault("docling.chunking", MagicMock())
 sys.modules.setdefault("httpx", MagicMock())
 
+from lavandula.parse import chunking, parse_runner
 from lavandula.parse.worker import (
     _process_one,
+    _parse_options_for,
     _download_batch,
     _spot_termination_pending,
     _record_error,
@@ -49,59 +51,132 @@ class TestParseArgs:
         assert args.priority == "newsletter,program_description"
 
 
+def _runner_returning(payload):
+    r = MagicMock()
+    r.parse.return_value = payload
+    return r
+
+
+def _good_section():
+    return {"section_index": 0, "char_count": 100, "heading": "Intro",
+            "heading_level": 1, "body_text": "x" * 100,
+            "page_start": 1, "page_end": 2, "parent_headings": ["Intro"]}
+
+
+_ITEM = {"content_sha256": "a" * 64, "source_org_ein": "12-345"}
+
+
+def _opts(downgrade=False):
+    return chunking.build_parse_options(skip_ocr=False, downgrade=downgrade)
+
+
 class TestProcessOne:
-    @patch("lavandula.parse.worker.chunking")
-    @patch("lavandula.parse.worker.config")
-    def test_returns_structured_result(self, mock_config, mock_chunking):
-        mock_config.filter_metadata.return_value = {"title": "Report"}
-
-        mock_doc = MagicMock()
-        mock_chunking.parse_pdf.return_value = mock_doc
-        mock_chunking.extract_sections.return_value = [
-            {"section_index": 0, "char_count": 100, "heading": "Intro",
-             "heading_level": 1, "body_text": "x" * 100,
-             "page_start": 1, "page_end": 2, "parent_headings": ["Intro"]},
-        ]
-        mock_chunking.extract_tables.return_value = []
-        mock_chunking.get_document_metadata.return_value = {
-            "page_count": 5, "figure_count": 1, "metadata": {"title": "Report"},
-        }
-
-        item = {"content_sha256": "a" * 64, "source_org_ein": "12-345"}
-        result = _process_one(Path("/tmp/test.pdf"), item)
+    def test_returns_structured_result(self):
+        runner = _runner_returning({
+            "sections": [_good_section()],
+            "tables": [],
+            "metadata": {"page_count": 5, "figure_count": 1, "metadata": {"title": "Report"}},
+            "convert_ms": 1234,
+        })
+        result = _process_one(runner, Path("/tmp/test.pdf"), _ITEM, _opts())
 
         assert result["sha"] == "a" * 64
         assert result["org_ein"] == "12-345"
-        # Version comes from importlib.metadata (or "docling-unknown" fallback) —
-        # never from docling.__version__, which does not exist in production.
         assert result["parse_version"].startswith("docling-")
         assert result["page_count"] == 5
         assert result["section_count"] == 1
         assert result["table_count"] == 0
         assert result["total_text_chars"] == 100
         assert result["error"] is None
+        # Spec 0058 observability
+        assert result["parse_outcome"] == "ok"
+        assert result["docling_convert_ms"] == 1234
+        assert result["metadata_json"] == {"title": "Report"}
 
-    @patch("lavandula.parse.worker.chunking")
-    def test_raises_permanent_on_parse_failure(self, mock_chunking):
-        mock_chunking.parse_pdf.side_effect = RuntimeError("corrupt PDF")
+    def test_downgraded_option_sets_outcome(self):
+        runner = _runner_returning({
+            "sections": [_good_section()], "tables": [],
+            "metadata": {"page_count": 2, "figure_count": 0, "metadata": {}},
+            "convert_ms": 10,
+        })
+        result = _process_one(runner, Path("/tmp/t.pdf"), _ITEM, _opts(downgrade=True))
+        assert result["parse_outcome"] == "downgraded"
 
-        item = {"content_sha256": "a" * 64, "source_org_ein": "12-345"}
+    def test_raises_permanent_on_parse_failure(self):
+        runner = MagicMock()
+        runner.parse.side_effect = parse_runner.ParseChildError("docling exploded mid-parse")
         with pytest.raises(PermanentError, match="docling_parse_failed"):
-            _process_one(Path("/tmp/test.pdf"), item)
+            _process_one(runner, Path("/tmp/test.pdf"), _ITEM, _opts())
 
-    @patch("lavandula.parse.worker.chunking")
-    def test_raises_permanent_on_empty_parse(self, mock_chunking):
-        mock_doc = MagicMock()
-        mock_chunking.parse_pdf.return_value = mock_doc
-        mock_chunking.extract_sections.return_value = []
-        mock_chunking.extract_tables.return_value = []
-        mock_chunking.get_document_metadata.return_value = {
-            "page_count": 1, "figure_count": 0, "metadata": {},
-        }
-
-        item = {"content_sha256": "a" * 64, "source_org_ein": "12-345"}
+    def test_raises_permanent_on_empty_parse(self):
+        runner = _runner_returning({
+            "sections": [], "tables": [],
+            "metadata": {"page_count": 1, "figure_count": 0, "metadata": {}},
+            "convert_ms": 5,
+        })
         with pytest.raises(PermanentError, match="empty_parse"):
-            _process_one(Path("/tmp/test.pdf"), item)
+            _process_one(runner, Path("/tmp/test.pdf"), _ITEM, _opts())
+
+
+class TestProcessOneErrorMapping:
+    """Typed subprocess errors -> PermanentError with the precise parse code."""
+
+    @pytest.mark.parametrize("exc,code", [
+        (parse_runner.DoclingParseTimeout("t"), "parse_timeout"),
+        (parse_runner.DoclingParseCrash("c"), "parse_crash"),
+        (parse_runner.DoclingParseOOM("o"), "parse_oom"),
+        (parse_runner.DoclingParseMalformed("m"), "parse_malformed"),
+    ])
+    def test_typed_errors_map_to_permanent(self, exc, code):
+        runner = MagicMock()
+        runner.parse.side_effect = exc
+        with pytest.raises(PermanentError, match=code):
+            _process_one(runner, Path("/tmp/t.pdf"), _ITEM, _opts())
+
+    def test_gpu_fault_is_transient_and_recycles_child(self):
+        runner = MagicMock()
+        runner.parse.side_effect = parse_runner.ParseChildError("CUDA device-side assert triggered")
+        with pytest.raises(TransientError, match="gpu_fault"):
+            _process_one(runner, Path("/tmp/t.pdf"), _ITEM, _opts())
+        runner.recycle.assert_called_once()
+
+
+class TestParseOptionsFor:
+    def test_poison_signal_downgrades(self):
+        signals = {"a" * 64: {"file_size_bytes": 5_600_000, "page_count": 4,
+                              "first_page_text_len": 19, "text_source": None,
+                              "pdftotext_char_count": None}}
+        opts = _parse_options_for("a" * 64, signals, "first_page_text")
+        assert opts.downgrade is True
+        assert "poison_profile" in opts.reasons
+
+    def test_text_native_skips_ocr(self):
+        signals = {"a" * 64: {"file_size_bytes": 1_000_000, "page_count": 20,
+                              "first_page_text_len": 8000, "text_source": "text_native",
+                              "pdftotext_char_count": 8000}}
+        opts = _parse_options_for("a" * 64, signals, "pdftotext")
+        assert opts.do_ocr is False
+        assert opts.downgrade is False
+
+    def test_missing_signal_defaults_keep_ocr_no_downgrade(self):
+        opts = _parse_options_for("a" * 64, {}, "pdftotext")
+        assert opts.do_ocr is True
+        assert opts.downgrade is False
+
+
+class TestRecordErrorOutcome:
+    @patch("lavandula.parse.worker.db")
+    def test_timeout_sets_timeout_outcome(self, mock_db):
+        _record_error(MagicMock(), _ITEM, PermanentError("parse_timeout"))
+        doc = mock_db.insert_document.call_args[0][1]
+        assert doc["parse_outcome"] == "timeout"
+        assert "parse_timeout" in doc["error"]
+
+    @patch("lavandula.parse.worker.db")
+    def test_crash_sets_error_outcome(self, mock_db):
+        _record_error(MagicMock(), _ITEM, PermanentError("parse_crash"))
+        doc = mock_db.insert_document.call_args[0][1]
+        assert doc["parse_outcome"] == "error"
 
 
 class TestDownloadBatch:

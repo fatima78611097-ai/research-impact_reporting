@@ -744,6 +744,12 @@ class Command(BaseCommand):
                     exit_reason = "max_hours"
                 elif final_status == "completed":
                     exit_reason = "empty_batch"
+                elif final_status == "failed":
+                    # Orchestrator gave up after detected worker deaths but no
+                    # classification was persisted (e.g. capacity exhaustion).
+                    # "error" reflects an orchestrator-detected failure;
+                    # "unknown" is reserved for genuinely indeterminate cases.
+                    exit_reason = "error"
                 else:
                     exit_reason = "unknown"
             db.finish_run_with_reason(conn, status["id"], final_stats, exit_reason)
@@ -882,6 +888,15 @@ class Command(BaseCommand):
         """Decide whether to relaunch a slot based on consecutive_failures."""
         if slot["consecutive_failures"] >= MAX_CONSECUTIVE_FAILURES:
             slot["status"] = "abandoned"
+            # Persist the orchestrator-detected death reason so a crash/hang
+            # abandonment is never left to fall through to "unknown" at
+            # finalization (Spec 0056 — exit_reason must reflect detected cause).
+            try:
+                db.set_exit_reason(conn, run_id, classification)
+            except Exception:
+                self.stderr.write(
+                    f"[slot {slot_idx}] Warning: could not persist exit_reason\n"
+                )
             self.stderr.write(
                 f"[slot {slot_idx}] Abandoned after {MAX_CONSECUTIVE_FAILURES} "
                 f"consecutive failures (last: {classification})\n"

@@ -43,6 +43,8 @@ urlpatterns = [
     path("parse/queue/", views.ParseJobCreateView.as_view(), name="parse_job_create"),
     path("parse/progress/", views.ParseProgressPartial.as_view(), name="parse_progress"),
     path("parse/stop/", views.ParseStopView.as_view(), name="parse_stop"),
+    path("parse/quarantine/", views.QuarantineReviewPartial.as_view(), name="parse_quarantine"),
+    path("parse/quarantine/remove/", views.QuarantineRemoveView.as_view(), name="parse_quarantine_remove"),
 
     # 990 Pipeline Controls
     path("990-index/", views.EnrichIndexView.as_view(), name="enrich_index"),

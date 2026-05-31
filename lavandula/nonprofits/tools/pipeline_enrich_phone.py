@@ -70,6 +70,8 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--allow-tollfree", action="store_true", help="Allow toll-free numbers")
     parser.add_argument("--serpex-api-key", default=None, help="Serpex API key (literal)")
     parser.add_argument("--search-qps", type=float, default=1.0, help="Search queries per second")
+    parser.add_argument("--job-id", type=int, default=None,
+                        help="Dashboard job ID (passed by orchestrator)")
     args = parser.parse_args(argv)
 
     try:

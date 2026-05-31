@@ -24,6 +24,90 @@ TRANSIENT_RETRY_BASE_SECONDS = 2.0
 LARGE_PDF_PAGE_THRESHOLD = 500
 DOWNLOAD_WORKERS = 8
 
+# ---------------------------------------------------------------------------
+# Spec 0058: parse performance & robustness (hang defense + triage + tuning)
+# ---------------------------------------------------------------------------
+# Per-doc timeout. 180s covers the measured p99 (69.5s) with margin and stays
+# well under the 0056 5-min heartbeat. The *mechanism* (native document_timeout
+# vs subprocess kill) is decided by the Phase-0 spike; this is the bound.
+PARSE_TIMEOUT_SECONDS = 180
+
+# Absolute, always-on ceilings (the floor of defense — independent of the
+# mb/page heuristic, applied to EVERY doc so per-doc cost is bounded even when
+# the triage heuristic misses; spec §3.1 / §7).
+MAX_NUM_PAGES = 500          # hard convert(max_num_pages=N) ceiling on every doc
+ABS_FILE_SIZE_CAP = 50_000_000  # 50 MB — corpus max observed ~49.6 MB (true outlier)
+ABS_PAGE_CAP = 200           # page_count > this -> downgrade (NOT a page truncation)
+
+# images_scale: the always-on ceiling for normal docs, and the tighter value
+# for triaged/downgraded docs. CAP default 2.0 = no regression vs Docling's
+# default; the §4 A/B may lower it toward 1.0-1.5 before shipping.
+IMAGES_SCALE_CAP = 2.0
+IMAGES_SCALE_DOWNGRADE = 1.0
+
+# TableFormer FAST is a quality-affecting tuning knob: it stays OFF until the
+# §4 cell-content A/B proves zero loss, then the operator flips this to True.
+# Default False preserves current production behavior (Docling's own default).
+TABLEFORMER_FAST = False
+
+# Pre-parse poison triage (spec §3.1). Downgrade (never skip) when a doc is
+# image-heavy AND has a thin text layer.
+POISON_MB_PER_PAGE = 1.0     # mb_per_page strictly above this is "image-heavy"
+POISON_TEXT_FLOOR = 200      # text-layer chars below this is "thin"
+
+# Conditional OCR (spec §3.4). Skip OCR only when an embedded text layer is
+# confidently present (>= this many chars). Default keep-OCR-on when uncertain.
+OCR_TEXT_FLOOR = 200
+# The 0060 pdftotext signal is the preferred detector, but only when the
+# backfill is substantially complete — otherwise the OCR decision would flip
+# run-to-run as the backfill fills in. Below this fraction, the run uses the
+# first_page_text fallback UNIFORMLY so the decision is reproducible (Codex
+# red-team). The chosen source + backfill % are recorded in parse_runs.stats_json.
+OCR_DETECTOR_BACKFILL_MIN = 0.99
+
+# ---------------------------------------------------------------------------
+# Spec 0058 Phase 2 — subprocess isolation (§3.3). The Phase-0 spike REJECTED
+# the native document_timeout path: the poison doc segfaults Docling's native
+# pdf_parsers.so (exit 139), uncatchable in-process; document_timeout is also a
+# soft between-stages check (75s convert overran a 60s limit). A persistent
+# child process is the ONLY thing that contains segfault + hang + OOM.
+# ---------------------------------------------------------------------------
+# Hard wall-clock bound the PARENT enforces by killing the child. This is the
+# real per-doc timeout (not the native option). 180s covers the observed 75.5s
+# and corpus p99 69.5s with margin, well under the 0056 5-min heartbeat.
+PARSE_TIMEOUT_SECONDS = 180
+
+# Optional soft, in-child document_timeout. NOT wired by default: the Phase-0
+# spike found Docling's native document_timeout unreliable (overran a 60s limit
+# by ~25%, and cannot interrupt a native segfault), so the parent hard kill is
+# the authoritative bound. Kept here only so an operator could opt a doc into a
+# soft self-abort via build_parse_options(document_timeout=...) if ever useful.
+PARSE_CHILD_SOFT_TIMEOUT_SECONDS = 150
+
+# Address-space cap on the child (resource.RLIMIT_AS), so an OOM / image bomb is
+# bounded at the OS level instead of taking down the worker or the host. Spike
+# peak RSS was 5.2 GB (49 MB single-page doc) + warm model; 14 GB leaves headroom
+# and stays below the g6.2xlarge 32 GB host. Set None to DISABLE (see the caveat
+# in parse_runner._apply_rlimit: CUDA reserves large *virtual* address space, so
+# RLIMIT_AS that is too low can break CUDA init — the Phase-6 smoke test must
+# confirm the child inits CUDA and parses a normal doc under this cap).
+PARSE_CHILD_RLIMIT_AS_BYTES = 14 * 1024 * 1024 * 1024
+
+# How often the parent polls child liveness while awaiting a result — bounds how
+# fast a segfault (child dies without sending) is detected (vs waiting full T).
+PARSE_CHILD_POLL_SECONDS = 1.0
+# Grace between terminate() and kill() when reaping a hung child.
+PARSE_CHILD_KILL_GRACE_SECONDS = 5.0
+
+# Circuit breaker — abort the run on repeated CHILD DEATHS (crash/timeout/oom),
+# NOT on per-doc data errors (parse_failed/parse_malformed leave the child alive).
+# Consecutive catches a sustained outage; the windowed rate catches an
+# interleaved [poison, valid, poison, ...] stream that resets a consecutive-only
+# counter forever (red-team HIGH — Gemini). Mirrors 0056's consecutive logic.
+PARSE_BREAKER_CONSECUTIVE = 5
+PARSE_BREAKER_WINDOW = 100
+PARSE_BREAKER_WINDOW_MAX = 10
+
 
 def validate_sha256(sha: str) -> bool:
     return bool(SHA256_RE.match(sha))

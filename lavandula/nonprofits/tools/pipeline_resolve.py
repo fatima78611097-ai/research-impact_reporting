@@ -77,6 +77,8 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--llm-api-key-ssm", default="lavandula/deepseek/api_key", help="SSM path for API key")
     p.add_argument("--consumer-threads", type=int, default=1, help="Parallel LLM consumer threads (default: 1)")
     p.add_argument("--dry-run", action="store_true", help="Search + fetch but skip LLM and DB writes")
+    p.add_argument("--job-id", type=int, default=None,
+                   help="Dashboard job ID (passed by orchestrator)")
     return p
 
 

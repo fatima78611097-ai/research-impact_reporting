@@ -29,9 +29,20 @@ from pathlib import Path
 from lavandula.parse import config
 from lavandula.parse import chunking
 from lavandula.parse import db
+from lavandula.parse import parse_runner
 from lavandula.parse.chunking import DoclingParseError
 
 logger = logging.getLogger("lavandula.parse.worker")
+
+# A subprocess parse-error label counts as a CHILD DEATH for the circuit breaker
+# only if it means the child process actually died / was killed (the worker
+# respawned). Per-doc data errors (parse_malformed, docling_parse_failed,
+# empty_parse) leave the child alive and must NOT trip the breaker.
+_CHILD_DEATH_CODES = frozenset({"parse_timeout", "parse_crash", "parse_oom"})
+
+# Substrings that mark a GPU/CUDA fault we treat as transient (retry the doc on a
+# fresh child context) rather than a permanent parse failure.
+_GPU_FAULT_MARKERS = ("cuda", "device-side assert", "out of memory", "nvml", "cublas")
 
 
 class TransientError(Exception):
@@ -215,6 +226,12 @@ def _run_loop(conn, args) -> None:
 
     max_docs = args.max_docs
 
+    # Spec 0058: legacy single-worker path also parses in the isolated child.
+    # No run-scoped work_queue here, so use the reproducible first_page_text
+    # detector uniformly.
+    detector_source = chunking.choose_detector_source(0.0)
+    runner = parse_runner.PersistentParseRunner()
+
     while True:
         if max_docs is not None and stats["total"] >= max_docs:
             logger.info("reached max-docs limit", extra={"max_docs": max_docs})
@@ -228,6 +245,15 @@ def _run_loop(conn, args) -> None:
         with tempfile.TemporaryDirectory(prefix="docling-work-") as tmp_dir:
             tmp_path = Path(tmp_dir)
             pdf_paths = _download_batch(s3, batch, tmp_path)
+
+            try:
+                signals = db.fetch_parse_signals(
+                    conn, [it["content_sha256"] for it in batch]
+                )
+            except Exception as exc:
+                logger.warning("fetch_parse_signals failed; default options",
+                               extra={"err": str(exc)[:100]})
+                signals = {}
 
             for item in batch:
                 sha = item["content_sha256"]
@@ -247,8 +273,9 @@ def _run_loop(conn, args) -> None:
                     stats["total"] += 1
                     continue
 
+                options = _parse_options_for(sha, signals, detector_source)
                 try:
-                    result = _process_one(pdf_path, item)
+                    result = _process_one(runner, pdf_path, item, options)
                     db.insert_document(conn, result)
                     _generate_thumbnail(s3, pdf_path, sha)
                     stats["succeeded"] += 1
@@ -277,6 +304,11 @@ def _run_loop(conn, args) -> None:
         if _spot_termination_pending():
             break
 
+    try:
+        runner.shutdown()
+    except Exception:
+        pass
+
     stats["end_time"] = time.time()
     stats["duration_seconds"] = stats["end_time"] - stats["start_time"]
     db.finish_run(conn, args.run_id, stats)
@@ -302,6 +334,26 @@ def _run_loop_queue(conn, args, heartbeat: HeartbeatThread | None = None) -> Non
     transient_attempts: dict[str, int] = {}
     max_transient_attempts = getattr(config, "MAX_TRANSIENT_ATTEMPTS", 3)
     consecutive_fetch_errors = 0
+
+    # Spec 0058: pick the OCR detector source ONCE (reproducible run-to-run) from
+    # the 0060 backfill completeness, and stand up the isolated parse child +
+    # circuit breaker. Both are recorded in stats for the dashboard.
+    try:
+        backfill = db.get_run_pdftotext_backfill(conn, args.run_id)
+    except Exception as exc:
+        logger.warning("pdftotext backfill query failed; using fallback detector",
+                       extra={"err": str(exc)[:100]})
+        _safe_rollback(conn)
+        backfill = 0.0
+    detector_source = chunking.choose_detector_source(backfill)
+    stats["ocr_detector_source"] = detector_source
+    stats["pdftotext_backfill"] = round(backfill, 4)
+    logger.info("ocr detector source chosen",
+                extra={"err": f"{detector_source} (backfill={backfill:.3f})"})
+
+    runner = parse_runner.PersistentParseRunner()
+    breaker = parse_runner.CircuitBreaker()
+    stop_run = False
 
     while True:
         if max_docs is not None and stats["total"] >= max_docs:
@@ -335,6 +387,18 @@ def _run_loop_queue(conn, args, heartbeat: HeartbeatThread | None = None) -> Non
             tmp_path = Path(tmp_dir)
             pdf_paths = _download_batch(s3, batch, tmp_path)
 
+            # Batch-fetch triage/OCR signals; fail toward completeness (default
+            # options = keep OCR, no downgrade) if the lookup errors.
+            try:
+                signals = db.fetch_parse_signals(
+                    conn, [it["content_sha256"] for it in batch]
+                )
+            except Exception as exc:
+                logger.warning("fetch_parse_signals failed; default options",
+                               extra={"err": str(exc)[:100]})
+                _safe_rollback(conn)
+                signals = {}
+
             for item in batch:
                 sha = item["content_sha256"]
 
@@ -360,19 +424,24 @@ def _run_loop_queue(conn, args, heartbeat: HeartbeatThread | None = None) -> Non
                     stats["total"] += 1
                     continue
 
+                options = _parse_options_for(sha, signals, detector_source)
                 try:
-                    result = _process_one(pdf_path, item)
+                    result = _process_one(runner, pdf_path, item, options)
                     db.insert_document(conn, result)
                     _generate_thumbnail(s3, pdf_path, sha)
                     db.complete_work_item(conn, args.run_id, sha)
                     stats["succeeded"] += 1
+                    breaker.record_success()
                 except TransientError as e:
                     logger.warning("transient error", extra={"sha": sha[:16], "err": str(e)[:100]})
                     _safe_rollback(conn)
                     _handle_transient(conn, args, sha, str(e)[:100],
                                       transient_attempts, max_transient_attempts, stats)
+                    # child healthy / recycled — reset the consecutive death count
+                    breaker.record_success()
                 except PermanentError as e:
-                    error_label = str(e)[:200] if str(e) else "unknown_error"
+                    code = str(e) if str(e) else "unknown_error"
+                    error_label = code[:200]
                     try:
                         _record_error(conn, item, e)
                     except Exception as rec_exc:
@@ -384,6 +453,13 @@ def _run_loop_queue(conn, args, heartbeat: HeartbeatThread | None = None) -> Non
                     except Exception:
                         _safe_rollback(conn)
                     stats["failed"] += 1
+                    # Only a real child death (the worker killed/respawned the
+                    # child) counts toward the breaker; per-doc data errors leave
+                    # the child alive and reset the consecutive count.
+                    if code in _CHILD_DEATH_CODES:
+                        breaker.record_failure()
+                    else:
+                        breaker.record_success()
                 except Exception as exc:
                     logger.error("unexpected error, marking item failed",
                                  extra={"sha": sha[:16], "err": str(exc)[:200]})
@@ -394,13 +470,22 @@ def _run_loop_queue(conn, args, heartbeat: HeartbeatThread | None = None) -> Non
                     except Exception:
                         _safe_rollback(conn)
                     stats["failed"] += 1
+                    breaker.record_failure()
                 finally:
                     stats["total"] += 1
                     if pdf_path and pdf_path.exists():
                         pdf_path.unlink()
 
+                if breaker.tripped():
+                    logger.error("parse circuit breaker tripped — aborting run",
+                                 extra={"err": breaker.reason()})
+                    exit_reason = breaker.reason()
+                    stop_run = True
+                    break
+
                 try:
                     if stats["total"] % config.STATS_UPDATE_INTERVAL == 0:
+                        stats["respawns"] = runner.respawns
                         db.update_run_stats(conn, args.run_id, stats)
                 except Exception as exc:
                     logger.warning("update_run_stats failed", extra={"err": str(exc)[:100]})
@@ -409,11 +494,23 @@ def _run_loop_queue(conn, args, heartbeat: HeartbeatThread | None = None) -> Non
                 if _spot_termination_pending():
                     logger.warning("spot termination notice received, exiting gracefully")
                     exit_reason = "spot_termination"
+                    stop_run = True
                     break
+
+        if stop_run:
+            break
 
         if _spot_termination_pending():
             exit_reason = "spot_termination"
             break
+
+    # Stop the parse child (daemon, so it dies on process exit too; this is the
+    # graceful path that also wipes the parent-owned TMPDIR).
+    try:
+        runner.shutdown()
+    except Exception:
+        pass
+    stats["respawns"] = runner.respawns
 
     stats["end_time"] = time.time()
     stats["duration_seconds"] = stats["end_time"] - stats["start_time"]
@@ -467,34 +564,80 @@ def _handle_transient(conn, args, sha, reason, attempts, max_attempts, stats) ->
         stats["transient_skipped"] = stats.get("transient_skipped", 0) + 1
 
 
-def _process_one(pdf_path: Path, item: dict) -> dict:
-    """Parse one PDF, return structured result for db.insert_document."""
+def _parse_options_for(sha: str, signals: dict, detector_source: str) -> "chunking.ParseOptions":
+    """Build bounded ParseOptions for one doc from its triage + OCR signals.
+
+    Fails toward completeness: a missing signal row -> default options (keep OCR,
+    no downgrade). document_timeout is deliberately NOT set: the Phase-0 spike
+    found Docling's native document_timeout unreliable (a 24-page doc overran a
+    60s limit by ~25%), so the parent's hard kill in PersistentParseRunner is the
+    sole, authoritative per-doc bound.
+    """
+    sig = signals.get(sha, {})
+    text_signal = sig.get("pdftotext_char_count")
+    if text_signal is None:
+        text_signal = sig.get("first_page_text_len")
+
+    triage = chunking.compute_triage(
+        sig.get("file_size_bytes"), sig.get("page_count"), text_signal
+    )
+    ocr_sig = chunking.OcrSignal(
+        text_source=sig.get("text_source"),
+        pdftotext_char_count=sig.get("pdftotext_char_count"),
+        first_page_text_len=sig.get("first_page_text_len"),
+    )
+    skip_ocr = chunking.decide_skip_ocr(ocr_sig, detector_source=detector_source)
+    return chunking.build_parse_options(
+        skip_ocr=skip_ocr,
+        downgrade=triage["downgrade"],
+        reasons=triage["reasons"],
+    )
+
+
+def _process_one(runner, pdf_path: Path, item: dict, options: "chunking.ParseOptions") -> dict:
+    """Parse one PDF in the isolated child, return a row for db.insert_document.
+
+    The child runs convert + extract and returns flattened dicts; a hang /
+    segfault / OOM in the child surfaces here as a typed ParseChildError that we
+    map to PermanentError with the precise parse_outcome code. A GPU-fault marker
+    in a (non-fatal) child error is treated as transient: recycle the child for a
+    fresh CUDA context and retry the doc next run.
+    """
     start = time.time()
 
     try:
-        doc = chunking.parse_pdf(pdf_path)
-    except Exception as exc:
-        raise PermanentError(f"docling_parse_failed: {type(exc).__name__}") from exc
-
-    # A3: post-parse extraction can also fault (CUDA/OOM from OCR, malformed
-    # chunking output). Reclassify so these route through the handled error
-    # paths instead of escaping as a raw exception that kills the worker.
-    try:
-        sections = chunking.extract_sections(doc)
-        tables = chunking.extract_tables(doc, sections)
-        meta = chunking.get_document_metadata(doc)
-    except Exception as exc:
+        result = runner.parse(pdf_path, options)
+    except parse_runner.DoclingParseTimeout as exc:
+        raise PermanentError(exc.code) from exc
+    except parse_runner.DoclingParseCrash as exc:
+        raise PermanentError(exc.code) from exc
+    except parse_runner.DoclingParseOOM as exc:
+        raise PermanentError(exc.code) from exc
+    except parse_runner.DoclingParseMalformed as exc:
+        raise PermanentError(exc.code) from exc
+    except parse_runner.ParseChildError as exc:
+        # Generic in-child error (Python-level docling failure). A GPU/CUDA fault
+        # may have poisoned the child's CUDA context -> recycle + retry (transient);
+        # anything else is a permanent parse failure for this doc.
         msg = str(exc).lower()
-        if any(k in msg for k in ("cuda", "device-side assert", "out of memory", "nvml", "cublas")):
-            raise TransientError(f"gpu_fault: {type(exc).__name__}") from exc
-        raise PermanentError(f"docling_postparse_failed: {type(exc).__name__}") from exc
+        if any(k in msg for k in _GPU_FAULT_MARKERS):
+            try:
+                runner.recycle()
+            except Exception:  # noqa: BLE001
+                pass
+            raise TransientError(f"gpu_fault: {str(exc)[:120]}") from exc
+        raise PermanentError(f"docling_parse_failed: {str(exc)[:120]}") from exc
+
+    sections = result["sections"]
+    tables = result["tables"]
+    meta = result["metadata"]
 
     total_text_chars = sum(s["char_count"] for s in sections)
-
     if not sections and total_text_chars == 0:
         raise PermanentError("empty_parse")
 
     duration_ms = int((time.time() - start) * 1000)
+    parse_outcome = "downgraded" if options.downgrade else "ok"
 
     return {
         "sha": item["content_sha256"],
@@ -506,6 +649,8 @@ def _process_one(pdf_path: Path, item: dict) -> dict:
         "figure_count": meta["figure_count"],
         "total_text_chars": total_text_chars,
         "parse_duration_ms": duration_ms,
+        "docling_convert_ms": result.get("convert_ms"),
+        "parse_outcome": parse_outcome,
         "error": None,
         "metadata_json": config.filter_metadata(meta.get("metadata")),
         "sections": sections,
@@ -575,6 +720,11 @@ def _record_error(conn, item: dict, error) -> None:
     """Insert document row with error field set."""
     error_str = config.sanitize_error(error) if isinstance(error, Exception) else str(error)[:config.MAX_ERROR_LEN]
 
+    # Coarse parse_outcome enum (spec §5): a hang is its own 'timeout' bucket;
+    # everything else (crash/oom/malformed/parse_failed/empty) rolls up as
+    # 'error' — the precise reason stays in the error column.
+    parse_outcome = "timeout" if "parse_timeout" in error_str else "error"
+
     doc = {
         "sha": item["content_sha256"],
         "org_ein": item["source_org_ein"],
@@ -585,6 +735,8 @@ def _record_error(conn, item: dict, error) -> None:
         "figure_count": 0,
         "total_text_chars": 0,
         "parse_duration_ms": None,
+        "docling_convert_ms": None,
+        "parse_outcome": parse_outcome,
         "error": error_str,
         "metadata_json": None,
         "sections": [],

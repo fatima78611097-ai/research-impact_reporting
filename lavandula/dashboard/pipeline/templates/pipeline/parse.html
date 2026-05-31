@@ -62,6 +62,17 @@
     </div>
     {% endif %}
 
+    <!-- Quarantine review (Spec 0058 §3.5) -->
+    <div class="bg-white rounded-lg shadow p-5">
+      <h2 class="text-lg font-semibold text-gray-900 mb-3">Quarantined Docs</h2>
+      <div id="parse-quarantine"
+           hx-get="{% url 'parse_quarantine' %}"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        <div class="text-sm text-gray-400">Loading…</div>
+      </div>
+    </div>
+
     <!-- Eligible Documents -->
     {% if eligible_counts %}
     <div class="bg-white rounded-lg shadow p-5">

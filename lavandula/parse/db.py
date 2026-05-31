@@ -130,11 +130,13 @@ def insert_document(conn, doc: dict) -> None:
                 INSERT INTO lava_parse.documents (
                     content_sha256, source_org_ein, parse_version,
                     page_count, section_count, table_count, figure_count,
-                    total_text_chars, parse_duration_ms, error, metadata_json
+                    total_text_chars, parse_duration_ms, error, metadata_json,
+                    docling_convert_ms, parse_outcome
                 ) VALUES (
                     %(sha)s, %(org_ein)s, %(parse_version)s,
                     %(page_count)s, %(section_count)s, %(table_count)s, %(figure_count)s,
-                    %(total_text_chars)s, %(parse_duration_ms)s, %(error)s, %(metadata_json)s
+                    %(total_text_chars)s, %(parse_duration_ms)s, %(error)s, %(metadata_json)s,
+                    %(docling_convert_ms)s, %(parse_outcome)s
                 )
                 """,
                 {
@@ -151,6 +153,9 @@ def insert_document(conn, doc: dict) -> None:
                     "metadata_json": json.dumps(doc["metadata_json"])
                     if doc["metadata_json"]
                     else None,
+                    # Spec 0058 — nullable; .get() keeps legacy callers working.
+                    "docling_convert_ms": doc.get("docling_convert_ms"),
+                    "parse_outcome": doc.get("parse_outcome"),
                 },
             )
 
@@ -398,6 +403,9 @@ def populate_work_queue(
                 WHERE c.content_sha256 NOT IN (
                     SELECT content_sha256 FROM lava_parse.documents
                 )
+                  AND c.content_sha256 NOT IN (
+                    SELECT content_sha256 FROM lava_parse.parse_blocklist
+                )
                   AND c.classification = ANY(%(priority)s)
                   {ntee_where}
                 ON CONFLICT (run_id, content_sha256) DO NOTHING
@@ -572,6 +580,134 @@ def get_run_status_by_id(conn, run_id: int) -> dict | None:
         )
         row = cur.fetchone()
         return dict(row) if row else None
+
+
+# ---------------------------------------------------------------------------
+# Quarantine / blocklist (Spec 0058 §3.5) — governed, auditable, reversible.
+# parse_blocklist is the SINGLE exclusion source of truth (no corpus-side flag).
+# ---------------------------------------------------------------------------
+
+
+def quarantine_doc(
+    conn, content_sha256: str, reason: str, quarantined_by: str, evidence: dict | None = None
+) -> None:
+    """Add (or refresh) a quarantine entry. Audited: reason + who + when + evidence.
+
+    Idempotent via upsert so a re-quarantine updates the audit trail rather than
+    erroring. quarantined_by is an operator id or 'auto:<rule>'.
+    """
+    if not validate_sha256(content_sha256):
+        raise ValueError(f"invalid sha256: {content_sha256!r}")
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO lava_parse.parse_blocklist
+                    (content_sha256, reason, quarantined_by, evidence_json)
+                VALUES (%(sha)s, %(reason)s, %(by)s, %(ev)s)
+                ON CONFLICT (content_sha256) DO UPDATE SET
+                    reason = EXCLUDED.reason,
+                    quarantined_by = EXCLUDED.quarantined_by,
+                    quarantined_at = now(),
+                    evidence_json = EXCLUDED.evidence_json
+                """,
+                {
+                    "sha": content_sha256,
+                    "reason": reason,
+                    "by": quarantined_by,
+                    "ev": json.dumps(evidence) if evidence is not None else None,
+                },
+            )
+
+
+def unquarantine_doc(conn, content_sha256: str) -> bool:
+    """Remove a quarantine entry (one-step recovery). Returns True if a row went."""
+    if not validate_sha256(content_sha256):
+        raise ValueError(f"invalid sha256: {content_sha256!r}")
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "DELETE FROM lava_parse.parse_blocklist WHERE content_sha256 = %s",
+                (content_sha256,),
+            )
+            return cur.rowcount > 0
+
+
+def is_quarantined(conn, content_sha256: str) -> bool:
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT 1 FROM lava_parse.parse_blocklist WHERE content_sha256 = %s",
+            (content_sha256,),
+        )
+        return cur.fetchone() is not None
+
+
+def get_quarantined_docs(conn) -> list[dict]:
+    """List all blocklisted docs with full provenance (dashboard review surface)."""
+    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+        cur.execute(
+            """
+            SELECT content_sha256, reason, quarantined_at, quarantined_by, evidence_json
+            FROM lava_parse.parse_blocklist
+            ORDER BY quarantined_at DESC
+            """
+        )
+        return [dict(r) for r in cur.fetchall()]
+
+
+# ---------------------------------------------------------------------------
+# Parse-triage / conditional-OCR signals (Spec 0058)
+# ---------------------------------------------------------------------------
+
+
+def fetch_parse_signals(conn, shas: list[str]) -> dict[str, dict]:
+    """Batch-fetch the per-doc triage + OCR signals for a work batch.
+
+    Returns {sha: {file_size_bytes, page_count, first_page_text_len,
+    text_source, pdftotext_char_count}}. corpus is read-only for docling_writer
+    (migration 002). text_source lives on documents (only once parsed); the
+    corpus-wide pdftotext.char_count is the primary OCR signal on a first parse.
+    """
+    if not shas:
+        return {}
+    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+        cur.execute(
+            """
+            SELECT c.content_sha256,
+                   c.file_size_bytes,
+                   c.page_count,
+                   length(c.first_page_text) AS first_page_text_len,
+                   d.text_source,
+                   p.char_count AS pdftotext_char_count
+            FROM lava_corpus.corpus c
+            LEFT JOIN lava_parse.documents d ON d.content_sha256 = c.content_sha256
+            LEFT JOIN lava_parse.pdftotext  p ON p.content_sha256 = c.content_sha256
+            WHERE c.content_sha256 = ANY(%(shas)s)
+            """,
+            {"shas": list(shas)},
+        )
+        return {r["content_sha256"]: dict(r) for r in cur.fetchall()}
+
+
+def get_run_pdftotext_backfill(conn, run_id: int) -> float:
+    """Fraction of the run's work-queue docs that have a 0060 pdftotext row.
+
+    Drives choose_detector_source(): below the configured floor the run uses the
+    first_page_text fallback uniformly so the OCR decision is reproducible
+    run-to-run (Codex determinism guard). 0.0 when the queue is empty.
+    """
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT COUNT(*) AS total, COUNT(p.content_sha256) AS have
+            FROM lava_parse.work_queue wq
+            LEFT JOIN lava_parse.pdftotext p ON p.content_sha256 = wq.content_sha256
+            WHERE wq.run_id = %(run_id)s
+            """,
+            {"run_id": run_id},
+        )
+        total, have = cur.fetchone()
+        return (have / total) if total else 0.0
 
 
 # ---------------------------------------------------------------------------

@@ -19,7 +19,35 @@ from lavandula.parse.chunking import (
     _extract_heading,
     _extract_heading_level,
     _get_parent_headings,
+    _scrub,
 )
+
+
+class TestScrub:
+    """Spec 0056 — NUL/control-char stripping for all Docling-derived text
+    fields that reach PostgreSQL (regression for run-32 NUL-byte failure)."""
+
+    def test_strips_nul(self):
+        assert _scrub("hello\x00world") == "helloworld"
+
+    def test_preserves_whitespace(self):
+        assert _scrub("a\nb\tc\r\n") == "a\nb\tc\r\n"
+
+    def test_strips_other_control_chars(self):
+        assert _scrub("a\x07b\x08c\x1fd\x7fe") == "abcde"
+
+    def test_recurses_into_list(self):
+        assert _scrub([["cell\x00", "ok"], ["x\x1f"]]) == [["cell", "ok"], ["x"]]
+
+    def test_recurses_into_dict(self):
+        assert _scrub({"k": "v\x00", "n": 5, "d": {"a": "b\x00"}}) == {
+            "k": "v", "n": 5, "d": {"a": "b"},
+        }
+
+    def test_passes_through_non_strings(self):
+        assert _scrub(None) is None
+        assert _scrub(42) == 42
+        assert _scrub(3.14) == 3.14
 
 
 def _make_chunk(text="Sample text", headings=None, pages=None):

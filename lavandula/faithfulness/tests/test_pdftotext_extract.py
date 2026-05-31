@@ -99,15 +99,19 @@ class TestExtractText:
     def test_timeout_handling(self):
         with mock.patch("lavandula.faithfulness.pdftotext_extract.subprocess.Popen") as mock_popen:
             proc_mock = mock.MagicMock()
-            proc_mock.stdin = mock.MagicMock()
-            proc_mock.stdout.read.return_value = b"some output"
-            proc_mock.stdout.close = mock.MagicMock()
-            proc_mock.stderr.read.return_value = b""
-            proc_mock.stderr.close = mock.MagicMock()
-            proc_mock.wait.side_effect = [
+            proc_mock.communicate.side_effect = [
                 subprocess.TimeoutExpired(cmd="pdftotext", timeout=30),
-                None,  # second call in except handler returns normally
             ]
+            # second communicate() call in except handler (after kill)
+            proc_mock.communicate.side_effect = subprocess.TimeoutExpired(cmd="pdftotext", timeout=30)
+            # Need two calls: first raises, second (in except) returns normally
+            call_count = [0]
+            def comm_side_effect(*args, **kwargs):
+                call_count[0] += 1
+                if call_count[0] == 1:
+                    raise subprocess.TimeoutExpired(cmd="pdftotext", timeout=30)
+                return (b"", b"")
+            proc_mock.communicate.side_effect = comm_side_effect
             mock_popen.return_value = proc_mock
 
             result = extract_text(b"%PDF-1.4 test")
@@ -115,18 +119,19 @@ class TestExtractText:
             assert result.error == "timeout"
             proc_mock.kill.assert_called_once()
 
-    def test_oversized_output_killed(self):
-        with mock.patch("lavandula.faithfulness.pdftotext_extract.subprocess.Popen") as mock_popen:
+    def test_oversized_output_rejected(self):
+        # Output now lands on disk (not buffered in RAM); oversize is detected by
+        # the on-disk file size, so a bomb PDF can't OOM the worker.
+        with mock.patch("lavandula.faithfulness.pdftotext_extract.subprocess.Popen") as mock_popen, \
+             mock.patch("lavandula.faithfulness.pdftotext_extract.os.path.getsize") as mock_size:
             proc_mock = mock.MagicMock()
-            proc_mock.stdin = mock.MagicMock()
-            proc_mock.stdout.read.return_value = b"x" * (MAX_OUTPUT_BYTES + 1)
-            proc_mock.stderr.read.return_value = b""
+            proc_mock.communicate.return_value = (b"", b"")
             mock_popen.return_value = proc_mock
+            mock_size.return_value = MAX_OUTPUT_BYTES + 1  # pretend pdftotext wrote a huge file
 
             result = extract_text(b"%PDF-1.4 test")
             assert result.failed
             assert result.error == "output_exceeded_10mb"
-            proc_mock.kill.assert_called_once()
 
     def test_failed_result_fields(self):
         result = ExtractResult(
