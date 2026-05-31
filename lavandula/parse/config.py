@@ -65,6 +65,48 @@ OCR_TEXT_FLOOR = 200
 # red-team). The chosen source + backfill % are recorded in parse_runs.stats_json.
 OCR_DETECTOR_BACKFILL_MIN = 0.99
 
+# ---------------------------------------------------------------------------
+# Spec 0058 Phase 2 — subprocess isolation (§3.3). The Phase-0 spike REJECTED
+# the native document_timeout path: the poison doc segfaults Docling's native
+# pdf_parsers.so (exit 139), uncatchable in-process; document_timeout is also a
+# soft between-stages check (75s convert overran a 60s limit). A persistent
+# child process is the ONLY thing that contains segfault + hang + OOM.
+# ---------------------------------------------------------------------------
+# Hard wall-clock bound the PARENT enforces by killing the child. This is the
+# real per-doc timeout (not the native option). 180s covers the observed 75.5s
+# and corpus p99 69.5s with margin, well under the 0056 5-min heartbeat.
+PARSE_TIMEOUT_SECONDS = 180
+
+# Soft, in-child document_timeout (< the hard parent bound) so a slow-but-not-hung
+# doc lets the child self-abort gracefully and STAY WARM, instead of forcing the
+# parent to SIGKILL + reload the model. None disables it. Margin must exceed the
+# spike's observed ~25% overrun, so keep it well below PARSE_TIMEOUT_SECONDS.
+PARSE_CHILD_SOFT_TIMEOUT_SECONDS = 150
+
+# Address-space cap on the child (resource.RLIMIT_AS), so an OOM / image bomb is
+# bounded at the OS level instead of taking down the worker or the host. Spike
+# peak RSS was 5.2 GB (49 MB single-page doc) + warm model; 14 GB leaves headroom
+# and stays below the g6.2xlarge 32 GB host. Set None to DISABLE (see the caveat
+# in parse_runner._apply_rlimit: CUDA reserves large *virtual* address space, so
+# RLIMIT_AS that is too low can break CUDA init — the Phase-6 smoke test must
+# confirm the child inits CUDA and parses a normal doc under this cap).
+PARSE_CHILD_RLIMIT_AS_BYTES = 14 * 1024 * 1024 * 1024
+
+# How often the parent polls child liveness while awaiting a result — bounds how
+# fast a segfault (child dies without sending) is detected (vs waiting full T).
+PARSE_CHILD_POLL_SECONDS = 1.0
+# Grace between terminate() and kill() when reaping a hung child.
+PARSE_CHILD_KILL_GRACE_SECONDS = 5.0
+
+# Circuit breaker — abort the run on repeated CHILD DEATHS (crash/timeout/oom),
+# NOT on per-doc data errors (parse_failed/parse_malformed leave the child alive).
+# Consecutive catches a sustained outage; the windowed rate catches an
+# interleaved [poison, valid, poison, ...] stream that resets a consecutive-only
+# counter forever (red-team HIGH — Gemini). Mirrors 0056's consecutive logic.
+PARSE_BREAKER_CONSECUTIVE = 5
+PARSE_BREAKER_WINDOW = 100
+PARSE_BREAKER_WINDOW_MAX = 10
+
 
 def validate_sha256(sha: str) -> bool:
     return bool(SHA256_RE.match(sha))
