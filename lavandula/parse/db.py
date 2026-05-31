@@ -403,6 +403,9 @@ def populate_work_queue(
                 WHERE c.content_sha256 NOT IN (
                     SELECT content_sha256 FROM lava_parse.documents
                 )
+                  AND c.content_sha256 NOT IN (
+                    SELECT content_sha256 FROM lava_parse.parse_blocklist
+                )
                   AND c.classification = ANY(%(priority)s)
                   {ntee_where}
                 ON CONFLICT (run_id, content_sha256) DO NOTHING
@@ -577,6 +580,79 @@ def get_run_status_by_id(conn, run_id: int) -> dict | None:
         )
         row = cur.fetchone()
         return dict(row) if row else None
+
+
+# ---------------------------------------------------------------------------
+# Quarantine / blocklist (Spec 0058 §3.5) — governed, auditable, reversible.
+# parse_blocklist is the SINGLE exclusion source of truth (no corpus-side flag).
+# ---------------------------------------------------------------------------
+
+
+def quarantine_doc(
+    conn, content_sha256: str, reason: str, quarantined_by: str, evidence: dict | None = None
+) -> None:
+    """Add (or refresh) a quarantine entry. Audited: reason + who + when + evidence.
+
+    Idempotent via upsert so a re-quarantine updates the audit trail rather than
+    erroring. quarantined_by is an operator id or 'auto:<rule>'.
+    """
+    if not validate_sha256(content_sha256):
+        raise ValueError(f"invalid sha256: {content_sha256!r}")
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO lava_parse.parse_blocklist
+                    (content_sha256, reason, quarantined_by, evidence_json)
+                VALUES (%(sha)s, %(reason)s, %(by)s, %(ev)s)
+                ON CONFLICT (content_sha256) DO UPDATE SET
+                    reason = EXCLUDED.reason,
+                    quarantined_by = EXCLUDED.quarantined_by,
+                    quarantined_at = now(),
+                    evidence_json = EXCLUDED.evidence_json
+                """,
+                {
+                    "sha": content_sha256,
+                    "reason": reason,
+                    "by": quarantined_by,
+                    "ev": json.dumps(evidence) if evidence is not None else None,
+                },
+            )
+
+
+def unquarantine_doc(conn, content_sha256: str) -> bool:
+    """Remove a quarantine entry (one-step recovery). Returns True if a row went."""
+    if not validate_sha256(content_sha256):
+        raise ValueError(f"invalid sha256: {content_sha256!r}")
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "DELETE FROM lava_parse.parse_blocklist WHERE content_sha256 = %s",
+                (content_sha256,),
+            )
+            return cur.rowcount > 0
+
+
+def is_quarantined(conn, content_sha256: str) -> bool:
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT 1 FROM lava_parse.parse_blocklist WHERE content_sha256 = %s",
+            (content_sha256,),
+        )
+        return cur.fetchone() is not None
+
+
+def get_quarantined_docs(conn) -> list[dict]:
+    """List all blocklisted docs with full provenance (dashboard review surface)."""
+    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+        cur.execute(
+            """
+            SELECT content_sha256, reason, quarantined_at, quarantined_by, evidence_json
+            FROM lava_parse.parse_blocklist
+            ORDER BY quarantined_at DESC
+            """
+        )
+        return [dict(r) for r in cur.fetchall()]
 
 
 # ---------------------------------------------------------------------------
