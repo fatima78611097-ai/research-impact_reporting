@@ -1,0 +1,28 @@
+{
+  "spec": "0058",
+  "purpose": "Frozen, replayable stratified sample for the §4 cell-content A/B gate. The harness (lavandula/parse/ab_quality.py) reads THIS file — it does not re-roll a random sample, so the gate cannot be silently re-rolled to pass (Codex red-team).",
+  "_operator_todo": "Replace every <FULL-SHA> with a real 64-char content_sha256 and fill the counts. Sample is stratified to the real ~99% text-native / ~1% scanned skew (NOT 1:1:1). Then commit this file before running the A/B; 0058-ab-results.md references it.",
+  "sampling_seed": 20580531,
+  "tool_versions": {
+    "docling": "2.93.0",
+    "pdftotext": "<fill: e.g. pdftotext version 22.02.0>",
+    "git_sha": "<fill: git rev-parse HEAD at A/B run time>"
+  },
+  "strata_targets": {
+    "text_native": "~80% of sample (the dominant cohort; strict parity gate)",
+    "scanned": "~10% (OCR-dependent; OCR-quality gate)",
+    "designed_image_heavy": "~10% (the downgrade cohort; report-only)",
+    "poison": "the known segfault doc — outcome-only, not cell-graded",
+    "slow": "measured slow-doc examples — outcome + timing"
+  },
+  "docs": [
+    {"sha": "<FULL-SHA>", "stratum": "text_native", "note": "table-heavy financials"},
+    {"sha": "<FULL-SHA>", "stratum": "text_native", "note": "narrative + a few tables"},
+    {"sha": "<FULL-SHA>", "stratum": "text_native", "note": "multi-page program tables"},
+    {"sha": "<FULL-SHA>", "stratum": "scanned", "note": "OCR-dependent scanned report"},
+    {"sha": "<FULL-SHA>", "stratum": "designed_image_heavy", "note": "Canva/Illustrator designed"},
+    {"sha": "e038a9e75317ff86<FULL-SHA-SUFFIX>", "stratum": "poison", "note": "segfaults pdf_parsers.so (exit 139) — expect clean parse_crash via the runner, NOT a wedge; this doc is quarantined"},
+    {"sha": "de8fecc5<FULL-SHA-SUFFIX>", "stratum": "slow", "note": "646s in run-10 corpus parse; expect bounded under cap+FAST or a clean parse_timeout"},
+    {"sha": "658d9b89<FULL-SHA-SUFFIX>", "stratum": "slow", "note": "46.9 MB/page single-page; downgrade cohort"}
+  ]
+}
