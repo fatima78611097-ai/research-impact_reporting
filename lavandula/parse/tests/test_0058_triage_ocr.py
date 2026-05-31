@@ -121,6 +121,16 @@ class TestDecideSkipOcr:
         sig = OcrSignal(text_source="pdftotext_failed", pdftotext_char_count=0)
         assert decide_skip_ocr(sig, detector_source="pdftotext") is False
 
+    def test_pdftotext_char_count_healthy_without_text_source_skips(self):
+        # First-parse case: no documents.text_source row yet, but the corpus-wide
+        # 0060 backfill gave us a healthy char_count -> skip OCR.
+        sig = OcrSignal(text_source=None, pdftotext_char_count=5000)
+        assert decide_skip_ocr(sig, detector_source="pdftotext") is True
+
+    def test_pdftotext_char_count_thin_without_text_source_keeps(self):
+        sig = OcrSignal(text_source=None, pdftotext_char_count=10)
+        assert decide_skip_ocr(sig, detector_source="pdftotext") is False
+
     def test_pdftotext_source_but_no_row_falls_back_to_first_page_text(self):
         # detector is pdftotext but this doc has no 0060 row (text_source None):
         # precedence falls through to the first_page_text rule.

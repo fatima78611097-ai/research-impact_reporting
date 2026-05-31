@@ -244,12 +244,17 @@ def _run_one_task(converters: dict, pdf_path: str, opts: ParseOptions) -> dict:
         converter = chunking.build_converter(opts)
         converters[key] = converter
 
+    t0 = time.monotonic()
     result = converter.convert(pdf_path, max_num_pages=opts.max_num_pages)
     doc = result.document
+    convert_ms = int((time.monotonic() - t0) * 1000)  # convert() alone (spec §5)
     sections = chunking.extract_sections(doc)
     tables = chunking.extract_tables(doc, sections)
     metadata = chunking.get_document_metadata(doc)
-    return {"sections": sections, "tables": tables, "metadata": metadata}
+    return {
+        "sections": sections, "tables": tables, "metadata": metadata,
+        "convert_ms": convert_ms,
+    }
 
 
 def _child_main(task_q, result_q, tmpdir: str, rlimit_as: int | None) -> None:  # pragma: no cover - runs in subprocess on GPU
@@ -376,6 +381,16 @@ class PersistentParseRunner:
         self.respawns += 1
         self._spawn()
 
+    def recycle(self) -> None:
+        """Force a kill + respawn (fresh CUDA context).
+
+        Used when a doc fails with a GPU-fault marker: the child is still alive
+        but its CUDA context may be poisoned (a device-side assert sticks for the
+        process lifetime), so the next doc would also fail. Respawning gives a
+        clean context. Counts as a respawn but NOT a child-death for the breaker.
+        """
+        self._kill_and_respawn()
+
     def shutdown(self) -> None:
         """Graceful stop: ask the child to exit, then reap + wipe."""
         if self._proc is not None and self._proc.is_alive() and self._task_q is not None:
@@ -423,6 +438,7 @@ class PersistentParseRunner:
                 "sections": msg.get("sections"),
                 "tables": msg.get("tables"),
                 "metadata": msg.get("metadata"),
+                "convert_ms": msg.get("convert_ms"),
             }
         error = msg.get("error")
         if error == _CHILD_OOM:

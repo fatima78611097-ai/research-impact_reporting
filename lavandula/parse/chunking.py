@@ -154,18 +154,25 @@ def decide_skip_ocr(
     """Conditional-OCR decision (spec §3.4). Returns True to SKIP OCR.
 
     Precedence (first available wins), fail-toward-completeness:
-      1. 0060 pdftotext (only when it is the chosen run-level source): a
-         'text_native' classification with char_count >= floor -> skip OCR;
-         scanned / failed / thin -> keep OCR.
-      2. Fallback (or when a doc has no 0060 row): first_page_text length >=
-         floor -> skip OCR.
+      1. 0060 pdftotext (only when it is the chosen run-level source):
+         - an explicit 'scanned'/'pdftotext_failed' text_source -> keep OCR;
+         - otherwise a healthy pdftotext char_count (>= floor) -> skip OCR. The
+           char_count is the primary signal because it is populated corpus-wide
+           by the 0060 backfill, so it is available even on a doc's FIRST parse
+           (text_source lives on documents and only exists once a doc is parsed);
+         - an explicit 'text_native' with no char_count -> skip OCR.
+      2. Fallback (or when a doc has no 0060 signal at all): first_page_text
+         length >= floor -> skip OCR.
       3. Signals absent / uncertain -> keep OCR ON (a wrongly-OCR'd text doc is
          just slower; a wrongly-skipped scanned doc loses all content).
     """
-    if detector_source == "pdftotext" and signal.text_source is not None:
-        if signal.text_source == "text_native" and (signal.pdftotext_char_count or 0) >= text_floor:
+    if detector_source == "pdftotext":
+        if signal.text_source in ("scanned", "pdftotext_failed"):
+            return False  # explicit negative -> keep OCR
+        if signal.pdftotext_char_count is not None:
+            return signal.pdftotext_char_count >= text_floor
+        if signal.text_source == "text_native":
             return True
-        return False  # scanned / pdftotext_failed / thin text_native -> keep OCR
 
     if signal.first_page_text_len is not None and signal.first_page_text_len >= text_floor:
         return True
