@@ -24,6 +24,47 @@ TRANSIENT_RETRY_BASE_SECONDS = 2.0
 LARGE_PDF_PAGE_THRESHOLD = 500
 DOWNLOAD_WORKERS = 8
 
+# ---------------------------------------------------------------------------
+# Spec 0058: parse performance & robustness (hang defense + triage + tuning)
+# ---------------------------------------------------------------------------
+# Per-doc timeout. 180s covers the measured p99 (69.5s) with margin and stays
+# well under the 0056 5-min heartbeat. The *mechanism* (native document_timeout
+# vs subprocess kill) is decided by the Phase-0 spike; this is the bound.
+PARSE_TIMEOUT_SECONDS = 180
+
+# Absolute, always-on ceilings (the floor of defense — independent of the
+# mb/page heuristic, applied to EVERY doc so per-doc cost is bounded even when
+# the triage heuristic misses; spec §3.1 / §7).
+MAX_NUM_PAGES = 500          # hard convert(max_num_pages=N) ceiling on every doc
+ABS_FILE_SIZE_CAP = 50_000_000  # 50 MB — corpus max observed ~49.6 MB (true outlier)
+ABS_PAGE_CAP = 200           # page_count > this -> downgrade (NOT a page truncation)
+
+# images_scale: the always-on ceiling for normal docs, and the tighter value
+# for triaged/downgraded docs. CAP default 2.0 = no regression vs Docling's
+# default; the §4 A/B may lower it toward 1.0-1.5 before shipping.
+IMAGES_SCALE_CAP = 2.0
+IMAGES_SCALE_DOWNGRADE = 1.0
+
+# TableFormer FAST is a quality-affecting tuning knob: it stays OFF until the
+# §4 cell-content A/B proves zero loss, then the operator flips this to True.
+# Default False preserves current production behavior (Docling's own default).
+TABLEFORMER_FAST = False
+
+# Pre-parse poison triage (spec §3.1). Downgrade (never skip) when a doc is
+# image-heavy AND has a thin text layer.
+POISON_MB_PER_PAGE = 1.0     # mb_per_page strictly above this is "image-heavy"
+POISON_TEXT_FLOOR = 200      # text-layer chars below this is "thin"
+
+# Conditional OCR (spec §3.4). Skip OCR only when an embedded text layer is
+# confidently present (>= this many chars). Default keep-OCR-on when uncertain.
+OCR_TEXT_FLOOR = 200
+# The 0060 pdftotext signal is the preferred detector, but only when the
+# backfill is substantially complete — otherwise the OCR decision would flip
+# run-to-run as the backfill fills in. Below this fraction, the run uses the
+# first_page_text fallback UNIFORMLY so the decision is reproducible (Codex
+# red-team). The chosen source + backfill % are recorded in parse_runs.stats_json.
+OCR_DETECTOR_BACKFILL_MIN = 0.99
+
 
 def validate_sha256(sha: str) -> bool:
     return bool(SHA256_RE.match(sha))
