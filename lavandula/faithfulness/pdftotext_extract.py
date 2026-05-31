@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 import os
 import subprocess
+import tempfile
 from dataclasses import dataclass
 
 log = logging.getLogger(__name__)
@@ -58,55 +59,77 @@ def get_pdftotext_version() -> str:
 def extract_text(pdf_input: bytes) -> ExtractResult:
     """Extract text from PDF bytes via pdftotext.
 
-    Uses Popen with bounded stdout read to enforce the 10MB output cap.
-    Input is fed via stdin (no temp file needed).
+    pdftotext writes its text to a temp FILE (not stdout) so a pathological
+    PDF that expands to gigabytes lands on disk, never buffered into worker
+    RAM — the output cap is enforced by checking the file size on disk before
+    reading at most MAX_OUTPUT_BYTES back. The 30s timeout is enforced via
+    communicate() (stdout/stderr are now near-empty diagnostic pipes). This
+    bounds BOTH time (hang) and memory (output bomb); a prior version used
+    communicate() to read stdout and buffered the whole output in RAM.
     """
     version = get_pdftotext_version()
-
+    out_path = None
     try:
-        proc = subprocess.Popen(
-            [PDFTOTEXT_BIN, "-layout", "-", "-"],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            env={**os.environ, "TMPDIR": _ensure_tmpdir()},
-        )
-    except OSError as exc:
-        return ExtractResult(
-            text="", version=version, char_count=0,
-            is_scanned=False, failed=True, error=str(exc),
-        )
+        # NamedTemporaryFile in our isolated dir; pdftotext writes here.
+        with tempfile.NamedTemporaryFile(
+            dir=_ensure_tmpdir(), suffix=".txt", delete=False
+        ) as tf:
+            out_path = tf.name
 
-    try:
-        raw_output, stderr_out = proc.communicate(
-            input=pdf_input, timeout=TIMEOUT_SECONDS,
-        )
+        try:
+            proc = subprocess.Popen(
+                [PDFTOTEXT_BIN, "-layout", "-", out_path],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                env={**os.environ, "TMPDIR": _ensure_tmpdir()},
+            )
+        except OSError as exc:
+            return ExtractResult(
+                text="", version=version, char_count=0,
+                is_scanned=False, failed=True, error=str(exc),
+            )
 
-        if stderr_out:
-            log.debug("pdftotext stderr: %s", stderr_out[:500])
+        try:
+            _, stderr_out = proc.communicate(input=pdf_input, timeout=TIMEOUT_SECONDS)
+            if stderr_out:
+                log.debug("pdftotext stderr: %s", stderr_out[:500])
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.communicate()
+            return ExtractResult(
+                text="", version=version, char_count=0,
+                is_scanned=False, failed=True, error="timeout",
+            )
+        except OSError as exc:
+            proc.kill()
+            proc.communicate()
+            return ExtractResult(
+                text="", version=version, char_count=0,
+                is_scanned=False, failed=True, error=str(exc),
+            )
 
-        if len(raw_output) > MAX_OUTPUT_BYTES:
-            log.warning("pdftotext output exceeded %d bytes", MAX_OUTPUT_BYTES)
+        # Size check on disk BEFORE reading into memory — bounds RAM.
+        try:
+            size = os.path.getsize(out_path)
+        except OSError:
+            size = 0
+        if size > MAX_OUTPUT_BYTES:
+            log.warning("pdftotext output exceeded %d bytes (%d on disk)", MAX_OUTPUT_BYTES, size)
             return ExtractResult(
                 text="", version=version, char_count=0,
                 is_scanned=False, failed=True,
                 error="output_exceeded_10mb",
             )
 
-    except subprocess.TimeoutExpired:
-        proc.kill()
-        proc.communicate()
-        return ExtractResult(
-            text="", version=version, char_count=0,
-            is_scanned=False, failed=True, error="timeout",
-        )
-    except OSError as exc:
-        proc.kill()
-        proc.communicate()
-        return ExtractResult(
-            text="", version=version, char_count=0,
-            is_scanned=False, failed=True, error=str(exc),
-        )
+        with open(out_path, "rb") as fh:
+            raw_output = fh.read(MAX_OUTPUT_BYTES)
+    finally:
+        if out_path:
+            try:
+                os.unlink(out_path)
+            except OSError:
+                pass
 
     text = raw_output.decode("utf-8", errors="replace")
     text = text.replace("\x00", "")
