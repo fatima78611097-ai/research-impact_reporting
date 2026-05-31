@@ -1,7 +1,7 @@
 # Spec 0058 — Parse Performance & Robustness (Hang Defense + TableFormer FAST + Conditional OCR)
 
 - **Project:** 0058
-- **Status:** conceived (initial draft, grounded by 4-thread research workflow)
+- **Status:** conceived (multi-agent review incorporated; grounded by 4-thread research workflow)
 - **Depends on:** 0055 (Multi-Instance Parse), 0056 (Parse Reliability — heartbeat backstop)
 - **Author:** Architect, 2026-05-31
 
@@ -63,6 +63,13 @@ Docling 2.93's `PdfPipelineOptions` exposes a native **`document_timeout`**. Bef
 
 The spike's PASS/FAIL determines which of §3.2/§3.3 the plan builds. Output: a result note, throwaway code.
 
+**PASS criteria (all must hold) — `document_timeout` is the primary mechanism only if:**
+1. On the poison doc with `document_timeout = T`, `convert()` returns control (raises or returns) within `T + 30s` wall-clock — measured across **≥ 3 runs** (deterministic, not a lucky single run).
+2. After the timeout fires, the worker process is healthy: it can immediately parse a normal doc to completion (GPU context intact, no leaked memory that breaks the next convert).
+3. No orphaned threads/processes left consuming GPU after the timeout.
+
+**FAIL (→ build §3.3 subprocess isolation) if any:** the poison doc exceeds `T + 30s`; OR the timeout fires but the next doc fails/hangs (corrupted GPU state); OR cleanup leaks GPU memory across docs. A "late exception" (fires but well past T) counts as FAIL — partial bounding is not bounding.
+
 ### 3.1 Pre-parse poison triage (cheap, deterministic, always-on)
 
 Before calling `convert()`, compute a risk signal from data already on hand (no GPU, no full download needed — corpus row + the local PDF bytes the worker already holds):
@@ -71,16 +78,22 @@ Before calling `convert()`, compute a risk signal from data already on hand (no 
 
 For docs matching the **poison profile** (default: `mb_per_page > 1.0 AND text_signal < 200 chars`; threshold config-driven), parse with **downgraded options**: capped `images_scale`, conditional OCR per §3.4, and the per-doc timeout. This removes most hang risk before it reaches the GPU. The threshold is configurable; default chosen from §1.3 (3.77% of corpus).
 
+**Triage is a DOWNGRADE, never a skip.** A poison-profile doc is still parsed — just with reduced `images_scale` and the timeout — so we never silently drop content (a designed report's hero stats matter; recall-first). Only the timeout (§3.2/§3.3) or an explicit quarantine flag (§3.5) prevents a parse. The triage decision is recorded as `parse_outcome='downgraded'` (§5) so its quality impact is measurable. The per-doc timeout applies to **every** doc regardless of triage — triage reduces the chance of hitting it, it is not the hang guard itself.
+
 ### 3.2 Per-doc timeout via native `document_timeout` (if spike PASSES)
 
-Set `PdfPipelineOptions.document_timeout` to a configured bound (default **180s** — covers p99 69.5s with safety margin, well under the 0056 5-min heartbeat). On timeout, Docling raises; `chunking.parse_pdf` converts that to a `DoclingParseError`, and `worker._process_one` raises `PermanentError('parse_timeout')` so the doc is recorded errored (not stranded claimed-incomplete) and the worker continues. Page cap via `convert(max_num_pages=...)` as a secondary bound.
+Set `PdfPipelineOptions.document_timeout` to a configured bound (default **180s** — covers p99 69.5s with safety margin, well under the 0056 5-min heartbeat). On timeout, Docling raises; `chunking.parse_pdf` converts that to a `DoclingParseError`, and `worker._process_one` raises `PermanentError('parse_timeout')`. Page cap via `convert(max_num_pages=...)` as a secondary bound.
+
+**Error / claim contract (precise):** a `parse_timeout` follows the **existing PermanentError path** (worker.py): `_record_error` inserts a `documents` row with `error='parse_timeout'`, then `complete_work_item()` marks the work_queue row complete-with-error in the same flow — so the row is **never left claimed-incomplete**, and the worker advances to the next doc. A timed-out doc is **NOT auto-retried** within the run (it is a PermanentError, not a TransientError — avoids re-hanging the same doc). Because a `documents` row now exists, `populate_work_queue` will **not** re-enqueue it on a future run unless the operator explicitly clears it or runs with a reprocess flag (so a one-time relaxed-timeout retry is an explicit operator action, not automatic). This is the same contract the NUL-byte and download-fail errors already use.
 
 ### 3.3 Subprocess isolation (ONLY if spike FAILS)
 
 If `document_timeout` cannot break a hard hang, run `convert()` in a **persistent child process** (multiprocessing `spawn` context) that holds the warm model across docs and is killed + respawned only on timeout:
 - One child per worker, model loaded once (~minutes). Per-doc requests routed via queue; normal docs incur zero reload cost.
 - Parent `join(timeout)`; on expiry → `terminate()` then `kill()` (SIGKILL reclaims GPU memory) → respawn → raise `DoclingParseTimeout` → `PermanentError('parse_timeout')`.
-- Circuit breaker: if the child dies > N times (config, default 10), fail the run (don't thrash).
+- **IPC contract (Gemini review):** the child must NOT return the raw `DoclingDocument` across the process boundary — it is large and may not pickle cleanly. The child runs `extract_sections` / `extract_tables` / `get_document_metadata` **inside the child** and returns the small, already-flattened dicts (the same structures `db.insert_document` consumes). Only plain JSON-serializable data crosses the queue.
+- **Circuit breaker keys on CONSECUTIVE failures (Gemini review):** respawn-then-success resets the counter; the run fails only after N *consecutive* child deaths (config, default 5) — so a scattered cluster of poison docs doesn't fail an otherwise healthy run. Mirrors 0056's per-slot consecutive-failure logic.
+- **GPU cleanup:** SIGKILL reclaims the child's CUDA memory at the OS/driver level; the spike (§3.0 criterion 2/3) also validates this holds across respawns so repeated timeouts don't fragment GPU memory. If a respawn's model load itself fails, that counts toward the consecutive-failure breaker.
 - Precedents in-repo: `reports/fetch_pdf.py` (multiprocessing spawn + terminate/kill), `faithfulness/pdftotext_extract.py` (subprocess timeout=30).
 
 This is the heavier path; the spike exists specifically to avoid building it if the native timeout suffices. The 0056 heartbeat remains the final backstop in all cases.
@@ -89,11 +102,15 @@ This is the heavier path; the spike exists specifically to avoid building it if 
 
 - **TableFormer FAST:** set `TableStructureOptions(mode=TableFormerMode.FAST, do_cell_matching=True)`. Measured 1.5× table-heavy / 2.6× on a 44pg doc with no cell-count loss — but must pass the cell-CONTENT A/B before shipping (the plan must first confirm whether 2.93 already defaults to FAST or ACCURATE).
 - **`images_scale` cap:** default 2.0 → capped (candidate 1.0–1.5); reduces rasterization cost for image-heavy docs. A/B-gated.
-- **Conditional OCR:** NEVER blanket-off (measured: destroyed 88% of table cells + 6% text on a scanned doc). OCR is enabled only when no embedded text layer is detected. Detection signal: prefer the 0060 `pdftotext` result (already computed corpus-wide) — a doc with a healthy pdftotext text layer can skip OCR; a thin/empty one keeps OCR. Falls back to `first_page_text` / pdfminer inline check where 0060 data is absent.
+- **Conditional OCR:** NEVER blanket-off (measured: destroyed 88% of table cells + 6% text on a scanned doc). OCR is enabled only when an embedded text layer is confidently present. **Detector precedence (deterministic, first available wins):**
+  1. **0060 `pdftotext` result** (preferred — already computed corpus-wide): `text_source='text_native'` with a healthy `char_count` (≥ a configured floor, candidate 200) → **skip OCR**. `scanned`/`pdftotext_failed`/thin → **keep OCR**.
+  2. **Fallback** when no 0060 row at parse time: inline pdfminer/`first_page_text` length ≥ floor → skip OCR.
+  3. **Default when signals are absent or disagree: keep OCR ON** (fail toward completeness — a wrongly-OCR'd text-native doc is just slower; a wrongly-skipped scanned doc loses all content).
+  **Mixed PDFs** (some pages text, some scanned): v1 decides **per-document** (keep OCR if ANY signal suggests a scanned page, i.e. err toward OCR-on); true per-page conditional OCR is a non-goal for v1 and noted as a future refinement. Docling's own auto-skip (it bypasses OCR on pages with a text layer) further limits the cost of a conservative document-level "keep OCR" decision.
 
 ### 3.5 Quarantine known poison docs
 
-Quarantine `e038a9e75317ff86` and re-scan the corpus for the poison cohort (§1.3) before the next national run, so a known-bad doc doesn't burn a parse slot. Quarantine = a flag that downgrades/skips, never a delete.
+Quarantine is **DB-persisted, not dynamic** — a known-hang doc carries a durable flag so it is excluded from `populate_work_queue` enqueue (a column on the corpus/documents side, set by the operator or by the gate when a doc times out repeatedly). This is distinct from §3.1 triage (which is computed dynamically at parse time and only downgrades). Concretely: `e038a9e75317ff86` is flagged now; the plan defines whether the flag lives on `lava_corpus.corpus` or a small `lava_parse.parse_blocklist` table (operator-run DDL). A timed-out doc is NOT auto-quarantined (it already errors cleanly per §3.2); quarantine is for docs proven to hang the timeout mechanism itself or known-pathological inputs. Quarantine = a flag, never a delete.
 
 ## 4. Quality Acceptance Gate — Cell-Content A/B (the core safeguard)
 
@@ -117,7 +134,11 @@ No pipeline change (FAST, images_scale, conditional OCR) ships without passing t
 
 ## 5. Data Model & Observability
 
-On `lava_parse.documents` (or `parse_runs` stats): record `docling_convert_ms` (separate from total `parse_duration_ms`), and a `parse_outcome` signal distinguishing `ok | timeout | downgraded | error`. Timed-out docs get a clear marker (NULL duration or `parse_outcome='timeout'`) so a query can separate "slow but finished" from "killed". Per-doc timeout/respawn events logged (INFO/WARNING) and counted for the dashboard. DDL is operator-run (same pattern as 0056/0057/0060).
+**New nullable columns on `lava_parse.documents`** (operator-run DDL, same pattern as 0056/0057/0060; existing rows default NULL = legacy):
+- `docling_convert_ms INTEGER` — time inside `convert()` alone (vs total `parse_duration_ms` which includes chunking/extract/DB).
+- `parse_outcome TEXT` — enum `ok | timeout | downgraded | error` (a downgraded doc that completes is `downgraded`; a timed-out doc is `timeout` and carries `error='parse_timeout'`). This is a per-document column, not a run aggregate; the dashboard rolls it up per run.
+
+Per-doc timeout/respawn/downgrade events logged (INFO/WARNING) and counted into `parse_runs.stats_json` for the dashboard.
 
 ## 6. Acceptance Criteria
 
@@ -128,7 +149,11 @@ On `lava_parse.documents` (or `parse_runs` stats): record `docling_convert_ms` (
 5. Conditional OCR keeps OCR ON for scanned docs (no blanket-off regression).
 6. Observability distinguishes timeout/downgrade/ok; per-doc convert time recorded.
 7. The Phase-0 spike result is documented and dictates which timeout mechanism shipped.
-8. **Required test cases:** poison doc completes within timeout; timeout → `parse_timeout` errored + worker continues; triage classifies the §1.3 examples correctly; conditional OCR skips OCR on a text-native doc and keeps it on a scanned doc; A/B harness reproducibly compares cell content + runs the 0057 gate.
+8. **Required tests, split by tier:**
+   - **Unit (deterministic fixtures, CI):** triage threshold math classifies the §1.3 example shas correctly; conditional-OCR decision function returns skip-OCR for a text-native signal and keep-OCR for a thin/empty signal; `parse_timeout` maps to `PermanentError('parse_timeout')` and routes through `_record_error` + `complete_work_item` (mocked); pipeline-options builder produces FAST + capped images_scale + correct OCR flag.
+   - **Integration (real Docling, one instance, not CI):** poison doc `e038a9e75317ff86` completes within timeout (or errors cleanly) and the worker parses a normal doc immediately after; conditional OCR on a real scanned doc keeps its tables.
+   - **End-to-end / acceptance (corpus-sample, manual):** the §4 cell-content A/B over the stratified sample, with frozen pass/fail thresholds, run via the A/B harness (which calls the real shipped 0057 gate).
+   Unit tests gate CI; integration + A/B are operator-run before the tarball ships to a full run.
 
 ## 7. Security & Abuse Considerations
 
