@@ -24,8 +24,10 @@ CREATE INDEX IF NOT EXISTS idx_documents_parse_outcome
     ON lava_parse.documents (parse_outcome)
     WHERE parse_outcome IS NOT NULL;
 
--- Explicit grants (no-op if ALL already held).
-GRANT INSERT, UPDATE (docling_convert_ms, parse_outcome) ON lava_parse.documents TO docling_writer;
+-- docling_writer already holds table-level ALL on lava_parse tables (migration
+-- 002), which covers INSERT of these new columns. This column-level UPDATE grant
+-- mirrors the 0056 exit_reason idiom and is belt-and-suspenders.
+GRANT UPDATE (docling_convert_ms, parse_outcome) ON lava_parse.documents TO docling_writer;
 
 COMMIT;
 

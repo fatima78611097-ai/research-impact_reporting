@@ -568,8 +568,10 @@ def _parse_options_for(sha: str, signals: dict, detector_source: str) -> "chunki
     """Build bounded ParseOptions for one doc from its triage + OCR signals.
 
     Fails toward completeness: a missing signal row -> default options (keep OCR,
-    no downgrade). The soft in-child document_timeout is set below the parent's
-    hard kill so a slow-but-not-hung doc lets the child self-abort and stay warm.
+    no downgrade). document_timeout is deliberately NOT set: the Phase-0 spike
+    found Docling's native document_timeout unreliable (a 24-page doc overran a
+    60s limit by ~25%), so the parent's hard kill in PersistentParseRunner is the
+    sole, authoritative per-doc bound.
     """
     sig = signals.get(sha, {})
     text_signal = sig.get("pdftotext_char_count")
@@ -589,7 +591,6 @@ def _parse_options_for(sha: str, signals: dict, detector_source: str) -> "chunki
         skip_ocr=skip_ocr,
         downgrade=triage["downgrade"],
         reasons=triage["reasons"],
-        document_timeout=config.PARSE_CHILD_SOFT_TIMEOUT_SECONDS,
     )
 
 

@@ -77,10 +77,11 @@ OCR_DETECTOR_BACKFILL_MIN = 0.99
 # and corpus p99 69.5s with margin, well under the 0056 5-min heartbeat.
 PARSE_TIMEOUT_SECONDS = 180
 
-# Soft, in-child document_timeout (< the hard parent bound) so a slow-but-not-hung
-# doc lets the child self-abort gracefully and STAY WARM, instead of forcing the
-# parent to SIGKILL + reload the model. None disables it. Margin must exceed the
-# spike's observed ~25% overrun, so keep it well below PARSE_TIMEOUT_SECONDS.
+# Optional soft, in-child document_timeout. NOT wired by default: the Phase-0
+# spike found Docling's native document_timeout unreliable (overran a 60s limit
+# by ~25%, and cannot interrupt a native segfault), so the parent hard kill is
+# the authoritative bound. Kept here only so an operator could opt a doc into a
+# soft self-abort via build_parse_options(document_timeout=...) if ever useful.
 PARSE_CHILD_SOFT_TIMEOUT_SECONDS = 150
 
 # Address-space cap on the child (resource.RLIMIT_AS), so an OOM / image bomb is
