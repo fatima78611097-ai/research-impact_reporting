@@ -865,11 +865,11 @@ projects:
   - id: "0058"
     title: "Parse Performance & Robustness (Hang Defense + TableFormer FAST + Conditional OCR)"
     summary: "Make the Docling parse pipeline hang-proof (per-doc timeout so no single image-heavy/scanned doc wedges a worker) AND faster (TableFormer FAST + capped images_scale + conditional OCR), each gated by a cell-CONTENT A/B backed by the 0057 grounding gate. Robustness half is the scale-gate blocker for the next national run."
-    status: conceived
+    status: specified
     priority: high
     files:
       spec: locard/specs/0058-parse-performance-robustness.md
-      plan: null
+      plan: locard/plans/0058-parse-performance-robustness.md
       review: null
     dependencies: ["0055", "0056"]
     tags: [pipeline, parse, gpu, performance, robustness, quality]

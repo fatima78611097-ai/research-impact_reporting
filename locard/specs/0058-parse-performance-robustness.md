@@ -1,7 +1,7 @@
 # Spec 0058 — Parse Performance & Robustness (Hang Defense + TableFormer FAST + Conditional OCR)
 
 - **Project:** 0058
-- **Status:** conceived (multi-agent review + red-team incorporated; grounded by 4-thread research workflow)
+- **Status:** specified (multi-agent review + red-team incorporated; human-approved 2026-05-31)
 - **Depends on:** 0055 (Multi-Instance Parse), 0056 (Parse Reliability — heartbeat backstop)
 - **Author:** Architect, 2026-05-31
 
