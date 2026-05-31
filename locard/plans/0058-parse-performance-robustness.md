@@ -1,7 +1,7 @@
 # Plan 0058 — Parse Performance & Robustness
 
 - **Project:** 0058   **Spec:** `locard/specs/0058-parse-performance-robustness.md` (specified)
-- **Status:** conceived (plan-review + red-team incorporated)
+- **Status:** planned (plan-review + red-team incorporated; human-approved 2026-05-31)
 - **Author:** Architect, 2026-05-31
 
 > Builder-executable plan. Phase 0 is a SPIKE that gates the architecture (native timeout vs subprocess). Everything else is sequenced behind it. Worker-side changes require a tarball rebuild (bundles the already-committed NUL `_scrub` fix) + operator deploy. Quality A/B + integration tests are operator-run before the tarball ships to a full run.
