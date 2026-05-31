@@ -70,7 +70,7 @@ class GpuMemPoller(threading.Thread):
     def __init__(self, interval: float = 0.25):
         super().__init__(daemon=True, name="gpu-mem-poller")
         self._interval = interval
-        self._stop = threading.Event()
+        self._stop_evt = threading.Event()
         self.peak_used_mib: int | None = None
         self.total_mib: int | None = None
 
@@ -96,12 +96,12 @@ class GpuMemPoller(threading.Thread):
             self.peak_used_mib = used
 
     def run(self) -> None:
-        while not self._stop.is_set():
+        while not self._stop_evt.is_set():
             self._sample()
-            self._stop.wait(self._interval)
+            self._stop_evt.wait(self._interval)
 
     def stop_and_read(self) -> dict:
-        self._stop.set()
+        self._stop_evt.set()
         self.join(timeout=2.0)
         self._sample()  # one final reading
         return {"peak_gpu_used_mib": self.peak_used_mib, "gpu_total_mib": self.total_mib}
