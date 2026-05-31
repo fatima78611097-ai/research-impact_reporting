@@ -549,6 +549,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=DEFAULT_TARGET,
         help="Stop after N new orgs added (default: 100)",
     )
+    ap.add_argument(
+        "--job-id",
+        type=int,
+        default=None,
+        help="Dashboard job ID (passed by orchestrator)",
+    )
     return ap
 
 

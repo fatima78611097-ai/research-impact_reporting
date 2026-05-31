@@ -51,6 +51,8 @@ def _build_parser() -> argparse.ArgumentParser:
                    help="Re-classify rows where classifier_definition != this value "
                    "(e.g., corpus_reports:v2). Uses IS DISTINCT FROM to include NULLs. "
                    "Implies --re-classify.")
+    p.add_argument("--job-id", type=int, default=None,
+                   help="Dashboard job ID (passed by orchestrator)")
     return p
 
 
