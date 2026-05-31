@@ -6,12 +6,36 @@ insertion into the lava_parse schema.
 from __future__ import annotations
 
 import logging
+import re
 from pathlib import Path
 from typing import Any
 
 from lavandula.parse.config import filter_metadata
 
 logger = logging.getLogger(__name__)
+
+# Strip C0 control characters that PostgreSQL rejects in text/jsonb columns,
+# preserving legitimate whitespace (\t 0x09, \n 0x0a, \r 0x0d). Matches the
+# control-char policy in faithfulness/grounding.py and reports/classify.py.
+# Docling's OCR/table extraction can emit NUL (0x00) and other control chars;
+# any that reach an INSERT raise "A string literal cannot contain NUL".
+_CTRL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+
+
+def _scrub(value: Any) -> Any:
+    """Recursively strip control characters from strings in str/list/dict.
+
+    Single producer-side sanitizer for every Docling-derived text field that
+    flows into lava_parse (body, heading, parent_headings, table caption,
+    markdown, data_json cells, metadata). Non-string scalars pass through.
+    """
+    if isinstance(value, str):
+        return _CTRL_RE.sub("", value)
+    if isinstance(value, list):
+        return [_scrub(v) for v in value]
+    if isinstance(value, dict):
+        return {k: _scrub(v) for k, v in value.items()}
+    return value
 
 
 class DoclingParseError(Exception):
@@ -39,10 +63,8 @@ def extract_sections(doc: Any) -> list[dict]:
 
     sections = []
     for i, chunk in enumerate(chunks):
-        body = chunk.text.replace("\x00", "") if chunk.text else ""
-        heading = _extract_heading(chunk)
-        if heading:
-            heading = heading.replace("\x00", "")
+        body = _scrub(chunk.text) if chunk.text else ""
+        heading = _scrub(_extract_heading(chunk))
         sections.append(
             {
                 "section_index": i,
@@ -52,7 +74,7 @@ def extract_sections(doc: Any) -> list[dict]:
                 "char_count": len(body),
                 "page_start": _get_page_start(chunk),
                 "page_end": _get_page_end(chunk),
-                "parent_headings": _get_parent_headings(chunk),
+                "parent_headings": _scrub(_get_parent_headings(chunk)),
             }
         )
     return sections
@@ -81,11 +103,11 @@ def extract_tables(doc: Any, sections: list[dict]) -> list[dict]:
                 "table_index": i,
                 "section_index": section_index,
                 "page_number": page_number,
-                "caption": _get_table_caption(table),
+                "caption": _scrub(_get_table_caption(table)),
                 "row_count": row_count,
                 "col_count": col_count,
-                "data_json": data_rows,
-                "markdown": _table_to_markdown(table),
+                "data_json": _scrub(data_rows),
+                "markdown": _scrub(_table_to_markdown(table)),
             }
         )
     return tables
@@ -111,7 +133,7 @@ def get_document_metadata(doc: Any) -> dict:
     return {
         "page_count": page_count,
         "figure_count": figure_count,
-        "metadata": raw_metadata,
+        "metadata": _scrub(raw_metadata),
     }
 
 
