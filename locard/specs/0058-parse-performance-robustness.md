@@ -1,7 +1,7 @@
 # Spec 0058 — Parse Performance & Robustness (Hang Defense + TableFormer FAST + Conditional OCR)
 
 - **Project:** 0058
-- **Status:** conceived (multi-agent review incorporated; grounded by 4-thread research workflow)
+- **Status:** conceived (multi-agent review + red-team incorporated; grounded by 4-thread research workflow)
 - **Depends on:** 0055 (Multi-Instance Parse), 0056 (Parse Reliability — heartbeat backstop)
 - **Author:** Architect, 2026-05-31
 
@@ -70,6 +70,10 @@ The spike's PASS/FAIL determines which of §3.2/§3.3 the plan builds. Output: a
 
 **FAIL (→ build §3.3 subprocess isolation) if any:** the poison doc exceeds `T + 30s`; OR the timeout fires but the next doc fails/hangs (corrupted GPU state); OR cleanup leaks GPU memory across docs. A "late exception" (fires but well past T) counts as FAIL — partial bounding is not bounding.
 
+The spike must also **record the nature of `document_timeout`** (red-team — Codex): wall-clock vs CPU-time, the exact exception raised, whether it interrupts native/CUDA code or only checks between pipeline stages, and whether cleanup is synchronous. These facts go in the result note and the plan.
+
+**OOM is a separate axis from hang (red-team CRITICAL — Gemini).** A PDF bomb / huge-image doc can exhaust RAM or GPU memory and crash *before any timeout fires* — `document_timeout` does not bound memory. The spike must therefore also **measure peak host + GPU memory** on the poison doc and the §1.3 extreme examples (the 46–49 MB/page single-page Illustrator/Photoshop docs). If peak memory approaches the instance limit, **memory isolation is required regardless of the timeout verdict** → the §3.3 subprocess path (with an OS memory cap) becomes mandatory, not just the hang fallback. In other words: the spike decides the *hang* mechanism, but an OOM risk can independently force the subprocess design.
+
 ### 3.1 Pre-parse poison triage (cheap, deterministic, always-on)
 
 Before calling `convert()`, compute a risk signal from data already on hand (no GPU, no full download needed — corpus row + the local PDF bytes the worker already holds):
@@ -79,6 +83,11 @@ Before calling `convert()`, compute a risk signal from data already on hand (no 
 For docs matching the **poison profile** (default: `mb_per_page > 1.0 AND text_signal < 200 chars`; threshold config-driven), parse with **downgraded options**: capped `images_scale`, conditional OCR per §3.4, and the per-doc timeout. This removes most hang risk before it reaches the GPU. The threshold is configurable; default chosen from §1.3 (3.77% of corpus).
 
 **Triage is a DOWNGRADE, never a skip.** A poison-profile doc is still parsed — just with reduced `images_scale` and the timeout — so we never silently drop content (a designed report's hero stats matter; recall-first). Only the timeout (§3.2/§3.3) or an explicit quarantine flag (§3.5) prevents a parse. The triage decision is recorded as `parse_outcome='downgraded'` (§5) so its quality impact is measurable. The per-doc timeout applies to **every** doc regardless of triage — triage reduces the chance of hitting it, it is not the hang guard itself.
+
+**Absolute caps, independent of the ratio heuristic (red-team — both reviewers).** The `mb_per_page` ratio is bypassable (a giant file with many blank/low-cost pages drops the ratio) and won't catch every pathological input — crafted or, more commonly for a crawled corpus, accidentally huge designed PDFs. So the triage applies hard ceilings that fire **regardless of the ratio**:
+- `file_size_bytes > 50 MB` (corpus max observed is ~49.6 MB, so this is a true outlier guard) → downgrade.
+- `page_count > 200` → downgrade + page cap.
+- And, applied to **every** doc (not just triaged ones): a hard `convert(max_num_pages=N)` ceiling and an `images_scale` ceiling, so per-doc rasterization cost is bounded by construction even when the heuristic misses. These ceilings are the floor of defense; triage + timeout layer on top.
 
 ### 3.2 Per-doc timeout via native `document_timeout` (if spike PASSES)
 
@@ -94,6 +103,8 @@ If `document_timeout` cannot break a hard hang, run `convert()` in a **persisten
 - **IPC contract (Gemini review):** the child must NOT return the raw `DoclingDocument` across the process boundary — it is large and may not pickle cleanly. The child runs `extract_sections` / `extract_tables` / `get_document_metadata` **inside the child** and returns the small, already-flattened dicts (the same structures `db.insert_document` consumes). Only plain JSON-serializable data crosses the queue.
 - **Circuit breaker keys on CONSECUTIVE failures (Gemini review):** respawn-then-success resets the counter; the run fails only after N *consecutive* child deaths (config, default 5) — so a scattered cluster of poison docs doesn't fail an otherwise healthy run. Mirrors 0056's per-slot consecutive-failure logic.
 - **GPU cleanup:** SIGKILL reclaims the child's CUDA memory at the OS/driver level; the spike (§3.0 criterion 2/3) also validates this holds across respawns so repeated timeouts don't fragment GPU memory. If a respawn's model load itself fails, that counts toward the consecutive-failure breaker.
+- **OS memory cap on the child (red-team CRITICAL — Gemini):** set a hard host-memory limit via `resource.setrlimit(RLIMIT_AS, ...)` (and rely on the GPU driver's per-process limits) so an OOM-bomb PDF cleanly kills the child (→ `PermanentError('parse_oom')`) instead of OOM-killing the worker or destabilizing the host. The cap is configured below the instance's available RAM with margin for the warm model. This is the isolation guarantee a native timeout cannot provide.
+- **Windowed circuit breaker, not consecutive-only (red-team HIGH — Gemini):** an interleaved `[poison, valid, poison, valid, …]` stream resets a consecutive-only counter forever and ties up the GPU indefinitely. So abort the run when **either** N consecutive child deaths **or** > M child deaths within the last W documents (config; e.g. M=10 in W=100). The windowed rate catches the interleaved-tie-up pattern.
 - Precedents in-repo: `reports/fetch_pdf.py` (multiprocessing spawn + terminate/kill), `faithfulness/pdftotext_extract.py` (subprocess timeout=30).
 
 This is the heavier path; the spike exists specifically to avoid building it if the native timeout suffices. The 0056 heartbeat remains the final backstop in all cases.
@@ -111,6 +122,8 @@ This is the heavier path; the spike exists specifically to avoid building it if 
 ### 3.5 Quarantine known poison docs
 
 Quarantine is **DB-persisted, not dynamic** — a known-hang doc carries a durable flag so it is excluded from `populate_work_queue` enqueue (a column on the corpus/documents side, set by the operator or by the gate when a doc times out repeatedly). This is distinct from §3.1 triage (which is computed dynamically at parse time and only downgrades). Concretely: `e038a9e75317ff86` is flagged now; the plan defines whether the flag lives on `lava_corpus.corpus` or a small `lava_parse.parse_blocklist` table (operator-run DDL). A timed-out doc is NOT auto-quarantined (it already errors cleanly per §3.2); quarantine is for docs proven to hang the timeout mechanism itself or known-pathological inputs. Quarantine = a flag, never a delete.
+
+**Quarantine governance — never silent (red-team CRITICAL — Codex).** Quarantine is auditable and reversible: every entry records `reason`, `quarantined_at`, `quarantined_by` (operator id or `auto:<rule>`), and the triggering evidence (e.g. timeout count). It is **operator-reviewable** (surfaced in the dashboard) so excluded docs have clear provenance and a recovery path — un-quarantining is a one-step operator action. **Default is operator-confirmed, not automatic;** if an auto-quarantine rule is enabled (e.g. "≥3 timeouts on the same sha across runs"), it requires that explicit threshold and still writes the full audit trail. This prevents quarantine from becoming a silent coverage-loss / denial-of-service path.
 
 ## 4. Quality Acceptance Gate — Cell-Content A/B (the core safeguard)
 
@@ -157,16 +170,20 @@ Per-doc timeout/respawn/downgrade events logged (INFO/WARNING) and counted into 
 
 ## 7. Security & Abuse Considerations
 
-- PDFs are untrusted input to a GPU process. The per-doc timeout + (if needed) subprocess kill bound resource exhaustion from a malicious/pathological PDF (the 35-megapixel-image case is the natural attack shape).
-- If subprocess isolation is used: `spawn` context, no shell, kill on timeout, GPU memory reclaimed by SIGKILL, circuit breaker on repeated child death.
-- `max_num_pages` and `images_scale` caps bound per-doc compute/memory regardless of input.
+- PDFs are untrusted input to a GPU process (crawled from external nonprofit sites — for this corpus the dominant pathological case is accidentally-huge designed PDFs, but a compromised source could serve a crafted bomb; the defenses cover both).
+- **Two exhaustion axes, both bounded:** *time* (hang) via the per-doc timeout (§3.2/§3.3); *memory* (OOM bomb) via the subprocess OS memory cap (`RLIMIT_AS`) — a native timeout does NOT bound memory, so OOM isolation requires the child process. An OOM-bomb kills the child cleanly → `PermanentError('parse_oom')`, worker survives.
+- **Heuristic-independent absolute ceilings** (file_size > 50MB, page_count > 200, hard `max_num_pages` + `images_scale` on every doc) ensure a bypass of the `mb_per_page` ratio (e.g. appended blank pages) still cannot drive unbounded per-doc cost.
+- If subprocess isolation is used: `spawn` context, no shell, kill on timeout, GPU memory reclaimed by SIGKILL, child returns only JSON-serializable dicts, windowed+consecutive circuit breaker on repeated child death.
+- Quarantine is governed/audited (§3.5) so it cannot become a silent coverage-loss vector.
 - No new external access; no new IAM. Same single-operator GPU instances.
 
 ## 8. Failure & Error Scenarios
 
 - **convert() hangs past timeout** → timeout fires (native or subprocess-kill) → `PermanentError('parse_timeout')` → doc errored, worker continues.
 - **Native `document_timeout` doesn't break a hang** (spike FAIL) → subprocess design is mandatory; until shipped, the 0056 heartbeat is the backstop (worker relaunches, doc re-errors — degraded but not a dead run, provided the doc is quarantined so it doesn't re-poison).
-- **Child process dies repeatedly** → circuit breaker fails the run with a clear exit_reason (ties into 0056's exit_reason).
+- **OOM bomb** (huge images / PDF bomb exhausts RAM or GPU before timeout) → child's `RLIMIT_AS` (or driver limit) kills it → `PermanentError('parse_oom')`, doc errored, worker survives. (Native-timeout-only path canNOT catch this — it's the independent reason §3.3 may be mandatory per the §3.0 spike memory measurement.)
+- **Child process dies repeatedly** → consecutive OR windowed circuit breaker fails the run with a clear exit_reason (ties into 0056's exit_reason). The windowed breaker catches interleaved poison/valid streams that would reset a consecutive-only counter.
+- **Triage heuristic bypassed** (ratio evaded by blank pages / hidden text) → absolute ceilings (§3.1) + the always-on `max_num_pages`/`images_scale` caps + the timeout still bound the doc.
 - **Conditional-OCR misclassifies a scanned doc as text-native** → OCR wrongly skipped → thin extraction. Mitigation: the 0060 pdftotext signal is the primary detector (a scanned doc has near-empty pdftotext), and the A/B scanned-sample gate catches systematic misclassification.
 - **A/B shows regression** → the change does not ship; default pipeline stays.
 
