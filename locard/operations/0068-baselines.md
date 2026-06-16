@@ -20,10 +20,10 @@ These live as named constants in `lavandula/nlp/marker_render.py`
 (`MAX_IDMAP_ITEMS`, `MAX_TAGGED_CHARS`) and `lavandula/nlp/marker_extract.py`
 (`ELIGIBILITY_THRESHOLD`, `SURGE_*`) — change only with evidence.
 
-## Still requires a live DeepSeek run (operator-gated compute — Phase 5)
-- **`LOC1_BASELINE`** (§7 AC1): the loc1 resolvable-`value_ref` rate on the eligible
-  set — the acceptance reference. Denominator = selected metrics on **eligible** docs
-  only (skipped excluded). Needs one DeepSeek call/doc.
+## Live DeepSeek run — DONE (dry, 2026-06-16; see 0068-validation.md)
+- **`LOC1_BASELINE`** (§7 AC1) = **84.79%** (1054/1243) over all 117 eligible docs.
+  AC2 table-cell coverage = **100%**, AC3 round-trip = **100%** (1054 sample). Frozen
+  as the acceptance reference (future runs ≥ baseline−5pp).
 - **One-pass vs two-pass** confirmation (§10.3): one-pass loc1 ships if within 5pp of
   the demo's two-pass; measured in the same run.
 - **AC2/AC3/AC6** (table-cell coverage, round-trip sample, CanCare/BGCSM fixture diff):
