@@ -5,6 +5,7 @@
 **Depends on**: 0068 (per-metric markers + resolved coords, integrated)
 **Blocks**: national scale (Phase 5), the published product surface
 **Protocol**: SPIDER
+**Review**: Gemini/Codex spec-review (COMMENT / REQUEST_CHANGES → addressed inline + §11)
 
 ---
 
@@ -91,6 +92,15 @@ The decision + reason are stored; **publish requires every check to pass.** Misp
 small-int/is-a-metric checks are conservative (quarantine when in doubt — false-publish is costly,
 false-quarantine is recoverable).
 
+**Decision precedence (resolves Codex #1): checks run in the fixed order above (1→7); the FIRST
+failing check wins and is the single stored `gate_reason`.** Deterministic, single-valued, no ties.
+
+**Pure oracle vs production policy (resolves Codex #9): two clearly separated layers.**
+- **Ported verdict oracle** (steps 2–4): a pure reproduction of research `gate.verdict` +
+  `measurable_value_check`, **regression-locked** to the research verdicts (so any change is caught).
+- **Production-only policies** (steps 1, 5, 6 + de-dup + spot-review/triage): new logic that may be
+  tuned, kept out of the oracle so its regressions isolate from the oracle's.
+
 ## 5. Requirements
 
 ### 5.1 Re-render for idmap (reuse 0068)
@@ -106,33 +116,63 @@ false-quarantine is recoverable).
 
 ### 5.3 Small-int measurable + is-a-metric (the LLM-assisted layer)
 - `measurable_value_check` (DeepSeek) runs only for |value|≤20 (where non-measurements hide).
+- **Trust boundary (resolves Codex #7):** the measurable check has a **strict boolean output
+  contract** (a single yes/no token; source text wrapped as untrusted data; output never stored
+  verbatim), a **bounded timeout + retry**, and **any failure/timeout/ambiguous output →
+  quarantine `measure_unchecked`** (never publish an unverified small int). Fail-safe.
 - Is-a-metric reject rules re-homed onto `value` + `label` + marker source text; each rule measured
   for false-quarantine before activation (precision-over-recall: bias to quarantine, but don't drop
   a real "9 vans" / "served 6 counties").
 
-### 5.4 De-dup (prose-internal only)
-- Within a doc, collapse metrics whose `value` AND label (distinctive stems) match AND are not
-  spatially distinct. Default to **NOT merging** when uncertain (a false merge destroys a real
-  metric). Prose-vs-infographic de-dup is out (vision).
+### 5.4 De-dup (prose-internal only — concrete heuristic, resolves Codex #5 / Gemini)
+Within one document, two **publish-eligible** metrics are merged iff ALL hold:
+1. equal numeric `value` (after `gate.to_float` normalization);
+2. label agreement via `regroup.labels_agree` (distinctive-stem overlap, the same helper 0068 used);
+3. **not spatially distinct** — their `value_ref` markers are co-located (`gate.co_located`: same
+   cell, same row, or same page within bbox proximity). Different page or distinct cell → NOT merged.
+On merge, **keep the occurrence with the lowest reading order** (page, then table/row/col; text
+before table); the dropped one is recorded `gate_reason=duplicate`. When any condition is uncertain,
+**keep both** (a false merge destroys a real metric). Prose-vs-infographic de-dup is out (vision).
 
 ### 5.5 Decision storage (additive migration, operator-run)
 - `gate_decision text` (`publish`|`quarantine`), `gate_reason text`, `gate_run_id integer`,
-  optional `gate_confidence numeric`. Additive on `llm_metrics` (rides to 0066 clean schema). The
+  `gate_confidence numeric NULL`. Additive on `llm_metrics` (rides to 0066 clean schema). The
   0057 `verification_tier` (text-substring) is retained but **`gate_decision` is the authoritative
   publish signal** for marker-bearing rows.
+- **`gate_confidence` is ADVISORY (resolves Codex #2):** it does **not** influence the binary
+  publish/quarantine decision (the §4 checks alone do); it only **prioritizes the spot-review
+  sample** (e.g. grounding margin / co-location strength). The decision is reproducible without it.
+- **Index (Gemini):** the migration adds an index on `(gate_run_id, gate_decision)` so the
+  published view / product queries are performant.
 
-### 5.6 Published-data contract
-- A view (e.g. `published_metrics`) exposing only `gate_decision='publish'`, surfacing **slots**
-  (value, label, unit, value_ref, page/bbox) — not the raw `metric_text`. The org-detail product
-  surface reads this view (fixes the current all-tiers/`metric_text` leak).
+### 5.6 Published-data contract (exact — resolves Codex #3 / Gemini)
+- A view `lava_vocab.published_metrics` with a **fixed slot column set** (no `metric_text`):
+  `content_sha256, source_org_ein, metric_value, label, unit, geo_impact, value_ref, value_page,
+  value_bbox, value_row, value_col, gate_run_id`. Filter: `gate_decision='publish'`.
+- **Active-run only (Gemini #1):** the view surfaces decisions from the **latest gate_run_id per
+  extraction-run** (a row's most-recent gate decision), never an aggregate of all historical
+  `publish` verdicts. Define the active-run selection in the view (e.g. join to the max
+  `gate_run_id` for that source extraction run).
+- Nullability: coord columns may be NULL only when a published row is text-located (no cell);
+  `marker_resolved=true` is implied by publish (unmarked rows quarantine, §4.1).
+- The org-detail product surface reads this view (fixes the current all-tiers/`metric_text` leak).
 
 ### 5.7 Human spot-review + precision SLA (the bar)
-- A **stratified sample** of the published set (prose vs table-located; across orgs) is graded for
-  **right-number AND right-label**. The run is **not declared shippable** until the sample meets the
-  operator's SLA (a number — per-metric AND per-org; set in the plan). Automated publish ≠ trusted
-  until the spot-review holds. This gate also fronts any future scale (Phase 5).
+- An **OFFLINE evaluation (resolves Codex #4 / Gemini):** a stratified sample of the published set
+  (prose vs table-located; across orgs) is graded for **right-number AND right-label**. It
+  **measures** the run's precision; it does **NOT write per-metric corrections back** to
+  `gate_decision` in 0069 (a correction/override UI is a separate concern). 0069 ships the
+  **protocol + the measured number**; the SLA itself is a **named plan parameter**
+  (`PUBLISH_PRECISION_SLA`, per-metric AND per-org) the operator sets. The "shippable" judgment =
+  the measured sample precision ≥ the SLA — a documented, repeatable check, not a code branch.
 - **Quarantine triage:** bucket quarantine into recoverable-by-relabel, recoverable-by-vision,
   true-junk; report counts. Recoverable feeds the vision/0069-follow-up, not the publish set.
+
+### 5.8 Stale-coords boundary (resolves Codex #6)
+0069 **gates on what 0068 stored; it does NOT re-mark or re-resolve.** If a doc's re-rendered
+`idmap` no longer matches the stored `parse_version` (a re-parse shifted IDs), the metric →
+quarantine `stale_coords` (reported). Re-marking is **upstream** (a fresh 0068 run after re-parse),
+out of 0069's scope. Clean boundary: 0069 never silently re-derives coordinates.
 
 ## 6. Technical Implementation (reference)
 - Port `gate.py`/`pipeline.decide` to `lavandula/nlp/` (pure verifier + decision chain), reusing
@@ -150,13 +190,22 @@ false-quarantine is recoverable).
    publish/quarantine split + reason histogram are reported. Counts are reproducible (deterministic).
 3. `marker_resolved=false` rows → `quarantine/unmarked` (never published).
 4. The `published_metrics` view returns only publish rows, slot-shaped; org-detail reads it.
-5. **Human spot-review** of a stratified published sample meets the SLA (number set in plan);
-   right-number-AND-right-label measured, not asserted.
+5. **Spot-review protocol runs** on a stratified published sample and produces a *measured*
+   right-number-AND-right-label precision; the run is marked shippable iff that measure ≥
+   `PUBLISH_PRECISION_SLA` (named plan param). The protocol + the measurement are the testable
+   artifact; the threshold is config.
 6. Mispairs are quarantined, never auto-relabeled (no `gate_decision='publish'` row had its label
    changed by the gate).
 7. De-dup never drops a metric whose value+label is spatially distinct within the doc.
 8. CanCare/BGCSM fixtures: the publish set's metric *content* is unchanged vs the gate's research
    verdicts (no regression in the ported logic).
+9. **Idempotency:** re-running the gate for a `(gate_run_id, content_sha256)` is atomic
+   delete-then-insert — no duplicate or partial decisions.
+10. **View isolation:** with multi-run data, `published_metrics` returns only active-run publish
+    rows — never a quarantine row nor a superseded `gate_run_id`.
+11. **Determinism:** identical inputs → identical decisions AND identical reason histogram.
+12. **Stale coords:** a `parse_version` mismatch yields `quarantine/stale_coords`, never a decision
+    gated on stale text.
 
 ## 8. Security & Abuse Considerations
 - **Untrusted source text** (already in `idmap`) — the gate reads parsed text only; no model output
@@ -188,5 +237,35 @@ false-quarantine is recoverable).
 4. **`gate_decision` vs `verification_tier`** — keep both, or have the published view also require
    `verification_tier` not in the quarantine set.
 
+## 11. Spec-review resolutions (Gemini COMMENT + Codex REQUEST_CHANGES → all addressed)
+- Decision precedence (first-failure-wins, single reason) → §4. Pure-oracle vs production-policy
+  separation → §4. Measurable-check trust boundary (strict boolean, timeout, fail→quarantine) → §5.3.
+  De-dup concrete heuristic + keep-first → §5.4. `gate_confidence` advisory + index → §5.5.
+  Exact published view contract + active-run-only → §5.6. Spot-review = offline eval, SLA a named
+  param, no write-back → §5.7. Stale-coords boundary (quarantine, no re-resolve) → §5.8.
+  Idempotency/view-isolation/determinism/stale-coords tests → §7 AC9–12.
+
 ## Consultation Log
-(to be populated from spec-review + red-team-spec consults)
+
+### First Consultation (After Initial Draft)
+**Date**: 2026-06-17
+**Models Consulted**: Gemini (gemini-3-pro), Codex (GPT-5)
+**Commands**:
+```
+consult --model gemini --type spec-review spec 0069
+consult --model codex  --type spec-review spec 0069
+```
+**Key Feedback**: Gemini **COMMENT** (HIGH) — view multi-run state, index, de-dup keep-rule,
+spot-review write-back. Codex **REQUEST_CHANGES** (HIGH) — decision precedence, `gate_confidence`
+contract, exact view columns, spot-review testability, de-dup vagueness, stale-coords boundary,
+measurable-check trust boundary, missing idempotency/view/determinism tests, oracle-vs-policy scope.
+**All addressed** (§11 map).
+
+### Red Team Security Review (MANDATORY)
+**Date**: pending
+**Commands**:
+```
+consult --model gemini --type red-team-spec spec 0069
+consult --model codex  --type red-team-spec spec 0069
+```
+**Verdict**: pending
