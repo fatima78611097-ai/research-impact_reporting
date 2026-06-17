@@ -1028,9 +1028,24 @@ projects:
     notes: "Reserved 2026-06-16. Phase 2 of the metric-product execution plan — where 'fewer, highly accurate' metrics go live. Gates exist in research (comp-metric-regression: gate.py number-aware grounding, item1_nonmetric_rules, regroup/mispair) but run only because research feeds them coordinates; this wires them to production once 0068 supplies per-metric markers. Builds on/absorbs 0057 (faithfulness) and 0063 (union grounding)."
 ```
 
+```yaml
+  - id: "0070"
+    title: "Mispair Recovery + Vision (recover the premier / infographic metrics)"
+    summary: "Recover the metrics 0069 quarantines as mispairs/image-only — concentrated on designed/infographic pages where the org's HEADLINE metrics live. Two-path recovery cascade: (1) cheap text-regroup (column-major reorder + re-extract) for labels present-but-scrambled in text; (2) vision (Flash-Lite) reads the page image to recover the number+label the 2D layout encodes. Recovered metrics re-enter the publish path at the same grounding + spot-review bar."
+    status: conceived
+    priority: high
+    files:
+      spec: null
+      plan: null
+      review: null
+    dependencies: ["0069"]
+    tags: [vision, mispair, recovery, infographic, flash-lite, precision, metrics]
+    notes: "Reserved 2026-06-17. Phase 4 of the metric-product execution plan — the recovery half. Mispairs cluster on designed pages = premier metrics; 0069 quarantine = 'held for recovery' (triaged recoverable-by-vision/relabel). Cascade: 0069 quarantine -> text-regroup (regroup_gate.py validated 6/6, cheap) -> vision on the residual (Flash-Lite, GATE-ROUTED off quarantine + figure-density, NOT a standalone infographic detector per 0065's 28%-precision lesson). Expand the vision verified set (1 -> ~15-20) before publishing any image-only number. Also recovers 0068's 14 image-heavy quarantined docs + sizes the image-only recall gap (~42% ceiling, measure properly here). Supersedes abandoned VL2 vision (0065)."
+```
+
 ## Next Available Number
 
-**0070** - Reserve this number for your next project
+**0071** - Reserve this number for your next project
 
 ---
 
