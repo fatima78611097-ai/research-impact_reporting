@@ -1002,12 +1002,12 @@ projects:
   - id: "0068"
     title: "Coordinate Handoff (re-parse + per-metric source markers)"
     summary: "The linchpin: re-parse target documents so per-element coordinates are populated in lava_parse (the parser already produces them; only ~1% of rows have them today), and change the metric extractor to record a page+box source marker per metric (not just a verbatim quote), so the number-aware grounding gate can verify each value at its location on the page."
-    status: committed
+    status: integrated
     priority: high
     files:
       spec: locard/specs/0068-coordinate-handoff.md
       plan: locard/plans/0068-coordinate-handoff.md
-      review: null
+      review: locard/reviews/0068-coordinate-handoff.md
     dependencies: ["0066"]
     tags: [parse, coordinates, extraction, grounding, linchpin]
     notes: "Reserved 2026-06-16. Phase 1 of the metric-product execution plan — the make-or-break coordinate handoff parse->extractor->gate. Coordinates live in lava_parse.sections.source_locations / tables.cell_locations|bbox (real Docling boxes where present, ~1% populated). Re-parse must target 'coordinates empty' (all docs stamped docling-2.93.0 regardless of whether they have coords)."
