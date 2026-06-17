@@ -256,8 +256,8 @@
           <tr class="border-b hover:bg-gray-50">
             <td class="py-2">
               {{ m.metric_text }}
-              {% if m.source_snippet %}
-              <div class="text-xs text-gray-500 italic mt-1 bg-gray-50 p-2 rounded border-l-2 border-gray-300">&ldquo;{{ m.source_snippet }}&rdquo;</div>
+              {% if m.value_page %}
+              <div class="text-xs text-gray-400 mt-1">verified · p.{{ m.value_page }}{% if m.value_ref %} · {{ m.value_ref }}{% endif %}</div>
               {% endif %}
             </td>
             <td class="py-2 text-gray-600">{{ m.metric_type|default:"—" }}</td>

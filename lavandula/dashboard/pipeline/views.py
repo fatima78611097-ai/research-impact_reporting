@@ -1181,19 +1181,29 @@ class OrgDetailView(LoginRequiredMixin, DetailView):
         except OrgProvenance.DoesNotExist:
             ctx["provenance"] = None
 
-        # LLM-extracted metrics and stories (Spec 0051)
+        # LLM-extracted metrics and stories (Spec 0051; metrics repointed by Spec 0069).
+        # The org-detail surface now reads ONLY the verified-only slot view
+        # lava_vocab.published_metrics (gate_decision='publish') — no all-tiers / composed
+        # metric_text leak. Slot-based: the published label IS the display field.
         from django.db import connections
         try:
             with connections["default"].cursor() as cur:
                 cur.execute("""
-                    SELECT metric_text, metric_type, metric_value, unit, geo_impact,
-                           source_snippet, created_at
-                    FROM lava_vocab.llm_metrics
+                    SELECT label, metric_value, unit, geo_impact, value_ref, value_page
+                    FROM lava_vocab.published_metrics
                     WHERE source_org_ein = %s
                     ORDER BY metric_value DESC NULLS LAST
                 """, [ein])
                 columns = [col[0] for col in cur.description]
-                ctx["llm_metrics"] = [dict(zip(columns, row)) for row in cur.fetchall()]
+                pub = [dict(zip(columns, row)) for row in cur.fetchall()]
+                # Slot-based contract: the label IS the description; there is no composed
+                # metric_text or source_snippet. Provenance is the marker page (value_page).
+                ctx["llm_metrics"] = [
+                    {"metric_text": r["label"], "metric_value": r["metric_value"],
+                     "unit": r["unit"], "geo_impact": r["geo_impact"],
+                     "value_ref": r["value_ref"], "value_page": r["value_page"]}
+                    for r in pub
+                ]
 
                 cur.execute("""
                     SELECT story_title, story_summary, people_mentioned, program,

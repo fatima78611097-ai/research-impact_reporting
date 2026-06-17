@@ -1,0 +1,17 @@
+{
+  "description": "Frozen regression set for the Spec 0069 gate oracle (AC1/AC8). Each case is one marker (value_ref == subject_ref == 't0') with the given cell text. 'measured' is the small-int measurable signal (null = not checked). The oracle's verdict MUST match expect_decision/expect_reason on every case; CI runs test_0069_fixtures.py. Derived from comp-metric-regression/gate.py counterexamples.",
+  "cases": [
+    {"name": "spelled_out_grounds", "value": 5, "text": "Five clients served", "label": "clients served", "measured": true, "expect_decision": "publish", "expect_reason": "ok"},
+    {"name": "abbreviated_millions_grounds", "value": 4400000, "text": "raised $4.4 million", "label": "raised dollars", "measured": null, "expect_decision": "publish", "expect_reason": "ok"},
+    {"name": "rounded_precise_grounds", "value": 6841066, "text": "net assets $6,841,065.77", "label": "net assets", "measured": null, "expect_decision": "publish", "expect_reason": "ok"},
+    {"name": "comma_dollar_grounds", "value": 14884, "text": "served 14,884 individuals", "label": "individuals served reach", "measured": null, "expect_decision": "publish", "expect_reason": "ok"},
+    {"name": "parse_shatter_whitespace_grounds", "value": 14884, "text": "1 4, 884 individuals reached", "label": "individuals reached", "measured": null, "expect_decision": "publish", "expect_reason": "ok"},
+    {"name": "small_int_exact_token_grounds", "value": 9, "text": "operated 9 vans across the county", "label": "vans operated", "measured": true, "expect_decision": "publish", "expect_reason": "ok"},
+    {"name": "small_int_stray_digit_does_not_ground", "value": 1, "text": "spent $10,000 on supplies", "label": "supplies", "measured": true, "expect_decision": "quarantine", "expect_reason": "value_not_at_marker"},
+    {"name": "small_int_no_numeral_does_not_ground", "value": 2, "text": "second highest in the region", "label": "ranking", "measured": true, "expect_decision": "quarantine", "expect_reason": "value_not_at_marker"},
+    {"name": "efd61fea_trap_no_cross_join", "value": 111, "text": "11 individuals took 121 tours", "label": "tours", "measured": null, "expect_decision": "quarantine", "expect_reason": "value_not_at_marker"},
+    {"name": "ranking_small_int_not_a_metric", "value": 2, "text": "ranked 2 in the nation", "label": "national rank", "measured": false, "expect_decision": "quarantine", "expect_reason": "not_a_metric"},
+    {"name": "no_numeric_value", "value": "qualitative impact", "text": "a strong year of impact", "label": "impact", "measured": null, "expect_decision": "quarantine", "expect_reason": "no_numeric_value"},
+    {"name": "non_finite_out_of_bounds", "value": null, "text": "anything", "label": "x", "measured": null, "expect_decision": "quarantine", "expect_reason": "value_out_of_bounds", "value_is_inf": true}
+  ]
+}

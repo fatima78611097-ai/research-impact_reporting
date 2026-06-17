@@ -29,9 +29,17 @@ DOCLING_PARSE_ORCHESTRATOR: int = 0xD0C114
 # Used by lavandula.parse.worker at startup to verify single-worker invariant.
 DOCLING_PARSE_WORKER: int = 0xD0C115
 
+# Marker-grounded gate runner (Spec 0069) — serializes gating of one source
+# extraction-run. Used by lavandula.nlp.gate_runner: the lock id is derived per
+# source_run_id as (GATE_RUNNER_BASE + source_run_id) so concurrent runners on the
+# SAME source run block (no interleaved gate_run_id, no duplicate measurable-check
+# calls), while different source runs proceed in parallel.
+GATE_RUNNER_BASE: int = 0x6A7E00  # "GATE00"
+
 
 __all__ = [
     "BUDGET_LEDGER_RESERVE",
     "DOCLING_PARSE_ORCHESTRATOR",
     "DOCLING_PARSE_WORKER",
+    "GATE_RUNNER_BASE",
 ]
