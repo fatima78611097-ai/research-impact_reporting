@@ -1020,7 +1020,7 @@ projects:
     status: conceived
     priority: high
     files:
-      spec: null
+      spec: locard/specs/0069-precision-gates.md
       plan: null
       review: null
     dependencies: ["0068"]
