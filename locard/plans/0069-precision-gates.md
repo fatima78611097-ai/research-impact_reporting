@@ -48,8 +48,8 @@ vs a named SLA before the run is "shippable". Validate on the live `0068-markers
 | AC6 | Mispairs quarantined, never auto-relabeled | P2 | Unit | `test_0069_gate.py` |
 | AC7 | De-dup never drops a spatially-distinct value+label | P2 | Unit | `test_0069_dedup.py` |
 | AC8 | CanCare/BGCSM publish-set content unchanged vs research verdicts | P7 | Regression | `test_0069_fixtures.py` |
-| AC9 | Idempotent atomic delete-then-insert per `(gate_run_id, content_sha256)` | P4 | Integration | `test_0069_runner.py` |
-| AC10 | View isolation: multi-run data → only active-run publish rows | P5 | Integration | `test_0069_view.py` |
+| AC9 | Idempotent **atomic UPDATE** of `gate_*` per `(gate_run_id, content_sha256)` — re-run → same values; 0068 marker payload untouched | P4 | Integration | `test_0069_runner.py` |
+| AC10 | Re-gate updates the view to the new current decision; never a stale or quarantine row | P5 | Integration | `test_0069_view.py` |
 | AC11 | Determinism: identical inputs → identical decisions + reason histogram | P4 | Integration | `test_0069_runner.py` |
 | AC12 | `parse_version` mismatch → `quarantine/stale_coords` | P2/P4 | Unit+Integration | `test_0069_gate.py` |
 | S1 | `to_float` rejects NaN/Inf/overflow → `value_out_of_bounds`, no malformed DB write | P1 | Unit (adversarial) | `test_0069_gate.py` |
@@ -64,8 +64,13 @@ vs a named SLA before the run is "shippable". Validate on the live `0068-markers
 - With the operator: set `PUBLISH_PRECISION_SLA` (per-metric + per-org) and the spot-review sample
   size/stratification. Measure on `0068-markers-2026-06-17`: the prose-internal **de-dup rate**, and
   the **column-coherence false-flag rate** (decides whether mispair-detect ships or defers, §dec.4).
-- **Deliverable:** `locard/operations/0069-baselines.md` (frozen numbers + dataset hash).
-  **Acceptance:** SLA + sample + mispair-detect decision fixed with evidence.
+- **Column-coherence false-flag artifact (resolves Codex):** run `gate.column_guard` in
+  report-only mode over the 1,066 markers, hand-check a sample of its flags, and record the
+  measured **false-flag rate** in `0069-baselines.md`. **Ship the mispair column-detect iff
+  false-flag ≤ 20%**; else defer it to 0070 and rely on subject-grounding + spot-review. The
+  threshold + measured rate are the decision artifact.
+- **Deliverable:** `locard/operations/0069-baselines.md` (frozen numbers + dataset hash + the
+  false-flag measurement). **Acceptance:** SLA + sample + mispair-detect decision fixed with evidence.
 
 ### Phase 1 — Pure ported gate (oracle, TDD, regression-locked)
 - Port `gate.verdict` + helpers to `lavandula/nlp/` (pure, no DB/network). Add float
@@ -82,31 +87,50 @@ vs a named SLA before the run is "shippable". Validate on the live `0068-markers
 - **Acceptance:** AC3, AC6, AC7, AC12, S2.
 
 ### Phase 3 — Data-model migration (operator-run)
-- **Deliverable:** `lavandula/migrations/lava_vocab/0069_gate_decision.sql` (additive:
-  `gate_decision text`, `gate_reason text`, `gate_run_id integer`, `gate_confidence numeric`) +
-  index on `(gate_run_id, gate_decision)` + a `gate_runs` registry with **server-assigned monotonic
-  immutable id + created_at + provenance to the source extraction run** (S3) + rollback. Migration
-  smoke-test + 0066-transition note (columns ride to clean schema). **Operator applies.**
-- **Acceptance:** columns/index/registry present, defaults safe, smoke-test + rollback verified.
+- **Storage model (resolves Gemini #1 / Codex #1,#4):** gate decisions are **single-valued per
+  metric row** — the `gate_*` columns hold the metric's **current** decision; re-gating **UPDATEs**
+  them (no per-run decision rows, no delete/insert of metric rows). "Active run" is therefore
+  intrinsic — the column IS the current decision, so the published view needs **no run-join**. The
+  `gate_runs` registry is the **audit trail**; `gate_run_id` on the metric records which run last
+  wrote it.
+- **Deliverable:** `lavandula/migrations/lava_vocab/0069_gate_decision.sql` — additive columns on
+  `llm_metrics` (`gate_decision text`, `gate_reason text`, `gate_run_id integer`,
+  `gate_confidence numeric NULL`) + index `(gate_run_id, gate_decision)` + a `gate_runs` table
+  (monotonic `id` via identity/sequence — **server-assigned, not client-supplied**; `created_at`;
+  `source_run_id` FK; immutable) + rollback. Migration smoke-test + 0066-transition note (columns
+  ride to the clean schema). **Operator applies.**
+- **Acceptance:** columns/index/registry present, defaults safe, `gate_runs.id` monotonic +
+  server-assigned (no client id, no backdating), smoke-test + rollback verified.
 
 ### Phase 4 — Gate runner
-- Iterate a 0068 run's marker-bearing `llm_metrics`; re-render per doc via **0068 `marker_render`**;
-  run Phase-1 oracle + Phase-2 policies; write `gate_decision`/reason/confidence under a
-  server-assigned `gate_run_id`; **atomic delete-then-insert per `(gate_run_id, content_sha256)`**;
-  emit per-run report (publish/quarantine counts, reason histogram, **quarantine triage**:
-  recoverable-by-relabel / recoverable-by-vision / true-junk) + immutable audit to
-  `extraction_runs.stats_json`. Run on `0068-markers-2026-06-17`.
-- **Acceptance:** AC2, AC9, AC11.
+- Allocate a `gate_runs` row (server-assigned id). Iterate a 0068 run's marker-bearing
+  `llm_metrics`, **streaming/batching per doc** (re-render via 0068 `marker_render`; bounded memory
+  — Gemini #3); run Phase-1 oracle + Phase-2 policies; **UPDATE the `gate_*` columns in-place** on
+  the existing rows (`gate_decision`/reason/confidence/`gate_run_id`), **atomic per doc**.
+  **Idempotent:** re-gating overwrites the same `gate_*` values — no delete/insert, the 0068 marker
+  payload is never touched. Emit per-run report (publish/quarantine counts, reason histogram,
+  **quarantine triage**: recoverable-by-relabel / recoverable-by-vision / true-junk) + immutable
+  audit to `extraction_runs.stats_json`. Run on `0068-markers-2026-06-17`.
+- **Acceptance:** AC2, AC9 (idempotent atomic UPDATE), AC11.
 
 ### Phase 5 — Published view + product repoint
-- Create `lava_vocab.published_metrics` (exact slot columns, `gate_decision='publish'`,
-  active-run-only via the monotonic `gate_run_id`). Repoint the org-detail surface to read it.
-- **Acceptance:** AC4, AC10, S3.
+- Create `lava_vocab.published_metrics` = `SELECT content_sha256, source_org_ein, metric_value,
+  label, unit, geo_impact, value_ref, value_page, value_bbox, value_row, value_col, gate_run_id
+  FROM llm_metrics WHERE gate_decision='publish'` — **slot columns only, no `metric_text`**.
+  Active-run is intrinsic (single-column current decision, Phase 3) → no run-join. Repoint the
+  org-detail surface (`views.py` OrgDetailView) to read this view.
+- **Acceptance:** AC4 (publish-only, slot-shaped), AC10 (re-gate → view reflects the new current
+  decision, never a stale or quarantine row), S3.
 
 ### Phase 6 — Human spot-review + SLA gate
 - Freeze + hash a stratified sample of the published set; capture reviewer id+timestamp; store
   results append-only; compute right-number-AND-right-label precision; mark the run **shippable iff
   ≥ `PUBLISH_PRECISION_SLA`** (offline eval — no per-metric write-back).
+- **Storage + keying (resolves Codex):** the frozen sample manifest (sampled `llm_metrics.id` list
+  + a content hash) is a committed artifact
+  `locard/operations/0069-spotreview/<gate_run_id>-manifest.json`; review records are append-only in
+  a `gate_review` table keyed `(gate_run_id, metric_id, reviewer, reviewed_at)` — a new review is a
+  new row, never an overwrite.
 - **Acceptance:** AC5, S5; the measured number recorded.
 
 ### Phase 7 — Validate + lock regression
@@ -133,14 +157,21 @@ P5 (view+repoint) → P6 (spot-review) → P7 (validate+lock). P1∥P3; P2 after
 ## Consultation Log
 
 ### First Consultation (After Initial Draft)
-**Date**: pending
-**Models Consulted**: Gemini, Codex
+**Date**: 2026-06-17
+**Models Consulted**: Gemini (gemini-3-pro), Codex (GPT-5)
 **Commands**:
 ```
 consult --model gemini --type plan-review plan 0069
 consult --model codex  --type plan-review plan 0069
 ```
-**Key Feedback**: pending
+**Key Feedback**: Gemini **APPROVE** (HIGH) — idempotency should be **UPDATE-in-place** not
+delete/insert (0069 writes onto 0068's existing rows); mock the LLM boundary in tests; batch the
+re-render. Codex **COMMENT** (MEDIUM) — enumerate the exact published-view columns + run-selection;
+make the Phase-0 false-flag measurement a concrete artifact+threshold; specify where the spot-review
+manifest/records live + keying; state active-run as an enforced invariant. **All addressed**:
+Phase 3 single-column current-decision + `gate_runs` audit (server-assigned monotonic), Phase 4
+atomic UPDATE, Phase 5 exact view SQL (no run-join), Phase 0 false-flag artifact (ship iff ≤20%),
+Phase 6 manifest + `gate_review` keying.
 
 ### Red Team Security Review (MANDATORY)
 **Date**: pending
