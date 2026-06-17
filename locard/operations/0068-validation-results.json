@@ -1,0 +1,596 @@
+{
+  "docs": 117,
+  "AC1_resolvable_value_ref_rate": 0.8479,
+  "selected_metrics": 1243,
+  "resolvable_metrics": 1054,
+  "AC2_table_cell_coverage": 1.0,
+  "AC3_round_trip": 1.0,
+  "round_trip_sample": 1054,
+  "per_doc": [
+    {
+      "sha": "00f08fbec50d",
+      "selected": 10,
+      "resolvable": 10
+    },
+    {
+      "sha": "015893d4c3a1",
+      "selected": 10,
+      "resolvable": 10
+    },
+    {
+      "sha": "029625c61ba3",
+      "selected": 10,
+      "resolvable": 10
+    },
+    {
+      "sha": "02e329fb7478",
+      "selected": 10,
+      "resolvable": 10
+    },
+    {
+      "sha": "0405ab89d0aa",
+      "selected": 9,
+      "resolvable": 9
+    },
+    {
+      "sha": "040633b7a34f",
+      "selected": 12,
+      "resolvable": 12
+    },
+    {
+      "sha": "04b82d113f99",
+      "selected": 13,
+      "resolvable": 13
+    },
+    {
+      "sha": "072b705afccc",
+      "selected": 9,
+      "resolvable": 9
+    },
+    {
+      "sha": "09398d18059c",
+      "selected": 10,
+      "resolvable": 0
+    },
+    {
+      "sha": "09e9f2c23a57",
+      "selected": 10,
+      "resolvable": 9
+    },
+    {
+      "sha": "0c2bea9fb771",
+      "selected": 13,
+      "resolvable": 3
+    },
+    {
+      "sha": "0cca730e12c2",
+      "selected": 10,
+      "resolvable": 10
+    },
+    {
+      "sha": "1084c8827842",
+      "selected": 14,
+      "resolvable": 0
+    },
+    {
+      "sha": "10c67887e3fc",
+      "selected": 9,
+      "resolvable": 9
+    },
+    {
+      "sha": "128de6076393",
+      "selected": 11,
+      "resolvable": 11
+    },
+    {
+      "sha": "131309e30ccd",
+      "selected": 8,
+      "resolvable": 7
+    },
+    {
+      "sha": "18bb8c0fcdff",
+      "selected": 10,
+      "resolvable": 10
+    },
+    {
+      "sha": "1c0ad786b5a2",
+      "selected": 10,
+      "resolvable": 10
+    },
+    {
+      "sha": "210ddd96634a",
+      "selected": 10,
+      "resolvable": 9
+    },
+    {
+      "sha": "232cc3c2e4d0",
+      "selected": 13,
+      "resolvable": 12
+    },
+    {
+      "sha": "24e186550b6f",
+      "selected": 10,
+      "resolvable": 10
+    },
+    {
+      "sha": "2603dd2b6048",
+      "selected": 12,
+      "resolvable": 12
+    },
+    {
+      "sha": "26460fbabb46",
+      "selected": 10,
+      "resolvable": 8
+    },
+    {
+      "sha": "287485c18f77",
+      "selected": 8,
+      "resolvable": 8
+    },
+    {
+      "sha": "2995644abfc6",
+      "selected": 10,
+      "resolvable": 10
+    },
+    {
+      "sha": "2a075d2a74cd",
+      "selected": 12,
+      "resolvable": 12
+    },
+    {
+      "sha": "2ea6005fa391",
+      "selected": 9,
+      "resolvable": 9
+    },
+    {
+      "sha": "30a05d187c9b",
+      "selected": 12,
+      "resolvable": 2
+    },
+    {
+      "sha": "323b6e69a693",
+      "selected": 14,
+      "resolvable": 1
+    },
+    {
+      "sha": "3517ecdcbfe9",
+      "selected": 5,
+      "resolvable": 5
+    },
+    {
+      "sha": "36941d4078e7",
+      "selected": 10,
+      "resolvable": 10
+    },
+    {
+      "sha": "38c9a81d70c1",
+      "selected": 10,
+      "resolvable": 10
+    },
+    {
+      "sha": "4410eb049749",
+      "selected": 13,
+      "resolvable": 0
+    },
+    {
+      "sha": "4ad0b091ae5f",
+      "selected": 7,
+      "resolvable": 7
+    },
+    {
+      "sha": "4b310b24d768",
+      "selected": 5,
+      "resolvable": 5
+    },
+    {
+      "sha": "520af13c4a55",
+      "selected": 7,
+      "resolvable": 7
+    },
+    {
+      "sha": "5370f17ecdb7",
+      "selected": 11,
+      "resolvable": 11
+    },
+    {
+      "sha": "566885143af9",
+      "selected": 10,
+      "resolvable": 10
+    },
+    {
+      "sha": "590e8b9e2fb4",
+      "selected": 11,
+      "resolvable": 11
+    },
+    {
+      "sha": "5a23e2e50aba",
+      "selected": 10,
+      "resolvable": 10
+    },
+    {
+      "sha": "5b98b66f8692",
+      "selected": 14,
+      "resolvable": 14
+    },
+    {
+      "sha": "5d03563c5bea",
+      "selected": 7,
+      "resolvable": 7
+    },
+    {
+      "sha": "60e7220fd3aa",
+      "selected": 8,
+      "resolvable": 8
+    },
+    {
+      "sha": "617eea509f16",
+      "selected": 12,
+      "resolvable": 3
+    },
+    {
+      "sha": "646706344668",
+      "selected": 10,
+      "resolvable": 10
+    },
+    {
+      "sha": "65ead0799d44",
+      "selected": 9,
+      "resolvable": 8
+    },
+    {
+      "sha": "682c59596d39",
+      "selected": 11,
+      "resolvable": 9
+    },
+    {
+      "sha": "6b3b6732ccc9",
+      "selected": 8,
+      "resolvable": 8
+    },
+    {
+      "sha": "71709748dfe5",
+      "selected": 13,
+      "resolvable": 13
+    },
+    {
+      "sha": "759c9a9445c7",
+      "selected": 11,
+      "resolvable": 11
+    },
+    {
+      "sha": "760f9dc6bf11",
+      "selected": 11,
+      "resolvable": 11
+    },
+    {
+      "sha": "812657228353",
+      "selected": 12,
+      "resolvable": 12
+    },
+    {
+      "sha": "81480a7791c5",
+      "selected": 15,
+      "resolvable": 15
+    },
+    {
+      "sha": "82d111251b52",
+      "selected": 10,
+      "resolvable": 10
+    },
+    {
+      "sha": "8552b09e8199",
+      "selected": 15,
+      "resolvable": 15
+    },
+    {
+      "sha": "85a790f7e64e",
+      "selected": 12,
+      "resolvable": 12
+    },
+    {
+      "sha": "865fb62f4d7b",
+      "selected": 12,
+      "resolvable": 12
+    },
+    {
+      "sha": "875754c889e4",
+      "selected": 10,
+      "resolvable": 10
+    },
+    {
+      "sha": "88bfa5f45ad9",
+      "selected": 13,
+      "resolvable": 13
+    },
+    {
+      "sha": "8b5543a9636f",
+      "selected": 7,
+      "resolvable": 7
+    },
+    {
+      "sha": "8bf029616351",
+      "selected": 10,
+      "resolvable": 10
+    },
+    {
+      "sha": "8e1cf08b1fd1",
+      "selected": 11,
+      "resolvable": 11
+    },
+    {
+      "sha": "8eb7da058905",
+      "selected": 13,
+      "resolvable": 13
+    },
+    {
+      "sha": "8fc61bbdd2bd",
+      "selected": 12,
+      "resolvable": 1
+    },
+    {
+      "sha": "9255ab7eb2a6",
+      "selected": 10,
+      "resolvable": 10
+    },
+    {
+      "sha": "942cb64e7004",
+      "selected": 11,
+      "resolvable": 0
+    },
+    {
+      "sha": "95f2054c9ff4",
+      "selected": 8,
+      "resolvable": 8
+    },
+    {
+      "sha": "98433b184428",
+      "selected": 10,
+      "resolvable": 9
+    },
+    {
+      "sha": "98dd921dca1d",
+      "selected": 8,
+      "resolvable": 8
+    },
+    {
+      "sha": "9b354fedd206",
+      "selected": 10,
+      "resolvable": 10
+    },
+    {
+      "sha": "9cbd486d940d",
+      "selected": 9,
+      "resolvable": 6
+    },
+    {
+      "sha": "a00adaa5cec7",
+      "selected": 12,
+      "resolvable": 12
+    },
+    {
+      "sha": "a0b0fcf4331e",
+      "selected": 13,
+      "resolvable": 13
+    },
+    {
+      "sha": "a1072081a1ac",
+      "selected": 13,
+      "resolvable": 13
+    },
+    {
+      "sha": "a17a2fc38e79",
+      "selected": 13,
+      "resolvable": 4
+    },
+    {
+      "sha": "a5520e3e5200",
+      "selected": 10,
+      "resolvable": 4
+    },
+    {
+      "sha": "aff89f109b99",
+      "selected": 11,
+      "resolvable": 2
+    },
+    {
+      "sha": "b04b0d3ab815",
+      "selected": 12,
+      "resolvable": 0
+    },
+    {
+      "sha": "b2c74cc5f6b0",
+      "selected": 10,
+      "resolvable": 0
+    },
+    {
+      "sha": "b60a49eb6c24",
+      "selected": 12,
+      "resolvable": 12
+    },
+    {
+      "sha": "b9acbd60cd9c",
+      "selected": 3,
+      "resolvable": 2
+    },
+    {
+      "sha": "bdad09217d68",
+      "selected": 12,
+      "resolvable": 12
+    },
+    {
+      "sha": "c09c96c29659",
+      "selected": 11,
+      "resolvable": 11
+    },
+    {
+      "sha": "c5a26f2a91ed",
+      "selected": 15,
+      "resolvable": 15
+    },
+    {
+      "sha": "c729cbae6962",
+      "selected": 14,
+      "resolvable": 13
+    },
+    {
+      "sha": "cc947e2b3b1a",
+      "selected": 15,
+      "resolvable": 3
+    },
+    {
+      "sha": "ccb0dcadca0a",
+      "selected": 10,
+      "resolvable": 10
+    },
+    {
+      "sha": "ce7b337fed82",
+      "selected": 14,
+      "resolvable": 14
+    },
+    {
+      "sha": "d04d1475b14f",
+      "selected": 10,
+      "resolvable": 10
+    },
+    {
+      "sha": "d2e6b6ffc0e2",
+      "selected": 12,
+      "resolvable": 12
+    },
+    {
+      "sha": "d58e3d5b13eb",
+      "selected": 11,
+      "resolvable": 8
+    },
+    {
+      "sha": "da2ba72a146d",
+      "selected": 9,
+      "resolvable": 9
+    },
+    {
+      "sha": "dca5a82438d1",
+      "selected": 8,
+      "resolvable": 8
+    },
+    {
+      "sha": "dde8c2f3bb82",
+      "selected": 9,
+      "resolvable": 7
+    },
+    {
+      "sha": "e136ede419d5",
+      "selected": 10,
+      "resolvable": 10
+    },
+    {
+      "sha": "e2416d20a5dc",
+      "selected": 11,
+      "resolvable": 11
+    },
+    {
+      "sha": "e27aec13db0c",
+      "selected": 11,
+      "resolvable": 3
+    },
+    {
+      "sha": "e31d17df049e",
+      "selected": 11,
+      "resolvable": 11
+    },
+    {
+      "sha": "e3665a33e759",
+      "selected": 10,
+      "resolvable": 10
+    },
+    {
+      "sha": "e4a5b7131d93",
+      "selected": 13,
+      "resolvable": 13
+    },
+    {
+      "sha": "e4c31d31eb6b",
+      "selected": 10,
+      "resolvable": 10
+    },
+    {
+      "sha": "e5ec222118ae",
+      "selected": 9,
+      "resolvable": 9
+    },
+    {
+      "sha": "e6696bd93607",
+      "selected": 13,
+      "resolvable": 13
+    },
+    {
+      "sha": "e83840a484e6",
+      "selected": 10,
+      "resolvable": 9
+    },
+    {
+      "sha": "e90515cafa8c",
+      "selected": 12,
+      "resolvable": 12
+    },
+    {
+      "sha": "ea8261e8a207",
+      "selected": 12,
+      "resolvable": 12
+    },
+    {
+      "sha": "eb59b2dba7b7",
+      "selected": 10,
+      "resolvable": 10
+    },
+    {
+      "sha": "ebaed191b724",
+      "selected": 11,
+      "resolvable": 11
+    },
+    {
+      "sha": "ebb0bcfe373e",
+      "selected": 7,
+      "resolvable": 7
+    },
+    {
+      "sha": "ecd677efcf03",
+      "selected": 10,
+      "resolvable": 10
+    },
+    {
+      "sha": "ee3f949b117a",
+      "selected": 12,
+      "resolvable": 12
+    },
+    {
+      "sha": "f1169e89a3c1",
+      "selected": 10,
+      "resolvable": 10
+    },
+    {
+      "sha": "f11892466c77",
+      "selected": 8,
+      "resolvable": 7
+    },
+    {
+      "sha": "f5c6d27dc692",
+      "selected": 11,
+      "resolvable": 11
+    },
+    {
+      "sha": "f92248ef9fa5",
+      "selected": 11,
+      "resolvable": 11
+    },
+    {
+      "sha": "fb8f56bdd13a",
+      "selected": 11,
+      "resolvable": 11
+    },
+    {
+      "sha": "fe88f5bae5d9",
+      "selected": 12,
+      "resolvable": 12
+    }
+  ]
+}
