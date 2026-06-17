@@ -1017,11 +1017,11 @@ projects:
   - id: "0069"
     title: "Precision Gates to Production (grounding + is-a-metric + mispair + de-dup)"
     summary: "Wire the validated-but-stranded research gates onto the production short-slot extractor: number-aware grounding (value verbatim at its marker), is-a-metric reject rules, mispaired-label fix (coordinate re-pairing), and de-dup (collapse a metric appearing in both prose and infographic). Publish only what passes; quarantine the rest."
-    status: conceived
+    status: planned
     priority: high
     files:
       spec: locard/specs/0069-precision-gates.md
-      plan: null
+      plan: locard/plans/0069-precision-gates.md
       review: null
     dependencies: ["0068"]
     tags: [grounding, is-a-metric, mispair, dedup, precision, metrics]
