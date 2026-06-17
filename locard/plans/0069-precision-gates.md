@@ -57,6 +57,8 @@ vs a named SLA before the run is "shippable". Validate on the live `0068-markers
 | S3 | `gate_run_id` server-assigned monotonic immutable; backdated run can't become active | P3/P5 | Integration | `test_0069_view.py` |
 | S4 | Per-metric regex time-budget → `gate_timeout`, no hang on crafted input | P2 | Unit (adversarial) | `test_0069_gate.py` |
 | S5 | Spot-review sample frozen+hashed; reviewer id+timestamp; outputs append-only | P6 | Integration | `test_0069_spotreview.py` |
+| S6 | Product role REVOKEd from `llm_metrics`; org-detail reads ONLY `published_metrics` (no raw-field leak) | P5 | Integration | `test_0069_view.py` |
+| S7 | Concurrency: a second gate runner on the same `source_run_id` fails gracefully (advisory lock); no interleaved run | P4 | Integration | `test_0069_runner.py` |
 
 ## Phase Breakdown
 
@@ -111,7 +113,15 @@ vs a named SLA before the run is "shippable". Validate on the live `0068-markers
   payload is never touched. Emit per-run report (publish/quarantine counts, reason histogram,
   **quarantine triage**: recoverable-by-relabel / recoverable-by-vision / true-junk) + immutable
   audit to `extraction_runs.stats_json`. Run on `0068-markers-2026-06-17`.
-- **Acceptance:** AC2, AC9 (idempotent atomic UPDATE), AC11.
+- **Concurrency lock (Gemini HIGH):** acquire a Postgres **advisory lock keyed on `source_run_id`**
+  before processing (mirrors the parse-worker pattern); a concurrent run fails gracefully — no
+  interleaved `gate_run_id`, no duplicate DeepSeek measurable-check calls (cost/rate-limit).
+- **Parameterized writes (Gemini MEDIUM):** all UPDATEs use parameterized queries / safe ORM
+  constructs; **string interpolation banned** (`gate_reason` is a fixed enum, never reflected text).
+- **AC9 supersedes the spec (Codex):** spec §7 AC9 says "atomic delete-then-insert" (inherited from
+  0068's new-row pattern); 0069 **UPDATEs existing rows in place** — the plan's wording is
+  authoritative; the 0068 marker payload is never deleted.
+- **Acceptance:** AC2, AC9 (idempotent atomic UPDATE), AC11, **S7**.
 
 ### Phase 5 — Published view + product repoint
 - Create `lava_vocab.published_metrics` = `SELECT content_sha256, source_org_ein, metric_value,
@@ -119,8 +129,16 @@ vs a named SLA before the run is "shippable". Validate on the live `0068-markers
   FROM llm_metrics WHERE gate_decision='publish'` — **slot columns only, no `metric_text`**.
   Active-run is intrinsic (single-column current decision, Phase 3) → no run-join. Repoint the
   org-detail surface (`views.py` OrgDetailView) to read this view.
+- **Least-privilege GRANT/REVOKE (Gemini HIGH):** the migration MUST
+  `REVOKE ALL ON lava_vocab.llm_metrics FROM <product_role>` and
+  `GRANT SELECT ON lava_vocab.published_metrics TO <product_role>` — so an injection/logic flaw in
+  the product role can't read raw (quarantined) rows. Creating the view ≠ enforcing the boundary.
+- **Active-run enforcement invariant (Codex):** the runner only ever writes the **newest**
+  `gate_run_id` (monotonic from `gate_runs`); it MUST NOT overwrite a row's decision with an older
+  `gate_run_id` (enforced in the UPDATE predicate / a guard). So a stale run can never become the
+  effective publish set.
 - **Acceptance:** AC4 (publish-only, slot-shaped), AC10 (re-gate → view reflects the new current
-  decision, never a stale or quarantine row), S3.
+  decision, never a stale or quarantine row), S3, **S6**.
 
 ### Phase 6 — Human spot-review + SLA gate
 - Freeze + hash a stratified sample of the published set; capture reviewer id+timestamp; store
@@ -131,6 +149,10 @@ vs a named SLA before the run is "shippable". Validate on the live `0068-markers
   `locard/operations/0069-spotreview/<gate_run_id>-manifest.json`; review records are append-only in
   a `gate_review` table keyed `(gate_run_id, metric_id, reviewer, reviewed_at)` — a new review is a
   new row, never an overwrite.
+- **Reviewer authentication (Gemini MEDIUM):** the reviewer id is sourced from the authenticated
+  session/shell identity (`$USER` / Locard session), **not a spoofable CLI argument** — so a failing
+  run can't be rubber-stamped under a fake identity. (`gate_review`/`gate_runs` get a rotation/
+  archiving strategy in a future iteration — Gemini LOW.)
 - **Acceptance:** AC5, S5; the measured number recorded.
 
 ### Phase 7 — Validate + lock regression
@@ -174,10 +196,15 @@ atomic UPDATE, Phase 5 exact view SQL (no run-join), Phase 0 false-flag artifact
 Phase 6 manifest + `gate_review` keying.
 
 ### Red Team Security Review (MANDATORY)
-**Date**: pending
+**Date**: 2026-06-17
 **Commands**:
 ```
 consult --model gemini --type red-team-plan plan 0069
 consult --model codex  --type red-team-plan plan 0069
 ```
-**Verdict**: pending
+Gemini **REQUEST_CHANGES** (0 CRITICAL, 2 HIGH: view GRANT/REVOKE, runner concurrency lock; MEDIUM:
+parameterized writes, reviewer auth; LOW: log rotation). Codex **COMMENT** (AC9 supersession,
+active-run enforcement invariant, org-detail isolation test). **All addressed:** Phase 5 GRANT/REVOKE
++ active-run invariant + S6; Phase 4 advisory lock + parameterized + AC9-supersession note + S7;
+Phase 6 session-sourced reviewer id + rotation note.
+**Verdict**: APPROVE — all findings resolved; **0 unresolved CRITICAL**.
