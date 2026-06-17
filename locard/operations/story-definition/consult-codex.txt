@@ -1,0 +1,225 @@
+[general review]
+Model: codex
+
+============================================================
+PROMPT:
+============================================================
+Review this DRAFT definition of an 'impact story' for a nonprofit-report extraction pipeline. Context: we extract these stories at scale from published nonprofit annual/impact reports; the published unit is a verbatim span with provenance; a separate validated pipeline handles numeric metrics. Audience for the definition: an LLM extraction prompt + human adjudicators. Focus your review on: (1) completeness/ambiguity of the required elements; (2) the reject classes — missing classes, classes that will over-reject good human stories; (3) the 5 operator decision points — recommend a ruling for each with reasoning; (4) the PII posture (capture-all + flags, pseudonymize-at-publication) — risks we missed; (5) anything that will bite at 90k-document scale. Be specific and terse; numbered findings with severity.
+
+# Impact Story — Definition (DRAFT for operator session)
+
+*Drafted 2026-06-11 from the metric-definition playbook + 30-story recon (`recon-30.json`).
+Nothing here is locked until the operator rules on it.*
+
+## 1. Definition
+
+An **impact story** is a narrated account, present in the report, of a **specific change** experienced
+by an **identifiable beneficiary** (a person, family, group, or community — named or anonymous)
+**attributable to the organization's intervention**, complete enough to stand alone given only the
+org and report year.
+
+**Required elements (all four):**
+| element | meaning | example |
+|---|---|---|
+| Beneficiary | a specific who — "Vanesa", "a first-time client", "the Bergenview residents" | not "our clients" in general |
+| Intervention | what the org did for them | "FloCrit's Housing Department arranged…" |
+| Change | a before→after or concrete result for the beneficiary | "moved from shelter to permanent housing" |
+| Standalone | understandable with only org + year | no dangling references |
+
+**The published unit is the VERBATIM SPAN(S)** from the report (with location provenance), plus
+structured fields (title, beneficiary type, program, themes). Any model-written summary is a
+**derived field, labeled as such** — never the story of record. (Lesson from metrics: the rewrite
+step is where fabrication lives.)
+
+## 2. Rejection rules (not an impact story)
+
+| reject type | why | recon example |
+|---|---|---|
+| Program description | no specific beneficiary, no change — describes a service | "Ripple Support Group provides a safe space…" |
+| Donor / volunteer story | subject is the giver, not a beneficiary (separate class if product wants it) | "Tricia Hall organized a drive…" |
+| Org-capability narrative | the org is the protagonist (fund launched, building opened) | "Crisis Fund established during pandemic" |
+| Mission / appeal language | aspirational, no account of change | "Together we can…" |
+| Bare gratitude / praise quote | emotion without an account of change | caller "in tears to express gratitude" *(borderline — operator call)* |
+| Event recap | attendance/activities, no beneficiary arc | gala/walkathon recaps |
+| Statistics narrative | numbers in prose = METRIC territory, not story | "served 3,375 individuals…" |
+| Hypothetical / composite | not a real account (unless report labels it and we flag it) | "imagine a mother who…" |
+
+## 3. Operator decision points (the session agenda)
+
+1. **Bare gratitude/testimonial quotes** — story (thin), reject, or separate `testimonial` class?
+2. **Donor/volunteer stories** — reject outright, or capture as a separate class for the product?
+3. **Minimum substance** — is a 2-sentence account enough, or require a real arc?
+4. **Composite/illustrative stories** — reject, or include with an `illustrative` flag?
+5. **Beneficiary = community/place** ("the neighborhood got its grocery store back") — in or out?
+
+## 4. PII / consent (hardens into REQ-PROD on lock)
+
+- Stories naming real private individuals get a **`named_person` flag** at extraction.
+- Public interface policy decided separately (publish-as-is / anonymize / hold) — but the FLAG is
+  captured from day one; backfilling consent risk is not acceptable.
+- Minors referenced by name → automatic stricter class.
+
+## 5. Held (collected, not gating — the tier pattern)
+
+- **Emotional-resonance / quality scoring** — subjective; log a score, never gate or publish on it
+  until calibrated.
+- Theme taxonomy — collect freeform now, lock a vocabulary later from data.
+
+## 6. Validation plan (after lock)
+
+New prompt → dev-corpus run (165 docs) → vision-audit sample of the NEW output → story fixture +
+scorecard + suite checks (verbatim-span grounding is deterministic; the audit grades selection
+quality against this definition).
+
+============================================================
+[CODEX] Starting consultation...
+============================================================
+
+LLM model: <codex CLI default>
+warning: `--full-auto` is deprecated; use `--sandbox workspace-write` instead.
+OpenAI Codex v0.130.0
+--------
+workdir: /home/ubuntu/research
+model: gpt-5.4-mini
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR, /home/ubuntu/.codex/memories]
+reasoning effort: low
+reasoning summaries: none
+session id: 019eb81a-de76-79c3-8806-1394e7051c0a
+--------
+user
+Review this DRAFT definition of an 'impact story' for a nonprofit-report extraction pipeline. Context: we extract these stories at scale from published nonprofit annual/impact reports; the published unit is a verbatim span with provenance; a separate validated pipeline handles numeric metrics. Audience for the definition: an LLM extraction prompt + human adjudicators. Focus your review on: (1) completeness/ambiguity of the required elements; (2) the reject classes — missing classes, classes that will over-reject good human stories; (3) the 5 operator decision points — recommend a ruling for each with reasoning; (4) the PII posture (capture-all + flags, pseudonymize-at-publication) — risks we missed; (5) anything that will bite at 90k-document scale. Be specific and terse; numbered findings with severity.
+
+# Impact Story — Definition (DRAFT for operator session)
+
+*Drafted 2026-06-11 from the metric-definition playbook + 30-story recon (`recon-30.json`).
+Nothing here is locked until the operator rules on it.*
+
+## 1. Definition
+
+An **impact story** is a narrated account, present in the report, of a **specific change** experienced
+by an **identifiable beneficiary** (a person, family, group, or community — named or anonymous)
+**attributable to the organization's intervention**, complete enough to stand alone given only the
+org and report year.
+
+**Required elements (all four):**
+| element | meaning | example |
+|---|---|---|
+| Beneficiary | a specific who — "Vanesa", "a first-time client", "the Bergenview residents" | not "our clients" in general |
+| Intervention | what the org did for them | "FloCrit's Housing Department arranged…" |
+| Change | a before→after or concrete result for the beneficiary | "moved from shelter to permanent housing" |
+| Standalone | understandable with only org + year | no dangling references |
+
+**The published unit is the VERBATIM SPAN(S)** from the report (with location provenance), plus
+structured fields (title, beneficiary type, program, themes). Any model-written summary is a
+**derived field, labeled as such** — never the story of record. (Lesson from metrics: the rewrite
+step is where fabrication lives.)
+
+## 2. Rejection rules (not an impact story)
+
+| reject type | why | recon example |
+|---|---|---|
+| Program description | no specific beneficiary, no change — describes a service | "Ripple Support Group provides a safe space…" |
+| Donor / volunteer story | subject is the giver, not a beneficiary (separate class if product wants it) | "Tricia Hall organized a drive…" |
+| Org-capability narrative | the org is the protagonist (fund launched, building opened) | "Crisis Fund established during pandemic" |
+| Mission / appeal language | aspirational, no account of change | "Together we can…" |
+| Bare gratitude / praise quote | emotion without an account of change | caller "in tears to express gratitude" *(borderline — operator call)* |
+| Event recap | attendance/activities, no beneficiary arc | gala/walkathon recaps |
+| Statistics narrative | numbers in prose = METRIC territory, not story | "served 3,375 individuals…" |
+| Hypothetical / composite | not a real account (unless report labels it and we flag it) | "imagine a mother who…" |
+
+## 3. Operator decision points (the session agenda)
+
+1. **Bare gratitude/testimonial quotes** — story (thin), reject, or separate `testimonial` class?
+2. **Donor/volunteer stories** — reject outright, or capture as a separate class for the product?
+3. **Minimum substance** — is a 2-sentence account enough, or require a real arc?
+4. **Composite/illustrative stories** — reject, or include with an `illustrative` flag?
+5. **Beneficiary = community/place** ("the neighborhood got its grocery store back") — in or out?
+
+## 4. PII / consent (hardens into REQ-PROD on lock)
+
+- Stories naming real private individuals get a **`named_person` flag** at extraction.
+- Public interface policy decided separately (publish-as-is / anonymize / hold) — but the FLAG is
+  captured from day one; backfilling consent risk is not acceptable.
+- Minors referenced by name → automatic stricter class.
+
+## 5. Held (collected, not gating — the tier pattern)
+
+- **Emotional-resonance / quality scoring** — subjective; log a score, never gate or publish on it
+  until calibrated.
+- Theme taxonomy — collect freeform now, lock a vocabulary later from data.
+
+## 6. Validation plan (after lock)
+
+New prompt → dev-corpus run (165 docs) → vision-audit sample of the NEW output → story fixture +
+scorecard + suite checks (verbatim-span grounding is deterministic; the audit grades selection
+quality against this definition).
+warning: Codex's Linux sandbox uses bubblewrap and needs access to create user namespaces.
+codex
+1. **High** - The core definition is under-specified on whether the story must show an actual *outcome* versus merely a narrated *transition*. “Specific change” and “attributable to intervention” are too loose for LLM extraction: they will admit “attended the program” / “received support” / “felt empowered” cases that are not real impact, and they will also reject legitimate “prevented harm” or “maintained stability” stories. Tighten to require an observable beneficiary state change, avoided negative outcome, or sustained condition improvement, and define whether attribution can be explicit, implied, or only reported attribution language.
+
+2. **High** - `Bare gratitude / praise quote` is too broad as a reject class and will over-reject good human stories. Many strong report stories are delivered as a quote with a thin narrative wrapper, e.g. “I got housing and can see my kids again,” which is both gratitude and impact. Recommended ruling for decision point 1: **include as `impact_story` if the quote contains a beneficiary change plus intervention context; otherwise reject or route to `testimonial` only when the quote is pure sentiment**.
+
+3. **High** - `Program description` and `Event recap` are missing an important middle class: **service-delivery episodes with beneficiary change but weak narrative form**. Reports often say “participants attended training and left with new skills” or “families received groceries during the event.” These are not clean program descriptions, but they are also not classic stories. Without this class, the prompt will oscillate between over-rejecting legitimate stories and over-accepting bland activity summaries.
+
+4. **Medium** - `Statistics narrative` is too binary and will over-reject human-readable stories that include numbers as supporting detail. In nonprofit reports, the most common valid unit is a hybrid: one named person or group plus a count, dose, duration, or outcome metric. Recommend ruling: **do not reject just because numbers appear; reject only if the span is primarily aggregate reporting with no beneficiary-specific arc**.
+
+5. **High** - The operator decision points need explicit policy for **composite / illustrative stories** and **beneficiary = community/place** because those two are the main scale failures. Recommended rulings:
+   - Decision point 3, minimum substance: **require at least one beneficiary, one intervention, and one concrete change; no minimum sentence count**.
+   - Decision point 4, composite/illustrative: **exclude from `impact_story` unless explicitly labeled as illustrative in-report; if included, force an `illustrative` flag and keep separate from canonical stories**.
+   - Decision point 5, community/place beneficiaries: **include only when the report clearly treats the place as the beneficiary of an intervention and change is concrete; otherwise map to `program/community impact` instead of person-level story**.
+
+6. **Medium** - The PII posture is directionally right but incomplete. `named_person` alone will miss high-risk cases: children/relatives, home addresses, phone/email, school names, medical status, immigration status, arrest/incarceration history, abuse/survivor status, and small-community reidentification risk from role + location + program. Add flags for **minor`, `sensitive_attribute`, `contact_info`, `precise_location`, and `reidentification_risk`**, and define whether the published span is allowed to include any of these or must be redacted at publication.
+
+7. **Medium** - At 90k-document scale, the biggest operational risk is **boundary inconsistency**: the published unit is a verbatim span, but the current definition leaves span selection ambiguous when one paragraph contains both a valid story and surrounding setup/closer language. That will cause unstable extraction, poor adjudication agreement, and hard-to-debug drift. Add explicit span rules for whether to include introductory attribution, quotes, captions, headings, and trailing moral/appeal language, and require one canonical span per story unless a report truly contains multiple distinct story units.
+
+8. **Medium** - `Standalone` is useful but vague enough to create false negatives. Many valid stories rely on local context, pronouns, or prior sentence setup while still being intelligible to a human and usable downstream. Recommend changing this to: **“understandable without reading outside the report-year context, even if it retains pronouns or local references.”** Otherwise the prompt will over-reject concise report prose.
+
+9. **Low** - The reject taxonomy is missing a **“testimonial with no beneficiary change”** class distinct from `bare gratitude`. That matters because adjudicators need a place to put quote-heavy passages that are emotionally rich but non-impactive. Without it, they will drift between `impact_story` and `donor/appeal` labels. This is also the cleanest home for decision point 1 if you want a separate class.
+
+10. **Low** - The definition should explicitly state whether the story must be **presented by the report as true**, not hypothetical, staged, or forward-looking. You mention hypothetical/composite, but not newsroom-style “wouldn’t it be nice” or future-tense “will help” passages. At 90k scale, those will leak in unless you make the tense / evidentiary requirement explicit.
+
+Recommended operator rulings, condensed:
+- Bare gratitude: **include only if it also states a real change; otherwise separate `testimonial` or reject**.
+- Donor/volunteer stories: **separate class if useful; do not mix into impact_story**.
+- Minimum substance: **one beneficiary + one intervention + one concrete change; sentence count irrelevant**.
+- Composite/illustrative: **reject unless explicitly labeled; if included, tag `illustrative`**.
+- Community/place beneficiary: **include when the place is the clear beneficiary of a concrete intervention/change; otherwise exclude**.
+
+If you want, I can turn this into a tightened redline of the definition with exact replacement wording for the ambiguous clauses.
+tokens used
+16,570
+1. **High** - The core definition is under-specified on whether the story must show an actual *outcome* versus merely a narrated *transition*. “Specific change” and “attributable to intervention” are too loose for LLM extraction: they will admit “attended the program” / “received support” / “felt empowered” cases that are not real impact, and they will also reject legitimate “prevented harm” or “maintained stability” stories. Tighten to require an observable beneficiary state change, avoided negative outcome, or sustained condition improvement, and define whether attribution can be explicit, implied, or only reported attribution language.
+
+2. **High** - `Bare gratitude / praise quote` is too broad as a reject class and will over-reject good human stories. Many strong report stories are delivered as a quote with a thin narrative wrapper, e.g. “I got housing and can see my kids again,” which is both gratitude and impact. Recommended ruling for decision point 1: **include as `impact_story` if the quote contains a beneficiary change plus intervention context; otherwise reject or route to `testimonial` only when the quote is pure sentiment**.
+
+3. **High** - `Program description` and `Event recap` are missing an important middle class: **service-delivery episodes with beneficiary change but weak narrative form**. Reports often say “participants attended training and left with new skills” or “families received groceries during the event.” These are not clean program descriptions, but they are also not classic stories. Without this class, the prompt will oscillate between over-rejecting legitimate stories and over-accepting bland activity summaries.
+
+4. **Medium** - `Statistics narrative` is too binary and will over-reject human-readable stories that include numbers as supporting detail. In nonprofit reports, the most common valid unit is a hybrid: one named person or group plus a count, dose, duration, or outcome metric. Recommend ruling: **do not reject just because numbers appear; reject only if the span is primarily aggregate reporting with no beneficiary-specific arc**.
+
+5. **High** - The operator decision points need explicit policy for **composite / illustrative stories** and **beneficiary = community/place** because those two are the main scale failures. Recommended rulings:
+   - Decision point 3, minimum substance: **require at least one beneficiary, one intervention, and one concrete change; no minimum sentence count**.
+   - Decision point 4, composite/illustrative: **exclude from `impact_story` unless explicitly labeled as illustrative in-report; if included, force an `illustrative` flag and keep separate from canonical stories**.
+   - Decision point 5, community/place beneficiaries: **include only when the report clearly treats the place as the beneficiary of an intervention and change is concrete; otherwise map to `program/community impact` instead of person-level story**.
+
+6. **Medium** - The PII posture is directionally right but incomplete. `named_person` alone will miss high-risk cases: children/relatives, home addresses, phone/email, school names, medical status, immigration status, arrest/incarceration history, abuse/survivor status, and small-community reidentification risk from role + location + program. Add flags for **minor`, `sensitive_attribute`, `contact_info`, `precise_location`, and `reidentification_risk`**, and define whether the published span is allowed to include any of these or must be redacted at publication.
+
+7. **Medium** - At 90k-document scale, the biggest operational risk is **boundary inconsistency**: the published unit is a verbatim span, but the current definition leaves span selection ambiguous when one paragraph contains both a valid story and surrounding setup/closer language. That will cause unstable extraction, poor adjudication agreement, and hard-to-debug drift. Add explicit span rules for whether to include introductory attribution, quotes, captions, headings, and trailing moral/appeal language, and require one canonical span per story unless a report truly contains multiple distinct story units.
+
+8. **Medium** - `Standalone` is useful but vague enough to create false negatives. Many valid stories rely on local context, pronouns, or prior sentence setup while still being intelligible to a human and usable downstream. Recommend changing this to: **“understandable without reading outside the report-year context, even if it retains pronouns or local references.”** Otherwise the prompt will over-reject concise report prose.
+
+9. **Low** - The reject taxonomy is missing a **“testimonial with no beneficiary change”** class distinct from `bare gratitude`. That matters because adjudicators need a place to put quote-heavy passages that are emotionally rich but non-impactive. Without it, they will drift between `impact_story` and `donor/appeal` labels. This is also the cleanest home for decision point 1 if you want a separate class.
+
+10. **Low** - The definition should explicitly state whether the story must be **presented by the report as true**, not hypothetical, staged, or forward-looking. You mention hypothetical/composite, but not newsroom-style “wouldn’t it be nice” or future-tense “will help” passages. At 90k scale, those will leak in unless you make the tense / evidentiary requirement explicit.
+
+Recommended operator rulings, condensed:
+- Bare gratitude: **include only if it also states a real change; otherwise separate `testimonial` or reject**.
+- Donor/volunteer stories: **separate class if useful; do not mix into impact_story**.
+- Minimum substance: **one beneficiary + one intervention + one concrete change; sentence count irrelevant**.
+- Composite/illustrative: **reject unless explicitly labeled; if included, tag `illustrative`**.
+- Community/place beneficiary: **include when the place is the clear beneficiary of a concrete intervention/change; otherwise exclude**.
+
+If you want, I can turn this into a tightened redline of the definition with exact replacement wording for the ambiguous clauses.
+
+[codex completed in 14.8s]

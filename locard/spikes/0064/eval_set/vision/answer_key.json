@@ -1,0 +1,1760 @@
+[
+ {
+  "sha": "42601e39a5adfc34f25f2deb80a7117ee33a6747198385bae6c5a185c4ff4bbf",
+  "page": 2,
+  "kind": "recovery",
+  "band": "severe",
+  "classification": "annual",
+  "done": true,
+  "true_metrics": [
+   {
+    "statement": "Mercy's Gate's housing assistance impacted 1,131 people in the community in 2021.",
+    "value": "1131",
+    "label": "housing people impacted",
+    "origin": "draft"
+   },
+   {
+    "statement": "Mercy's Gate's utilities assistance impacted 1,337 people in the community in 2021.",
+    "value": "1337",
+    "label": "utilities people impacted",
+    "origin": "draft"
+   },
+   {
+    "statement": "Mercy's Gate's medical assistance impacted 1,214 people in the community in 2021.",
+    "value": "1214",
+    "label": "medical people impacted",
+    "origin": "draft"
+   },
+   {
+    "statement": "Mercy's Gate's clothing assistance impacted 1,731 people in the community in 2021.",
+    "value": "1731",
+    "label": "clothing people impacted",
+    "origin": "draft"
+   },
+   {
+    "statement": "Mercy's Gate's transportation assistance impacted 2,367 people in the community in 2021.",
+    "value": "2367",
+    "label": "transportation people impacted",
+    "origin": "draft"
+   },
+   {
+    "statement": "Mercy's Gate's food pantry assistance impacted 15,030 people in the community in 2021.",
+    "value": "15030",
+    "label": "food pantry people impacted",
+    "origin": "draft"
+   },
+   {
+    "statement": "Mercy's Gate's volunteer income tax assistance impacted 1,691 people in the community in 2021.",
+    "value": "1691",
+    "label": "VITA people impacted",
+    "origin": "draft"
+   },
+   {
+    "statement": "Mercy's Gate's Thanksgiving meal baskets impacted 1,898 people in the community in 2021.",
+    "value": "1898",
+    "label": "Thanksgiving baskets people impacted",
+    "origin": "draft"
+   },
+   {
+    "statement": "Mercy's Gate's backpack bash impacted 371 people in the community in 2021.",
+    "value": "371",
+    "label": "backpack bash people impacted",
+    "origin": "draft"
+   },
+   {
+    "statement": "Mercy's Gate's bibles, coats, and child kits program impacted 1,207 people in the community in 2021.",
+    "value": "1207",
+    "label": "bibles/coats/kits impacted",
+    "origin": "draft"
+   },
+   {
+    "statement": "In 2021, Mercy's Gate was able to impact 28,132 people's lives in the community.",
+    "value": "28132",
+    "label": "total community impact",
+    "origin": "draft"
+   }
+  ]
+ },
+ {
+  "sha": "2162c0deea69c0cc661476a8e38b0717859ae4e2b9876a28306ed99cb79d22f1",
+  "page": 1,
+  "kind": "recovery",
+  "band": "severe",
+  "classification": "annual",
+  "done": true,
+  "true_metrics": [
+   {
+    "statement": "Mercy's Gate provided Housing Assistance impacting 1,426 people in the community in 2022.",
+    "value": "1426",
+    "label": "housing assistance people impacted",
+    "origin": "draft"
+   },
+   {
+    "statement": "Mercy's Gate provided Utility Assistance impacting 615 people in the community in 2022.",
+    "value": "615",
+    "label": "utility assistance people impacted",
+    "origin": "draft"
+   },
+   {
+    "statement": "Mercy's Gate provided Medical Assistance impacting 1,158 people in the community in 2022.",
+    "value": "1158",
+    "label": "medical assistance people impacted",
+    "origin": "draft"
+   },
+   {
+    "statement": "Mercy's Gate provided Household and Clothing Assistance impacting 1,982 people in the community in 2022.",
+    "value": "1982",
+    "label": "household/clothing assistance people impacted",
+    "origin": "draft"
+   },
+   {
+    "statement": "Mercy's Gate provided Transportation Assistance impacting 3,034 people in the community in 2022.",
+    "value": "3034",
+    "label": "transportation assistance people impacted",
+    "origin": "draft"
+   },
+   {
+    "statement": "Mercy's Gate's food pantry assistance impacted 11,755 people in the community in 2022.",
+    "value": "11755",
+    "label": "food pantry people impacted",
+    "origin": "draft"
+   },
+   {
+    "statement": "Mercy's Gate provided Prayer and Counseling impacting 1,243 people in the community in 2022.",
+    "value": "1243",
+    "label": "prayer/counseling people impacted",
+    "origin": "draft"
+   },
+   {
+    "statement": "Mercy's Gate's The Hope of the Gospel program impacted 485 people in the community in 2022.",
+    "value": "485",
+    "label": "hope of the gospel people impacted",
+    "origin": "draft"
+   },
+   {
+    "statement": "Mercy's Gate provided Community Referrals impacting 657 people in the community in 2022.",
+    "value": "657",
+    "label": "community referrals people impacted",
+    "origin": "draft"
+   },
+   {
+    "statement": "Mercy's Gate provided Seasonal Services impacting 4,772 people in the community in 2022.",
+    "value": "4772",
+    "label": "seasonal services people impacted",
+    "origin": "draft"
+   },
+   {
+    "statement": "Mercy's Gate provided Additional Services impacting 2,520 people in the community in 2022.",
+    "value": "2520",
+    "label": "additional services people impacted",
+    "origin": "draft"
+   },
+   {
+    "statement": "Mercy's Gate was able to impact 29,647 people in the community in 2022 through all its programs combined.",
+    "value": "29647",
+    "label": "total community impact",
+    "origin": "draft"
+   }
+  ]
+ },
+ {
+  "sha": "04ffe1c4f24efd73d9cca73537fe2b7c61fb763d6159c5e1234929fac3b65926",
+  "page": 1,
+  "kind": "recovery",
+  "band": "severe",
+  "classification": "impact",
+  "done": true,
+  "true_metrics": [
+   {
+    "statement": "Olympic Peninsula YMCA provided $577,000 in membership support for individuals and families with financial need in 2025.",
+    "value": "577000",
+    "label": "membership financial support",
+    "origin": "draft"
+   },
+   {
+    "statement": "Olympic Peninsula YMCA served 15,188 individuals across its Membership and Wellness programs in 2025.",
+    "value": "15188",
+    "label": "members and wellness participants",
+    "origin": "draft"
+   },
+   {
+    "statement": "Olympic Peninsula YMCA had 465 youth enrollments in after school, preschool, and camp programs in 2025.",
+    "value": "465",
+    "label": "youth program enrollments",
+    "origin": "draft"
+   },
+   {
+    "statement": "Olympic Peninsula YMCA recorded 24,700 visits to the Y each month in 2025.",
+    "value": "24700",
+    "label": "monthly visits",
+    "origin": "draft"
+   },
+   {
+    "statement": "Olympic Peninsula YMCA had 1,026 enrollments in Safety Around Water classes and swim lessons in 2025.",
+    "value": "1026",
+    "label": "swim/water safety enrollments",
+    "origin": "draft"
+   },
+   {
+    "statement": "Olympic Peninsula YMCA offered 85+ Group Exercise classes each week in 2025.",
+    "value": "85",
+    "label": "weekly group exercise classes",
+    "origin": "draft"
+   },
+   {
+    "statement": "Olympic Peninsula YMCA distributed healthy groceries to over 350 families in Jefferson County in 2025.",
+    "value": "350",
+    "label": "families receiving groceries",
+    "origin": "draft"
+   },
+   {
+    "statement": "Olympic Peninsula YMCA provided 23,000 meals + 4,500 snacks in 2025.",
+    "value": "23000",
+    "label": "meals provided",
+    "origin": "draft"
+   },
+   {
+    "statement": "Olympic Peninsula YMCA had 587 kids participate in YMCA youth sports in 2025.",
+    "value": "587",
+    "label": "youth sports participants",
+    "origin": "draft"
+   },
+   {
+    "statement": "Olympic Peninsula YMCA had 296 6th-8th graders enrolled in free Middle School membership in 2025.",
+    "value": "296",
+    "label": "free middle school members",
+    "origin": "draft"
+   },
+   {
+    "statement": "Olympic Peninsula YMCA served 175 Clallam and Jefferson County families with resource navigation in 2025.",
+    "value": "175",
+    "label": "families receiving resource navigation",
+    "origin": "draft"
+   },
+   {
+    "statement": "17 individuals with Parkinson's Disease participated in the Rock Steady Boxing program in 2025.",
+    "value": "17",
+    "label": "Parkinson's boxing participants",
+    "origin": "draft"
+   },
+   {
+    "statement": "Olympic Peninsula YMCA provided $145,000 in financial support for individuals and families for program participation in 2025.",
+    "value": "145000",
+    "label": "financial support for programs",
+    "origin": "draft"
+   },
+   {
+    "statement": "Active adults hiked 630+ miles in outdoor excursion programs in 2025.",
+    "value": "630",
+    "label": "outdoor excursion miles hiked",
+    "origin": "draft"
+   }
+  ]
+ },
+ {
+  "sha": "f92248ef9fa5d0676a6b957f14aecc1cbda62df28f2df7620c45a22a9b9c7f1f",
+  "page": 2,
+  "kind": "recovery",
+  "band": "severe",
+  "classification": "annual",
+  "done": true,
+  "true_metrics": [
+   {
+    "statement": "206 volunteers contributed 5,886 hours of time in 2021.",
+    "value": "5886",
+    "label": "volunteer hours",
+    "origin": "draft"
+   },
+   {
+    "statement": "63,791 pounds of produce and bread were distributed at Breadbasket Food Pantry in 2021.",
+    "value": "63791",
+    "label": "pounds of food distributed",
+    "origin": "draft"
+   },
+   {
+    "statement": "331 neighbors were enrolled in health coverage, food assistance, and basic needs programs in 2021.",
+    "value": "331",
+    "label": "neighbors enrolled",
+    "origin": "draft"
+   },
+   {
+    "statement": "The Allen Farmers Market drew 18,000 patrons in 2021.",
+    "value": "18000",
+    "label": "farmers market patrons",
+    "origin": "draft"
+   },
+   {
+    "statement": "69 food entrepreneurs have started their business in the ANC Kitchens in the last 6 years.",
+    "value": "69",
+    "label": "food entrepreneurs",
+    "origin": "draft"
+   },
+   {
+    "statement": "The Food Hub had gross sales of $830,553 since 2015.",
+    "value": "830553",
+    "label": "Food Hub gross sales",
+    "origin": "draft"
+   },
+   {
+    "statement": "128 Market Walk participants walked 2,644 miles during the summer.",
+    "value": "2644",
+    "label": "Market Walk miles",
+    "origin": "draft"
+   },
+   {
+    "statement": "117 neighbors attended 9 workshops at the Hunter Park GardenHouse in 2021.",
+    "value": "117",
+    "label": "GardenHouse attendees",
+    "origin": "draft"
+   }
+  ]
+ },
+ {
+  "sha": "7db4fcbb9fdfb8807f02160d401054f4c045cf4083f04cf7049386ebf7296260",
+  "page": 7,
+  "kind": "recovery",
+  "band": "severe",
+  "classification": "annual",
+  "done": true,
+  "true_metrics": [
+   {
+    "statement": "The organization trained 2,942 oral disciple-makers in 2011.",
+    "value": "2942",
+    "label": "oral disciple-makers 2011",
+    "origin": "draft"
+   },
+   {
+    "statement": "5,421 people have been trained in oral disciple-making since 2009.",
+    "value": "5421",
+    "label": "total trained since 2009",
+    "origin": "draft"
+   },
+   {
+    "statement": "The organization laid 187,122 feet of pipe for water access in 2011.",
+    "value": "187122",
+    "label": "feet of pipe laid",
+    "origin": "draft"
+   },
+   {
+    "statement": "The Advent Conspiracy gift cards campaign raised $320,930 in 2011.",
+    "value": "320930",
+    "label": "Advent Conspiracy raised",
+    "origin": "draft"
+   },
+   {
+    "statement": "The organization raised $786,668 for work in Ethiopia in 2011.",
+    "value": "786668",
+    "label": "Ethiopia funds raised",
+    "origin": "draft"
+   },
+   {
+    "statement": "The organization's Facebook like growth in 2011 was 5,081 to 25,106.",
+    "value": "25106",
+    "label": "lives impacted",
+    "origin": "draft"
+   },
+   {
+    "statement": "The organization partnered with churches and pastors in 15 countries.",
+    "value": "15",
+    "label": "countries partnering",
+    "origin": "draft"
+   },
+   {
+    "statement": "The organization's Twitter follower growth in 2011 was 3,456 to 6,297.",
+    "value": "",
+    "label": "",
+    "origin": "added"
+   }
+  ]
+ },
+ {
+  "sha": "6e967b2a4d02d0cc5a22e2d1dd724e5c46fe3d83abf7d9fd4f2afdcce2eb2c56",
+  "page": 4,
+  "kind": "recovery",
+  "band": "severe",
+  "classification": "annual",
+  "done": true,
+  "true_metrics": [
+   {
+    "statement": "Life On Wheels volunteers contributed 12,138 volunteer hours in 2024.",
+    "value": "12138",
+    "label": "volunteer hours in 2024",
+    "origin": "draft"
+   },
+   {
+    "statement": "Life On Wheels had a total of 109 volunteers in 2024.",
+    "value": "109",
+    "label": "total volunteers",
+    "origin": "draft"
+   },
+   {
+    "statement": "Life On Wheels volunteers provided 531 days of service in 2024.",
+    "value": "531",
+    "label": "days of service",
+    "origin": "draft"
+   }
+  ]
+ },
+ {
+  "sha": "2a781d91a6712fe87990ae49b54dbcb5f515d9ed8064a2b82598563765fce7a0",
+  "page": 15,
+  "kind": "recovery",
+  "band": "severe",
+  "classification": "annual",
+  "done": true,
+  "true_metrics": [
+   {
+    "statement": "The Night of Hope program served 1,182 families and 3,206 kids in 2014.",
+    "value": "1182",
+    "label": "2014 families",
+    "origin": "draft"
+   },
+   {
+    "statement": "The Night of Hope program served 1,389 families and 3,465 kids in 2015.",
+    "value": "1389",
+    "label": "2015 families",
+    "origin": "draft"
+   },
+   {
+    "statement": "The Night of Hope program served 1,542 families and 3,776 kids in 2016.",
+    "value": "1542",
+    "label": "2016 families",
+    "origin": "draft"
+   },
+   {
+    "statement": "The Night of Hope program served 1,642 families and 4,242 kids in 2017.",
+    "value": "1642",
+    "label": "2017 families",
+    "origin": "draft"
+   }
+  ]
+ },
+ {
+  "sha": "d1f6abc2d00b797321d1bae65e10e4980097b2df4763bcda16ef08b9cdf8d4c9",
+  "page": 2,
+  "kind": "recovery",
+  "band": "severe",
+  "classification": "annual",
+  "done": true,
+  "true_metrics": []
+ },
+ {
+  "sha": "959c06798d096d1176a06e3fc194666651ea1e22b2452c5e832fc266084d06ae",
+  "page": 8,
+  "kind": "recovery",
+  "band": "severe",
+  "classification": "annual",
+  "done": true,
+  "true_metrics": []
+ },
+ {
+  "sha": "2a781d91a6712fe87990ae49b54dbcb5f515d9ed8064a2b82598563765fce7a0",
+  "page": 14,
+  "kind": "recovery",
+  "band": "severe",
+  "classification": "annual",
+  "done": true,
+  "true_metrics": [
+   {
+    "statement": "The Night of Hope program served 263 families and 1,166 kids in 2009.",
+    "value": "263",
+    "label": "2009 families",
+    "origin": "draft"
+   },
+   {
+    "statement": "The Night of Hope program served 667 families and 2,218 kids in 2010.",
+    "value": "667",
+    "label": "2010 families",
+    "origin": "draft"
+   },
+   {
+    "statement": "The Night of Hope program served 673 families and 2,911 kids in 2011.",
+    "value": "673",
+    "label": "2011 families",
+    "origin": "draft"
+   },
+   {
+    "statement": "The Night of Hope program served 753 families and 2,915 kids in 2012.",
+    "value": "753",
+    "label": "2012 families",
+    "origin": "draft"
+   },
+   {
+    "statement": "The Night of Hope program served 1,021 families and 3,002 kids in 2013.",
+    "value": "1021",
+    "label": "2013 families",
+    "origin": "draft"
+   }
+  ]
+ },
+ {
+  "sha": "e551f65ea2962479d484e1592ac783fb9b1c9807d934c8a1c6eb7380dedf0ffd",
+  "page": 5,
+  "kind": "recovery",
+  "band": "severe",
+  "classification": "annual",
+  "done": true,
+  "true_metrics": [
+   {
+    "statement": "66 cancer survivors received help recovering from treatment through the LIVESTRONG program at the Downtown South Bend YMCA.",
+    "value": "66",
+    "label": "cancer survivors served",
+    "origin": "draft"
+   },
+   {
+    "statement": "900 StayStrong connections were made through the LIVESTRONG program at the Downtown South Bend YMCA.",
+    "value": "900",
+    "label": "StayStrong connections",
+    "origin": "draft"
+   },
+   {
+    "statement": "$45,415 was raised by Golf Classic and Hope Grows to support the LIVESTRONG program.",
+    "value": "45415",
+    "label": "Golf Classic raised",
+    "origin": "draft"
+   }
+  ]
+ },
+ {
+  "sha": "d4387c602ebc6ab660f47e43fdc3b71bc394e7c2c8bdb737670734a8fc54ac24",
+  "page": 4,
+  "kind": "recovery",
+  "band": "severe",
+  "classification": "annual",
+  "done": true,
+  "true_metrics": [
+   {
+    "statement": "The organization if marking 50 years of Changing Lives",
+    "value": "50",
+    "label": "years of changing lives",
+    "origin": "added"
+   }
+  ]
+ },
+ {
+  "sha": "bad2c36c63950da4f5c4b089f369576dda63194cf81249283736f180375c76ed",
+  "page": 1,
+  "kind": "recovery",
+  "band": "severe",
+  "classification": "impact",
+  "done": true,
+  "true_metrics": [
+   {
+    "statement": "Southeast Ventura County YMCA had 6,631 total family memberships in 2024.",
+    "value": "6631",
+    "label": "total memberships",
+    "origin": "draft"
+   },
+   {
+    "statement": "Southeast Ventura County YMCA served 15,915 individual members in 2024.",
+    "value": "15915",
+    "label": "individual members served",
+    "origin": "draft"
+   },
+   {
+    "statement": "Southeast Ventura County YMCA Group X Fitness Classes served 1,764 members per week in 2024.",
+    "value": "1764",
+    "label": "Group X fitness per week",
+    "origin": "draft"
+   },
+   {
+    "statement": "Southeast Ventura County YMCA provided financial assistance to 386 families in 2024.",
+    "value": "386",
+    "label": "financial assistance families",
+    "origin": "draft"
+   },
+   {
+    "statement": "Southeast Ventura County YMCA's Find My Genius Summer program served 675 scholars in 2024.",
+    "value": "675",
+    "label": "summer scholars",
+    "origin": "draft"
+   },
+   {
+    "statement": "Southeast Ventura County YMCA's Child Care program served 771 youth in 2024.",
+    "value": "771",
+    "label": "child care youth served",
+    "origin": "draft"
+   },
+   {
+    "statement": "Southeast Ventura County YMCA's Kids' Zone recorded 24,979 youth check-ins in 2024.",
+    "value": "24979",
+    "label": "Kids Zone check-ins",
+    "origin": "draft"
+   },
+   {
+    "statement": "Southeast Ventura County YMCA's Gala raised $404,055 in 2024.",
+    "value": "404055",
+    "label": "Gala funds raised",
+    "origin": "draft"
+   },
+   {
+    "statement": "Southeast Ventura County YMCA's Golf Tournament raised $201,000 in 2024.",
+    "value": "201000",
+    "label": "Golf Tournament raised",
+    "origin": "draft"
+   },
+   {
+    "statement": "Southeast Ventura County YMCA's Healthy Kids' Day had 2,045 attendees in 2024.",
+    "value": "2045",
+    "label": "Healthy Kids Day attendees",
+    "origin": "draft"
+   },
+   {
+    "statement": "Southeast Ventura County YMCA's Fall Festival had 3,212 attendees in 2024.",
+    "value": "3212",
+    "label": "Fall Festival attendees",
+    "origin": "draft"
+   },
+   {
+    "statement": "Southeast Ventura County YMCA's Safety Around Water program served 1,313 youth in 2024.",
+    "value": "1313",
+    "label": "Safety Around Water youth",
+    "origin": "draft"
+   },
+   {
+    "statement": "Southeast Ventura County YMCA's Youth Swim Lessons served 2,329 youth in 2024.",
+    "value": "2329",
+    "label": "youth swim lessons served",
+    "origin": "draft"
+   },
+   {
+    "statement": "Southeast Ventura County YMCA Group X Aquatics Classes served 1,518 members per week in 2024.",
+    "value": "1518",
+    "label": "Group X aquatics per week",
+    "origin": "added"
+   },
+   {
+    "statement": "Southeast Ventura County YMCA's Find My Genius Afterschool program served 317 scholars in 2024.",
+    "value": "317",
+    "label": "afterschool scholars",
+    "origin": "added"
+   }
+  ]
+ },
+ {
+  "sha": "2f02e0b244ca70386d65f8596e7854dd5e907c8621bd433954df7d2183e1e027",
+  "page": 40,
+  "kind": "recovery",
+  "band": "severe",
+  "classification": "impact",
+  "done": true,
+  "true_metrics": [
+   {
+    "statement": "The organization's total program income was $166,573.",
+    "value": "166573",
+    "label": "total program income",
+    "origin": "draft"
+   },
+   {
+    "statement": "The organization's total income was $342,469.",
+    "value": "342469",
+    "label": "total income",
+    "origin": "draft"
+   },
+   {
+    "statement": "The National Network program received $75,000 in income.",
+    "value": "75000",
+    "label": "National Network income",
+    "origin": "draft"
+   },
+   {
+    "statement": "The Management & General category received $142,366 in income.",
+    "value": "142366",
+    "label": "management & general income",
+    "origin": "draft"
+   },
+   {
+    "statement": "The Development category received $33,829 in income.",
+    "value": "33829",
+    "label": "development income",
+    "origin": "draft"
+   },
+   {
+    "statement": "The Mentorship program received $30,700 in income.",
+    "value": "30700",
+    "label": "mentorship income",
+    "origin": "draft"
+   },
+   {
+    "statement": "The Smart Start program received $30,606 in income.",
+    "value": "30606",
+    "label": "Smart Start income",
+    "origin": "draft"
+   },
+   {
+    "statement": "The Food Social Enterprise program received $28,141 in income.",
+    "value": "28141",
+    "label": "food social enterprise income",
+    "origin": "draft"
+   },
+   {
+    "statement": "The Refugee Assistance program received $2,125 in income.",
+    "value": "2125",
+    "label": "refugee assistance income",
+    "origin": "draft"
+   }
+  ]
+ },
+ {
+  "sha": "4bec863484d1f277e8c41e19c1c659e2b539d5dfcbbf6cf31bed25c4abf081a4",
+  "page": 1,
+  "kind": "recovery",
+  "band": "severe",
+  "classification": "impact",
+  "done": true,
+  "true_metrics": [
+   {
+    "statement": "Hope Through Housing Foundation served 4,351 total residents.",
+    "value": "4351",
+    "label": "total residents served",
+    "origin": "draft"
+   },
+   {
+    "statement": "Hope Through Housing Foundation served 3,206 youth and families.",
+    "value": "3206",
+    "label": "youth and families served",
+    "origin": "draft"
+   },
+   {
+    "statement": "Hope Through Housing Foundation served 1,145 seniors.",
+    "value": "1145",
+    "label": "seniors served",
+    "origin": "draft"
+   },
+   {
+    "statement": "Hope Through Housing Foundation provided 164 economic mobility events.",
+    "value": "164",
+    "label": "economic mobility events",
+    "origin": "draft"
+   },
+   {
+    "statement": "Hope Through Housing Foundation provided 18,081 hours of youth services.",
+    "value": "18081",
+    "label": "hours of youth services",
+    "origin": "draft"
+   },
+   {
+    "statement": "Hope Through Housing Foundation provided 5,404 hours of service to seniors.",
+    "value": "5404",
+    "label": "hours of service to seniors",
+    "origin": "draft"
+   }
+  ]
+ },
+ {
+  "sha": "7cd334fc2468a971a14864ed6eaf5a02b85f83fa45e897d0901b29cda52ce01f",
+  "page": 11,
+  "kind": "recovery",
+  "band": "severe",
+  "classification": "annual",
+  "done": true,
+  "true_metrics": [
+   {
+    "statement": "GivePower's 10 solar water farms provide clean drinking water for 673,103 people every day.",
+    "value": "673103",
+    "label": "people with daily clean water",
+    "origin": "draft"
+   },
+   {
+    "statement": "GivePower exceeded 100 million lifetime liters of clean drinking water distributed as of December 15, 2022.",
+    "value": "100000000",
+    "label": "lifetime liters distributed",
+    "origin": "draft"
+   },
+   {
+    "statement": "GivePower's Kiunga, Kenya system distributed 17,024,140 liters of clean water.",
+    "value": "17024140",
+    "label": "liters distributed",
+    "origin": "draft"
+   },
+   {
+    "statement": "GivePower's Anse a Galet, Haiti system distributed 23,986,907 liters of clean water.",
+    "value": "23986907",
+    "label": "liters distributed",
+    "origin": "draft"
+   },
+   {
+    "statement": "GivePower's Likoni, Kenya system distributed 31,138,297 liters of clean water.",
+    "value": "31138297",
+    "label": "liters distributed",
+    "origin": "draft"
+   },
+   {
+    "statement": "GivePower's Bamburi, Kenya system distributed 22,897,912 liters of clean water.",
+    "value": "22897912 ",
+    "label": "liters distributed",
+    "origin": "added"
+   },
+   {
+    "statement": "GivePower's Cabo De La Vela, Colombia system distributed 679,232 liters of clean water.",
+    "value": "679232",
+    "label": "liters distributed",
+    "origin": "added"
+   },
+   {
+    "statement": "GivePower's Wrote, Kenya system distributed 1,584,741 liters of clean water.",
+    "value": "8303286",
+    "label": "liters distributed",
+    "origin": "added"
+   },
+   {
+    "statement": "GivePower's Kitengela Kenya system distributed 8,303,286 liters of clean water.",
+    "value": "8303286",
+    "label": "liters distributed",
+    "origin": "added"
+   },
+   {
+    "statement": "GivePower's Mokowe, Kenya system distributed 323,008 liters of clean water.",
+    "value": "323008",
+    "label": "liters distributed",
+    "origin": "added"
+   },
+   {
+    "statement": "GivePower's Mwingi, Kenya system distributed 79,165 liters of clean water.",
+    "value": "79165",
+    "label": "liters distributed",
+    "origin": "added"
+   },
+   {
+    "statement": "GivePower's Mtongwe, Kenya system distributed 89,690 liters of clean water.",
+    "value": "89690",
+    "label": "liters distributed",
+    "origin": "added"
+   }
+  ]
+ },
+ {
+  "sha": "4aaf1bcc80b7bdffd07fb3965af505cce5a216dccaa3d5bf9acde07c2f85f3a5",
+  "page": 10,
+  "kind": "recovery",
+  "band": "severe",
+  "classification": "impact",
+  "done": true,
+  "true_metrics": [
+   {
+    "statement": "The percentage of recruitment based on false promises increased by 102.5% since 2021 in South Africa trafficking cases.",
+    "value": "102.5",
+    "label": "false promises increase",
+    "origin": "draft"
+   },
+   {
+    "statement": "In 2022, the NHTH handled six cases involving sex trafficking from provinces such as Gauteng, North West, and Mpumalanga.",
+    "value": "6",
+    "label": "sex trafficking cases handled",
+    "origin": "draft"
+   },
+   {
+    "statement": "South African perpetrators account for 22.3% of suspected traffickers reported to the NHTH.",
+    "value": "22.3",
+    "label": "South African perpetrators",
+    "origin": "draft"
+   },
+   {
+    "statement": "Nigerian perpetrators account for 19.6% of suspected traffickers reported to the NHTH.",
+    "value": "19.6",
+    "label": "Nigerian perpetrators",
+    "origin": "draft"
+   },
+   {
+    "statement": "Withholding and destruction of victims' documents increased by 352.8% in 2022 in South Africa.",
+    "value": "352.8",
+    "label": "document withholding increase",
+    "origin": "draft"
+   }
+  ]
+ },
+ {
+  "sha": "2986b138138fe28a948c7483cd7c428eacd1f4e9a7d08e313eac562854411fc6",
+  "page": 16,
+  "kind": "recovery",
+  "band": "severe",
+  "classification": "impact",
+  "done": true,
+  "true_metrics": [
+   {
+    "statement": "In 2015, Whatcom County had 11,193 children under 5 years of age.",
+    "value": "11193",
+    "label": "children under 5 in county",
+    "origin": "draft"
+   },
+   {
+    "statement": "Licensed child care in Whatcom County had capacity for only 3,247 children at the end of 2013.",
+    "value": "3247",
+    "label": "licensed child care capacity",
+    "origin": "draft"
+   },
+   {
+    "statement": "The cost for licensed childcare in Whatcom County is approximately $12,000 per year.",
+    "value": "12000",
+    "label": "annual childcare cost",
+    "origin": "draft"
+   }
+  ]
+ },
+ {
+  "sha": "c76d2de06f3cbe7f5d64e4ff5c0e87f16dfd16b4fd4e69f8fbdaa5bbd2a1abde",
+  "page": 11,
+  "kind": "recovery",
+  "band": "severe",
+  "classification": "impact",
+  "done": true,
+  "true_metrics": [
+   {
+    "statement": "Uplift's Philly HopeLine received 756 calls total during FY23.",
+    "value": "756",
+    "label": "total calls FY23",
+    "origin": "draft"
+   },
+   {
+    "statement": "Uplift's Philly HopeLine call volume in FY23 was a 42% increase over FY22.",
+    "value": "42",
+    "label": "call volume increase",
+    "origin": "draft"
+   },
+   {
+    "statement": "Uplift's Philly HopeLine received 531 calls in FY22.",
+    "value": "531",
+    "label": "total calls FY22",
+    "origin": "draft"
+   },
+   {
+    "statement": "72% of calls to Uplift's Philly HopeLine were from callers interested in joining a grief group.",
+    "value": "72",
+    "label": "calls seeking grief group",
+    "origin": "draft"
+   }
+  ]
+ },
+ {
+  "sha": "203388b72f141337c23f305ecf7311430e525bcd06c7b453c97ee82c1acd3a92",
+  "page": 2,
+  "kind": "recovery",
+  "band": "severe",
+  "classification": "annual",
+  "done": true,
+  "true_metrics": []
+ },
+ {
+  "sha": "26ceeafa30ac792bdabe5c93f78dced3d4102bb986949d3226f5e0e491326d58",
+  "page": 2,
+  "kind": "recovery",
+  "band": "severe",
+  "classification": "annual",
+  "done": true,
+  "true_metrics": [
+   {
+    "statement": "The total cost of the Community Commons project is $34.5 million.",
+    "value": "34.5M",
+    "label": "total project cost",
+    "origin": "draft"
+   }
+  ]
+ },
+ {
+  "sha": "76a707c16c1940770d7645355551b0c9aca72ca6ba65ed0832a9cddfd7099e42",
+  "page": 8,
+  "kind": "recovery",
+  "band": "severe",
+  "classification": "annual",
+  "done": true,
+  "true_metrics": [
+   {
+    "statement": "SURVIVORS served 261 clients in 2013.",
+    "value": "261",
+    "label": "clients served 2013",
+    "origin": "draft"
+   },
+   {
+    "statement": "SURVIVORS served clients from 29 different countries in 2013.",
+    "value": "29",
+    "label": "countries of origin",
+    "origin": "draft"
+   },
+   {
+    "statement": "SURVIVORS communicated with clients in 22 different languages in 2013.",
+    "value": "22",
+    "label": "languages served",
+    "origin": "draft"
+   },
+   {
+    "statement": "SURVIVORS completed 3,120 social services in 2013.",
+    "value": "3120",
+    "label": "social services completed",
+    "origin": "draft"
+   },
+   {
+    "statement": "SURVIVORS provided 1,182 hours of therapy sessions in 2013.",
+    "value": "1182",
+    "label": "therapy hours",
+    "origin": "draft"
+   },
+   {
+    "statement": "SURVIVORS served 78 torture survivors in 2013.",
+    "value": "78",
+    "label": "torture survivors served",
+    "origin": "draft"
+   },
+   {
+    "statement": "SURVIVORS hosted 222 guests at its Journey to Healing tours in 2013.",
+    "value": "222",
+    "label": "Journey to Healing guests",
+    "origin": "draft"
+   },
+   {
+    "statement": "SURVIVORS celebrated 30 clients who won their asylum cases in 2013.",
+    "value": "30",
+    "label": "asylum cases won",
+    "origin": "draft"
+   }
+  ]
+ },
+ {
+  "sha": "52e76474cd0e0a894e1ca8ae815c6a655224dfb4bbfab883f17fcdaf8dc5dde8",
+  "page": 1,
+  "kind": "recovery",
+  "band": "severe",
+  "classification": "impact",
+  "done": true,
+  "true_metrics": [
+   {
+    "statement": "Washita Valley Community Action Council employs over 100 full-time equivalent jobs in central Oklahoma.",
+    "value": "100",
+    "label": "full-time equivalent jobs",
+    "origin": "draft"
+   },
+   {
+    "statement": "Close to 200 additional jobs are supported in the local economy.",
+    "value": "200",
+    "label": "additional local jobs",
+    "origin": "draft"
+   },
+   {
+    "statement": "Between 2007 and 2017, total economic activity supported is estimated at $234 million.",
+    "value": "234M",
+    "label": "total economic activity",
+    "origin": "draft"
+   },
+   {
+    "statement": "Between 2007 and 2017, total disposable income supported is over $89 million.",
+    "value": "89M",
+    "label": "total disposable income",
+    "origin": "draft"
+   }
+  ]
+ },
+ {
+  "sha": "4531167bafed74e6455d3debf9dc9881ec3e0b7049fa21d70a25ff305fb926e4",
+  "page": 6,
+  "kind": "recovery",
+  "band": "severe",
+  "classification": "annual",
+  "done": true,
+  "true_metrics": [
+   {
+    "statement": "Birch's Universal Pre-K classrooms can have as few as 6 students.",
+    "value": "6",
+    "label": "minimum class size",
+    "origin": "draft"
+   },
+   {
+    "statement": "Birch's Universal Pre-K classrooms can have as many as 15-18 students.",
+    "value": "15-18",
+    "label": "maximum class size",
+    "origin": "draft"
+   }
+  ]
+ },
+ {
+  "sha": "61d4b4bb7f83fa0750ddd063568fb7505afb64c1d810d19c94aff8b91e94dfc7",
+  "page": 1,
+  "kind": "recovery",
+  "band": "severe",
+  "classification": "impact",
+  "done": true,
+  "true_metrics": [
+   {
+    "statement": "Southeast Ventura County YMCA had 5,423 memberships in 2023.",
+    "value": "5423",
+    "label": "total memberships",
+    "origin": "draft"
+   },
+   {
+    "statement": "Southeast Ventura County YMCA served 11,485 individual members in 2023.",
+    "value": "11485",
+    "label": "individual members",
+    "origin": "draft"
+   },
+   {
+    "statement": "Southeast Ventura County YMCA had 355 small group training groups in 2023.",
+    "value": "355",
+    "label": "small group training",
+    "origin": "draft"
+   },
+   {
+    "statement": "Southeast Ventura County YMCA's Bala fundraiser raised $367,000 in 2023.",
+    "value": "367000",
+    "label": "Bala fundraiser raised",
+    "origin": "draft"
+   },
+   {
+    "statement": "Southeast Ventura County YMCA's Golf Classic raised $210,620 in 2023.",
+    "value": "210620",
+    "label": "Golf Classic raised",
+    "origin": "draft"
+   },
+   {
+    "statement": "Southeast Ventura County YMCA's Fall Festival & Trunk-or-Treat had 2,200 attendees in 2023.",
+    "value": "2200",
+    "label": "Fall Festival attendees",
+    "origin": "draft"
+   },
+   {
+    "statement": "Southeast Ventura County YMCA's Breakfast with Santa had 850 attendees in 2023.",
+    "value": "850",
+    "label": "Breakfast with Santa attendees",
+    "origin": "draft"
+   },
+   {
+    "statement": "Southeast Ventura County YMCA had 466 flag football participants in 2023.",
+    "value": "466",
+    "label": "flag football participants",
+    "origin": "draft"
+   },
+   {
+    "statement": "Southeast Ventura County YMCA's Find My Genius Summer Program had 575 scholars in 2023.",
+    "value": "575",
+    "label": "Find My Genius Summer scholars",
+    "origin": "draft"
+   },
+   {
+    "statement": "Southeast Ventura County YMCA's Find My Genius Afterschool Program had 287 scholars in 2023.",
+    "value": "287",
+    "label": "Find My Genius Afterschool scholars",
+    "origin": "draft"
+   },
+   {
+    "statement": "Southeast Ventura County YMCA provided afterschool child care for 772 students in 2023.",
+    "value": "772",
+    "label": "afterschool childcare students",
+    "origin": "draft"
+   },
+   {
+    "statement": "Southeast Ventura County YMCA had 720 participants in Safety Around Water in 2023.",
+    "value": "720",
+    "label": "Safety Around Water participants",
+    "origin": "draft"
+   },
+   {
+    "statement": "Southeast Ventura County YMCA graduated 75 students from Lifeguard Certification in 2023.",
+    "value": "75",
+    "label": "lifeguard certification graduates",
+    "origin": "draft"
+   },
+   {
+    "statement": "Southeast Ventura County YMCA provided 1,650 swim lessons in 2023.",
+    "value": "1650",
+    "label": "swim lessons",
+    "origin": "draft"
+   },
+   {
+    "statement": "Southeast Ventura County YMCA provided 397 private swim lessons in 2023.",
+    "value": "397",
+    "label": "private swim lessons",
+    "origin": "draft"
+   },
+   {
+    "statement": "Southeast Ventura County YMCA had 709 summer campers in 2023.",
+    "value": "709",
+    "label": "summer campers",
+    "origin": "draft"
+   },
+   {
+    "statement": "Southeast Ventura County YMCA's Adventure Guides program served 420 families in 2023.",
+    "value": "420",
+    "label": "Adventure Guides families",
+    "origin": "draft"
+   }
+  ]
+ },
+ {
+  "sha": "37c813719836e0d808e996eba4db2a451803090ea772d8305c352946e52df21e",
+  "page": 2,
+  "kind": "recovery",
+  "band": "moderate",
+  "classification": "annual",
+  "done": true,
+  "true_metrics": [
+   {
+    "statement": "Louisiana United Methodist Children and Family Services employed 765 staff members during 2016.",
+    "value": "765",
+    "label": "staff employed 2016",
+    "origin": "draft"
+   },
+   {
+    "statement": "Louisiana United Methodist Children and Family Services touched more than 27,900 individuals in 2016.",
+    "value": "27900",
+    "label": "individuals served 2016",
+    "origin": "draft"
+   },
+   {
+    "statement": "During 2016, 289 children received care in three children's homes.",
+    "value": "289",
+    "label": "children in residential care",
+    "origin": "draft"
+   },
+   {
+    "statement": "195 youth resided on the Ruston campus during 2016.",
+    "value": "195",
+    "label": "Ruston campus youth",
+    "origin": "draft"
+   },
+   {
+    "statement": "50 residents were in the Mandeville program during 2016.",
+    "value": "50",
+    "label": "Mandeville program residents",
+    "origin": "draft"
+   },
+   {
+    "statement": "44 residents were on the Sulphur campus during 2016.",
+    "value": "44",
+    "label": "Sulphur campus residents",
+    "origin": "draft"
+   },
+   {
+    "statement": "The average length of stay at the Ruston campus was 147 days in 2016.",
+    "value": "147",
+    "label": "Ruston avg length of stay",
+    "origin": "draft"
+   },
+   {
+    "statement": "Louisiana Methodist Children's Homes provided 41,700 actual days of care in 2016.",
+    "value": "41700",
+    "label": "actual days of care",
+    "origin": "draft"
+   },
+   {
+    "statement": "Louisiana Methodist Children's Homes operated at 91% of potential capacity in 2016.",
+    "value": "91",
+    "label": "capacity utilization rate",
+    "origin": "draft"
+   }
+  ]
+ },
+ {
+  "sha": "4d2d0f1648b0cea38946c74bbf9dd4cc18a0a9e2e325b986f3eac5cf9e3fd340",
+  "page": 5,
+  "kind": "recovery",
+  "band": "moderate",
+  "classification": "impact",
+  "done": false,
+  "true_metrics": [
+   {
+    "statement": "The survey response rate for the Wright County Community Action Agency study was 20.3%.",
+    "value": "20.3",
+    "label": "survey response rate",
+    "origin": "draft"
+   },
+   {
+    "statement": "Wright County, MN has a population of 134,365.",
+    "value": "134365",
+    "label": "county population",
+    "origin": "draft"
+   },
+   {
+    "statement": "Wright County's median household income is $75,705.",
+    "value": "75705",
+    "label": "median household income",
+    "origin": "draft"
+   },
+   {
+    "statement": "Wright County has 7,060 veterans.",
+    "value": "7060",
+    "label": "veterans in county",
+    "origin": "draft"
+   },
+   {
+    "statement": "Wright County has a median age of 35.8.",
+    "value": "35.8",
+    "label": "median age",
+    "origin": "draft"
+   }
+  ]
+ },
+ {
+  "sha": "42359654cab8afd60cfca2141e23a1b70669ff69974dc56723b728c7e23e83c2",
+  "page": 1,
+  "kind": "recovery",
+  "band": "moderate",
+  "classification": "impact",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "1c0e8ebdca50a66099c4a74bb50322d2bd4cbb2db7fd20d02e1977977a705956",
+  "page": 1,
+  "kind": "recovery",
+  "band": "moderate",
+  "classification": "impact",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "95f2d6534b9661852fc20c69320b13a077fc5f21eb628d5fd12f08812c94562a",
+  "page": 6,
+  "kind": "recovery",
+  "band": "moderate",
+  "classification": "impact",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "39f267013401edcc562dfd4e4bd56135840091fb2b9e11365f1b6eb502fe1685",
+  "page": 10,
+  "kind": "recovery",
+  "band": "moderate",
+  "classification": "impact",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "1d64181ad987b8003db87907beba3f451ed17fb7882bfa61c814ddee73027f7e",
+  "page": 3,
+  "kind": "recovery",
+  "band": "moderate",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "91655b0a2871eef081d61dfe43499fdf40aac0bd597d79b8320cf263ccd77097",
+  "page": 4,
+  "kind": "recovery",
+  "band": "moderate",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "d7da0c433bff3f07732ca03bb0a70fcf27b4cf135a2938c5a66336c1657a7858",
+  "page": 5,
+  "kind": "recovery",
+  "band": "moderate",
+  "classification": "impact",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "a199d3699ff9a0d40f1f658b7837782b102e175e3cbcf67ebbab6c9ef87eb877",
+  "page": 2,
+  "kind": "recovery",
+  "band": "moderate",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "c4baf1ffceb426f503a37a250cd6662a448ff7dad312e5a50b7f86dd1cd693c6",
+  "page": 3,
+  "kind": "recovery",
+  "band": "moderate",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "b3c518d3ab20d37a7d0f7acb312174779ddc02b2a63a17f329b2bb7b0b50e9cb",
+  "page": 6,
+  "kind": "recovery",
+  "band": "moderate",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "2c946e78ffc21efdd095cfb62820cb411046cfcf2b685472a20bfd41e6947955",
+  "page": 9,
+  "kind": "recovery",
+  "band": "moderate",
+  "classification": "impact",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "28ffc40bc7355b8c14d85df7275e5216d76402e38681afaa629db84cc7fa83d2",
+  "page": 4,
+  "kind": "recovery",
+  "band": "moderate",
+  "classification": "impact",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "218a5f56b5ac52c5f7678396e2706777df3983205bdaa56da3b0b851f98e64c3",
+  "page": 2,
+  "kind": "recovery",
+  "band": "moderate",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "d58cd817b2975439feaad20706fc72eed875cade0f1753b0be5701b244b10f69",
+  "page": 3,
+  "kind": "recovery",
+  "band": "moderate",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "1fd1e4deb25d915cb2f4db883345cd7e0e77062b7f0ef048a55e5f258e216701",
+  "page": 5,
+  "kind": "recovery",
+  "band": "moderate",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "a2cff96edd50db0d05a99aa7db594c3d3fb186367c8f27c60c4d6a72e69b4b8f",
+  "page": 1,
+  "kind": "recovery",
+  "band": "moderate",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "d92b5760c6935ea8dfd75514892f2c398a6d223aa93129889857e1922f0e153e",
+  "page": 1,
+  "kind": "recovery",
+  "band": "moderate",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "e9fee2407dd1f7e763b5866764b458d9823aa2f34536569be76af1d144be7aae",
+  "page": 10,
+  "kind": "recovery",
+  "band": "moderate",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "d3786c0c275984e85c6787ad7a76016c3b0040dcd3d3dee33068e351989b8964",
+  "page": 1,
+  "kind": "recovery",
+  "band": "near",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "006bcf30c9a5ac2b3db1baf5b1f741ffd4d6b7ad4b3458b38702f71f4d15eaf1",
+  "page": 1,
+  "kind": "recovery",
+  "band": "near",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "ea088319924e32f1522ffdb0421740cd6c7231021bc9137ed0d6e3b6a718771d",
+  "page": 13,
+  "kind": "recovery",
+  "band": "near",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "2fccbb57fe9b7d4e64e4e44a8f635fa0652f776bc37e55d7bf284a15cbd1b1fc",
+  "page": 1,
+  "kind": "recovery",
+  "band": "near",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "90c39894a106f613897f012f47d6f1f6f4fca239b08852558e6e3bd338f443ca",
+  "page": 3,
+  "kind": "recovery",
+  "band": "near",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "b663b6a360edc8200605ee98d5f4e2e473dce73668f996a070a0f6dc713a6db8",
+  "page": 8,
+  "kind": "recovery",
+  "band": "near",
+  "classification": "impact",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "2a4e7c563a480de555cdf1607d6385de42bcae7fb671211b2d0530e90916e23c",
+  "page": 15,
+  "kind": "recovery",
+  "band": "near",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "6d0e3354d0c3d685191f4024b2a402e1d48bbe8df2525dfaeea8b4120ee8cf2a",
+  "page": 8,
+  "kind": "recovery",
+  "band": "near",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "f23e829015bd8033874108b06c39b93eab142bd156cca414b0561c827398beb8",
+  "page": 5,
+  "kind": "recovery",
+  "band": "near",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "ab00e9972119b45e2330f51f2bc55b3c5b30751edc7380269d9ddee4da7d60f0",
+  "page": 15,
+  "kind": "recovery",
+  "band": "near",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "35887724cf0f7e3f0b6a1404a7aafc36acd6eb0766ab5eab496678188188eb99",
+  "page": 3,
+  "kind": "recovery",
+  "band": "near",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "0dec8ae308fbd11eef4b2fa4d5827b32500cc94c082a2eee9a262224505ce1cc",
+  "page": 5,
+  "kind": "recovery",
+  "band": "near",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "39ce518419a6fb67f8ca05fd44099a666ceacf6a04e0983ca2fec6e19340fff0",
+  "page": 7,
+  "kind": "recovery",
+  "band": "near",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "03a2edf1d8e8a013c3df5dd45f5201afedc4dc1b0b1eadf940ce32c1cb963db3",
+  "page": 5,
+  "kind": "recovery",
+  "band": "near",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "c5fb5180b501759fb47c794fc4adcaddb95ff17f55373a6e4b10c69a5b56c15f",
+  "page": 4,
+  "kind": "recovery",
+  "band": "near",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "60ad28bbbc0769252933577fab9e9faf0c70686270ce94c418a2679ec4940052",
+  "page": 2,
+  "kind": "control",
+  "band": "control",
+  "classification": "impact",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "357c4264011b7bf431e416332b5a24b090fc1fdb0e4fb00e96b871fc0677cf35",
+  "page": 12,
+  "kind": "control",
+  "band": "control",
+  "classification": "impact",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "78efcb859e0ce411b1cdd46c00d9b69c7f69b1e3ba4d18764eba1944fa55c0fd",
+  "page": 7,
+  "kind": "control",
+  "band": "control",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "495f1ffcdf18f44c0a2a47e53c3db9b3876028dea5f3950abe4b911980d0acd3",
+  "page": 5,
+  "kind": "control",
+  "band": "control",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "06b47850a8654c6b3f0aae50a3b0a028a5a153ebfd188578bac27b370183aa60",
+  "page": 34,
+  "kind": "control",
+  "band": "control",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "75dff0f85d7123051c70b95cdde932529cebd074f26ea69df604fe149b41063e",
+  "page": 8,
+  "kind": "control",
+  "band": "control",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "5fe7632e2640fd98ae512e89c99e795911b380cc2c1ef057815ec44372a1b4fb",
+  "page": 3,
+  "kind": "control",
+  "band": "control",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "26713209245519c23220b5eff2fdfbcf5a1c1e43be4c68b27067c11afd958889",
+  "page": 6,
+  "kind": "control",
+  "band": "control",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "f6e46daa9475f6d685e85374320659de80942ee6e301a102f209a254e7f97465",
+  "page": 13,
+  "kind": "control",
+  "band": "control",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "55af457522efaf08158d90369212795f61eae7a592d1ea0fb6e490175867c1e0",
+  "page": 4,
+  "kind": "control",
+  "band": "control",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "4e667ef35d3d8105087792090f29da1a1910d49cb088680dec6ee246cca9e288",
+  "page": 1,
+  "kind": "control",
+  "band": "control",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "c3504dd0cf0037c07809930247e1a218fc11ef58542f13d5ff5077c7b46c1af8",
+  "page": 8,
+  "kind": "control",
+  "band": "control",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "9d2d6c3815bc20684f37e123cdd5f90f4326f7c2264c2f6ba90890ea09c6d3b1",
+  "page": 5,
+  "kind": "control",
+  "band": "control",
+  "classification": "impact",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "de17dae4b2824e3bc9a77c4aef024780372c387c0686bc49db88aae9f9c1420b",
+  "page": 4,
+  "kind": "control",
+  "band": "control",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "5f8a6eaab6279891310396b3958f44a53aadfd86e889a23cd122936b9a569aac",
+  "page": 9,
+  "kind": "control",
+  "band": "control",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "8beb3eb8cbefa115c849489db40c1e9e370134b167c979088e51a0fd6f2a5b82",
+  "page": 7,
+  "kind": "control",
+  "band": "control",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "e80b7d1e13e4d9a98cac0da50b10f803947d8512497e279cd433295f491b4455",
+  "page": 4,
+  "kind": "control",
+  "band": "control",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "65ad492acd8ac0179e5c2ae078dc918a5a803e3de2e1db43cd4819b43b5ab155",
+  "page": 3,
+  "kind": "control",
+  "band": "control",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "1a6db554d481d279ed6f56520d1ab12a5186bef4d3c3284700d4615235df602b",
+  "page": 11,
+  "kind": "control",
+  "band": "control",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ },
+ {
+  "sha": "2f6619396337dd368bb3abbd5059edb2c9705a919816f7c24862e7523ade6770",
+  "page": 23,
+  "kind": "control",
+  "band": "control",
+  "classification": "annual",
+  "done": false,
+  "true_metrics": []
+ }
+]

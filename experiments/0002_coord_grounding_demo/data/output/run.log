@@ -1,0 +1,25 @@
+dev corpus: 165 docs -> low-value gate flags 8:
+  12a4557a  ['C:narrative/event (12/13 non-measurable)']                 0 published | Texas Network Of Youth Services Incorp
+  30259c4d  ['C:narrative/event (5/6 non-measurable)']                   0 published | Gbcanada Usa
+  3517ecdc  ['A:plain-text (figs=0, 2152 chars/pg)']                     0 published | Womens Way
+  3c185ba6  ['C:narrative/event (7/8 non-measurable)']                   0 published | Jay   Randolph Developmental Services 
+  4afba9fd  ['A:plain-text (figs=0, 1598 chars/pg)']                     0 published | Emergency Assistance Center Inc
+  5fcaa0e6  ['C:narrative/event (7/10 non-measurable)']                  0 published | Missouri Valley Family Young Mens Chri
+  92cf711c  ['C:narrative/event (5/8 non-measurable)']                   0 published | Potomac Community Resources Inc
+  dca5a824  ['A:plain-text (figs=0, 2596 chars/pg)']                     0 published | Grapevine Family & Community Resource 
+
+impact if applied: 0 published metrics would move to curation-excluded (0.0% of published)
+(report only — pass --apply after operator decision)
+e6696bd9: 10 -> 10 pub / 0 quar (8.6s)
+f92248ef: 9 -> 9 pub / 0 quar (9.1s)
+865fb62f: 12 -> 12 pub / 0 quar (10.8s)
+88bfa5f4: 10 -> 10 pub / 0 quar (9.7s)
+e31d17df: 10 -> 9 pub / 1 quar (8.7s)
+c1a9f80b: 10 -> 9 pub / 1 quar (8.4s)
+ee33d0e3: 8 -> 7 pub / 1 quar (7.9s)
+efd61fea: 15 -> 8 pub / 7 quar (16.4s)
+fb8f56bd: 10 -> 10 pub / 0 quar (8.4s)
+f090f7af: 12 -> 10 pub / 2 quar (11.4s)
+
+TOTAL: 10/10 docs ran; 106 metrics -> 94 publish / 12 quarantine
+wrote /home/ubuntu/research/experiments/0002_coord_grounding_demo/data/output/demo_results.json

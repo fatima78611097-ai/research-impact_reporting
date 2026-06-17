@@ -8,7 +8,11 @@ import pytest
 from lavandula.parse import db
 
 
-class TestFetchWorkBatch:
+class TestFetchWorkBatchLegacy:
+    # Spec 0055 renamed the original priority-filtered fetch to
+    # fetch_work_batch_legacy (still used by worker.py's single-worker advisory-
+    # lock path); the name fetch_work_batch is now the SKIP-LOCKED queue claim
+    # (conn, run_id, batch_size, worker_id). These tests cover the legacy path.
     def test_normal_query_uses_not_in_exclusion(self):
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
@@ -16,7 +20,7 @@ class TestFetchWorkBatch:
         mock_conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
         mock_cursor.fetchall.return_value = []
 
-        db.fetch_work_batch(mock_conn, ["annual", "impact"], 500)
+        db.fetch_work_batch_legacy(mock_conn, ["annual", "impact"], 500)
 
         sql = mock_cursor.execute.call_args[0][0]
         assert "NOT IN" in sql
@@ -30,7 +34,7 @@ class TestFetchWorkBatch:
         mock_conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
         mock_cursor.fetchall.return_value = []
 
-        db.fetch_work_batch(mock_conn, ["annual"], 100, retry_errors=True)
+        db.fetch_work_batch_legacy(mock_conn, ["annual"], 100, retry_errors=True)
 
         sql = mock_cursor.execute.call_args[0][0]
         assert "error IS NOT NULL" in sql
@@ -42,7 +46,7 @@ class TestFetchWorkBatch:
         mock_conn.cursor.return_value.__exit__ = MagicMock(return_value=False)
         mock_cursor.fetchall.return_value = []
 
-        db.fetch_work_batch(
+        db.fetch_work_batch_legacy(
             mock_conn, ["annual"], 100, reparse=True, min_version="docling-2.93.0"
         )
 
@@ -145,10 +149,13 @@ class TestDeleteDocumentData:
 
         calls = mock_cursor.execute.call_args_list
         sqls = [c[0][0] for c in calls]
-        # Tables deleted first, then sections, then documents
+        # Order: tables, pages, sections, documents (documents last; pages/sections
+        # have no FK so their relative position is harmless).
         assert "tables" in sqls[0]
-        assert "sections" in sqls[1]
-        assert "documents" in sqls[2]
+        assert "pages" in sqls[1]
+        assert "figures" in sqls[2]
+        assert "sections" in sqls[3]
+        assert "documents" in sqls[4]
 
 
 class TestCreateParseRun:

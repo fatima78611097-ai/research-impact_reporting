@@ -1,0 +1,111 @@
+[
+ {
+  "id": "131309e3:3",
+  "overall_verdict": "too_liberal",
+  "supported_rewrite": "Community360 Day Program provided 342,845 hours of care for 46 individuals.",
+  "atomic_claims": [
+   {
+    "claim": "CSS operates eight group homes providing 24-hour residential care.",
+    "verdict": "contradicted",
+    "evidence": "The source mentions 'Community360 Day Program' and hours of care, but does not state that CSS operates eight group homes or that the care is residential. The metric's claim about group homes is not supported and is contradicted by the source's reference to a day program."
+   },
+   {
+    "claim": "CSS provided 342,845 hours of care for 46 individuals.",
+    "verdict": "supported",
+    "evidence": "The source states '46 342,845 Community360 Day Program', which can be interpreted as 46 individuals receiving 342,845 hours of care."
+   }
+  ]
+ },
+ {
+  "id": "2cf7c1e8:3",
+  "overall_verdict": "too_liberal",
+  "supported_rewrite": "Forward Stride had 351 participants (human and equine) from different backgrounds.",
+  "atomic_claims": [
+   {
+    "claim": "Forward Stride served 351 clients through its own programs.",
+    "verdict": "too_liberal",
+    "evidence": "The source states '52 351 All our participants, human and equine, come from different backgrounds and experiences.' This indicates 351 participants total, including both humans and equines, not exclusively clients. The metric adds 'through its own programs' which is not explicitly stated, though the context of 'at the barn' implies it is Forward Stride's location. The claim is too liberal because it interprets 'participants' as 'clients' and omits the inclusion of equines."
+   }
+  ]
+ },
+ {
+  "id": "1c0ad786:8",
+  "overall_verdict": "contradicted",
+  "supported_rewrite": "The organization does not state that it operates in more than 70 schools in Orange County.",
+  "atomic_claims": [
+   {
+    "claim": "The organization operates in more than 70 schools in Orange County.",
+    "verdict": "contradicted",
+    "evidence": "The source mentions 'In seven institutions, we offered in-custody substance use disorder and mental health services to adolescents and adults' but does not mention operating in any schools, let alone more than 70 schools in Orange County."
+   }
+  ]
+ },
+ {
+  "id": "65c918ec:7",
+  "overall_verdict": "supported",
+  "supported_rewrite": "Fun Time Early Childhood Academy Inc operates 4 locations.",
+  "atomic_claims": [
+   {
+    "claim": "Fun Time Academy now operates 4 locations.",
+    "verdict": "supported",
+    "evidence": "350 STUDENTS 4 LOCATIONS"
+   }
+  ]
+ },
+ {
+  "id": "d2e6b6ff:3",
+  "overall_verdict": "contradicted",
+  "supported_rewrite": "109 adults and 116 children spent 24,889 nights in their own homes and received 11,832 nights of safety in the Safe House program.",
+  "atomic_claims": [
+   {
+    "claim": "63 adults spent 24,889 nights in their own homes through the New Beginnings rapid rehousing program.",
+    "verdict": "contradicted",
+    "evidence": "Source states '109 ADULTS AND 116 CHILDREN spent 24,889 NIGHTS in their own homes' and does not mention 'New Beginnings rapid rehousing program' or the number 63."
+   },
+   {
+    "claim": "39 children spent 24,889 nights in their own homes through the New Beginnings rapid rehousing program.",
+    "verdict": "contradicted",
+    "evidence": "Source states '109 ADULTS AND 116 CHILDREN spent 24,889 NIGHTS in their own homes' and does not mention 'New Beginnings rapid rehousing program' or the number 39."
+   },
+   {
+    "claim": "The 24,889 nights in their own homes are attributed to the New Beginnings rapid rehousing program.",
+    "verdict": "contradicted",
+    "evidence": "Source does not mention 'New Beginnings rapid rehousing program' at all; it only states nights in own homes and Safe House program nights."
+   }
+  ]
+ },
+ {
+  "id": "ee9087ae:4",
+  "overall_verdict": "contradicted",
+  "supported_rewrite": "The source does not provide information about CPTS's fleet size, open-to-all public transportation, or ADA accessibility.",
+  "atomic_claims": [
+   {
+    "claim": "CPTS maintains a fleet of 66 vehicles.",
+    "verdict": "contradicted",
+    "evidence": "The source mentions Cimarron Transit but does not state the number of vehicles in its fleet."
+   },
+   {
+    "claim": "CPTS provides open-to-all public transportation.",
+    "verdict": "contradicted",
+    "evidence": "The source describes Cimarron Transit as a service used by individuals with disabilities but does not state it is open to all."
+   },
+   {
+    "claim": "CPTS provides ADA accessibility.",
+    "verdict": "contradicted",
+    "evidence": "The source mentions that riders have visual impairments and that drivers are helpful, but does not explicitly state ADA accessibility."
+   }
+  ]
+ },
+ {
+  "id": "cc947e2b:10",
+  "overall_verdict": "too_liberal",
+  "supported_rewrite": "Over 5,000 campers had Shabbos presented to them as more than a list of do's and don'ts, instead as a gift to be enjoyed and cherished.",
+  "atomic_claims": [
+   {
+    "claim": "Agudath Israel of America's summer camps hosted over 5,000 campers.",
+    "verdict": "contradicted",
+    "evidence": "The source does not attribute the camps to Agudath Israel of America; it states 'This summer, over 5,000 campers had Shabbos presented to them...' in the context of Masmidei HaShabbos and Ki Heim Chayeinu, with no mention of Agudath Israel owning or hosting the camps."
+   }
+  ]
+ }
+]

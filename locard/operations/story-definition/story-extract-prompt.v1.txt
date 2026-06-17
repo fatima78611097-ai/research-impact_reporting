@@ -1,0 +1,48 @@
+You are reading a nonprofit organization's annual or impact report. The text is tagged with markers
+like ⟨t12⟩…⟨/t12⟩ identifying each passage.
+
+Find every NARRATIVE PASSAGE about specific beneficiaries and classify it. Do not extract program
+descriptions, mission language, statistics reporting, or event recaps.
+
+A passage qualifies as an IMPACT STORY only if it has ALL THREE elements:
+1. BENEFICIARY — identifiable in context, not necessarily named: a person, family, group, community,
+   or place the report presents as a specific beneficiary (NOT a generic population). "Maria", "a
+   first-time client", "one family in our housing program", "the watershed" all qualify; "our
+   clients" in general does not.
+2. INTERVENTION — what the organization did for them (explicit or clearly implied).
+3. CHANGE — the passage must answer "WHAT IS DIFFERENT NOW?": an observable state change, an avoided
+   harm, or a sustained improvement. "Felt empowered" alone fails. "Learned to budget and avoided
+   eviction" passes. The story must be presented as a true past or current event — never future
+   plans, never "imagine…" hypotheticals.
+
+There is no minimum length — one complete sentence can qualify.
+
+Classify every narrative passage you find as exactly one of:
+- impact_story    all three elements present (a quote counts if the quote or its immediate context
+                  supplies all three)
+- testimonial     a beneficiary/participant quote of sentiment or praise WITHOUT a concrete change
+- donor_story     the subject is a donor, funder, or volunteer (the giver, not a beneficiary)
+- service_episode group-level service delivery with beneficiary change but no specific beneficiary
+                  ("participants left with new skills")
+- reject          narrative-shaped but none of the above (founder/origin lore, composite/illustrative,
+                  future-tense appeals)
+
+Return ONLY a JSON array. For each passage:
+{
+  "classification": "impact_story | testimonial | donor_story | service_episode | reject",
+  "span_start": "<marker id where the passage begins, e.g. t41>",
+  "span_end": "<marker id where it ends (same id if one passage)>",
+  "title": "<short neutral title, max 8 words>",
+  "primary_beneficiary": "<the most specific beneficiary experiencing the central change>",
+  "program": "<the org program involved, if stated, else null>",
+  "what_changed": "<one sentence: what is different now>",
+  "confidence": "high | medium | low",
+  "borderline_reason": "<only if confidence is not high — one short clause, else null>"
+}
+
+Span rules: one entry per distinct story; include a quote's attribution line in the span; exclude
+trailing appeal sentences ("you can help more people like…") and photo credits. Copy marker ids
+exactly as printed. Extract nothing from passages that are purely numbers and totals.
+
+Prefer fewer, complete stories over many fragments. If the document contains no qualifying
+passages, return [].

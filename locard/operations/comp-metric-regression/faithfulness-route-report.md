@@ -1,0 +1,1064 @@
+# Faithfulness stage-1 routing — published metrics (348 of 1,263 routed)
+
+Each metric asserts at least one grammatical component (subject/verb/object/modifier) that is
+NOT on the cited page (caps-folded, org-acronym/self-reference aware, time-framing excluded).
+`cited markers` = the exact source text the metric points at. Stage 1 routes; it does not judge.
+
+## MULTIPLE slots missing (highest suspicion) — 95
+
+- **029625c6:0** `obj:program, mod:services`
+  - metric: CAAGKC served 444,738 individuals with food and toiletries through its Supportive Services program.
+  - cited markers: value=“444,738” | subject=“i ndividuals served with food and toiletries”
+- **029625c6:1** `verb:fight, obj:poverty`
+  - metric: The organization has been fighting poverty in Kansas City for 43 years.
+  - cited markers: value=“43” | subject=“years of making a difference i n Kansas City”
+- **029625c6:6** `verb:help, subj:services, mod:supportive`
+  - metric: Supportive Services helped 989 individuals avoid eviction.
+  - cited markers: value=“989” | subject=“i ndividuals avoided eviction”
+- **128de607:1** `obj:pharmacy, mod:charitable`
+  - metric: Over 300 uninsured patients received life-saving medication, including insulin, through the charitable pharmacy.
+  - cited markers: value=“300+” | subject=“uninsured patients received life-saving medication, including insulin”
+- **128de607:6** `subj:revenue, obj:organization`
+  - metric: Total revenue for the organization in 2020 was $13,022,953.
+  - cited markers: value=“$13,022,953” | subject=“Total Income”
+- **131309e3:2** `obj:provider, obj:illinois, mod:large`
+  - metric: CSS is one of the largest providers of Respite services in Illinois, providing 38,655 hours of Respite to 307 individuals.
+  - cited markers: value=“38,655” | subject=“Respite”
+- **18588fca:2** `obj:care, mod:foster`
+  - metric: 64 children returned home from foster care.
+  - cited markers: value=“# of kids that returned home: 64” | subject=“# of kids that returned home: 64”
+- **18588fca:4** `verb:open, mod:foster`
+  - metric: 38 new foster homes were opened.
+  - cited markers: value=“# of new homes: 38” | subject=“# of new homes: 38”
+- **18588fca:5** `obj:end, mod:foster`
+  - metric: 139 total foster homes were active at year-end.
+  - cited markers: value=“# of total homes EOY: 139” | subject=“# of total homes EOY: 139”
+- **18588fca:6** `verb:provide, obj:care`
+  - metric: 26,592 bed nights of care were provided.
+  - cited markers: value=“# of bed nights: 26,592” | subject=“# of bed nights: 26,592”
+- **18588fca:9** `subj:revenue, mod:total`
+  - metric: Total revenue was $15,983,165.
+  - cited markers: value=“$15,983,165” | subject=“$15,983,165”
+- **1b29d1a0:0** `verb:superó, obj:agregar`
+  - metric: Boulder Housing Partners superó las 2,000 unidades de vivienda asequible al agregar 517 nuevas viviendas en 2025.
+  - cited markers: value=“'A medida que Boulder Housing Partners alcanzó un momento clave en 2025 al sumar 517 vivie” | subject=“'A medida que Boulder Housing Partners alcanzó un momento clave en 2025 al sumar 517 vivie”
+- **1b29d1a0:8** `verb:distribuyó, obj:comunitarios, mod:través, mod:sus, mod:programas`
+  - metric: BHP distribuyó 24,751 libras de alimentos a través de sus programas comunitarios.
+  - cited markers: value=“Alimentos distribuidos 24,751 libras” | subject=“Alimentos distribuidos 24,751 libras”
+- **1c0ad786:11** `verb:draw, obj:participant`
+  - metric: The first 5K Walk for Overdose Awareness drew more than 250 participants.
+  - cited markers: value=“In September 2023, we held our first 5K Walk for Overdose Awareness at Dockweiler Beach. M” | subject=“In September 2023, we held our first 5K Walk for Overdose Awareness at Dockweiler Beach. M”
+- **24e18655:10** `subj:support, mod:fiscal, mod:total`
+  - metric: Total support and revenue for fiscal year 2023-2024 was $40,176,185.
+  - cited markers: value=“$40,176,185” | subject=“TOTALSUPPORTANDREVENUE”
+- **24e18655:5** `verb:complete, obj:warehouse`
+  - metric: 23 graduates completed the Warehouse and Inventory Control Training Program, with 65% employed at an average wage of $20 per hour.
+  - cited markers: value=“23	graduates , 65% are employed earning an average wage of $20 per hour.” | subject=“23	graduates , 65% are employed earning an average wage of $20 per hour.”
+- **287485c1:10** `obj:client, mod:new`
+  - metric: Family Services Center served 48 new clients through PTIP (Theft) program.
+  - cited markers: value=“48” | subject=“PTIP (THEFT)”
+- **287485c1:11** `obj:client, mod:new`
+  - metric: Family Services Center served 41 new clients through LIFT.
+  - cited markers: value=“41” | subject=“LIFT”
+- **287485c1:12** `obj:assistance, obj:client, mod:payment, mod:down, mod:new`
+  - metric: Family Services Center served 35 new clients through Down Payment Assistance (DPA/Pinnacle).
+  - cited markers: value=“35” | subject=“DPA/ PINNACLE”
+- **287485c1:13** `obj:client, mod:new`
+  - metric: Family Services Center served 30 new clients through AMP.
+  - cited markers: value=“30” | subject=“AMP”
+- **287485c1:14** `obj:client, mod:new`
+  - metric: Family Services Center served 29 new clients through WDCRP.
+  - cited markers: value=“29” | subject=“WDCRP”
+- **287485c1:15** `obj:client, mod:new`
+  - metric: Family Services Center served 19 new clients through HSP.
+  - cited markers: value=“19” | subject=“HSP”
+- **287485c1:16** `obj:client, mod:new`
+  - metric: Family Services Center served 18 new clients through Workforce Development.
+  - cited markers: value=“18” | subject=“WORKFORCE DEVELOPMENT”
+- **287485c1:17** `obj:client, mod:new`
+  - metric: Family Services Center served 17 new clients through Parenting program.
+  - cited markers: value=“17” | subject=“PARENTING”
+- **287485c1:18** `obj:client, mod:new`
+  - metric: Family Services Center served 5 new clients through SAP.
+  - cited markers: value=“5” | subject=“SAP”
+- **287485c1:19** `obj:client, mod:new`
+  - metric: Family Services Center served 3 new clients through Conflict Resolution.
+  - cited markers: value=“3” | subject=“CONFLICT RESOLUTION”
+- **287485c1:20** `obj:client, mod:new`
+  - metric: Family Services Center served 1 new client through Caring Cars.
+  - cited markers: value=“1” | subject=“CARING CARS”
+- **287485c1:21** `obj:client, mod:new`
+  - metric: Family Services Center served 1 new client through Nurturing Fathers.
+  - cited markers: value=“1” | subject=“NURTURING FATHER'S”
+- **287485c1:22** `obj:client, mod:new`
+  - metric: Family Services Center served 1 new client through SBG.
+  - cited markers: value=“1” | subject=“SBG”
+- **287485c1:23** `obj:client, obj:erap, mod:new`
+  - metric: Family Services Center served 138 new clients through COVID/ERAP (ended Oct 2022).
+  - cited markers: value=“138” | subject=“* COV/ERAP(Ended Oct 2022)”
+- **287485c1:5** `obj:client, mod:new`
+  - metric: Family Services Center served 174 new clients through Housing Counseling.
+  - cited markers: value=“174” | subject=“HOUSING COUNSELING”
+- **287485c1:6** `obj:client, mod:new`
+  - metric: Family Services Center served 128 new clients through PTSA (Drug/Alcohol) program.
+  - cited markers: value=“128” | subject=“PTSA(DRUG /ALCOHOL)”
+- **287485c1:7** `obj:client, mod:new`
+  - metric: Family Services Center served 94 new clients through DVIP (Domestic Violence Intervention Program).
+  - cited markers: value=“94” | subject=“DVIP”
+- **287485c1:8** `obj:client, mod:new`
+  - metric: Family Services Center served 89 new clients through FAST.
+  - cited markers: value=“89” | subject=“FAST”
+- **287485c1:9** `obj:client, mod:new`
+  - metric: Family Services Center served 74 new clients through Counseling.
+  - cited markers: value=“74” | subject=“COUNSELING”
+- **2995644a:2** `verb:open, mod:renovate, mod:phase`
+  - metric: The $56 million Health Center and Garden Apartments project at Kendal at Longwood opened Phase One, with over 38 Personal Care residents moving into renovated spaces.
+  - cited markers: value=“Aerial view of the new addition to the Kendal at Longwood Health Center Last year marked e” | subject=“Aerial view of the new addition to the Kendal at Longwood Health Center Last year marked e”
+- **2995644a:5** `obj:committee, mod:american, mod:friends`
+  - metric: The Shed at Crosslands raised over $20,000 for the American Friends Service Committee.
+  - cited markers: value=“Over almost 50 years, the Shed-a humble but beloved Crosslands fixture-has been refurbishe” | subject=“Over almost 50 years, the Shed-a humble but beloved Crosslands fixture-has been refurbishe”
+- **30a05d18:2** `subj:revenue, mod:fiscal`
+  - metric: Total revenue for fiscal year 2015-2016 was $41,048,266.
+  - cited markers: value=“$ 41,048,266” | subject=“Total”
+- **30a05d18:3** `subj:revenue, mod:fiscal`
+  - metric: Total revenue for fiscal year 2014-2015 was $34,666,199.
+  - cited markers: value=“$ 34,666,199” | subject=“Total”
+- **36941d40:3** `verb:deliver, mod:prior`
+  - metric: CATA delivered 910 workshops in local schools, a 49% increase over the prior year.
+  - cited markers: value=“910” | subject=“workshops in local schools a 49% increase over last year”
+- **370cd021:0** `verb:grow, subj:budget`
+  - metric: The Home Access Program budget grew from $100,000 to $600,000 annually, enabling 13 home improvement projects last year and aiming to serve 50+ residents this year.
+  - cited markers: value=“A few weeks later, we received the exciting news  that  our  funding  had  been  approved ” | subject=“A few weeks later, we received the exciting news  that  our  funding  had  been  approved ”
+- **38c9a81d:1** `subj:score, obj:course, obj:program, mod:scale`
+  - metric: Participants' median Financial Capability Scale score increased by 32%, from 5 to 6.6, over the course of the program.
+  - cited markers: value=“32%” | subject=“Median FCS”
+- **38c9a81d:2** `subj:score, obj:course, obj:program, mod:scale`
+  - metric: Participants' median Financial Stress Scale score decreased by 57%, from 19 to 8, over the course of the program.
+  - cited markers: value=“57%” | subject=“Median FSS”
+- **47fd5ae6:0** `obj:client, mod:past`
+  - metric: Pregnancy Center Plus provided 15,982 total services to clients in the past year.
+  - cited markers: value=“Total Services Provided: 15,982” | subject=“Total Services Provided: 15,982”
+- **5370f17e:3** `verb:achieve, obj:program, mod:health`
+  - metric: 94% of participants in the mental health program achieved success.
+  - cited markers: value=“94%” | subject=“Participant	Enrollment Participant	Success”
+- **5a23e2e5:1** `subj:program, obj:revenue, mod:annual`
+  - metric: The Center Based Employment program earned $618,000 in annual revenue.
+  - cited markers: value=“$ earned by Center Based Employment.......................................................” | subject=“$ earned by Center Based Employment.......................................................”
+- **5a23e2e5:2** `verb:serve, obj:program, obj:individual, mod:adults`
+  - metric: STARS served 42 individuals in its Day Training for Adults program.
+  - cited markers: value=“# of participants in DTA..................................................................” | subject=“# of participants in DTA..................................................................”
+- **5f0a0f54:2** `verb:avoid, obj:program`
+  - metric: 50 families avoided entering shelter by moving directly into housing through diversion programs.
+  - cited markers: value=“50 shelter diversions - families housed directly from homelessness” | subject=“50 shelter diversions - families housed directly from homelessness”
+- **6b3b6732:0** `verb:serve, mod:start`
+  - metric: Coastal Georgia Area Community Action Authority served 714 Head Start students in 2022.
+  - cited markers: value=“Out of the 714 students in this report, we have 11-18 percent at the below level with the ” | subject=“Out of the 714 students in this report, we have 11-18 percent at the below level with the ”
+- **6b3b6732:1** `verb:serve, obj:head, mod:early`
+  - metric: The organization served 94 Early Head Start students in 2022.
+  - cited markers: value=“Out of the 94 students in this report, we have 33-44 percent at the below level with the h” | subject=“Out of the 94 students in this report, we have 33-44 percent at the below level with the h”
+- **714f6f9a:5** `subj:youth, obj:program`
+  - metric: 222 youth participated in programs this year.
+  - cited markers: value=“222 Participated 85 Volunteers” | subject=“222 Participated 85 Volunteers”
+- **71709748:8** `verb:donate, obj:bank, obj:pound, obj:produce, mod:fresh, mod:county`
+  - metric: The Hope Farm donated hundreds of pounds of fresh produce to Sullivan County food banks and nutrition programs.
+  - cited markers: value=“11097 lbs” | subject=“Hope Farm Production”
+- **810829ad:6** `subj:revenue, mod:total`
+  - metric: Total organizational revenue was $4,373,565.19.
+  - cited markers: value=“Overall Organizational $4,373,565.19” | subject=“Overall Organizational $4,373,565.19”
+- **81265722:2** `verb:show, obj:completion, mod:high`
+  - metric: Youth who co-created community support plans with mentors showed higher rates of plan completion and engagement.
+  - cited markers: value=“The number of youth participants who created a community support plan increased across pro” | subject=“Community support plans 9  played a vital role in increasing youth engagement, accountabil”
+- **82d11125:0** `verb:generate, mod:total`
+  - metric: Bayview's social accountability program generated $1,182,585 in total community impact in 2019, nearly double the previous year.
+  - cited markers: value=“Bayview's social accountability program engages residents and staff, encouraging them to r” | subject=“Bayview's social accountability program engages residents and staff, encouraging them to r”
+- **8552b09e:2** `verb:complete, obj:institute, mod:leadership, mod:training`
+  - metric: 14 adult participants completed the Parent Leadership Training Institute (PLTI), gaining skills to become advocates for children.
+  - cited markers: value=“14 adult participants gained the skills and tools needed to become leading advocates on be” | subject=“14 adult participants gained the skills and tools needed to become leading advocates on be”
+- **8b5543a9:0** `obj:individual, obj:program, mod:multiple`
+  - metric: Exceptional Persons, Inc. served individuals and families across multiple programs in Fiscal Year 2022, with total revenue of $20,557,363.
+  - cited markers: value=“TOTAL $20,557,363” | subject=“TOTAL $20,557,363”
+- **8b5543a9:1** `verb:account, subj:area, obj:spending, mod:program, mod:large`
+  - metric: The organization's largest program area, Community Services - Residential/Host Homes, accounted for $14,043,490 in expenses, representing 69.10% of total spending.
+  - cited markers: value=“$14,043,490 |” | subject=“COMMUNITY SERVICES - RESIDENTIAL/HOST HOMES”
+- **8b5543a9:2** `obj:spending, obj:area, mod:program, mod:large`
+  - metric: Children & Family Services was the second-largest program area, with $3,390,580 in expenses, or 16.68% of total spending.
+  - cited markers: value=“$3,390,580 |” | subject=“CHILDREN & FAMILY SERVICES”
+- **8b5543a9:3** `subj:cost, mod:overhead, mod:efficient`
+  - metric: Net administration costs were 10.3% of total expenses, indicating efficient overhead management.
+  - cited markers: value=“Net Administration is 10.3% OF TOTAL EXPENSES” | subject=“Net Administration is 10.3% OF TOTAL EXPENSES”
+- **8b5543a9:4** `verb:provide, obj:funding, obj:majority`
+  - metric: State and federal grants provided the majority of funding at $15,331,448, or 74.58% of total revenue.
+  - cited markers: value=“$15,331,448 |” | subject=“MEDICAID”
+- **8b8cd8e1:1** `subj:revenue, obj:fy2020, mod:total`
+  - metric: CUMAC's total revenue in FY2020 was $5,293,336.
+  - cited markers: value=“FY2020TotalRevenue:$5,293,336” | subject=“FY2020TotalRevenue:$5,293,336”
+- **8c29956a:8** `verb:receive, obj:campaign`
+  - metric: St. Luke's Hospital in Nablus received a new ambulance in 2019, funded by a campaign that raised over $85,000 from Washington, DC-area churches and individuals.
+  - cited markers: value=“in Chevy Chase, Maryland took this on as a challenge. Working in partnership with AFEDJ, b” | subject=“in Chevy Chase, Maryland took this on as a challenge. Working in partnership with AFEDJ, b”
+- **8e1cf08b:5** `verb:hold, obj:december`
+  - metric: The Luther Manor Foundation held total net assets of $8,971,558 as of December 31, 2024.
+  - cited markers: value=“$8,971,558” | subject=“Total Net Assets”
+- **93e81f02:6** `subj:revenue, mod:annual`
+  - metric: Total annual revenue was $614,807.
+  - cited markers: value=“TOTAL  -­--  $614,807” | subject=“TOTAL  -­--  $614,807”
+- **93e81f02:7** `subj:expense, mod:annual`
+  - metric: Total annual expenses were $604,954.
+  - cited markers: value=“TOTAL  -­--  $604,954” | subject=“TOTAL  -­--  $604,954”
+- **9b354fed:0** `obj:increase, mod:fiscal, mod:significant, mod:prior`
+  - metric: The Thompson served 26,180 meals in fiscal year 2022, a significant increase from the prior year.
+  - cited markers: value=“26,180 Meals Served” | subject=“26,180 Meals Served”
+- **9b354fed:6** `verb:grow, obj:september, mod:invest`
+  - metric: The organization's invested funds ending balance grew to $2,214,382 as of September 30, 2022.
+  - cited markers: value=“$2,214,382” | subject=“Ending Balance”
+- **9fcf82e5:9** `verb:go, obj:expense`
+  - metric: 81% of expenses went directly to programs.
+  - cited markers: value=“Administration 18% Fundraising 1% Programs 81%” | subject=“Administration 18% Fundraising 1% Programs 81%”
+- **a00adaa5:0** `obj:target, mod:first`
+  - metric: Bridge of Hope surpassed its 3-year goal of a 50% increase in parents and children served within the first two years and is now expanding the target to 70% growth.
+  - cited markers: value=“Within the past two years we surpassed the 50% goal! We are now expanding the 3-year strat” | subject=“Within the past two years we surpassed the 50% goal! We are now expanding the 3-year strat”
+- **a17a2fc3:11** `subj:number, obj:member`
+  - metric: The average number of training hours per staff member was 55.7.
+  - cited markers: value=“55.7” | subject=“Average Numberof Hours Per Staff”
+- **b670f181:1** `subj:individual, obj:household`
+  - metric: Over 5,328 individuals from 2,604 households were served by HRA programs.
+  - cited markers: value=“Servedover5,328individualsfrom2,604households.” | subject=“Servedover5,328individualsfrom2,604households.”
+- **bdad0921:1** `verb:registró, obj:participante`
+  - metric: Un año después del ingreso al programa, se registró un aumento del 38% en el bienestar general de los participantes.
+  - cited markers: value=“Aumento del 38% en el bienestar general” | subject=“Aumento del 38% en el bienestar general”
+- **c6d70581:1** `verb:reach, subj:revenue`
+  - metric: Total revenue including food donations reached $59,930,680.
+  - cited markers: value=“GRAND TOTAL                                          $59,930,680” | subject=“GRAND TOTAL                                          $59,930,680”
+- **c6d70581:3** `obj:individual, mod:aspire`
+  - metric: The ASPIRE program provided employment support services to 84 individuals.
+  - cited markers: value=“84” | subject=“RECEIVED EMPLOYMENT SUPPORT SERVICES”
+- **c6d70581:6** `subj:individual, obj:aspire`
+  - metric: 49 individuals obtained employment or better employment through ASPIRE.
+  - cited markers: value=“49” | subject=“OBTAINED EMPLOYMENT OR BETTER EMPLOYMENT”
+- **cc947e2b:13** `verb:help, obj:project`
+  - metric: Agudath Israel of America's Project LEARN helped 170 cases monthly from schools across the country.
+  - cited markers: value=“170” | subject=“170”
+- **ce7b337f:0** `obj:florida, mod:therapy, mod:intensive`
+  - metric: HomeSafe cares for 50 percent of all children served by the five organizations in Florida accredited to provide the intensive therapy program these children require.
+  - cited markers: value=“There are only five organizations like HomeSafe throughout the state, and HomeSafe current” | subject=“There are only five organizations like HomeSafe throughout the state, and HomeSafe current”
+- **d9fef44f:10** `subj:revenue, obj:fy2023`
+  - metric: Total revenue for FY2023 was $6,436,789.
+  - cited markers: value=“$6,436,789” | subject=“$6,436,789”
+- **da2ba72a:5** `verb:go, obj:program`
+  - metric: 58% of Abbott House's operating expenses went to the residential program in FY2017.
+  - cited markers: value=“Residential  58%” | subject=“Residential  58%”
+- **dddcd7b6:0** `subj:cao, obj:assistance`
+  - metric: CAO of Scioto County served 773 adults and youth through workforce services, including 210 who received vehicle repair assistance.
+  - cited markers: value=“Individuals in workforce services - 773 Adults and Youth served, including 210 receiving v” | subject=“Individuals in workforce services - 773 Adults and Youth served, including 210 receiving v”
+- **e43d7482:2** `verb:earn, subj:member, obj:employment, mod:support`
+  - metric: Members earned an average wage of $9.82 per hour through supported employment.
+  - cited markers: value=“$9.82 PER HOUR” | subject=“AVERAGE WAGE”
+- **e43d7482:3** `verb:work, subj:member, obj:community, mod:different`
+  - metric: Summerhouse members worked at 18 different employers in the community.
+  - cited markers: value=“18” | subject=“TOTAL EMPLOYERS”
+- **e6fb382a:5** `quantity, obj:loss`
+  - metric: Good Shepherd's change in net assets from operations was a loss of $346,263.
+  - cited markers: value=“Change in Net Assets from Operations ($346,263)” | subject=“Change in Net Assets from Operations ($346,263)”
+- **ec5c8930:10** `verb:break, obj:ground`
+  - metric: Villa View Apartments, a 50-unit mixed-income development, broke ground in 2024.
+  - cited markers: value=“One of our most significant accomplishments this year was the groundbreaking of Villa View” | subject=“One of our most significant accomplishments this year was the groundbreaking of Villa View”
+- **ee9087ae:1** `verb:operate, obj:construction, mod:complete`
+  - metric: United Community Action Program operates 16 Head Start/Early Head Start childhood centers, with one new building completing construction.
+  - cited markers: value=“May is Community Action Month! This month and year Community Action is acknowledging the i” | subject=“May is Community Action Month! This month and year Community Action is acknowledging the i”
+- **ee9087ae:2** `obj:partnership, mod:additional`
+  - metric: The UCAP Housing program has 44 single-family and other units housing over 100 people, with partnerships for 370 additional units across Oklahoma.
+  - cited markers: value=“May is Community Action Month! This month and year Community Action is acknowledging the i” | subject=“May is Community Action Month! This month and year Community Action is acknowledging the i”
+- **ee9087ae:4** `verb:maintain, subj:cpts`
+  - metric: CPTS maintains a fleet of 66 vehicles providing open-to-all public transportation with ADA accessibility.
+  - cited markers: value=“May is Community Action Month! This month and year Community Action is acknowledging the i” | subject=“May is Community Action Month! This month and year Community Action is acknowledging the i”
+- **efd61fea:15** `subj:investment, mod:capital`
+  - metric: Capital investment reached $254,102,007, ahead of the five-year $300 million goal.
+  - cited markers: value=“At $254,102,007, we are ahead of schedule in reaching our five year goal of $300 million.” | subject=“At $254,102,007, we are ahead of schedule in reaching our five year goal of $300 million.”
+- **efd61fea:5** `verb:conduct, obj:leader`
+  - metric: Greater Dubuque Development conducted 256 Info Action visits with business leaders.
+  - cited markers: value=“Through Greater Dubuque's signature Business Retention and Expansion program, Info Action ” | subject=“Through Greater Dubuque's signature Business Retention and Expansion program, Info Action ”
+- **f1189246:0** `obj:illness, mod:serious`
+  - metric: Chrysalis served individuals with serious mental illness in Dane County, Wisconsin, with total expenses of $385,039.
+  - cited markers: value=“Total: $385,039” | subject=“Expenses”
+- **f4819890:0** `obj:ptsd, obj:open, mod:combat`
+  - metric: Since opening in 2014, Heroes and Horses has served 72 combat veterans suffering from PTSD.
+  - cited markers: value=“Heroes and Horses opened its doors in 2014, and since that time we have served 72 veterans” | subject=“Heroes and Horses opened its doors in 2014, and since that time we have served 72 veterans”
+- **fb8f56bd:0** `obj:history, obj:cohort, mod:large`
+  - metric: New Futures served 273 Scholars in 2024, the largest cohort in its history.
+  - cited markers: value=“273 Scholars Served” | subject=“273 Scholars Served”
+- **fb8f56bd:1** `verb:celebrate, obj:graduate`
+  - metric: The organization celebrated 55 graduates in 2024, a record number.
+  - cited markers: value=“55 Scholars Graduated” | subject=“55 Scholars Graduated”
+- **fd032b14:5** `verb:raise, subj:campaign`
+  - metric: Clover's 125th Anniversary Campaign raised more than $2 million.
+  - cited markers: value=“Later, as President of the Clover Foundation, he cochaired Clover's 125th Anniversary Camp” | subject=“Later, as President of the Clover Foundation, he cochaired Clover's 125th Anniversary Camp”
+
+## VERB not on page (action the source never states) — 95
+
+- **029625c6:3** `verb:impact`
+  - metric: Weatherization impacted 482 lives and completed 225 homes.
+  - cited markers: value=“482 l i v e s   i m p a c t e d” | subject=“482 l i v e s   i m p a c t e d”
+- **0b829d61:3** `verb:operate`
+  - metric: SLI operated 21 homes serving 95 men and women with 24/7 support.
+  - cited markers: value=“clients engaged in activities, volunteering in the community, learning daily living skills” | subject=“clients engaged in activities, volunteering in the community, learning daily living skills”
+- **131309e3:1** `verb:deliver`
+  - metric: CSS delivered 447,572 total service hours across all programs.
+  - cited markers: value=“447,572” | subject=“SERVICE HOURS”
+- **131309e3:3** `verb:operate`
+  - metric: CSS operates eight group homes providing 24-hour residential care, totaling 342,845 hours of care for 46 individuals.
+  - cited markers: value=“342,845” | subject=“24-Hour Residential Care”
+- **18588fca:11** `verb:go`
+  - metric: 85% of expenses went to program services.
+  - cited markers: value=“85%” | subject=“Program Services”
+- **18bb8c0f:1** `verb:provide`
+  - metric: CPWD provided 20,437 service hours to consumers.
+  - cited markers: value=“20,437” | subject=“Service Hours with Consumers”
+- **18bb8c0f:8** `verb:achieve`
+  - metric: CPWD achieved 5 job placements for consumers.
+  - cited markers: value=“5” | subject=“Number of Job Placements”
+- **1a70e980:1** `verb:provide`
+  - metric: Over 63 volunteers provided nights of kids sleeping safe and sound.
+  - cited markers: value=“NIGHTS OF KIDS SLEEPING SAFE AND SOUND THANKS TO OVER 63 VOLUNTEERS” | subject=“NIGHTS OF KIDS SLEEPING SAFE AND SOUND THANKS TO OVER 63 VOLUNTEERS”
+- **1c0ad786:2** `verb:reach`
+  - metric: Prevention sessions reached 24,016 youth and adults.
+  - cited markers: value=“In Fiscal Year 2023-2024, 29,748 young people, women, and men received our services, inclu” | subject=“In Fiscal Year 2023-2024, 29,748 young people, women, and men received our services, inclu”
+- **1c0ad786:8** `verb:operate`
+  - metric: The organization operates in more than 70 schools in Orange County.
+  - cited markers: value=“Since 1979, Phoenix House has offered behavioral health services in California including s” | subject=“Since 1979, Phoenix House has offered behavioral health services in California including s”
+- **24e18655:6** `verb:conduct`
+  - metric: Island Harvest conducted 2,098 nutrition education sessions.
+  - cited markers: value=“2,098	individual	and	group	nutrition	education	sessions on topics such as eating healthy o” | subject=“2,098	individual	and	group	nutrition	education	sessions on topics such as eating healthy o”
+- **28bb72ee:2** `verb:generate`
+  - metric: The program generated $6.5 million in EITC refunds for taxpayers.
+  - cited markers: value=“$6.5M in EITC Refunds” | subject=“$6.5M in EITC Refunds”
+- **28bb72ee:4** `verb:secure`
+  - metric: The program secured $4.7 million in Child Tax Credit and Additional Child Tax Credit refunds as of May 2025.
+  - cited markers: value=“$4.7M” | subject=“Child Tax Credit/Additional Child Tax Credit Refunds as of May 2025”
+- **2995644a:0** `verb:raise`
+  - metric: Kendal~Crosslands Communities raised over $542,500 in charitable gifts from more than 400 households in 2025.
+  - cited markers: value=“Thanks to the support of generous residents, families, friends, board members, future resi” | subject=“Thanks to the support of generous residents, families, friends, board members, future resi”
+- **30a05d18:1** `verb:found`
+  - metric: JFS was founded in 1854 as the first charity in Los Angeles.
+  - cited markers: value=“In 1854, Jewish Family Service (JFS) was the first charity to be established in the city. ” | subject=“In 1854, Jewish Family Service (JFS) was the first charity to be established in the city. ”
+- **31855611:2** `verb:live`
+  - metric: 76% of Wesley Health Center patients live at or below 100% of the Federal Poverty Level.
+  - cited markers: value=“During the Fiscal Year 2011-2012, Wesley Health Center provided services to 7,593 unduplic” | subject=“During the Fiscal Year 2011-2012, Wesley Health Center provided services to 7,593 unduplic”
+- **36941d40:8** `verb:serve`
+  - metric: CATA served students across 9 school districts.
+  - cited markers: value=“Students across 9 school districts (and over 30 classrooms!) count on CATA's weekly arts p” | subject=“Students across 9 school districts (and over 30 classrooms!) count on CATA's weekly arts p”
+- **38c9a81d:0** `verb:serve`
+  - metric: The Financial Wellness Program served 22 participants, with 86% completing 3 hours of coaching and 77% completing 6 hours.
+  - cited markers: value=“Of the 22 participants enrolled,  19 (86%) completed 3 hours of coaching, and 17 (77%) com” | subject=“Of the 22 participants enrolled,  19 (86%) completed 3 hours of coaching, and 17 (77%) com”
+- **3e3ff326:1** `verb:occur`
+  - metric: 10,078 participations in Springboard programming occurred in 2022.
+  - cited markers: value=“10,078 participations in Springboard” | subject=“10,078 participations in Springboard”
+- **3e3ff326:3** `verb:record`
+  - metric: 4,234 instances of staff supporting residents with housing stability were recorded.
+  - cited markers: value=“4,234” | subject=“instances of staff supporting residents with housing stability”
+- **47fd5ae6:1** `verb:contribute`
+  - metric: Volunteers contributed 38,746 hours, valued at $774,920.
+  - cited markers: value=“38,746 Volunteer Hours Worth $774,920” | subject=“38,746 Volunteer Hours Worth $774,920”
+- **4b310b24:2** `verb:attend`
+  - metric: 219 participants attended NHTDWG's 3-part Spring Webinar Series.
+  - cited markers: value=“219” | subject=“Participants in our 3 part Spring Webinar Series.”
+- **4ec0d342:1** `verb:operate`
+  - metric: Step Up operates nine locations across Santa Monica, Hollywood, West Los Angeles, Orange County, and the Inland Empire.
+  - cited markers: value=“These 13 units will add to the number of people already living in Step Up's nine locations” | subject=“These 13 units will add to the number of people already living in Step Up's nine locations”
+- **520af13c:3** `verb:come`
+  - metric: Over 30% of the organization's support now comes directly from the community.
+  - cited markers: value=“Ten years ago this organization was nearly 100% dependent on federal and state grants and ” | subject=“Ten years ago this organization was nearly 100% dependent on federal and state grants and ”
+- **5370f17e:1** `verb:receive`
+  - metric: 2,550 child care providers received trauma-informed care training.
+  - cited markers: value=“2,550” | subject=“Child	Care Providers	Served Child	Care	Providers	in Trauma-Informed	Care	Training”
+- **5370f17e:8** `verb:cite`
+  - metric: 79% of families cited employment as their primary child care need.
+  - cited markers: value=“79%” | subject=“Primary Child Care Need (Employment)”
+- **56688514:2** `verb:achieve`
+  - metric: Council on Aging's Care Transitions program achieved a 12 percent hospital readmission rate within 30 days, significantly lower than the national Medicare rate of approximately 20 percent.
+  - cited markers: value=“In the first nine months of 2013, 1,669 patients completed the 30-day program (64 percent ” | subject=“In the first nine months of 2013, 1,669 patients completed the 30-day program (64 percent ”
+- **5b8eae73:1** `verb:generate`
+  - metric: The organization's Hospice Unique Boutique (The HUB) generated $602,263 in gross sales in 2023.
+  - cited markers: value=“$602,263 in Gross Sales” | subject=“$602,263 in Gross Sales”
+- **5b8eae73:2** `verb:receive`
+  - metric: The HUB received 148,000 donated items in 2023.
+  - cited markers: value=“148,000 Items Donated” | subject=“148,000 Items Donated”
+- **5b8eae73:3** `verb:contribute`
+  - metric: Volunteers contributed 5,600 hours to The HUB in 2023.
+  - cited markers: value=“5,600” | subject=“Volunteer Hours”
+- **5b8eae73:5** `verb:generate`
+  - metric: The HUB generated $83,018 in event sales in 2023.
+  - cited markers: value=“$83,018” | subject=“in Event Sales”
+- **5b98b66f:8** `verb:secure`
+  - metric: Capstone secured $1,903,873 in tax refunds for low-income households through tax preparation assistance.
+  - cited markers: value=“$1,903,873” | subject=“In tax refunds for low-income households resulting from tax preparation assistance”
+- **5f0a0f54:1** `verb:move`
+  - metric: 75% of families exiting shelter moved into stable housing.
+  - cited markers: value=“75% shelter exits to stable housing” | subject=“75% shelter exits to stable housing”
+- **65dd3092:5** `verb:provide`
+  - metric: 3,279 individual coaching sessions were provided.
+  - cited markers: value=“individual coaching 3,279” | subject=“individual coaching 3,279”
+- **65dd3092:6** `verb:hold`
+  - metric: 10 Transition Mentoring Workshops were held nationally.
+  - cited markers: value=“10” | subject=“Transition Mentoring Workshops nationally”
+- **65dd3092:8** `verb:involve`
+  - metric: 86 mentors were involved.
+  - cited markers: value=“mentors 86” | subject=“mentors 86”
+- **71709748:4** `verb:serve`
+  - metric: New Hope Community served 328 free hot meals at its 3rd Annual Community Outreach Holiday Dinner.
+  - cited markers: value=“Arriving guests were treated to a festive Christmas scene and received hot meals to go - i” | subject=“Under a crisp evening sky, Santa Claus and his elves arrived on December 15th at NHC's  3r”
+- **74fdf437:3** `verb:go`
+  - metric: 94% of expenses went to program services, with 4% administrative and 1% fundraising.
+  - cited markers: value=“94% program expenses 4% administrative 1% fundraising” | subject=“94% program expenses 4% administrative 1% fundraising”
+- **74fdf437:5** `verb:come`
+  - metric: 85% of revenue came from donations and 15% from fees.
+  - cited markers: value=“85% donations 15% fees” | subject=“85% donations 15% fees”
+- **74fdf437:6** `verb:total`
+  - metric: In-kind revenue totaled $66,215 and in-kind expenses were $53,297.
+  - cited markers: value=“In-Kind Revenue - $66,215” | subject=“In-Kind Revenue - $66,215”
+- **752d2b78:2** `verb:serve`
+  - metric: ACTS served 1,328 households in 2022.
+  - cited markers: value=“1,328” | subject=“Households”
+- **759c9a94:7** `verb:hold`
+  - metric: His Grace Foundation held 22 celebrations and special events on the Bone Marrow Transplant Unit.
+  - cited markers: value=“Celebrations and Special Events on the Bone Marrow Transplant Unit 22” | subject=“Celebrations and Special Events on the Bone Marrow Transplant Unit 22”
+- **7e9ebeba:9** `verb:gain`
+  - metric: St. Vincent de Paul Society of Lane County gained 43 new Monthly Sustainer Circle members.
+  - cited markers: value=“43” | subject=“New Monthly Sustainer Circle members”
+- **810829ad:3** `verb:provide`
+  - metric: The center provided 913 total hours of therapy.
+  - cited markers: value=“913 Total Hours of Therapy” | subject=“913 Total Hours of Therapy”
+- **81480a77:3** `verb:finalize`
+  - metric: 34 adoptions were finalized from foster care in 2021.
+  - cited markers: value=“♥ 34 ADOPTIONS” | subject=“♥ 34 ADOPTIONS”
+- **8552b09e:1** `verb:serve`
+  - metric: 82 families were served through the Parents as Teachers and Healthy Families Greater Danbury home visiting programs.
+  - cited markers: value=“Please take the time to read the quotes that appear throughout this Annual Report. Those q” | subject=“Please take the time to read the quotes that appear throughout this Annual Report. Those q”
+- **8c29956a:5** `verb:serve`
+  - metric: The Jerusalem Princess Basma Centre's inclusive school serves over 450 students, with about 40% diagnosed with a disability, fostering confidence and leadership for girls.
+  - cited markers: value=“The Jerusalem Princess Basma Centre, an internationally-accredited rehabilitation center f” | subject=“The Jerusalem Princess Basma Centre, an internationally-accredited rehabilitation center f”
+- **8e1cf08b:3** `verb:raise`
+  - metric: The first annual dinner auction raised $27,315 in net proceeds for the resident support fund.
+  - cited markers: value=“EVENT NET PROCEEDS THE FIRST ANNUAL DINNER AUCTION: $27,315” | subject=“EVENT NET PROCEEDS THE FIRST ANNUAL DINNER AUCTION: $27,315”
+- **98eb1221:10** `verb:contribute`
+  - metric: Volunteers contributed 3,310 hours to RaiseUp Families.
+  - cited markers: value=“TOTAL VOLUNTEER HOURS: 3,310         TOTAL VOLUNTEERS: 423” | subject=“TOTAL VOLUNTEER HOURS: 3,310         TOTAL VOLUNTEERS: 423”
+- **98eb1221:9** `verb:contribute`
+  - metric: 423 volunteers contributed 3,310 hours to RaiseUp Families.
+  - cited markers: value=“TOTAL VOLUNTEER HOURS: 3,310         TOTAL VOLUNTEERS: 423” | subject=“TOTAL VOLUNTEER HOURS: 3,310         TOTAL VOLUNTEERS: 423”
+- **9b354fed:1** `verb:grow`
+  - metric: Home-delivered Meals on Wheels grew from just over 11,000 meals last year to 17,304 meals this year.
+  - cited markers: value=“17,304 Home-Delivered Meals on Wheels 7,769 In-house dining room meals” | subject=“17,304 Home-Delivered Meals on Wheels 7,769 In-house dining room meals”
+- **9d9ae097:5** `verb:participate`
+  - metric: 480 individuals participated in 1,440 hours of financial coaching.
+  - cited markers: value=“480” | subject=“individuals partidipated in 1,440 hours of financial coaching to help them learn better sk”
+- **9dade083:3** `verb:contribute`
+  - metric: Volunteers contributed 2,171 hours of service.
+  - cited markers: value=“2,171 volunteer hours” | subject=“2,171 volunteer hours”
+- **9dade083:4** `verb:provide`
+  - metric: The organization provided 164 ShareCare rides for older adults.
+  - cited markers: value=“164 ShareCare rides” | subject=“164 ShareCare rides”
+- **9dade083:5** `verb:total`
+  - metric: Friendly visits to older adults totaled 64.
+  - cited markers: value=“64 friendly visits” | subject=“64 friendly visits”
+- **9dade083:7** `verb:reach`
+  - metric: Jewish Holiday Outreach programs reached 207 participants.
+  - cited markers: value=“207 participants in Jewish Holiday Outreach programs” | subject=“207 participants in Jewish Holiday Outreach programs”
+- **9fcf82e5:4** `verb:receive`
+  - metric: 22 families received long-term case navigation.
+  - cited markers: value=“22 families given long-term case navigation 131 referrals for food and basic needs help 10” | subject=“22 families given long-term case navigation 131 referrals for food and basic needs help 10”
+- **9fcf82e5:5** `verb:make`
+  - metric: 131 referrals were made for food and basic needs help.
+  - cited markers: value=“22 families given long-term case navigation 131 referrals for food and basic needs help 10” | subject=“22 families given long-term case navigation 131 referrals for food and basic needs help 10”
+- **a5520e3e:13** `verb:go`
+  - metric: 87% of expenses went to Program Services.
+  - cited markers: value=“Program Services.......................................................87%” | subject=“3”
+- **a79f5931:11** `verb:amplify`
+  - metric: THRIVE amplified community awareness through 19 media placements.
+  - cited markers: value=“📰 Amplified community awareness through 19 media placements 📰 Amplified community awarenes” | subject=“📰 Amplified community awareness through 19 media placements 📰 Amplified community awarenes”
+- **ab7a5a03:1** `verb:respond`
+  - metric: City House responded to 654 crisis calls.
+  - cited markers: value=“654” | subject=“crisis calls answered”
+- **ab7a5a03:4** `verb:provide`
+  - metric: City House provided 2,753 hours of individual and family counseling.
+  - cited markers: value=“2,753 hours of individual and” | subject=“2,753 hours of individual and”
+- **ab7a5a03:8** `verb:operate`
+  - metric: City House operates a 48-bed agency including emergency shelter, transitional living homes, and other services.
+  - cited markers: value=“In  1988,  Plano  ISD  school  counselor  Nancy  Boyd  and  educator  Kay Goodman took act” | subject=“In  1988,  Plano  ISD  school  counselor  Nancy  Boyd  and  educator  Kay Goodman took act”
+- **ab7a5a03:9** `verb:contribute`
+  - metric: Volunteers contributed 17,250 hours, providing a value of $577,703.
+  - cited markers: value=“17,250” | subject=“volunteer hours”
+- **bdad0921:4** `verb:generó`
+  - metric: Freedom Lifemap generó más de $50,000 de ahorros anuales en eficiencia del equipo para organizaciones sin fines de lucro, según un ensayo de control aleatorio.
+  - cited markers: value=“+$50,000 de ahorros anuales en eficiencia del equipo para organizaciones sin fines de lucr” | subject=“+$50,000 de ahorros anuales en eficiencia del equipo para organizaciones sin fines de lucr”
+- **c0325150:10** `verb:receive`
+  - metric: 200 youth received computers to support distance learning.
+  - cited markers: value=“When COVID began impacting our community in March of 2020 we immediately knew that digging” | subject=“When COVID began impacting our community in March of 2020 we immediately knew that digging”
+- **c09c96c2:5** `verb:raise`
+  - metric: Membership appeal raised $46,020 in contributions.
+  - cited markers: value=“46,019.69” | subject=“Membership Appeal”
+- **c09c96c2:9** `verb:attract`
+  - metric: Breakfast with Santa attracted nearly 500 guests.
+  - cited markers: value=“Breakfast with Santa - Nearly 500 guests packed the Main Hall and hallways of Community Se” | subject=“Breakfast with Santa - Nearly 500 guests packed the Main Hall and hallways of Community Se”
+- **c94ad3f6:3** `verb:raise`
+  - metric: The Fun Run fundraiser raised more than $28,500 in 2021.
+  - cited markers: value=“Your generosity made a difference in 2021. During the Fun Run, our largest fundraiser, you” | subject=“Your generosity made a difference in 2021. During the Fun Run, our largest fundraiser, you”
+- **c94ad3f6:4** `verb:raise`
+  - metric: The end-of-year campaign raised almost $11,600 in additional support.
+  - cited markers: value=“Your generosity made a difference in 2021. During the Fun Run, our largest fundraiser, you” | subject=“Your generosity made a difference in 2021. During the Fun Run, our largest fundraiser, you”
+- **c94ad3f6:6** `verb:contribute`
+  - metric: Volunteers contributed 5,555 helpline hours in 2021.
+  - cited markers: value=“Active helpline volunteers: 17 Volunteer helpline hours: 5,555 Helpline calls: 588” | subject=“Active helpline volunteers: 17 Volunteer helpline hours: 5,555 Helpline calls: 588”
+- **cc947e2b:2** `verb:secure`
+  - metric: Agudath Israel of America secured $20,000,000 for Jewish education funding.
+  - cited markers: value=“$20,000,000 for Jewish education funding 2,335 voucher students in schools” | subject=“$20,000,000 for Jewish education funding 2,335 voucher students in schools”
+- **cc947e2b:3** `verb:secure`
+  - metric: Agudath Israel of America secured $30,000,000 in educational services received.
+  - cited markers: value=“Regulatory hurdles for yeshivos accessing EANS funding removed $30,000,000 in educational ” | subject=“Regulatory hurdles for yeshivos accessing EANS funding removed $30,000,000 in educational ”
+- **cc947e2b:4** `verb:secure`
+  - metric: Agudath Israel of America secured $11,000,000 in funding for busing 49,000 children in New Jersey.
+  - cited markers: value=“NEW JERSEY $11,000,000 in funding made available for busing 49,000 children” | subject=“NEW JERSEY $11,000,000 in funding made available for busing 49,000 children”
+- **ce7b337f:11** `verb:provide`
+  - metric: The newly constructed Sylvester Family West Campus provides a home for 12 young women.
+  - cited markers: value=“Our newly constructed Sylvester Family West Campus is fully operational - a home for 12 yo” | subject=“Our newly constructed Sylvester Family West Campus is fully operational - a home for 12 yo”
+- **d04d1475:3** `verb:distribute`
+  - metric: Over 1,037,652 pounds of food were distributed, equivalent to almost 838,700 meals.
+  - cited markers: value=“1,037,652 pounds of food were delivered from Food Gatherers - equivalent to almost 838,700” | subject=“1,037,652 pounds of food were delivered from Food Gatherers - equivalent to almost 838,700”
+- **d58e3d5b:9** `verb:operate`
+  - metric: Hearts With A Mission operates a 15-bed emergency shelter for youth ages 10-17, open 365 days a year, 24/7.
+  - cited markers: value=“” | subject=“Emergency shelter for youth ages 10 - 17”
+- **d5cb6d0c:2** `verb:deliver`
+  - metric: Elevate Youth Services delivered 4,435 hours of direct services.
+  - cited markers: value=“4,435” | subject=“hours of direct services provided”
+- **db75f054:7** `verb:complete`
+  - metric: A $2.3-million fiber enhancement project by CenturyLink was completed, providing 68 miles of new fiber to protect telecommunications.
+  - cited markers: value=“Our team went on-site to monitor repairs to the damaged fiber and relayed real-time update” | subject=“Our team went on-site to monitor repairs to the damaged fiber and relayed real-time update”
+- **e136ede4:1** `verb:assist`
+  - metric: The Anti-Displacement Tax Fund assisted more than 130 longtime homeowners offset rising property taxes.
+  - cited markers: value=“WFF's Home on the Westside program made major progress in connecting residents with resour” | subject=“WFF's Home on the Westside program made major progress in connecting residents with resour”
+- **e136ede4:7** `verb:receive`
+  - metric: 262 households received Thanksgiving meal delivery.
+  - cited markers: value=“262 Households” | subject=“262 Households”
+- **e2416d20:3** `verb:serve`
+  - metric: 821 elderly and disabled clients were served in 2017.
+  - cited markers: value=“Through Neighborhood House's programs, 821 elderly & disabled clients were able to get hea” | subject=“Through Neighborhood House's programs, 821 elderly & disabled clients were able to get hea”
+- **e2416d20:4** `verb:serve`
+  - metric: 515 struggling youth and young adults were served in 2017.
+  - cited markers: value=“All youth deserve opportunities to prepare for their future. So, in 2017, we worked with 5” | subject=“All youth deserve opportunities to prepare for their future. So, in 2017, we worked with 5”
+- **e31d17df:8** `verb:receive`
+  - metric: 205 employees received Stoneburner Service Awards for 10+ years of service.
+  - cited markers: value=“The Stoneburner Service Awards acknowledged 205 employees with 10+ years of commitment and” | subject=“The Stoneburner Service Awards acknowledged 205 employees with 10+ years of commitment and”
+- **e83840a4:8** `verb:hold`
+  - metric: 110 participant-led classes were held in the Peer Growth & Lifelong Learning program.
+  - cited markers: value=“110 participant-led classes” | subject=“110 participant-led classes”
+- **ebb0bcfe:3** `verb:operate`
+  - metric: A Precious Child operates 33 boutiques serving 8 Denver metro area counties.
+  - cited markers: value=“33” | subject=“BOUTIQUES SERVING 8 DENVER METRO AREA COUNTIES”
+- **efd61fea:8** `verb:generate`
+  - metric: Company expansions generated $27,750,000 in capital investment.
+  - cited markers: value=“Like a proud parent watching as their son or daughter achieves a significant milestone, Gr” | subject=“Like a proud parent watching as their son or daughter achieves a significant milestone, Gr”
+- **efd61fea:9** `verb:participate`
+  - metric: Over 75 area businesses participated in Dubuque Innovation Consortium programs.
+  - cited markers: value=“The Dubuque Innovation Consortium is a private-sector driven initiative comprised of Dubuq” | subject=“The Dubuque Innovation Consortium is a private-sector driven initiative comprised of Dubuq”
+- **f1169e89:2** `verb:receive`
+  - metric: The Foundation for Enhancing Communities received $6 million in new contributions in 2012.
+  - cited markers: value=“The year of 2012 was a very productive year for The Foundation for Enhancing Communities a” | subject=“The year of 2012 was a very productive year for The Foundation for Enhancing Communities a”
+- **f1169e89:3** `verb:establish`
+  - metric: The Foundation for Enhancing Communities established 44 new funds, management agreements and projects in 2012.
+  - cited markers: value=“The year of 2012 was a very productive year for The Foundation for Enhancing Communities a” | subject=“The year of 2012 was a very productive year for The Foundation for Enhancing Communities a”
+- **f1169e89:7** `verb:receive`
+  - metric: The Foundation for Enhancing Communities received 250 grant applications totaling $710,000 in requests but could only fund $262,000.
+  - cited markers: value=“We focused on grants in our five county region funded by our Regional Foundation's Discret” | subject=“We focused on grants in our five county region funded by our Regional Foundation's Discret”
+- **f46565eb:4** `verb:participate`
+  - metric: Over 200 young people participated in Summer Adventures camp programs in 2008.
+  - cited markers: value=“Orchards' Summer Adventures is the program that started us on the path to exploring new an” | subject=“Orchards' Summer Adventures is the program that started us on the path to exploring new an”
+- **f92248ef:4** `verb:generate`
+  - metric: The Food Hub has generated $830,553 in gross sales since 2015, with 85% going to local farmers and producers.
+  - cited markers: value=“Gross sales since 2015: $830,553.45 of which 85% goes to local farmers, producers, supplie” | subject=“ The Food Hub had gross sales of $830,553 since 2015, of which 85% went to local farmers ”
+- **fb8f56bd:2** `verb:achieve`
+  - metric: New Futures achieved a 90% success rate for Scholar graduation and persistence in 2024.
+  - cited markers: value=“90% Success Rate (Graduation & Persistence)” | subject=“90% Success Rate (Graduation & Persistence)”
+- **fb8f56bd:6** `verb:receive`
+  - metric: New Futures received a $1.5 million grant from the A. James & Alice B. Clark Foundation.
+  - cited markers: value=“We also honored the A. James & Alice B. Clark Foundation (left) with the 2024 New Futures ” | subject=“We also honored the A. James & Alice B. Clark Foundation (left) with the 2024 New Futures ”
+
+## SUBJECT not on page — 18
+
+- **011c1177:2** `subj:expense`
+  - metric: Program services expenses totaled $4,454,276.
+  - cited markers: value=“Program Services $4,454,276 Administrative $986,443 Fund-raising $79,400” | subject=“Program Services $4,454,276 Administrative $986,443 Fund-raising $79,400”
+- **0793289a:1** `subj:questcdc`
+  - metric: QuestCDC was recognized as one of 7 top agencies for data quality among 84 participating organizations.
+  - cited markers: value=“Data & Performance Recognized as one of 7 top agencies for data quality among 84 participa” | subject=“Data & Performance Recognized as one of 7 top agencies for data quality among 84 participa”
+- **128de607:4** `subj:client`
+  - metric: Clients received 100 vouchers for free clothing, beds, and furniture.
+  - cited markers: value=“100” | subject=“# of vouchers for free clothing, beds and furniture”
+- **35494eab:13** `subj:individual`
+  - metric: 120 individuals enrolled in family development classes.
+  - cited markers: value=“ENROLLED IN FAMILY DEVELOPMENT CLASSES 120” | subject=“ENROLLED IN FAMILY DEVELOPMENT CLASSES 120”
+- **5a23e2e5:4** `subj:program`
+  - metric: The Center Based Employment program processed 187,125 remotes in the past year.
+  - cited markers: value=“# of remotes processed by Center Based Employment in past year............... 187,125” | subject=“# of remotes processed by Center Based Employment in past year............... 187,125”
+- **810829ad:7** `subj:spending`
+  - metric: Direct victim services spending was $2,781,150.05.
+  - cited markers: value=“Direct Victim Services $2,781,150.05” | subject=“Direct Victim Services $2,781,150.05”
+- **82d11125:2** `subj:gala`
+  - metric: The Savoy gala raised $50,000 in 2019, far exceeding its $39,000 goal.
+  - cited markers: value=“Though attendees hid behind masks in keeping with the masquerade theme, it's no mystery as” | subject=“Though attendees hid behind masks in keeping with the masquerade theme, it's no mystery as”
+- **98dd921d:0** `subj:cil`
+  - metric: LIFE CIL impacted 2,649 lives from July 1, 2020 to June 30, 2021.
+  - cited markers: value=“2,649 lives impacted from July 1, 2020 to June 30, 2021” | subject=“2,649 lives impacted from July 1, 2020 to June 30, 2021”
+- **bb8cb998:1** `subj:ctn`
+  - metric: CTN served 714 seniors and people with disabilities to access health care.
+  - cited markers: value=“ Served 714 seniors and people with disabilities to access health care” | subject=“ Served 714 seniors and people with disabilities to access health care”
+- **dddcd7b6:2** `subj:cao`
+  - metric: CAO provided 150,101 summer meals at 26 open feeding sites.
+  - cited markers: value=“Summer meals - 150,101 meals at 26 open feeding sites” | subject=“Summer meals - 150,101 meals at 26 open feeding sites”
+- **dddcd7b6:4** `subj:cao`
+  - metric: CAO completed 6,285 applications for PIPP, Summer and Winter Crisis programs for households in Scioto County.
+  - cited markers: value=“PIPP, Summer and Winter Crisis - 6285 applications completed for households in Scioto Coun” | subject=“PIPP, Summer and Winter Crisis - 6285 applications completed for households in Scioto Coun”
+- **dddcd7b6:6** `subj:cao`
+  - metric: CAO served 1,612 women, infants, and children through the Scioto County WIC program.
+  - cited markers: value=“Scioto County WIC caseload - 1612 (Women, Infants and Children)” | subject=“Scioto County WIC caseload - 1612 (Women, Infants and Children)”
+- **dddcd7b6:7** `subj:cao`
+  - metric: CAO completed 6,149 home visits, including 1,427 for Head Start and 4,722 for Early Head Start.
+  - cited markers: value=“6,149 Home Visits completed - 1427 Head Start and 4722 Early Head Start” | subject=“6,149 Home Visits completed - 1427 Head Start and 4722 Early Head Start”
+- **dddcd7b6:8** `subj:cao`
+  - metric: CAO invested $6 million in the local community.
+  - cited markers: value=“6 million dollars invested in local community” | subject=“6 million dollars invested in local community”
+- **e27aec13:9** `subj:share`
+  - metric: At program exit, the share of participants earning $1,000 or less per month fell from 37% at intake to 20%.
+  - cited markers: value=“At program intake, participants earning $1,000 or less made up 37% of the sample; this fel” | subject=“At program intake, participants earning $1,000 or less made up 37% of the sample; this fel”
+- **e43d7482:5** `subj:program`
+  - metric: Summerhouse's shredding program recycled 60,000 pounds of paper and provided jobs for 3 new shredding attendants.
+  - cited markers: value=“Recycled 60,000 pounds of paper” | subject=“Recycled 60,000 pounds of paper”
+- **e5ec2221:0** `subj:cil`
+  - metric: LIFE CIL impacted 3,803 lives from July 1, 2021 to June 30, 2022.
+  - cited markers: value=“3,803 lives impacted from July 1, 2021 to June 30, 2022” | subject=“3,803 lives impacted from July 1, 2021 to June 30, 2022”
+- **f1189246:6** `subj:department`
+  - metric: Department of Vocational Rehabilitation revenue was $111,192.
+  - cited markers: value=“$111,192” | subject=“Medicaid Revenue”
+
+## OBJECT not on page — 68
+
+- **029625c6:4** `obj:life`
+  - metric: Healthy Homes served 67 households and impacted 137 lives.
+  - cited markers: value=“67 households served” | subject=“67 households served”
+- **0405ab89:0** `obj:high`
+  - metric: Elim Park achieved a 96% apartment occupancy rate in 2023, one of the highest in the state.
+  - cited markers: value=“In 2023, Elim Park Place achieved a 96% apartment occupancy rate, one of the highest in th” | subject=“In 2023, Elim Park Place achieved a 96% apartment occupancy rate, one of the highest in th”
+- **0455b54f:0** `obj:family`
+  - metric: Marguerite's Place provided 14,090 nights of housing to families in 2023.
+  - cited markers: value=“14,090” | subject=“NIGHTS OF HOUSING PROVIDED”
+- **0455b54f:2** `obj:program`
+  - metric: Marguerite's Place served 23,400 healthy meals in its childcare program.
+  - cited markers: value=“23,400” | subject=“HEALTHY MEALS SERVED IN CHILDCARE”
+- **0455b54f:4** `obj:hour`
+  - metric: Marguerite's Place provided 1,560 hours of case management.
+  - cited markers: value=“1,560” | subject=“HRS OF CASE MANAGEMENT”
+- **10c67887:2** `obj:connection`
+  - metric: 92% of youth/alumni reported an increased sense of connection with the foster youth community as a result of their participation in the 2011 Youth Leadership Summit.
+  - cited markers: value=“92% of youth/ alumni reported an increased sense of connnection with the foster youth comm” | subject=“92% of youth/ alumni reported an increased sense of connnection with the foster youth comm”
+- **128de607:7** `obj:organization`
+  - metric: Total expenses for the organization in 2020 were $12,125,087.
+  - cited markers: value=“$12,125,087” | subject=“Total Expenses”
+- **131309e3:5** `obj:organization`
+  - metric: Thirty Direct Support Professionals have been with CSS over ten years, and ten have been with the organization over twenty years.
+  - cited markers: value=“Our DSPs are important to the quality of services provided to the individuals we serve. De” | subject=“Our DSPs are important to the quality of services provided to the individuals we serve. De”
+- **18bb8c0f:9** `obj:community`
+  - metric: 3 people transitioned from nursing homes back into the community.
+  - cited markers: value=“3” | subject=“People Transitioned From Nursing Home”
+- **1c0ad786:7** `obj:custody`
+  - metric: In-custody substance use disorder treatment served 2,057 clients through the California Department of Corrections and Rehabilitation.
+  - cited markers: value=“California Department of Corrections and Rehabilitation Integrated Substance Use Disorder ” | subject=“California Department of Corrections and Rehabilitation Integrated Substance Use Disorder ”
+- **287485c1:4** `obj:program`
+  - metric: Family Services Center constructed 1 home through its housing program.
+  - cited markers: value=“Moved IT Infrastructure to cloud-based system(s) Presenting Agency to Huntsville City Coun” | subject=“Moved IT Infrastructure to cloud-based system(s) Presenting Agency to Huntsville City Coun”
+- **2995644a:8** `obj:cost`
+  - metric: The Louise P. Mullestein Scholarship Fund helped 11 staff members with child development center costs, totaling $36,394.
+  - cited markers: value=“To show appreciation for the care his wife Louise received in the Crosslands health center” | subject=“To show appreciation for the care his wife Louise received in the Crosslands health center”
+- **38c9a81d:4** `obj:program`
+  - metric: Participants paid off a total of $37,283 in debt and saved a total of $23,245 during the program.
+  - cited markers: value=“$37,283.00” | subject=“Debt Paid”
+- **519266c2:0** `obj:independence`
+  - metric: CPWD assisted people with disabilities in the greater Boulder-Denver area to achieve and maintain independence through five core services: Information and Referral, Independent Living Skills Training, Individual and Systems Advocacy, Peer Support, and Transitions.
+  - cited markers: value=“CPWD assists people with ALL disabilities, families, schools, employers and other related ” | subject=“CPWD assists people with ALL disabilities, families, schools, employers and other related ”
+- **590e8b9e:7** `obj:participant`
+  - metric: Activity/Life Enrichment programs drew 29,743 senior participants.
+  - cited markers: value=“Trips to New Orleans, Frostfire Theater, Jasper's Theater, Minnesota Twins and Minnesota V” | subject=“Trips to New Orleans, Frostfire Theater, Jasper's Theater, Minnesota Twins and Minnesota V”
+- **5f0a0f54:3** `obj:house`
+  - metric: The organization invested $202,000 in rental assistance to keep families housed.
+  - cited markers: value=“$202,000 in rental assistance” | subject=“$202,000 in rental assistance”
+- **5f0a0f54:4** `obj:work`
+  - metric: Over $600,000 in volunteer time was donated to power the organization's work.
+  - cited markers: value=“$600,000+ volunteer time donated” | subject=“$600,000+ volunteer time donated”
+- **682c5959:4** `obj:december`
+  - metric: EFI completed 84 certifications and had 4 certifications in progress as of December 31, 2023.
+  - cited markers: value=“84” | subject=“CERTIFICATIONS COMPLETED”
+- **68e0e142:2** `obj:graduate`
+  - metric: After Narrow Gate, 89% of graduates are able to hear from God quite a bit or a lot.
+  - cited markers: value=“89% AFTER NG” | subject=“Able to HEAR from God!”
+- **68e0e142:3** `obj:principle, obj:graduate`
+  - metric: After Narrow Gate, 89% of graduates make decisions based on Biblical principles or obedience to God.
+  - cited markers: value=“89% AFTER NG” | subject=“Make decisions based on Biblical principals or obedience to God.”
+- **68e0e142:9** `obj:program`
+  - metric: TN Box Beams has built over 10,000 beams and ships across the country, with profits supporting tuition-free programs.
+  - cited markers: value=“To date, we've built over 10,000 beams and currently ship our beams all across the country” | subject=“To date, we've built over 10,000 beams and currently ship our beams all across the country”
+- **714f6f9a:6** `obj:organization`
+  - metric: 85 volunteers supported the organization.
+  - cited markers: value=“222 Participated 85 Volunteers” | subject=“222 Participated 85 Volunteers”
+- **71709748:6** `obj:opwdd`
+  - metric: Select Human Services assisted 63 individuals in self-directing their services through OPWDD.
+  - cited markers: value=“63” | subject=“Supported through Self Direction”
+- **759c9a94:2** `obj:fulfillment`
+  - metric: His Grace Foundation served 132 families through shopping list fulfillment.
+  - cited markers: value=“Shopping Lists Fulfilled for             Families 132 708” | subject=“Shopping Lists Fulfilled for             Families 132 708”
+- **779d9438:3** `obj:judge`
+  - metric: 59% of respondents said they were criticized by judges or magistrates.
+  - cited markers: value=“59% respondents said they were criticized by judges/ magistrates .” | subject=“59% respondents said they were criticized by judges/ magistrates .”
+- **81480a77:13** `obj:end`
+  - metric: Total net assets at end of 2021 were $41,405,020.
+  - cited markers: value=“$41,405,020” | subject=“TOTAL NET ASSETS”
+- **88bfa5f4:0** `obj:medium`
+  - metric: IAVA reached more than 88 million people in 2017 through media and public engagement.
+  - cited markers: value=“In 2017, IAVA was America's true thought leader, driving the national conversation around ” | subject=“In 2017, IAVA was America's true thought leader, driving the national conversation around ”
+- **8bf02961:0** `obj:fy2024`
+  - metric: New Narrative served 2,040 participants in FY2024.
+  - cited markers: value=“We are meeting people where they are and getting them the quality care they need. Between ” | subject=“We are meeting people where they are and getting them the quality care they need. Between ”
+- **8bf02961:7** `obj:challenge`
+  - metric: 40% of staff report lived experience with mental health challenges.
+  - cited markers: value=“40%” | subject=“of staff report lived experience during their lifetime”
+- **9dade083:0** `obj:pound`
+  - metric: Jewish Family Service of the Lehigh Valley distributed 76,000 pounds of food through its Community Food Pantry.
+  - cited markers: value=“76,000 lbs of food distributed” | subject=“76,000 lbs of food distributed”
+- **a79f5931:1** `obj:program`
+  - metric: THRIVE stabilized 476 families (1,172 people) through its programs.
+  - cited markers: value=“Stabilized  476 families (1172 people)” | subject=“Stabilized  476 families (1172 people)”
+- **ab7a5a03:0** `obj:prevention`
+  - metric: City House provided 9,249 days of homelessness prevention via residential care.
+  - cited markers: value=“9,249” | subject=“days of homelessness prevented via residential care”
+- **b60a49eb:5** `obj:function`
+  - metric: 80% of youth living at the Childhelp Merv Griffin Village showed significant clinical improvement in family functioning.
+  - cited markers: value=“80% of youth living at the Childhelp Merv Griffin Village showed significant clinical impr” | subject=“80% of youth living at the Childhelp Merv Griffin Village showed significant clinical impr”
+- **b670f181:2** `obj:season`
+  - metric: Over 780 Energy Assistance Applications were completed, with over $3.0 million awarded in assistance for the 2019-2020 season.
+  - cited markers: value=“Completed over 780 Energy Assistance Applications. Over S3.0 Million awarded in assistance” | subject=“Completed over 780 Energy Assistance Applications. Over S3.0 Million awarded in assistance”
+- **bdad0921:2** `obj:participante`
+  - metric: Un año después del ingreso al programa, se registró una reducción del 50% en la vulnerabilidad de los participantes.
+  - cited markers: value=“Reducción del 50% en la vulnerabilidad” | subject=“Reducción del 50% en la vulnerabilidad”
+- **c0325150:1** `obj:box`
+  - metric: The organization distributed 8,044 food boxes to families.
+  - cited markers: value=“8,044” | subject=“Food Boxes Distributed”
+- **c09c96c2:11** `obj:december`
+  - metric: The organization's total assets were $1,266,416 as of December 31, 2006.
+  - cited markers: value=“1,266,415.90” | subject=“Total Assets”
+- **c09c96c2:7** `obj:postponement, obj:flooding`
+  - metric: The Golf Tournament raised over $20,436 despite a postponement due to flooding.
+  - cited markers: value=“In 2006, we had another excellent year of programming.  The 15 th Annual Golf Tournament a” | subject=“In 2006, we had another excellent year of programming.  The 15 th Annual Golf Tournament a”
+- **c31a2d63:0** `obj:fy16`
+  - metric: The YWRC served 1,035 clients through its Empowerment programs in FY16.
+  - cited markers: value=“1035 - # of Empowerment clients served” | subject=“1035 - # of Empowerment clients served”
+- **c31a2d63:1** `obj:fy16`
+  - metric: The YWRC served 289 Young Moms clients and their children in FY16.
+  - cited markers: value=“289 - # of Young Moms clients and their children served” | subject=“289 - # of Young Moms clients and their children served”
+- **c6d70581:5** `obj:aspire`
+  - metric: 127 families received assistance to avoid eviction and maintain housing through ASPIRE.
+  - cited markers: value=“127” | subject=“RECEIVED ASSISTANCE TO AVOID EVICTION AND MAINTAIN HOUSING”
+- **ccb0dcad:0** `obj:flood`
+  - metric: Jewish Family Service provided more than $950,000 in financial relief to 293 families affected by the August 2014 floods.
+  - cited markers: value=“To date, JFS has provided many forms of assistance, including more than $950,000 in financ” | subject=“To date, JFS has provided many forms of assistance, including more than $950,000 in financ”
+- **ccb0dcad:3** `obj:program`
+  - metric: Jewish Family Service provided 145 rides through its Escorted Transportation program.
+  - cited markers: value=“The JFS Transportation Department provides 145 rides , providing doorthrough-door assistan” | subject=“The JFS Transportation Department provides 145 rides , providing doorthrough-door assistan”
+- **ccb0dcad:9** `obj:flood`
+  - metric: Art Van donated more than 500 pieces of furniture delivered by JFS to 127 households affected by flooding.
+  - cited markers: value=“To date, JFS has provided many forms of assistance, including more than $950,000 in financ” | subject=“To date, JFS has provided many forms of assistance, including more than $950,000 in financ”
+- **d5cb6d0c:12** `obj:homelessness`
+  - metric: 37% of youth receiving intensive services were homeless or at risk of homelessness.
+  - cited markers: value=“37% were homeless or at risk of being homeless” | subject=“37% were homeless or at risk of being homeless”
+- **d5cb6d0c:4** `obj:solve`
+  - metric: 90% of youth exiting intensive programs learned new methods of problem-solving or coping with challenges.
+  - cited markers: value=“90% of youth learned new methods of problem-solving and/or coping with challenges.” | subject=“90% of youth learned new methods of problem-solving and/or coping with challenges.”
+- **d9fef44f:0** `obj:fy2023`
+  - metric: Facing Forward touched the lives of nearly 3,000 individuals affected by homelessness in FY2023.
+  - cited markers: value=“This past year, our journey has been a testament to the remarkable potential of collective” | subject=“This past year, our journey has been a testament to the remarkable potential of collective”
+- **d9fef44f:6** `obj:fy2023`
+  - metric: The Housing Location program served 30 individuals in FY2023.
+  - cited markers: value=“Our Housing Location program served 30 individuals in FY23.” | subject=“Our Housing Location program served 30 individuals in FY23.”
+- **d9fef44f:7** `obj:fy2023`
+  - metric: The Expedited Housing Initiative served 45 households in FY2023.
+  - cited markers: value=“Our Expedited Housing Initiative efforts served 45 households in FY23.” | subject=“Our Expedited Housing Initiative efforts served 45 households in FY23.”
+- **d9fef44f:8** `obj:fy2023`
+  - metric: The First Foundations program served 19 families (61 individuals) in FY2023.
+  - cited markers: value=“Families (61 individuals) in FY23.” | subject=“Our First Foundations program served 19”
+- **d9fef44f:9** `obj:fy2023`
+  - metric: The Home Connection program served 139 families (389 individuals) in FY2023.
+  - cited markers: value=“Families (389 individuals) in FY23.” | subject=“Our Home Connection program served 139”
+- **da2ba72a:3** `obj:rate`
+  - metric: The residential program had a 67% occupancy rate in FY2017.
+  - cited markers: value=“Abbott House provides a safe place for girls who complete treatment and have no other plac” | subject=“Abbott House provides a safe place for girls who complete treatment and have no other plac”
+- **da2ba72a:4** `obj:funding`
+  - metric: 86% of Abbott House's funding came from fees in FY2017.
+  - cited markers: value=“Fees  86%” | subject=“Where the dollars come from”
+- **db75f054:6** `obj:program`
+  - metric: Greater Dubuque Development secured three new companies through its National Marketing program.
+  - cited markers: value=“Based on our targeted-industry clusters ranging from advanced manufacturing to IT and soft” | subject=“Based on our targeted-industry clusters ranging from advanced manufacturing to IT and soft”
+- **e31d17df:5** `obj:rate`
+  - metric: Graceworks Housing Services achieved a 98% occupancy rate in 2023.
+  - cited markers: value=“Graceworks Housing Services achieved an impressive 98% occupancy and successfully complete” | subject=“Graceworks Housing Services achieved an impressive 98% occupancy and successfully complete”
+- **e43d7482:0** `obj:goal, obj:adult`
+  - metric: Summerhouse served 33 adults with intellectual and developmental disabilities (IDD) in 2021, with a goal of reaching 40+ members in their new location.
+  - cited markers: value=“33 persons served as of 12-31-21; on our way to 40+ within our new location” | subject=“33 persons served as of 12-31-21; on our way to 40+ within our new location”
+- **e83840a4:4** `obj:ccs`
+  - metric: Total support and revenue for CCS was $8,952,385.
+  - cited markers: value=“$8,952,385” | subject=“TOTAL SUPPORT & REVENUE ..................................................................”
+- **e83840a4:6** `obj:program`
+  - metric: 20 students (74%) in the School2Work program were placed in jobs.
+  - cited markers: value=“20 students (74%) were placed in jobs” | subject=“20 students (74%) were placed in jobs”
+- **e83840a4:7** `obj:program`
+  - metric: 14 students participated in the Bridging program across 5 high schools.
+  - cited markers: value=“14 students participated” | subject=“14 students participated”
+- **ec5c8930:1** `obj:household`
+  - metric: The Family Support Center served 515 households, with 94% receiving food assistance.
+  - cited markers: value=“Beyond education, we remained focused on empowering individuals and families through essen” | subject=“Beyond education, we remained focused on empowering individuals and families through essen”
+- **ecd677ef:1** `obj:client`
+  - metric: The organization served tens of thousands of clients across 28 counties.
+  - cited markers: value=“SERVING TENS OF THOUSANDS ACROSS 28 COUNTIES .” | subject=“SERVING TENS OF THOUSANDS ACROSS 28 COUNTIES .”
+- **f4819890:2** `obj:graduate`
+  - metric: 100% of graduates from the three-phase program have moved on to the next phase of their lives with a reestablished sense of purpose and hope.
+  - cited markers: value=“100% of students who graduated the Heroes and Horses 3 phase program have fundamentally mo” | subject=“100% of students who graduated the Heroes and Horses 3 phase program have fundamentally mo”
+- **f92248ef:6** `obj:summer`
+  - metric: 128 Market Walk participants walked 2,644 miles during summer 2021.
+  - cited markers: value=“2,644” | subject=“miles walked by Market Walk participants between June and August by”
+- **fa5c5fe6:0** `obj:enrollment`
+  - metric: Abbott House served 77 girls in FY19, with 35 new enrollments.
+  - cited markers: value=“At Abbott House we serve 60-90 girls each year, 77 in FY19 (35 new enrolled), with ages ra” | subject=“At Abbott House we serve 60-90 girls each year, 77 in FY19 (35 new enrolled), with ages ra”
+- **fb8f56bd:3** `obj:founding`
+  - metric: The organization has served 813 Scholars since its founding in 1999.
+  - cited markers: value=“813 Scholars Served (All-Time)” | subject=“813 Scholars Served (All-Time)”
+- **fd032b14:0** `obj:program`
+  - metric: Clover served more than 8,000 individuals and families across its programs in FY 2023-2024.
+  - cited markers: value=“8,000+ Individuals and Families Served” | subject=“8,000+ Individuals and Families Served”
+- **ff8c3ea8:10** `obj:revenue`
+  - metric: Go Kids' total revenue for 2019 was $20,279,812.
+  - cited markers: value=“$20,279,812” | subject=“Total”
+- **ff8c3ea8:11** `obj:expense`
+  - metric: Go Kids' total expenses for 2019 were $20,460,761.
+  - cited markers: value=“$20,460,761” | subject=“Total”
+
+## MODIFIER not on page (the capital-vs-commercial class) — 72
+
+- **011c1177:1** `mod:fiscal`
+  - metric: Total revenue and support for the fiscal year was $7,056,005.
+  - cited markers: value=“TOTAL $7,056,005” | subject=“Dreams With Wings 1579 Bardstown Rd. Louisville, KY 40205 (502) 459-4647 www.dreamswithwin”
+- **072b705a:2** `mod:several`
+  - metric: 85% of the first 30 tenants who moved into Rising Oaks continued to call it home after several months.
+  - cited markers: value=“Of the 30 tenants who moved in during the first few months, 85% continue to call Rising Oa” | subject=“Of the 30 tenants who moved in during the first few months, 85% continue to call Rising Oa”
+- **0b829d61:5** `mod:annual`
+  - metric: SLI has raised $1.4 million over the years through its two annual special events.
+  - cited markers: value=“SLI has two special events annually - the SLI Golf Classic, established 13 years ago, and ” | subject=“SLI has two special events annually - the SLI Golf Classic, established 13 years ago, and ”
+- **128de607:2** `mod:drive`
+  - metric: The organization served 685 families per week on average through its drive-through food pantry.
+  - cited markers: value=“685” | subject=“* Number of Families”
+- **18588fca:1** `mod:reporting`
+  - metric: The organization served 285 children in the reporting period.
+  - cited markers: value=“# of kids served: 285” | subject=“# of kids served: 285”
+- **18588fca:10** `mod:total`
+  - metric: Total expenses were $15,876,035.
+  - cited markers: value=“$15,876,035” | subject=“Expense”
+- **18588fca:7** `mod:live, mod:independent`
+  - metric: 96 independent living youth were served.
+  - cited markers: value=“# of IL youth served: 96” | subject=“# of IL youth served: 96”
+- **18bb8c0f:0** `mod:fiscal, mod:last`
+  - metric: CPWD served 536 intake consumers receiving services in the last fiscal year.
+  - cited markers: value=“536” | subject=“Intake Consumers Receiving Services”
+- **18bb8c0f:10** `mod:cpwd`
+  - metric: The average age of CPWD consumers was 70.
+  - cited markers: value=“70” | subject=“Average Age of Consumer”
+- **1b29d1a0:6** `mod:nuevo`
+  - metric: El nuevo programa HIPPY de BHP atiende a 22 familias con niños de 2 a 3 años para mejorar la preparación escolar.
+  - cited markers: value=“Familias activas: 22” | subject=“Familias activas: 22”
+- **1c0ad786:10** `mod:total`
+  - metric: Total program expenses were $27,991,683.
+  - cited markers: value=“All Program Expenses: $27,991,683” | subject=“All Program Expenses: $27,991,683”
+- **1c0ad786:9** `mod:total`
+  - metric: Total expenses for FY 2023-2024 were $32,297,070.
+  - cited markers: value=“All Expenses: $32,297,070” | subject=“All Expenses: $32,297,070”
+- **24e18655:11** `mod:fiscal, mod:total`
+  - metric: Total expenses for fiscal year 2023-2024 were $40,019,175.
+  - cited markers: value=“$40,019,175” | subject=“TOTALEXPENSES”
+- **2995644a:3** `mod:reserve, mod:unable`
+  - metric: The Crosslands Reserve Fund provided $577,000 in financial assistance to 13 households unable to afford full monthly fees.
+  - cited markers: value=“This $7.7 million dollar fund provides financial assistance to current Crosslands resident” | subject=“This $7.7 million dollar fund provides financial assistance to current Crosslands resident”
+- **2995644a:4** `mod:reserve`
+  - metric: The Kendal at Longwood Reserve Fund provided $220,000 in financial assistance to 7 households.
+  - cited markers: value=“This $9.3 million dollar fund provides financial assistance to current Kendal at Longwood ” | subject=“This $9.3 million dollar fund provides financial assistance to current Kendal at Longwood ”
+- **2cf7c1e8:1** `mod:previous`
+  - metric: Clients served increased by 10% over the previous year.
+  - cited markers: value=“Your giving spirit has assured Forward Stride's strength and resilience as an organization” | subject=“Your giving spirit has assured Forward Stride's strength and resilience as an organization”
+- **2cf7c1e8:3** `mod:own`
+  - metric: Forward Stride served 351 clients through its own programs.
+  - cited markers: value=“351” | subject=“Forward Stride clients”
+- **36941d40:0** `mod:prior`
+  - metric: CATA served 950 people with disabilities in 2023, a 25% increase over the prior year.
+  - cited markers: value=“950” | subject=“people with disabilities served a 25% increase over last year”
+- **36941d40:1** `mod:prior`
+  - metric: CATA provided 2,285 arts workshops in 2023, a 22% increase over the prior year.
+  - cited markers: value=“2,285” | subject=“arts workshops provided a 22% increase over last year”
+- **36941d40:2** `mod:prior`
+  - metric: CATA reached 400 youth in weekly programs in local schools, a 24% increase over the prior year.
+  - cited markers: value=“400” | subject=“youth in weekly CATA programs a 24% increase over last year”
+- **38c9a81d:3** `mod:program`
+  - metric: 100% of participants who completed 6 hours of coaching had a budget and savings plan by program end.
+  - cited markers: value=“of participants have budget & savings plan after 6 hours of coaching 100%” | subject=“of participants have budget & savings plan after 6 hours of coaching 100%”
+- **5370f17e:2** `mod:education`
+  - metric: 65% of children in the Early Childhood STEAM Education program graduated kindergarten-ready.
+  - cited markers: value=“65” | subject=“Kindergarten-Ready (Graduated)”
+- **5370f17e:9** `mod:program`
+  - metric: 55% of mental health program participants had a primary treatment need of mental disorders.
+  - cited markers: value=“55%” | subject=“Primary Treatment Need (Mental disorders...)”
+- **56688514:1** `mod:state`
+  - metric: Council on Aging was Ohio's top performer in reducing unnecessary nursing home placements via PASSPORT, averaging 22 percent against a state goal of less than 26 percent.
+  - cited markers: value=“for low income seniors.  The Ohio Department of Aging's goal was to limit the number of PA” | subject=“PASSPORT  Effectiveness Council  on  Aging  was  Ohio's  top  performer  in  reducing unne”
+- **5a23e2e5:0** `mod:valley, mod:integrate`
+  - metric: STARS placed 60 participants in competitive integrated employment at 34 Valley businesses since the program's inception.
+  - cited markers: value=“# of participants placed in businesses since 2020 ........................................” | subject=“# of participants placed in businesses since 2020 ........................................”
+- **5f0a0f54:0** `mod:single`
+  - metric: In 2025, Family Promise of Greater Wichita served 500 families, including 1,248 children, the highest number ever served in a single year.
+  - cited markers: value=“500 families served 1,248 kids” | subject=“500 families served 1,248 kids”
+- **5f0a0f54:7** `mod:total`
+  - metric: The organization's total revenue for 2025 was $2,033,483.
+  - cited markers: value=“Revenue: $2,033,483” | subject=“Revenue: $2,033,483”
+- **5f0a0f54:8** `mod:total`
+  - metric: Total expenses for 2025 were $1,157,377.
+  - cited markers: value=“Expenses: $1,157,377” | subject=“Expenses: $1,157,377”
+- **682c5959:1** `mod:certify`
+  - metric: In 2023, EFI-certified farms paid $3.7 million in worker bonuses.
+  - cited markers: value=“$3.7 million PAID IN WORKER” | subject=“$3.7 million PAID IN WORKER”
+- **682c5959:2** `mod:certify`
+  - metric: Since 2014, EFI-certified farms have paid a total of $21.3 million in worker bonuses.
+  - cited markers: value=“$21.3 million” | subject=“PAID IN WORKER BONUSES SINCE 2014”
+- **682c5959:3** `mod:train`
+  - metric: Over 50,500 workers are on farms with EFI-trained leadership teams.
+  - cited markers: value=“50,515 WORKERS ON FARMS WITH EFI-TRAINED LEADERSHIP TEAMS” | subject=“50,515 WORKERS ON FARMS WITH EFI-TRAINED LEADERSHIP TEAMS”
+- **6b3b6732:9** `mod:pre`
+  - metric: The Georgia Pre-K program served children in seven classrooms across six counties.
+  - cited markers: value=“This state, lottery-funded program provides services to four-year old children in seven cl” | subject=“This state, lottery-funded program provides services to four-year old children in seven cl”
+- **715b2531:8** `mod:insecure`
+  - metric: In 2022, 143 housing-insecure individuals were counted in the Point in Time Survey.
+  - cited markers: value=“In 2021, nearly 300 homeless individuals were counted in the Point in Time Survey, a surve” | subject=“In 2021, nearly 300 homeless individuals were counted in the Point in Time Survey, a surve”
+- **74fdf437:2** `mod:pandemic`
+  - metric: 342 volunteers donated 6,180 hours to program services and events during the pandemic year.
+  - cited markers: value=“Despite COVID-19, 342 volunteers donated 6,180 hours to program services and events.” | subject=“Despite COVID-19, 342 volunteers donated 6,180 hours to program services and events.”
+- **759c9a94:9** `mod:total`
+  - metric: Total expenses for His Grace Foundation were $504,503, with 77% going to program expenses.
+  - cited markers: value=“77% Program Expenses” | subject=“77% Program Expenses”
+- **779d9438:10** `mod:prior`
+  - metric: 39% of survivors with a prior protection order were criticized by prosecutors.
+  - cited markers: value=“Among the survivors who previously had a protection order (criminal or civil), 14% said th” | subject=“Among the survivors who previously had a protection order (criminal or civil), 14% said th”
+- **779d9438:9** `mod:prior`
+  - metric: 14% of survivors with a prior protection order were criticized by court personnel for seeking a new one.
+  - cited markers: value=“Among the survivors who previously had a protection order (criminal or civil), 14% said th” | subject=“Among the survivors who previously had a protection order (criminal or civil), 14% said th”
+- **810829ad:0** `mod:fiscal`
+  - metric: The Resource and Crisis Center of Galveston County answered 15,658 hotline calls in fiscal year 2023.
+  - cited markers: value=“15,658 Hotline Calls Were Answered” | subject=“15,658 Hotline Calls Were Answered”
+- **82d11125:6** `mod:holiday`
+  - metric: The Holiday Bazaar raised $3,800 for Medic One Foundation, helping train 13 new paramedics.
+  - cited markers: value=“Bazaar Chair Betty Blakney and a multitude of resident volunteers organized the resident-d” | subject=“Bazaar Chair Betty Blakney and a multitude of resident volunteers organized the resident-d”
+- **865fb62f:7** `mod:empowerment`
+  - metric: The Wellspring's Youth Empowerment Program served 279 youth in positive youth development programs.
+  - cited markers: value=“279 youth participated in positive youth development programs” | subject=“279 youth participated in positive youth development programs”
+- **93e81f02:2** `mod:base`
+  - metric: WSS provided court-based advocacy and support to 250 victims of family violence.
+  - cited markers: value=“Provided  court-­--based  advocacy  and  support  to  250  victims  of  family  violence.” | subject=“Provided  court-­--based  advocacy  and  support  to  250  victims  of  family  violence.”
+- **98dd921d:3** `mod:assistive`
+  - metric: Nearly 1,300 assistive devices were loaned from the Equipment Loan Closet.
+  - cited markers: value=“I am thrilled to share that the LIFE CIL team helped eight individuals transition out of a” | subject=“I am thrilled to share that the LIFE CIL team helped eight individuals transition out of a”
+- **a1072081:4** `mod:operate`
+  - metric: Aldersly maintained an operating expense reserve of $611,408.
+  - cited markers: value=“Aldersly currently maintains its Debt Service Reserve of $3,214,407 and its Operating Expe” | subject=“Aldersly currently maintains its Debt Service Reserve of $3,214,407 and its Operating Expe”
+- **b42e6f95:0** `mod:fiscal`
+  - metric: Calm Waters impacted 7,806 people in fiscal year 2025.
+  - cited markers: value=“7,806” | subject=“total people impacted July 1, 2024 - June 30, 2025”
+- **b60a49eb:1** `mod:previous`
+  - metric: The Childhelp National Child Abuse Hotline handled 88,669 calls in FY2017, a 4% increase over the previous year.
+  - cited markers: value=“Hotline counselors handled 88,669 calls in FY2017, a 4% increase over last year.” | subject=“Hotline counselors handled 88,669 calls in FY2017, a 4% increase over last year.”
+- **c09c96c2:10** `mod:theresa`
+  - metric: Three $1,000 Theresa Hearne Scholarships were awarded to graduating seniors.
+  - cited markers: value=“In May, 2006, the Board of Directors of Community Service of Hamilton-Wenham, Inc. awarded” | subject=“In May, 2006, the Board of Directors of Community Service of Hamilton-Wenham, Inc. awarded”
+- **c6d70581:0** `mod:county`
+  - metric: The organization distributed 16,825,965 pounds of food across a seven-county area.
+  - cited markers: value=“16,825,965” | subject=“Pounds of food distributed by SHFB”
+- **d2e6b6ff:3** `mod:rehouse`
+  - metric: 63 adults and 39 children spent 24,889 nights in their own homes through the New Beginnings rapid rehousing program.
+  - cited markers: value=“spent 24,889 NIGHTS in their own homes” | subject=“63 ADULTS WITH 39 CHILDREN”
+- **d58e3d5b:3** `mod:second`
+  - metric: Safe Families for Children provided 8,412 night hostings in a second county.
+  - cited markers: value=“” | subject=“OUR SFFC COUNTIES TO DATE:”
+- **d58e3d5b:4** `mod:third`
+  - metric: Safe Families for Children served 113 individuals in a third county, with 2,706 night hostings.
+  - cited markers: value=“” | subject=“OUR SFFC COUNTIES TO DATE:”
+- **d58e3d5b:5** `mod:third`
+  - metric: Safe Families for Children provided 2,706 night hostings in a third county.
+  - cited markers: value=“” | subject=“OUR SFFC COUNTIES TO DATE:”
+- **da2ba72a:1** `mod:aftercare`
+  - metric: Abbott House served 35 girls in its aftercare program in FY2017.
+  - cited markers: value=“Abbott House provides a safe place for girls who complete treatment and have no other plac” | subject=“Abbott House provides a safe place for girls who complete treatment and have no other plac”
+- **dddcd7b6:5** `mod:assistance`
+  - metric: The organization served 3,053 households through the Home Energy Assistance Program (HEAP).
+  - cited markers: value=“HEAP - 3053 households served” | subject=“HEAP - 3053 households served”
+- **e136ede4:4** `mod:rental`
+  - metric: 33 rental units were initiated with the groundbreaking at 839 Joseph E. Boone Blvd.
+  - cited markers: value=“Units initiated with the groundbreaking at 839 Joseph E. Boone Blvd.” | subject=“Units initiated with the groundbreaking at 839 Joseph E. Boone Blvd.”
+- **e136ede4:9** `mod:new`
+  - metric: The average down payment assistance for new homeowners was $42,188.
+  - cited markers: value=“$42,188 Average amount of down payment assistance” | subject=“$42,188 Average amount of down payment assistance”
+- **e27aec13:4** `mod:economic`
+  - metric: The top four barriers to economic security at program entry were access to affordable housing (57%), affordable child care, transportation, and limited employment history.
+  - cited markers: value=“DS grantees were asked to report on the number of participants who experienced specific ba” | subject=“DS grantees were asked to report on the number of participants who experienced specific ba”
+- **e27aec13:7** `mod:minimum`
+  - metric: 36% of WAGES participants (93 women) earned at least $15.01 per hour at program exit or follow-up, above Colorado's minimum wage of $12.32.
+  - cited markers: value=“93 WAGES participants (36%) for whom data were available earned above $15.01 an hour at pr” | subject=“93 WAGES participants (36%) for whom data were available earned above $15.01 an hour at pr”
+- **e6fb382a:1** `mod:profit`
+  - metric: Good Shepherd costs Medicare about 45% less per patient admitted than for-profit hospices.
+  - cited markers: value=“As a non-profi  t, Good Shepherd costs Medicare about 45% less per patient admitted to our” | subject=“As a non-profi  t, Good Shepherd costs Medicare about 45% less per patient admitted to our”
+- **e6fb382a:2** `mod:profit, mod:nonprofit`
+  - metric: Nonprofit hospices like Good Shepherd provide about 20% more services per patient per week than for-profit hospices.
+  - cited markers: value=“As a non-profi  t, Good Shepherd costs Medicare about 45% less per patient admitted to our” | subject=“As a non-profi  t, Good Shepherd costs Medicare about 45% less per patient admitted to our”
+- **ebb0bcfe:11** `mod:donate`
+  - metric: The value of donated essentials was $6,778,053.
+  - cited markers: value=“$6,778,053” | subject=“Value of Donated Essentials”
+- **ec5c8930:0** `mod:high`
+  - metric: Guadalupe Centers celebrated a 92.5% graduation rate at its charter high school in 2024.
+  - cited markers: value=“Education remains a cornerstone of our mission. This year, we proudly implemented the 50/5” | subject=“Education remains a cornerstone of our mission. This year, we proudly implemented the 50/5”
+- **ecd677ef:3** `mod:education`
+  - metric: 198 students earned an education credential on the Education Pathway.
+  - cited markers: value=“198 STUDENTS EARNED A CREDENTIAL.” | subject=“198 STUDENTS EARNED A CREDENTIAL.”
+- **ecd677ef:4** `mod:resiliency`
+  - metric: On average, clients on the Financial Resiliency Pathway increased their savings by $2,227.
+  - cited markers: value=“$2,227 .” | subject=“ON AVERAGE, CLIENTS INCREASED THEIR SAVINGS BY”
+- **ecd677ef:5** `mod:resiliency`
+  - metric: The average client on the Financial Resiliency Pathway had $542 more to spend each month after expenses.
+  - cited markers: value=“$542 MORE TO SPEND EACH MONTH AFTER EXPENSES.” | subject=“THE AVERAGE CLIENT HAD”
+- **ecd677ef:6** `mod:focus`
+  - metric: 600 clients were served by refugee-focused employment services.
+  - cited markers: value=“600” | subject=“CLIENTS SERVED BY REFUGEE- FOCUSED SERVICES.”
+- **ee9087ae:5** `mod:compliant`
+  - metric: CPTS received 10 new ADA-compliant 7-passenger vans in March 2024 to maintain fleet in good repair.
+  - cited markers: value=“Drivers George Noble (pictured left) and Gary Trook (right) relocate a new Ford Transit to” | subject=“Drivers George Noble (pictured left) and Gary Trook (right) relocate a new Ford Transit to”
+- **f4819890:9** `mod:consecutive`
+  - metric: The program's Phase 1 and 2 run for 40 consecutive days, the longest veteran program in the nation.
+  - cited markers: value=“We have longest veteran program in the nation. Phases 1 and 2 of our program run for 40 da” | subject=“We have longest veteran program in the nation. Phases 1 and 2 of our program run for 40 da”
+- **f92248ef:0** `mod:need`
+  - metric: Allen Neighborhood Center served 331 neighbors through health coverage, food assistance, and basic needs enrollment in 2021.
+  - cited markers: value=“331” | subject=“ANC ' s Outreach team neighbors enrolled”
+- **f92248ef:5** `mod:past`
+  - metric: 69 food entrepreneurs have started their businesses in the ANC Kitchens over the past 6 years.
+  - cited markers: value=“ 69 food entrepreneurs have started their business in the ANC Kitchens in the last 6 year” | subject=“ 69 food entrepreneurs have started their business in the ANC Kitchens in the last 6 year”
+- **fa5c5fe6:3** `mod:budget`
+  - metric: Abbott House's budgeted operating income was $5,975,231.
+  - cited markers: value=“Budgeted Income: $5,975,231” | subject=“Operating Income”
+- **fa5c5fe6:4** `mod:budget`
+  - metric: Abbott House's budgeted expenses were $5,949,062.
+  - cited markers: value=“Budgeted Expenses: $5,949,062” | subject=“Budgeted Expenses: $5,949,062”
+- **ff8c3ea8:0** `mod:monitor`
+  - metric: Go Kids received a contract monitoring audit from the California Department of Education resulting in a less than 1% error rate.
+  - cited markers: value=“Received a Contract Monitoring Review Unit audit from the California Department of Educati” | subject=“Received a Contract Monitoring Review Unit audit from the California Department of Educati”

@@ -1,5 +1,9 @@
 # research - Claude Code Instructions
 
+## Response style (REQUIRED)
+
+Lead with the answer or decision in the first line or two. No reasoning, caveats, breakdowns, or restated context unless asked. Terse and high-signal by default; the operator says "expand" when they want the why. Do not bury the one useful sentence in noise.
+
 ## Project Overview
 
 This project uses **Locard** for AI-assisted development.

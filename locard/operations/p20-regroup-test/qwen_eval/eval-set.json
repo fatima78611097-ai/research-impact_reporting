@@ -1,0 +1,1262 @@
+[
+ {
+  "source": "p20-flag",
+  "img": "pages/76a707c16c194077_p8.png",
+  "value": "538.0",
+  "truth": "78 torture survivors with 538 medical services.",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/76a707c16c194077_p8.png",
+  "value": "3120.0",
+  "truth": "completed 3,120 social services, including assistance finding housing, food, educational opportunities, and employment resources for clients and their families.",
+  "verdict_ctx": "BOTH_SAME"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/e8282b509a65bb2d_p6.png",
+  "value": "1000.0",
+  "truth": "families served through our food pantry in East Boston",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/cb87721ea80fcc7e_p20.png",
+  "value": "33.0",
+  "truth": "CAMPER & STAFF STATES",
+  "verdict_ctx": "BOTH_SAME"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/cb87721ea80fcc7e_p20.png",
+  "value": "3383.0",
+  "truth": "3383 HOURS DONATED BY 134 VOLUNTEERS SUPPORTING THE CONISTON PROGRAM",
+  "verdict_ctx": "BOTH_SAME"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/7cac03508b35731c_p6.png",
+  "value": "547.0",
+  "truth": "BUSINESSES ASSISTED",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/97a733534a89e71d_p12.png",
+  "value": "37.0",
+  "truth": "Children Identified with a Disability",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/97a733534a89e71d_p12.png",
+  "value": "93.0",
+  "truth": "Families Served",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/a8119c186f57aec5_p7.png",
+  "value": "705.0",
+  "truth": "Academic Achievement 705 students who were behind in credits re-engaged in school and earned their high school diplomas.",
+  "verdict_ctx": "BOTH_SAME"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/fc5badf6efc8f1cd_p18.png",
+  "value": "100.0",
+  "truth": "employment rate within 90 days of release",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/ce29d66f3718b6ca_p6.png",
+  "value": "62245.0",
+  "truth": "Monthly food packages issued to families",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/7c61bc1ec037fb1f_p5.png",
+  "value": "5100.0",
+  "truth": "Hands-on advanced manufacturing training",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/999b598701d3b267_p11.png",
+  "value": "85.0",
+  "truth": "of Chelsea Foyer supportive housing graduates transitioned to stable housing",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/999b598701d3b267_p11.png",
+  "value": "87.0",
+  "truth": "of participants agreed that the activities and services offered are fun and interesting",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/f29929b5fe517789_p8.png",
+  "value": "23.0",
+  "truth": "Children Identified with a Disability",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/4bf36e9b82925b6a_p43.png",
+  "value": "10000.0",
+  "truth": "Donald and Judith Dean",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/97a733534a89e71d_p12.png",
+  "value": "93.0",
+  "truth": "Families Served",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/97a733534a89e71d_p13.png",
+  "value": "2232.0",
+  "truth": "Visits Completed",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/97a733534a89e71d_p12.png",
+  "value": "5705.0",
+  "truth": "Volunteer Hours",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/5dcceb20044f5cb6_p8.png",
+  "value": "56.0",
+  "truth": "VOLUNTEERS\nDedicated individuals who donate their time and talent and believe in our mission.",
+  "verdict_ctx": "BOTH_SAME"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/47b1806959ff2a9b_p10.png",
+  "value": "1600.0",
+  "truth": "Attendees",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/109e56d1bfc3a519_p4.png",
+  "value": "530.0",
+  "truth": "Appointments offered per week",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/0a6f3d8ae231eaae_p8.png",
+  "value": "143.0",
+  "truth": "Grant proposals written and submitted by partners in 2025",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/13d8273e5302ae1d_p3.png",
+  "value": "1171.0",
+  "truth": "PROFESSIONALS TRAINED",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/733f26b25291de4f_p17.png",
+  "value": "420.0",
+  "truth": "420 Meals available each week",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/cbccdbbf4b3d57e3_p17.png",
+  "value": "420.0",
+  "truth": "420 Meals available each week",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/6fcd73b54816cf39_p3.png",
+  "value": "30.0",
+  "truth": "People opened a savings account",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/2a959eeaec033c09_p8.png",
+  "value": "387.0",
+  "truth": "COMPLETED A DIGITAL LITERACY COURSE",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/e92a1ba3fc189583_p10.png",
+  "value": "74.0",
+  "truth": "Translation Progress",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/9bd3dd8171a995a5_p6.png",
+  "value": "263.0",
+  "truth": "Bibles/spiritual literature",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/756008f8161ec499_p33.png",
+  "value": "50.0",
+  "truth": "$50 per month Family Membership",
+  "verdict_ctx": "NEITHER"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/1f4fc1cc37d87587_p14.png",
+  "value": "28703.58",
+  "truth": "Class Fees",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/9332ce62b886b38c_p1.png",
+  "value": "3201.0",
+  "truth": "Counseling sessions provided compassionate care",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/9f68f2f6e2c1813c_p5.png",
+  "value": "60.0",
+  "truth": "Adults received pre-employment training",
+  "verdict_ctx": "NEITHER"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/ba6d5fe6c9b97299_p9.png",
+  "value": "20.0",
+  "truth": "average profit a month, per agent",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/38e8ac67d8cdbbf5_p6.png",
+  "value": "98.0",
+  "truth": "51% of CREATE students were below proficient in Math or English at the start of the school year; at the end, 98% of that subset improved to proficient or better",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/d4ecca1e7f6a17a7_p9.png",
+  "value": "18772.0",
+  "truth": "SMS subscribers:",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/514c6099076992d5_p17.png",
+  "value": "75.0",
+  "truth": "Students Served",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/d22dd0cd671820e0_p6.png",
+  "value": "736.0",
+  "truth": "Individuals Provided Shoes",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/d22dd0cd671820e0_p6.png",
+  "value": "400.0",
+  "truth": "Fresh Produce Bags + Non-Perishable Food Items",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/d22dd0cd671820e0_p6.png",
+  "value": "80.0",
+  "truth": "Laptops Given",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/d22dd0cd671820e0_p6.png",
+  "value": "400.0",
+  "truth": "Fresh Produce Bags + Non-Perishable Food Items",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/4e6600bc419e3723_p8.png",
+  "value": "403.0",
+  "truth": "403 students served in 6 after school programs",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/4e6600bc419e3723_p11.png",
+  "value": "105.0",
+  "truth": "IN-PERSON CONSULTATIONS",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/6c55eb9080d4f82a_p9.png",
+  "value": "100.0",
+  "truth": "Employees",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/b3468df09fdf2f2e_p5.png",
+  "value": "83.0",
+  "truth": "Program Expenses",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/488ad29a6dc6fe58_p1.png",
+  "value": "50.0",
+  "truth": "days on average to find housing",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/4cba6e68b4994e65_p3.png",
+  "value": "138818.0",
+  "truth": "YOUTH DEVELOPMENT ASSISTANCE \u2014 Financial assistance awarded to families for participation in youth development programs including camp, swim team, school age childcare, swim lessons, gymnastics, and dance.",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/91655b0a2871eef0_p4.png",
+  "value": "356.0",
+  "truth": "IDs Provided",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/13da37f3edbf0e3d_p1.png",
+  "value": "542.0",
+  "truth": "Seniors Programs made available",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/d6857911689cfa64_p1.png",
+  "value": "2160.0",
+  "truth": "hours volunteered",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/d6857911689cfa64_p1.png",
+  "value": "64.0",
+  "truth": "events this year",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/d6857911689cfa64_p1.png",
+  "value": "510.0",
+  "truth": "Launching in phases, we have released our member portal to 510 new members",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/4f6fa60d14bf229a_p5.png",
+  "value": "13572.0",
+  "truth": "Out of Area Lodging Nights",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/860bd1359e8cf1ac_p8.png",
+  "value": "33283.0",
+  "truth": "Total Calls Handled: 33,283",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/e62f1fe1bd0ebeee_p6.png",
+  "value": "4500.0",
+  "truth": "people equipped for ministry",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/75331199af7d5e8f_p14.png",
+  "value": "2200.0",
+  "truth": "La Colaborativa helped 2,200 households stabilize through free legal aid, emergency housing placements, housing assistance application support like RAFT, utility assistance, cash assistance, housing inspections, eviction prevention, landlord mediation and informing our population of resources, which teaches tenants how to perform self inspections of their homes.",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/9cf4989e4bafc32c_p5.png",
+  "value": "100.0",
+  "truth": "of students improved socio-emotional skills",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/9cf4989e4bafc32c_p5.png",
+  "value": "100.0",
+  "truth": "100% of students improved academic performance",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/ba7e01250a2e48c8_p4.png",
+  "value": "5000.0",
+  "truth": "square meters of the Luminous Stars Center built",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/f118f090bedc47e6_p5.png",
+  "value": "90.0",
+  "truth": "Parent Workshops Offered",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/a4e48e036a533309_p3.png",
+  "value": "846636.0",
+  "truth": "Employment/Income Support Linkage",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/03be680815a05023_p4.png",
+  "value": "85.0",
+  "truth": "SOCIAL INTERACTION",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/03be680815a05023_p4.png",
+  "value": "74.0",
+  "truth": "PHYSICAL ACTIVITY",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/0a6f3d8ae231eaae_p8.png",
+  "value": "30.0",
+  "truth": "Grant proposal success rate across the partner network",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/0cce3cf6a6decaba_p3.png",
+  "value": "63.0",
+  "truth": "STI HERPES TESTING",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/0cce3cf6a6decaba_p1.png",
+  "value": "6545.0",
+  "truth": "SHOWERS",
+  "verdict_ctx": "NEITHER"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/a8119c186f57aec5_p7.png",
+  "value": "92.0",
+  "truth": "Development Opportunities \u2014 92% of young people surveyed in our afterschool programs indicated that the program has helped them learn leadership skills.",
+  "verdict_ctx": "BOTH_SAME"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/a8119c186f57aec5_p7.png",
+  "value": "100.0",
+  "truth": "Sense of Belonging \u2014 100% of participants surveyed in our Marian Hall and Euphrasian group residences feel connected to at least one staff member.",
+  "verdict_ctx": "BOTH_SAME"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/11a98eb524381dcd_p12.png",
+  "value": "100.0",
+  "truth": "Gender Distribution",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/13d8273e5302ae1d_p3.png",
+  "value": "419.0",
+  "truth": "CHILDREN/YOUTH/TEENS SUPPORTED IN GRIEF GROUPS",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/424317c250afd975_p3.png",
+  "value": "11492.0",
+  "truth": "Individual Vermonters were served",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/5dcceb20044f5cb6_p5.png",
+  "value": "8000.0",
+  "truth": "Patients seen by Circle the City yearly",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/488ad29a6dc6fe58_p1.png",
+  "value": "593.0",
+  "truth": "Neighboring Volunteers walked alongside families facing homelessness",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/4bec863484d1f277_p2.png",
+  "value": "43.0",
+  "truth": "are working to DECREASE DEBT.",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/4bf36e9b82925b6a_p43.png",
+  "value": "2000.0",
+  "truth": "$2,000+ Maureen Grimaud",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/4f765e5a39551512_p22.png",
+  "value": "250.0",
+  "truth": "One person gains the skills to Stop Abusive/Violent Behavior",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/4f6fa60d14bf229a_p6.png",
+  "value": "31141.0",
+  "truth": "Total Calls Handled:",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/6c55eb9080d4f82a_p9.png",
+  "value": "100.0",
+  "truth": "Employees",
+  "verdict_ctx": "NEITHER"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/6c55eb9080d4f82a_p9.png",
+  "value": "100.0",
+  "truth": "Employees",
+  "verdict_ctx": "NEITHER"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/7b8db037ba413ec8_p6.png",
+  "value": "20.0",
+  "truth": "Fill Critical Community Voids: Mobile Produce, Veteran Support, Youth and Teen Mental Well-Being",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/872a85d4080210e7_p7.png",
+  "value": "1447775.0",
+  "truth": "Value of Food Procured at No Cost",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/76a707c16c194077_p8.png",
+  "value": "261.0",
+  "truth": "cared for 261 clients (including 145 new clients) with comprehensive mental health, medical and case management services.",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/97a733534a89e71d_p12.png",
+  "value": "37.0",
+  "truth": "Children Identified with a Disability",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/7c61bc1ec037fb1f_p5.png",
+  "value": "100.0",
+  "truth": "Internships with industry collaboration",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/b7629270a9f82b71_p16.png",
+  "value": "5000.0",
+  "truth": "$5,000+",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/b9ebf2b72ae32839_p7.png",
+  "value": "10029.0",
+  "truth": "TOTAL (auto calculated)",
+  "verdict_ctx": "NEITHER"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/a4e48e036a533309_p6.png",
+  "value": "41178.0",
+  "truth": "Funds invested back into participants' households:",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/a8119c186f57aec5_p7.png",
+  "value": "100.0",
+  "truth": "Housing Stability \u2014 100% of Chelsea Foyer supportive housing graduates transitioned to stable housing.",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/ad78215d45684e52_p17.png",
+  "value": "31.0",
+  "truth": "Education \u2014 These clients have completed a recognized credential, certificate or degree achievement in the field of their choice. 31 Clients assisted in their pursuit of improving their education.",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/ba7e01250a2e48c8_p4.png",
+  "value": "5000.0",
+  "truth": "square meters of the Luminous Stars Center built",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/d3f5b5af860091a6_p2.png",
+  "value": "514.0",
+  "truth": "REDIRECTION SERVICES",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/e92a1ba3fc189583_p10.png",
+  "value": "74.0",
+  "truth": "Translation Progress",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/f29929b5fe517789_p9.png",
+  "value": "29.0",
+  "truth": "Children Identified with a Disability",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/f4814f638ee75531_p24.png",
+  "value": "20.0",
+  "truth": "of teens who age out of foster care become homeless on their",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/fc5badf6efc8f1cd_p19.png",
+  "value": "50.0",
+  "truth": "Average Coaching Hours per Borrower",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/fe9b85e28d2e4d5c_p7.png",
+  "value": "65.0",
+  "truth": "made substantial progress in achieving treatment goals",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/0cce3cf6a6decaba_p3.png",
+  "value": "20.0",
+  "truth": "STI SYPHILIS (POSITIVE)",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/0e52ba0438f069e2_p2.png",
+  "value": "83.0",
+  "truth": "83% MAINTAINED STABLE HOUSING & employment after graduating BOH",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/422923c6ae6fb53d_p3.png",
+  "value": "17021.0",
+  "truth": "FARMERS MARKET BENEFITS REDEEMED",
+  "verdict_ctx": "BOTH_SAME"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/422923c6ae6fb53d_p5.png",
+  "value": "90.0",
+  "truth": "PREGNANT ENROLLEE INITATED BREAST & CHEST FEEDING",
+  "verdict_ctx": "NEITHER"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/64b5ae70957e05ee_p1.png",
+  "value": "9000.0",
+  "truth": "WHO WE SERVE \u2014 The number of people we serve has more than doubled in the last five years (2022: 9,000)",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/6c55eb9080d4f82a_p12.png",
+  "value": "21.0",
+  "truth": "Teachers",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/6c98ee914a8bd843_p2.png",
+  "value": "56713.0",
+  "truth": "Total individuals served by all Catholic Charities 37 programs and services in 2025",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/6fcd73b54816cf39_p3.png",
+  "value": "11576907.0",
+  "truth": "Total Revenues",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/756008f8161ec499_p33.png",
+  "value": "50.0",
+  "truth": "$50 per month \u2014 Family Membership",
+  "verdict_ctx": "NEITHER"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/7c61bc1ec037fb1f_p5.png",
+  "value": "50.0",
+  "truth": "states online engagement",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/7cac03508b35731c_p6.png",
+  "value": "13370.0",
+  "truth": "Advisory Hours",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/bc75a3dce961836f_p7.png",
+  "value": "1800.0",
+  "truth": "TOTAL COVID-19 RELIEF DONORS:",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/d22dd0cd671820e0_p5.png",
+  "value": "165.0",
+  "truth": "Certifications",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/d8f2a2fa203e28e0_p5.png",
+  "value": "95.0",
+  "truth": "Babies born at healthy weight",
+  "verdict_ctx": "REGROUP_RIGHT"
+ },
+ {
+  "source": "p20-flag",
+  "img": "pages/dfcc61dafb1937ac_p16.png",
+  "value": "764393.0",
+  "truth": "Total Revenue",
+  "verdict_ctx": "METRIC_RIGHT"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/90c6ec41de21ed62_p9.png",
+  "value": "288.0",
+  "truth": "288 farmers participated in six entrepreneurial trainings",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/5dcceb20044f5cb6_p5.png",
+  "value": "30.0",
+  "truth": "30% of patients receive behavioral healthcare",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/13da37f3edbf0e3d_p1.png",
+  "value": "5864.0",
+  "truth": "5,864 Seniors Programs participants",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/11de3a4a85b5b6e4_p5.png",
+  "value": "199.0",
+  "truth": "199 community members received transportation assistance",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/4bec863484d1f277_p2.png",
+  "value": "1500.0",
+  "truth": "1,500+ holiday toys distributed",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/9cf4989e4bafc32c_p5.png",
+  "value": "85.0",
+  "truth": "85% of clients in Career Development Services demonstrated improvement",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/f2f12b589c771c6d_p10.png",
+  "value": "1002.0",
+  "truth": "1,002 recovery support (case management) sessions",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/4bec863484d1f277_p2.png",
+  "value": "81.0",
+  "truth": "81% of students plan to graduate from high school and pursue college/career training",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/f06af234cacf106c_p1.png",
+  "value": "85.0",
+  "truth": "85% of children increased their home management and safety skills",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/38e8ac67d8cdbbf5_p9.png",
+  "value": "18275.0",
+  "truth": "$18,275 in incentive stipends provided to IT trainees",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/f29929b5fe517789_p9.png",
+  "value": "29.0",
+  "truth": "29% children identified with a disability for Crawford Early Head Start",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/6b8fe350f5a75a9e_p16.png",
+  "value": "1325.0",
+  "truth": "1,325 cooked meals provided through food assistance program",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/5dcceb20044f5cb6_p6.png",
+  "value": "2415.0",
+  "truth": "2,415 COVID vaccines administered to people experiencing homelessness",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/488ad29a6dc6fe58_p1.png",
+  "value": "8.5",
+  "truth": "8.5 years old average age of children served",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/514c6099076992d5_p20.png",
+  "value": "20.0",
+  "truth": "20 permanent supportive housing residents",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/cbccdbbf4b3d57e3_p13.png",
+  "value": "149.0",
+  "truth": "149 Families used Tot Watch",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/36941d4078e7e3c5_p9.png",
+  "value": "143.0",
+  "truth": "143 CATA artists earned commissions",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/42eae26ad6c1c013_p6.png",
+  "value": "52.0",
+  "truth": "52% of participating families receive free or reduced lunch",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/f29929b5fe517789_p8.png",
+  "value": "5486.0",
+  "truth": "5,486 volunteer hours for Welcome Every Child",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/80dee4011ccc4852_p11.png",
+  "value": "3037.0",
+  "truth": "3,037 babies born",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/5965e2ac9d84f47e_p15.png",
+  "value": "52.0",
+  "truth": "52 cart events at Unless U Scoops",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/9d05b0a5edea98d6_p5.png",
+  "value": "841.0",
+  "truth": "841 hotline calls answered",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/84df576afbe02645_p10.png",
+  "value": "515.0",
+  "truth": "515 veterans received legal, counseling, housing, and other supportive services",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/e136ede419d5d50b_p9.png",
+  "value": "125000.0",
+  "truth": "$125,000 paid in assistance to residents within the ADTF program",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/1b47608ada84a257_p4.png",
+  "value": "37.0",
+  "truth": "37 people received substance use counseling",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/733f26b25291de4f_p7.png",
+  "value": "198000.0",
+  "truth": "$198,000 in Financial Assistance given through our Annual Campaign",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/f2f12b589c771c6d_p10.png",
+  "value": "291.0",
+  "truth": "291 customers treated by the Comprehensive Treatment Center",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/7f6954add302f202_p4.png",
+  "value": "100000.0",
+  "truth": "$100,000 invested in youth via stipends, scholarships, & emergency support",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/47b1806959ff2a9b_p8.png",
+  "value": "1102.0",
+  "truth": "1,102 people participated in Racial Justice & Equity Training sessions",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/fe9b85e28d2e4d5c_p7.png",
+  "value": "65.0",
+  "truth": "65% made substantial progress in achieving treatment goals",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/c46d73cb9a091198_p13.png",
+  "value": "214.0",
+  "truth": "214 smartphones and laptops provided",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/4a3e32888d1f1b6b_p12.png",
+  "value": "149.0",
+  "truth": "149 Clover Cares Adult Day Care Program participants",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/cbccdbbf4b3d57e3_p12.png",
+  "value": "53.0",
+  "truth": "53 Sports Programs",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/17df9bb625a6fb00_p7.png",
+  "value": "377.0",
+  "truth": "377 high schools reached by the campaign",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/fa02c02aebc9238b_p1.png",
+  "value": "60.0",
+  "truth": "60 children each week received weekend food through our BackPack program",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/c98854a4e1596a0d_p5.png",
+  "value": "92.0",
+  "truth": "92 people housed at St. John Paul II Phase I & II",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/13da37f3edbf0e3d_p1.png",
+  "value": "201.0",
+  "truth": "201 swim team prep lessons",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/68e99206b02ff36c_p4.png",
+  "value": "644.0",
+  "truth": "644 youth with disabilities served",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/42813c91889c8794_p1.png",
+  "value": "3349.0",
+  "truth": "3,349 individuals demonstrated improved health and well being",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/ab00e9972119b45e_p15.png",
+  "value": "83.0",
+  "truth": "83 gymnastics lessons provided through financial assistance",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/f29929b5fe517789_p8.png",
+  "value": "23.0",
+  "truth": "23% children identified with a disability for Venango Early Head Start",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/ba7e01250a2e48c8_p5.png",
+  "value": "700.0",
+  "truth": "Over 700 orphaned children registered in Afghanistan",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/a4e48e036a533309_p7.png",
+  "value": "621.0",
+  "truth": "621 individuals assisted in public benefits enrollment",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/4dbe14e2ec74af4a_p9.png",
+  "value": "15000.0",
+  "truth": "$15,000 in scholarships awarded to high school seniors",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/2f6c779eca088675_p3.png",
+  "value": "252.0",
+  "truth": "252 individuals with outpatient mental health needs",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/ba6d5fe6c9b97299_p9.png",
+  "value": "20.0",
+  "truth": "$20 average profit a month per agent",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/70312fe024eef07a_p18.png",
+  "value": "3590.0",
+  "truth": "3,590 volunteer hours served",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/7ba6da00e27f2271_p3.png",
+  "value": "57.0",
+  "truth": "57 individuals rapidly rehoused",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/acc1780e1c1ce27b_p6.png",
+  "value": "2500.0",
+  "truth": "2,500 pounds of produce allocated to food share",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/ab00e9972119b45e_p15.png",
+  "value": "20.0",
+  "truth": "20 youth sports participants supported through financial assistance",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/27180a168a4589e4_p3.png",
+  "value": "105.0",
+  "truth": "105 crime victims received assistance",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/b450b04f0884a080_p1.png",
+  "value": "567.0",
+  "truth": "567 hours of case management provided",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/7ba6da00e27f2271_p3.png",
+  "value": "42.0",
+  "truth": "42 individuals saved from eviction",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/2a4e7c563a480de5_p11.png",
+  "value": "294.0",
+  "truth": "294 employment partnerships nationwide",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "p20-recovery",
+  "img": "pages/f7ff8eeae92d9110_p7.png",
+  "value": "92.0",
+  "truth": "92% responded positively",
+  "verdict_ctx": "RECOVER_YES"
+ },
+ {
+  "source": "dev-adjudicated",
+  "img": "pages/752d2b78_p2.png",
+  "value": "3375",
+  "truth": "Individuals Helped",
+  "verdict_ctx": "MODEL"
+ },
+ {
+  "source": "dev-adjudicated",
+  "img": "pages/95f2054c_p1.png",
+  "value": "30",
+  "truth": "ANNIVERSARY",
+  "verdict_ctx": "NEITHER"
+ },
+ {
+  "source": "dev-adjudicated",
+  "img": "pages/b42e6f95_p1.png",
+  "value": "258",
+  "truth": "detained individuals received Incarcerated Grief Support",
+  "verdict_ctx": "BOTH_SAME"
+ },
+ {
+  "source": "dev-adjudicated",
+  "img": "pages/be50ade6_p4.png",
+  "value": "154",
+  "truth": "Achievers receiving one on one Professional Mentorship",
+  "verdict_ctx": "BOTH_SAME"
+ },
+ {
+  "source": "dev-adjudicated",
+  "img": "pages/be50ade6_p4.png",
+  "value": "100",
+  "truth": "of Caregivers say they would RECOMMEND THE FRIENDS-BOSTON PROGRAM",
+  "verdict_ctx": "MODEL"
+ },
+ {
+  "source": "dev-adjudicated",
+  "img": "pages/be50ade6_p4.png",
+  "value": "45",
+  "truth": "ADDRESSED 45 family crisis situations through 1:1 IN DEPTH SUPPORT",
+  "verdict_ctx": "MODEL"
+ },
+ {
+  "source": "dev-adjudicated",
+  "img": "pages/d9fef44f_p4.png",
+  "value": "638",
+  "truth": "INDIVIDUALS HOUSED",
+  "verdict_ctx": "MODEL"
+ },
+ {
+  "source": "dev-adjudicated",
+  "img": "pages/ee3f949b_p3.png",
+  "value": "1329",
+  "truth": "referrals to other services for our residents",
+  "verdict_ctx": "MODEL"
+ },
+ {
+  "source": "dev-adjudicated",
+  "img": "pages/5b8eae73_p7.png",
+  "value": "83018",
+  "truth": "in Event Sales",
+  "verdict_ctx": "REGROUP"
+ },
+ {
+  "source": "dev-adjudicated",
+  "img": "pages/8bf02961_p3.png",
+  "value": "11",
+  "truth": "growth rate, with 324 staff on board by the end of FY24",
+  "verdict_ctx": "REGROUP"
+ },
+ {
+  "source": "dev-adjudicated",
+  "img": "pages/9d9ae097_p1.png",
+  "value": "25571",
+  "truth": "days of food for a total of [76,713 meals] for Irving families.",
+  "verdict_ctx": "REGROUP"
+ },
+ {
+  "source": "dev-adjudicated",
+  "img": "pages/b42e6f95_p1.png",
+  "value": "180",
+  "truth": "individuals attended Divorce Support Groups",
+  "verdict_ctx": "REGROUP"
+ },
+ {
+  "source": "dev-adjudicated",
+  "img": "pages/ec055971_p1.png",
+  "value": "1660",
+  "truth": "Educational Services",
+  "verdict_ctx": "NEITHER"
+ }
+]

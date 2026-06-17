@@ -210,10 +210,11 @@ def _verify_metrics_for_doc(
         tier = _assign_tier(verdict, source)
         offsets_json = json.dumps(verdict.offsets) if verdict.offsets else None
         context = _extract_context_window(source.section_text, verdict.offsets)
+        diag_json = _diag_json(verdict)
 
         _update_metric_tier(
             engine, metric_id, tier, verdict.rule,
-            source.source, offsets_json, context,
+            source.source, offsets_json, context, diag_json,
         )
 
         if tier == TIER_VERIFIED:
@@ -259,10 +260,11 @@ def _verify_stories_for_doc(
         tier = _assign_tier(verdict, source)
         offsets_json = json.dumps(verdict.offsets) if verdict.offsets else None
         context = _extract_context_window(source.section_text, verdict.offsets)
+        diag_json = _diag_json(verdict)
 
         _update_story_tier(
             engine, story_id, tier, verdict.rule,
-            source.source, offsets_json, context,
+            source.source, offsets_json, context, diag_json,
         )
 
         if tier == TIER_VERIFIED:
@@ -275,6 +277,18 @@ def _verify_stories_for_doc(
             stats.stories_quarantined += 1
 
 
+def _diag_json(verdict) -> str:
+    """Serialize the verdict's WHY-diagnostics for grounding_diag (Spec 0057
+    amendment). Recorded on EVERY fact so the quarantine self-categorizes:
+    word_coverage/longest_run/table_coverage/source_chars."""
+    return json.dumps({
+        "word_coverage": verdict.word_coverage,
+        "longest_run": verdict.longest_run,
+        "table_coverage": verdict.table_coverage,
+        "source_chars": verdict.source_chars,
+    })
+
+
 def _update_metric_tier(
     engine: Engine,
     metric_id: int,
@@ -283,6 +297,7 @@ def _update_metric_tier(
     grounding_source: str | None,
     offsets_json: str | None,
     context: str | None,
+    diag_json: str | None = None,
 ) -> None:
     with engine.begin() as conn:
         conn.execute(text("""
@@ -291,7 +306,8 @@ def _update_metric_tier(
                 grounding_rule = :rule,
                 grounding_source = :source,
                 grounding_offsets = CAST(:offsets AS JSONB),
-                context_window = :context
+                context_window = :context,
+                grounding_diag = CAST(:diag AS JSONB)
             WHERE id = :id
         """), {
             "id": metric_id,
@@ -300,6 +316,7 @@ def _update_metric_tier(
             "source": grounding_source,
             "offsets": offsets_json,
             "context": context,
+            "diag": diag_json,
         })
 
 
@@ -311,6 +328,7 @@ def _update_story_tier(
     grounding_source: str | None,
     offsets_json: str | None,
     context: str | None,
+    diag_json: str | None = None,
 ) -> None:
     with engine.begin() as conn:
         conn.execute(text("""
@@ -319,7 +337,8 @@ def _update_story_tier(
                 grounding_rule = :rule,
                 grounding_source = :source,
                 grounding_offsets = CAST(:offsets AS JSONB),
-                context_window = :context
+                context_window = :context,
+                grounding_diag = CAST(:diag AS JSONB)
             WHERE id = :id
         """), {
             "id": story_id,
@@ -328,6 +347,7 @@ def _update_story_tier(
             "source": grounding_source,
             "offsets": offsets_json,
             "context": context,
+            "diag": diag_json,
         })
 
 

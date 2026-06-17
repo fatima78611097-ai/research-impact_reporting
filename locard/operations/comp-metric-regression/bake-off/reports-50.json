@@ -1,0 +1,402 @@
+[
+ {
+  "sha8": "1a70e980",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/1a70e980.pdf",
+  "page": 1,
+  "figs_per_page": 2.8,
+  "org": "Skookum Kids",
+  "img": "bakeoff/pages/1a70e980.png"
+ },
+ {
+  "sha8": "5b98b66f",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/5b98b66f.pdf",
+  "page": 2,
+  "figs_per_page": 1.8,
+  "org": "Capstone Community Action Inc",
+  "img": "bakeoff/pages/5b98b66f.png"
+ },
+ {
+  "sha8": "2ec17b37",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/2ec17b37.pdf",
+  "page": 2,
+  "figs_per_page": 19.0,
+  "org": "Atlanta Victim Assistance Inc",
+  "img": "bakeoff/pages/2ec17b37.png"
+ },
+ {
+  "sha8": "9d9ae097",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/9d9ae097.pdf",
+  "page": 1,
+  "figs_per_page": 15.5,
+  "org": "Irving Cares Inc",
+  "img": "bakeoff/pages/9d9ae097.png"
+ },
+ {
+  "sha8": "c6d70581",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/c6d70581.pdf",
+  "page": 1,
+  "figs_per_page": 15.0,
+  "org": "Action Pathways Inc",
+  "img": "bakeoff/pages/c6d70581.png"
+ },
+ {
+  "sha8": "ec055971",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/ec055971.pdf",
+  "page": 1,
+  "figs_per_page": 14.0,
+  "org": "Ada S Mckinley Community Services Inc",
+  "img": "bakeoff/pages/ec055971.png"
+ },
+ {
+  "sha8": "28bb72ee",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/28bb72ee.pdf",
+  "page": 1,
+  "figs_per_page": 13.0,
+  "org": "Virginia Community Action Partnership",
+  "img": "bakeoff/pages/28bb72ee.png"
+ },
+ {
+  "sha8": "b42e6f95",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/b42e6f95.pdf",
+  "page": 1,
+  "figs_per_page": 12.0,
+  "org": "Calm Waters Center For Children And Families Inc",
+  "img": "bakeoff/pages/b42e6f95.png"
+ },
+ {
+  "sha8": "011c1177",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/011c1177.pdf",
+  "page": 1,
+  "figs_per_page": 12.0,
+  "org": "Dreams With Wings Inc",
+  "img": "bakeoff/pages/011c1177.png"
+ },
+ {
+  "sha8": "a79f5931",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/a79f5931.pdf",
+  "page": 1,
+  "figs_per_page": 11.0,
+  "org": "Thrive Peninsula",
+  "img": "bakeoff/pages/a79f5931.png"
+ },
+ {
+  "sha8": "93774f84",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/93774f84.pdf",
+  "page": 1,
+  "figs_per_page": 10.0,
+  "org": "Family And Community Together",
+  "img": "bakeoff/pages/93774f84.png"
+ },
+ {
+  "sha8": "149d2e8e",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/149d2e8e.pdf",
+  "page": 1,
+  "figs_per_page": 10.0,
+  "org": "Unleashing Potential",
+  "img": "bakeoff/pages/149d2e8e.png"
+ },
+ {
+  "sha8": "c31a2d63",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/c31a2d63.pdf",
+  "page": 3,
+  "figs_per_page": 8.4,
+  "org": "Young Womens Resource Center",
+  "img": "bakeoff/pages/c31a2d63.png"
+ },
+ {
+  "sha8": "5cfbbca2",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/5cfbbca2.pdf",
+  "page": 1,
+  "figs_per_page": 8.0,
+  "org": "Turning Point Of Lehigh Valley Inc",
+  "img": "bakeoff/pages/5cfbbca2.png"
+ },
+ {
+  "sha8": "4ec0d342",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/4ec0d342.pdf",
+  "page": 1,
+  "figs_per_page": 8.0,
+  "org": "Step Up On Second Street Inc",
+  "img": "bakeoff/pages/4ec0d342.png"
+ },
+ {
+  "sha8": "f46565eb",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/f46565eb.pdf",
+  "page": 2,
+  "figs_per_page": 7.8,
+  "org": "Orchards Childrens Services Inc",
+  "img": "bakeoff/pages/f46565eb.png"
+ },
+ {
+  "sha8": "c19607d8",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/c19607d8.pdf",
+  "page": 1,
+  "figs_per_page": 7.5,
+  "org": "Fair Chance",
+  "img": "bakeoff/pages/c19607d8.png"
+ },
+ {
+  "sha8": "71d70742",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/71d70742.pdf",
+  "page": 1,
+  "figs_per_page": 7.5,
+  "org": "South Carolina Respite Coalition",
+  "img": "bakeoff/pages/71d70742.png"
+ },
+ {
+  "sha8": "1b29d1a0",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/1b29d1a0.pdf",
+  "page": 1,
+  "figs_per_page": 7.4,
+  "org": "Golden West Communities Inc",
+  "img": "bakeoff/pages/1b29d1a0.png"
+ },
+ {
+  "sha8": "65c918ec",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/65c918ec.pdf",
+  "page": 3,
+  "figs_per_page": 7.2,
+  "org": "Fun Time Early Childhood Academy Inc",
+  "img": "bakeoff/pages/65c918ec.png"
+ },
+ {
+  "sha8": "a00adaa5",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/a00adaa5.pdf",
+  "page": 1,
+  "figs_per_page": 7.0,
+  "org": "Bridge Of Hope Greater Denver",
+  "img": "bakeoff/pages/a00adaa5.png"
+ },
+ {
+  "sha8": "128de607",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/128de607.pdf",
+  "page": 1,
+  "figs_per_page": 7.0,
+  "org": "District Council Of Madison Inc Society Of St Vincent De Paul",
+  "img": "bakeoff/pages/128de607.png"
+ },
+ {
+  "sha8": "bdad0921",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/bdad0921.pdf",
+  "page": 3,
+  "figs_per_page": 6.8,
+  "org": "Willow International",
+  "img": "bakeoff/pages/bdad0921.png"
+ },
+ {
+  "sha8": "752d2b78",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/752d2b78.pdf",
+  "page": 1,
+  "figs_per_page": 6.0,
+  "org": "Area Congregations Together In Service",
+  "img": "bakeoff/pages/752d2b78.png"
+ },
+ {
+  "sha8": "b670f181",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/b670f181.pdf",
+  "page": 3,
+  "figs_per_page": 6.0,
+  "org": "Human Resources Agency Of New Britain Inc",
+  "img": "bakeoff/pages/b670f181.png"
+ },
+ {
+  "sha8": "da2ba72a",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/da2ba72a.pdf",
+  "page": 1,
+  "figs_per_page": 6.0,
+  "org": "Abbott House Inc",
+  "img": "bakeoff/pages/da2ba72a.png"
+ },
+ {
+  "sha8": "3e3ff326",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/3e3ff326.pdf",
+  "page": 1,
+  "figs_per_page": 6.0,
+  "org": "Springboard To Opportunities",
+  "img": "bakeoff/pages/3e3ff326.png"
+ },
+ {
+  "sha8": "5370f17e",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/5370f17e.pdf",
+  "page": 1,
+  "figs_per_page": 6.0,
+  "org": "Drew Child Development Corporation Inc",
+  "img": "bakeoff/pages/5370f17e.png"
+ },
+ {
+  "sha8": "fa5c5fe6",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/fa5c5fe6.pdf",
+  "page": 1,
+  "figs_per_page": 6.0,
+  "org": "Abbott House Inc",
+  "img": "bakeoff/pages/fa5c5fe6.png"
+ },
+ {
+  "sha8": "714f6f9a",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/714f6f9a.pdf",
+  "page": 2,
+  "figs_per_page": 5.8,
+  "org": "Genesis Hopeful Haven Inc",
+  "img": "bakeoff/pages/714f6f9a.png"
+ },
+ {
+  "sha8": "6b3b6732",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/6b3b6732.pdf",
+  "page": 3,
+  "figs_per_page": 5.6,
+  "org": "Coastal Georgia Area Community Action Authority Inc",
+  "img": "bakeoff/pages/6b3b6732.png"
+ },
+ {
+  "sha8": "f1189246",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/f1189246.pdf",
+  "page": 2,
+  "figs_per_page": 5.5,
+  "org": "Chrysalis Inc",
+  "img": "bakeoff/pages/f1189246.png"
+ },
+ {
+  "sha8": "10c67887",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/10c67887.pdf",
+  "page": 2,
+  "figs_per_page": 5.5,
+  "org": "Mockingbird Society",
+  "img": "bakeoff/pages/10c67887.png"
+ },
+ {
+  "sha8": "30259c4d",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/30259c4d.pdf",
+  "page": 1,
+  "figs_per_page": 5.5,
+  "org": "Gbcanada Usa",
+  "img": "bakeoff/pages/30259c4d.png"
+ },
+ {
+  "sha8": "8b8cd8e1",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/8b8cd8e1.pdf",
+  "page": 2,
+  "figs_per_page": 5.3,
+  "org": "Cumac Echo Inc",
+  "img": "bakeoff/pages/8b8cd8e1.png"
+ },
+ {
+  "sha8": "9fcf82e5",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/9fcf82e5.pdf",
+  "page": 2,
+  "figs_per_page": 5.2,
+  "org": "Worcester Youth & Family Counseling Service Inc",
+  "img": "bakeoff/pages/9fcf82e5.png"
+ },
+ {
+  "sha8": "d58e3d5b",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/d58e3d5b.pdf",
+  "page": 2,
+  "figs_per_page": 5.1,
+  "org": "Hearts With A Mission",
+  "img": "bakeoff/pages/d58e3d5b.png"
+ },
+ {
+  "sha8": "b60a49eb",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/b60a49eb.pdf",
+  "page": 2,
+  "figs_per_page": 5.1,
+  "org": "Childhelp Inc",
+  "img": "bakeoff/pages/b60a49eb.png"
+ },
+ {
+  "sha8": "2ea6005f",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/2ea6005f.pdf",
+  "page": 3,
+  "figs_per_page": 4.9,
+  "org": "Community Rehabilitation Agencies Of Tennessee",
+  "img": "bakeoff/pages/2ea6005f.png"
+ },
+ {
+  "sha8": "8552b09e",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/8552b09e.pdf",
+  "page": 2,
+  "figs_per_page": 4.9,
+  "org": "Families Network Of Western Connecticut Inc",
+  "img": "bakeoff/pages/8552b09e.png"
+ },
+ {
+  "sha8": "8eb7da05",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/8eb7da05.pdf",
+  "page": 2,
+  "figs_per_page": 4.8,
+  "org": "The Childrens Place At Home Safe Inc",
+  "img": "bakeoff/pages/8eb7da05.png"
+ },
+ {
+  "sha8": "e136ede4",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/e136ede4.pdf",
+  "page": 2,
+  "figs_per_page": 4.7,
+  "org": "Westside Future Fund",
+  "img": "bakeoff/pages/e136ede4.png"
+ },
+ {
+  "sha8": "ce7b337f",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/ce7b337f.pdf",
+  "page": 2,
+  "figs_per_page": 4.6,
+  "org": "The Childrens Place At Home Safe Inc",
+  "img": "bakeoff/pages/ce7b337f.png"
+ },
+ {
+  "sha8": "24e18655",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/24e18655.pdf",
+  "page": 2,
+  "figs_per_page": 4.6,
+  "org": "Island Harvest Ltd",
+  "img": "bakeoff/pages/24e18655.png"
+ },
+ {
+  "sha8": "2cf7c1e8",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/2cf7c1e8.pdf",
+  "page": 1,
+  "figs_per_page": 4.5,
+  "org": "Forward Stride",
+  "img": "bakeoff/pages/2cf7c1e8.png"
+ },
+ {
+  "sha8": "98eb1221",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/98eb1221.pdf",
+  "page": 1,
+  "figs_per_page": 4.3,
+  "org": "Raiseup Families",
+  "img": "bakeoff/pages/98eb1221.png"
+ },
+ {
+  "sha8": "0cca730e",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/0cca730e.pdf",
+  "page": 1,
+  "figs_per_page": 4.2,
+  "org": "Young Womens Christian Association Of Lewiston Clarkston Inc",
+  "img": "bakeoff/pages/0cca730e.png"
+ },
+ {
+  "sha8": "88bfa5f4",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/88bfa5f4.pdf",
+  "page": 2,
+  "figs_per_page": 4.2,
+  "org": "Iraq And Afghanistan Veterans Of America Inc",
+  "img": "bakeoff/pages/88bfa5f4.png"
+ },
+ {
+  "sha8": "d9fef44f",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/d9fef44f.pdf",
+  "page": 2,
+  "figs_per_page": 4.2,
+  "org": "Facing Forward To End Homelessness",
+  "img": "bakeoff/pages/d9fef44f.png"
+ },
+ {
+  "sha8": "5a23e2e5",
+  "pdf": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/5a23e2e5.pdf",
+  "page": 2,
+  "figs_per_page": 4.1,
+  "org": "Scottsdale Training And Rehabilitation Services Inc",
+  "img": "bakeoff/pages/5a23e2e5.png"
+ }
+]

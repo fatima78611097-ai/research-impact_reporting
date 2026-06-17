@@ -22,15 +22,20 @@ STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 
 cd "$(git rev-parse --show-toplevel)"
 
-echo "Packaging lavandula/ -> ${OUT}"
-# Exclude tests, caches, and the dashboard (the GPU worker does not import it).
-# If your existing tarball includes the dashboard, drop that --exclude.
+echo "Packaging worker code -> ${OUT}"
+# Package ONLY the packages the worker imports (parse, common, faithfulness) +
+# the top-level package marker. The full lavandula/ tree is NOT safe to tar: it
+# contains reports/logs (multi-GB crawler_decisions.jsonl), nonprofits/data
+# (a ~200 MB SQLite db), and per-subpackage venvs — none of which belong on a
+# worker. Explicit includes keep the tarball ~200 KB and junk-free.
 tar -czf "${OUT}" \
     --exclude='*/__pycache__' \
     --exclude='*/tests' \
-    --exclude='lavandula/dashboard' \
     --exclude='*.pyc' \
-    lavandula
+    lavandula/__init__.py \
+    lavandula/parse \
+    lavandula/common \
+    lavandula/faithfulness
 
 echo "Built ${OUT}:"
 tar -tzf "${OUT}" | grep -E 'parse/(parse_runner|worker|chunking|db|config)\.py' || {

@@ -77,6 +77,11 @@
               <span class="qa-geo qa-geo-{{ m.geo_impact|lower }}">{{ m.geo_impact }}</span>
               {% endif %}
             </div>
+            {% if m.source_snippet %}
+            <div class="qa-snippet" title="Verbatim source quote — this is the text the faithfulness gate verifies against the document (the line above is a composed label).">
+              <span class="qa-snippet-label">source:</span> &ldquo;{{ m.source_snippet }}&rdquo;
+            </div>
+            {% endif %}
           </div>
         </div>
         {% endfor %}

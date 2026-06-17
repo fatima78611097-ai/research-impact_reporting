@@ -1,0 +1,32 @@
+[
+ {
+  "id": "131309e3:3",
+  "statement": "CSS operates eight group homes providing 24-hour residential care, totaling 342,845 hours of care for 46 individuals.",
+  "reason": "The source only mentions '46 342,845 Community360 Day Program' with no mention of group homes or 24-hour residential care, so the claim adds ownership and scope not present."
+ },
+ {
+  "id": "2cf7c1e8:3",
+  "statement": "Forward Stride served 351 clients through its own programs.",
+  "reason": "The source does not mention Forward Stride's own programs or specify that it served 351 clients, only listing the number 351 without context."
+ },
+ {
+  "id": "1c0ad786:8",
+  "statement": "The organization operates in more than 70 schools in Orange County.",
+  "reason": "The source mentions services in seven institutions, not 70 schools, so the claim amplifies the scope and setting of the organization's operations."
+ },
+ {
+  "id": "65c918ec:7",
+  "statement": "Fun Time Academy now operates 4 locations.",
+  "reason": "The source lists '4 LOCATIONS' as a fact without stating that Fun Time Academy operates them, while the claim asserts direct operational ownership."
+ },
+ {
+  "id": "d2e6b6ff:3",
+  "statement": "63 adults and 39 children spent 24,889 nights in their own homes through the New Beginnings rapid rehousing program.",
+  "reason": "The claim reduces the number of adults and children from 109 and 116 to 63 and 39, but the source does not specify that the 24,889 nights in their own homes are exclusively through the New Beginnings rapid rehousing program, and the claim omits the 11,832 nights of safety in the Safe House program, thereby misrepresenting the scope and ownership of the action."
+ },
+ {
+  "id": "ee9087ae:4",
+  "statement": "CPTS maintains a fleet of 66 vehicles providing open-to-all public transportation with ADA accessibility.",
+  "reason": "The claim states CPTS maintains a fleet of 66 vehicles providing public transportation, but the source only mentions Cimarron Transit services and UCAP's programs, with no mention of a specific fleet size or CPTS."
+ }
+]

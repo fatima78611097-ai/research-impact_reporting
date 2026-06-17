@@ -1,0 +1,1378 @@
+{
+  "summary": "Page-truth audit of 100 stratified story-extraction records vs the locked definition",
+  "agentCount": 100,
+  "logs": [],
+  "result": {
+    "n": 100,
+    "span": {
+      "verbatim": 95,
+      "paraphrased": 0,
+      "partial": 2,
+      "absent": 3
+    },
+    "class_agree": 66,
+    "impact_agree": 36,
+    "impact_n": 60,
+    "fields": {
+      "yes": 83,
+      "minor": 13,
+      "no": 4
+    },
+    "detail": [
+      {
+        "idx": 0,
+        "sha8": "ebaed191",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "named_person",
+          "sensitive_context"
+        ],
+        "reason": "All claimed span text is printed verbatim on the page (modulo line breaks): the March 2012 decline, \"Suzanne passed on Feb. 20, 2013,\" the two \"We were able to keep her...\" / \"Moving her at that point...\" quotes, the Geriatric Care Management paragraph, and \"When staff members at Bethesda Gardens realized that Suzanne's health was starting to decline, they got\" (cut off mid-sentence). The passage meets all three impact-story criteria: (1) specific named beneficiary, resident Suzanne Wright; (2) explicit org intervention, Bethesda's Geriatric Care Management program / Senior Support Solutions coordinating her care, plus Bethesda Hospice Care; (3) a true past change/avoided harm, she remained in her beloved Bethesda Gardens apartment among friends, with her belongings and Renoir painting, until her death rather than being moved during declining health. Title, primary_beneficiary (Suzanne Wright), and what_changed are all directly supported, no invented facts. PII: real private individuals named (Suzanne Wright, Janet Mulroy) and end-of-life/health context present (declining health, terminal diagnosis, hospice, death). No minor."
+      },
+      {
+        "idx": 1,
+        "sha8": "ee33d0e3",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "sensitive_context"
+        ],
+        "reason": "The claimed span appears verbatim on the page under the \"William – Caregiver for family members lost employment\" heading in the ERAP \"Stories of Impact\" section. It satisfies all three impact-story criteria: (1) a specific beneficiary in context — \"the sole breadwinner in his household,\" with a disabled wife and ill sister, not a generic population; (2) explicit org intervention — \"ERAP provided support\" and \"With support from another program\"; (3) a real past/current change — rental arrears eliminated, family stayed housed, and he \"establish[ed] his own successful business, and is in a more financially sustainable position today.\" Fields are faithful: title, primary_beneficiary, and what_changed all track the page text (the first-name \"William\" is a story-format characterization of an unnamed individual, which is acceptable). PII: sensitive_context applies due to health/disability details (disabled wife, ill sister) and the eviction/housing-crisis context. No real surname is given (story uses a first name only), and no minor is involved, so named_person and minor do not apply."
+      },
+      {
+        "idx": 2,
+        "sha8": "fd032b14",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "minor"
+        ],
+        "reason": "The claimed span is printed verbatim on p13 (only line-wrap differences). The passage qualifies as an impact story: it contains specific identifiable beneficiaries in context (a young mother at River Garden, a senior citizen at Columbia Parc, a young father), the org's interventions (Clover Career Connections job training, a coordinated Thanksgiving food basket, free VITA tax prep), and realized past/present changes (earned a health care certification and now works a living-wage full-time job; received a food basket; caught up on bills and bought school supplies). Two of the three vignettes are unambiguous impact stories; the senior vignette adds sentiment but pairs it with a concrete receipt, so the overall passage clears all three elements. Title and beneficiary/what_changed fields faithfully track the text with no invention. PII: minor is implied via \"school supplies for his children.\" Johnathan Abrams is named but appears as a Saints player/coordinating partner, not a private beneficiary, so not flagged as a private named_person. No health/DV/justice sensitive context (a job credential is not a personal health condition)."
+      },
+      {
+        "idx": 3,
+        "sha8": "f92248ef",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "reject",
+        "fields_faithful": "yes",
+        "pii": [
+          "sensitive_context"
+        ],
+        "reason": "The claimed span is printed verbatim on the page (left column, final paragraph): \"In 2021 we supplied fresh, nutritionally-dense produce to 630 members over the span of 40 weeks... That's why in 2021 we offered: 60 free shares to refugee families in partnership with the Refugee Development Center, 38 subsidized shares for folks who were experiencing hardship, and 16 shares for folks who wanted to pay using SNAP benefits.\" Correct class is REJECT, not impact_story: the passage is a program description with aggregate distribution counts (630 members, 60/38/16 shares). \"Refugee families\" is a generic population category, not a specific, identifiable beneficiary presented in context; there is no narrative change answering \"what is different now?\" for an identifiable beneficiary — only counts of shares offered. Fails the impact-story requirement of an identifiable beneficiary plus an observable state change. Fields are faithful: title, primary_beneficiary (refugee families), and what_changed (60 refugee families received free fresh produce shares) all map accurately to on-page text and invent nothing — the error is purely the impact_story label. PII: the refugee/immigration framing is a sensitive_context flag; named entities on the page are corporate donors (AF Group, Emergent BioSolutions, Sparrow Health System, Magna Dexsys), not private named individuals, so no named_person; no specific minor is implied."
+      },
+      {
+        "idx": 4,
+        "sha8": "68e0e142",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "none"
+        ],
+        "reason": "The claimed span is printed verbatim in the left column (modulo line breaks/hyphenation), including both quoted truths and the before/after narration. Within an otherwise aggregate survey framing (\"Our interviewees repeated back...\"), the passage zooms to a specific unnamed responder: \"one responded... This results in his feeling joyful and hopeful about his future whereas before NG, he was unsure and insecure.\" That gives all three impact-story elements: (1) an identifiable beneficiary in context (a specific graduate, \"one responded\"/\"He\"), (2) the org's intervention (NG, \"before NG\"), and (3) a concrete change presented as true now vs. before — outlook shifted from unsure/insecure to joyful/hopeful. The opening quote alone would be a testimonial, but the attributed before/after lifts it to an impact story, which is the strongest individual case on the page and what the system flagged. Fields are faithful: title (joy/hope through obedience), primary_beneficiary (an unnamed graduate), and what_changed all map directly to on-page text. No real private individual is named (NG is the org), subject is an adult graduate, and no sensitive context — so PII is none."
+      },
+      {
+        "idx": 5,
+        "sha8": "682c5959",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "service_episode",
+        "fields_faithful": "yes",
+        "pii": [
+          "none"
+        ],
+        "reason": "The claimed span is printed verbatim on the page under the heading \"Two-Year Produce & Reduce Pilot Concludes.\" The passage has an intervention (EFI's worker-engagement waste-management pilot) and a real past-tense change (created a culture of sustainability and reduced CO2 by the equivalent of 1 million miles driven). But the only \"beneficiary\" is \"three California-based farming operations\" presented as a count of pilot sites/program participants in a demonstration, not a specific beneficiary shown in context with its own situation — it's group-level program delivery with an aggregate measured outcome. That fits SERVICE_EPISODE (delivery + change, no specific beneficiary in context) rather than IMPACT_STORY. Fields are faithful to the page (title, beneficiary, what_changed all pulled directly from the text; no invented facts). No named private individuals, sensitive contexts, or minors in the passage."
+      },
+      {
+        "idx": 6,
+        "sha8": "ee33d0e3",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "named_person",
+          "sensitive_context",
+          "minor"
+        ],
+        "reason": "The claimed span is printed verbatim on the page under the \"Marita – Single mother of three young children, loss of spouse\" heading. It satisfies all three impact-story criteria: identifiable beneficiary (Marita, single mother of three), org intervention (ERAP covered her rental arrears), and a concrete past-tense change/avoided harm (she had received an eviction letter; ERAP covered arrears and provided housing stability). All system fields are supported by the page text: title (widowed/loss of spouse + housing stability), primary_beneficiary, and what_changed all match. PII: Marita is named; sensitive context (spouse died of COVID, eviction); three young children = minors."
+      },
+      {
+        "idx": 7,
+        "sha8": "68e0e142",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "minor_issue",
+        "pii": [
+          "sensitive_context",
+          "minor",
+          "named_person"
+        ],
+        "reason": "Span is printed verbatim on the page (modulo line breaks/hyphenation): \"It culminated with a suicide attempt... a thing I didn't know existed prior to that.\" Page is a first-person Narrow Gate testimony titled \"DISCOVER A LIFE THAT MATTERS.\" True class is impact_story: (1) identifiable specific beneficiary = the unnamed first-person speaker; (2) intervention = Narrow Gate's 8-month residential program; (3) change = from suicidal depression/self-loathing to faith, a CNC/woodworking career, marriage and fatherhood, presented as true past/current. Title and what_changed are supported. fields_faithful is minor_issue: primary_beneficiary \"Webb Meredith\" is misattributed — the speaker is NEVER named on the page; \"Webb Meredith\" comes from the daughter's name \"Elsie Honey Webb Meredith,\" so the field assigns a name belonging to a different person (the infant daughter) to the adult subject. PII: sensitive_context (suicide attempts, depression/mental health); minor (one-year-old daughter explicitly involved); named_person (the daughter is named on the page)."
+      },
+      {
+        "idx": 8,
+        "sha8": "370cd021",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "none"
+        ],
+        "reason": "Span is printed verbatim on p19 (right of \"Success Stories and Microenterprises\"), modulo line breaks. The bakery clause meets all three impact-story criteria: (1) specific beneficiary — \"a young woman passionate about baking,\" not a generic population; (2) intervention — \"used creative funding to acquire an oven,\" within Slade's microenterprise support program (org help clearly implied); (3) change — \"creating a sustainable job for herself and boosting the bakery's capacity,\" an observable sustained improvement stated as accomplished. So impact_story is correct. Fields are faithful: title, beneficiary (verbatim), and what_changed all track the page with no invented facts. No PII: beneficiary unnamed, \"young woman\" implies adult, no sensitive context."
+      },
+      {
+        "idx": 9,
+        "sha8": "e83840a4",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "reject",
+        "fields_faithful": "yes",
+        "pii": [
+          "none"
+        ],
+        "reason": "The claimed span is printed verbatim as the last bullet in a \"Data\" section: \"1 individual faded out from job coaching supports to independence at work.\" It sits in a list of five aggregate program-output statistics (98% employed, 69% employed, 6 new job placements, 3 Paid Work Experiences, 1 individual...). Per the DEFINITION this is aggregate statistics / program data, which is REJECT: there is no identifiable beneficiary in context — \"1 individual\" is a bare count (like \"6 new job placements\" above it), a generic tally entry with no person/family/group presented as a specific beneficiary. It does imply an intervention (job coaching) and a change (to independence), but the required identifiable-beneficiary-in-context element is absent. The system's fields are faithful to the literal text, but the passage's true class is reject, not impact_story. No PII."
+      },
+      {
+        "idx": 10,
+        "sha8": "93774f84",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "testimonial",
+        "fields_faithful": "yes",
+        "pii": [
+          "none"
+        ],
+        "reason": "The passage is printed verbatim in the bottom-right pull-quote block of the page, attributed to \"Reyna, professional\": \"I learned how to change the framework of our words when talking about people and disabilities and how to better support students with disabilities. Thank you for the work you do. It truly helped me get a better understanding on my choice of words.\" Against the three-part impact-story test: (1) Reyna is an identifiable speaker/participant — OK; (2) org intervention (the training/\"work you do\") is implied — OK; but (3) the \"change\" is only a vague, self-reported cognitive/attitudinal shift (\"I learned how to... better understanding on my choice of words\") wrapped in gratitude (\"Thank you for the work you do. It truly helped me\"). There is no observable state change, avoided harm, or sustained improvement — just sentiment/praise plus a soft self-reported learning. That is a TESTIMONIAL, not an impact story. The system's fields (title, beneficiary \"Reyna, professional\", what_changed) faithfully describe the on-page text without inventing facts. PII: only a first name in a testimonial attribution (treated as an unnamed-speaker characterization), no sensitive context, no minor — none."
+      },
+      {
+        "idx": 11,
+        "sha8": "5b8eae73",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "donor_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "sensitive_context"
+        ],
+        "reason": "The claimed span is printed verbatim on the page (right column, attributed to \"Janet, spiritual care volunteer and retired professional singer\"); OCR-only differences (drop-cap \"A s a\" for \"As a\"). The passage contains an identifiable beneficiary (a new resident, former nurse, who resisted medications), an intervention (Janet reading, singing, stroking her head), and a change (the resident became calm and opened her eyes), which superficially meets the three impact-story elements. But the passage is a first-person account whose SUBJECT is the volunteer herself (\"As a volunteer... I have had many moving experiences,\" \"I felt honored to have been one of her last encounters\"). Per the definition, DONOR_STORY applies when the subject is a giver/volunteer, so the true class is donor_story rather than impact_story. The system's fields are faithful to the page: title and beneficiary characterize the unnamed resident correctly and what_changed matches the text. PII: hospice/dying-care content is sensitive_context (health); the resident is unnamed and \"Janet\" is only a first-name volunteer attribution, so no named private individual and no minor."
+      },
+      {
+        "idx": 12,
+        "sha8": "1c0ad786",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "sensitive_context"
+        ],
+        "reason": "Page is headed \"CLIENT STORY – A NEW LIFE AFTER BEING SENTENCED FOR LIFE\" and narrates Robert's arc. The claimed span matches the printed text modulo line breaks/hyphenation and truncation (\"44 years - life\" / cut at \"December 202\"), so verbatim. All three impact-story elements are present: (1) identifiable specific beneficiary — \"Robert,\" an incarcerated man sentenced to 44 years to life; (2) intervention — completion of the ISUDT treatment program, Offender Mentor Certification Program, and Phoenix House ISUDT mentorship at Ironwood State Prison; (3) real past change — as a result he was resentenced and released in December 2023, found a job, and is now (per the right column) a productive, law-abiding member of society. Fields are faithful: title, beneficiary description, and what_changed (release Dec 2023, employment, law-abiding) are all supported on the page. PII: \"Robert\" is in quotes (a pseudonym), so not a real named private individual; but the passage carries justice/incarceration and substance-use-disorder content, so sensitive_context applies. Subject is an adult; no minor."
+      },
+      {
+        "idx": 13,
+        "sha8": "8bf02961",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "named_person",
+          "sensitive_context"
+        ],
+        "reason": "The claimed span is printed verbatim on the page (modulo line breaks): \"The future is a good life, with my family getting in touch with me again and coming to visit me...those things wouldn't have happened if I was still homeless. Since I've been here, I've gotten my life back.\" attributed to BOB, NEW NARRATIVE RESIDENT. It satisfies all three impact-story elements: (1) identifiable beneficiary — Bob, a specific resident speaking in first person; (2) intervention clearly implied — \"since I've been here\" at New Narrative, a housing program; (3) change answering \"what is different now?\" — family reconnected and resumed visits, he \"gotten my life back,\" no longer homeless, presented as true current/past state. Title, primary_beneficiary (Bob), and what_changed are all supported by the page. PII: Bob is a named individual (named_person); the surrounding content concerns homelessness recovery and justice-system involvement, so sensitive_context applies. No minor indicated (participant profile states ages 18-87)."
+      },
+      {
+        "idx": 14,
+        "sha8": "db75f054",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "none"
+        ],
+        "reason": "Span is printed verbatim on the page (matches modulo line breaks/hyphenation, e.g. \"software-development\"). All three impact-story elements are present: (1) specific beneficiary = Design Mill, Inc., a named software company, not a generic population; (2) org intervention = Greater Dubuque Development \"serving as the catalyst,\" convening the City, NICC, Iowa Economic Development Authority, and Gronen Restoration to facilitate the move; (3) concrete realized change = Design Mill relocated to Dubuque, bringing 16 new positions in graphic design, animation, engineering, and programming (per the second column), stated as past/accomplished. The embedded Greiner quote is a testimonial element, but the surrounding passage delivers the change, so the whole qualifies as impact_story. Fields are faithful: title, primary_beneficiary (Design Mill, Inc.), and what_changed (relocation + 16 new positions in those fields) are all on-page; nothing invented. PII: Nathan Greiner is named only as a corporate officer (President of Design Mill) in an economic-development context, not a private individual or service recipient, so none of the protective flags apply; no sensitive context, no minor."
+      },
+      {
+        "idx": 15,
+        "sha8": "e83840a4",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "named_person",
+          "sensitive_context"
+        ],
+        "reason": "The claimed span is printed verbatim on the page (modulo line breaks): opening \"How to turn a passion and dream into a successful growing business? For Paul...\" through \"Paul chose the business name Timeless.\" The passage qualifies as an impact_story on all three criteria: (1) identifiable beneficiary — Paul, a specific Way2Work client, blind from birth; (2) intervention — Way2Work helped him launch the business and is now partnering on marketing/logo/persona; (3) change presented as true/current — printed text states \"Timeless Classics has secured several standing gigs and repeat bookings... including a newly designed business logo and learning new DJ software,\" an observable state change. Fields are faithful: title, beneficiary (Paul), and what_changed all trace to verbatim page text (\"standing gigs and repeat bookings,\" \"learning new DJ software,\" broadening client base). PII: Paul is a named real individual; the page explicitly states \"I'm totally blind from birth,\" a disability/health sensitive context. No minor involved."
+      },
+      {
+        "idx": 16,
+        "sha8": "c0325150",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "named_person",
+          "minor"
+        ],
+        "reason": "The claimed span is printed verbatim on the page (matching modulo line breaks) under the \"Helping Students Get Back on Track\" column. It satisfies all three impact-story criteria: identifiable beneficiary (Kade, a specific student), org intervention (case manager stabilized the family, paid rent, delivered food, ensured learning resources and attendance), and a real past change (Kade recovered credits and graduated on time with his diploma). Fields are faithful: title and what_changed are directly supported by the text, including the detail about his mother/pride (\"She is going to be so proud of me\"). PII: Kade is a named individual and an implied minor (high-school student recovering credits to graduate). Sensitive context is arguable (pandemic job loss / financial precarity) but does not fall squarely into the listed sensitive categories (health/DV/addiction/immigration/justice/foster), so I did not flag sensitive_context."
+      },
+      {
+        "idx": 17,
+        "sha8": "98eb1221",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "named_person",
+          "minor"
+        ],
+        "reason": "The claimed span is printed verbatim on the page (right-panel \"Engineering His Future\" story), modulo line breaks. It satisfies all three impact-story criteria: (1) identifiable specific beneficiary — Jesus and his family, named; (2) org intervention — RaiseUp Families' 9-month Hand-Up program and matching savings program; (3) a concrete past change — they moved from a tiny apartment to a house thanks to money saved through the program. Fields are faithful: title, primary_beneficiary (Jesus and his family), and what_changed all track the page text without invention. PII: Jesus is named; he was 15 and has a younger brother, so a minor is involved. The father's death and rent hardship are not in the listed sensitive categories (health/DV/addiction/immigration/justice/foster), so sensitive_context not flagged."
+      },
+      {
+        "idx": 18,
+        "sha8": "072b705a",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "named_person",
+          "sensitive_context",
+          "minor"
+        ],
+        "reason": "The claimed span is printed verbatim on the page under the \"GREG'S STORY\" heading (the system's capture truncates at \"secured a position f\" but the printed text continues \"...first in our on-campus cafe and later in the community\"). The passage satisfies all three impact-story criteria: (1) identifiable beneficiary in context — Greg, named, with diagnosis and history; (2) org intervention — Avalon residential treatment, Rising Oaks housing, day treatment, family therapy, Workability vocational program; (3) concrete past/current change — graduated, replaced aggressive responses with words, secured a job, moved to agency housing on an independence track. Title, primary_beneficiary (Greg), and what_changed are all supported by the page text. PII: named_person (Greg); sensitive_context (PTSD, depression, self-injury, psychiatric hospitalizations, foster/justice-adjacent \"non-minor dependents\" and Regional Center supported-living); minor implied — \"non-minor dependents\" / Regional Center / non-public school day treatment indicate a transition-age foster youth who was a minor during the program."
+      },
+      {
+        "idx": 19,
+        "sha8": "93774f84",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "testimonial",
+        "fields_faithful": "minor_issue",
+        "pii": [
+          "named_person",
+          "sensitive_context",
+          "minor"
+        ],
+        "reason": "The claimed span (Rebecca B. quote) is printed verbatim on the page. Read in isolation, the passage is praise/sentiment (\"I really appreciated talking to someone... FACT Oregon is an amazing resource\") plus a statement of what she NEEDED (\"I needed the encouragement to stand up for my child's rights and know what questions to ask\"). It has an identifiable beneficiary (Rebecca, a parent) and an implied intervention (talking to a knowledgeable FACT Oregon resource), but it lacks a clearly realized \"what is different now?\" change for her — she describes a need, not a confirmed past/current outcome. That makes it a TESTIMONIAL, not a full impact story. (The separate Wendy W. quote below does state a change — \"the family's stress was reduced\" — but that is a different span/speaker.) Fields: title and beneficiary are supported; what_changed reframes a statement of need into a realized outcome (\"Rebecca received... encouragement\"), which overstates the text — minor issue. PII: speaker named (first name + initial), involves her child (minor) and special-education/disability/IEP context (sensitive)."
+      },
+      {
+        "idx": 20,
+        "sha8": "68e0e142",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "none"
+        ],
+        "reason": "The claimed span appears verbatim on the page (modulo line breaks). The targeted passage is a first-person quote: \"Another reported, 'Before NG I was a big introvert and spent little time outdoors. Now, I'm constantly in community and find great peace and connection with God through nature.'\" This satisfies all three impact-story criteria: (1) identifiable beneficiary — an unnamed program graduate/respondent presented as a specific speaker; (2) intervention — NG, clearly implied via the before/after framing; (3) a concrete change answering \"what is different now?\" — isolated and indoors before, now in community and connected with God through nature, stated as true/current, not mere sentiment. (The surrounding program-description text and 85/92/90% survey stats on the page would be REJECT on their own, but the system targeted the qualifying quote.) Fields are faithful: title, \"an unnamed graduate,\" and the what_changed paraphrase all track the quote. No PII: speaker is anonymous; no sensitive context; subjects are young men, not clearly minors."
+      },
+      {
+        "idx": 21,
+        "sha8": "759c9a94",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "named_person",
+          "sensitive_context",
+          "minor"
+        ],
+        "reason": "The claimed span is printed verbatim on the page (top-right \"Patients & Families\" block), matching modulo line breaks; the page continues \"She wants to help others just like Briana, the BMTU staff, and HGF helped her.\" The passage satisfies all three impact-story criteria: identifiable beneficiary (Hala, a specific named patient), intervention (bone marrow transplant plus the His Grace Foundation Holly A. Hardy Education and Scholarship Fund), and a real past/current change (\"Hala began college in January 2020 after her transplant. She received a scholarship... and is pursuing a degree in Clinical Social Work\"). Correct class is impact_story. Fields are faithful: title, primary_beneficiary (Hala), and what_changed are all supported by the on-page text with no invented facts. PII: named real individuals (Hala, Briana); sensitive health context (Severe Aplastic Anemia, bone marrow transplant); minor implied — diagnosed a month before her high school graduation, i.e., a high-school senior."
+      },
+      {
+        "idx": 22,
+        "sha8": "9fa2652e",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "named_person",
+          "sensitive_context"
+        ],
+        "reason": "The claimed span is genuinely printed on the page (opening paragraph and Martha Martin quotes match verbatim modulo reflow/hyphenation; the parse stitched together the lead paragraph, the \"Being at home enabled Frances to stay comfortable...\" line, and Martha's quotes). Passage qualifies as impact_story on all three prongs: (1) identifiable beneficiary — Frances Gilbert, age 93, and her family, a specific person not a generic population; (2) org intervention — SpiriTrust Lutheran Home Care & Hospice brought hospice care into her home, with nurses visiting once or twice daily including weekends; (3) change presented as true past state — Frances stayed comfortable in a familiar place surrounded by loved ones through end of life, the aide was peaceful with her at passing, and the family received continuous and post-death grief support. Title, primary_beneficiary, and what_changed are all supported by the page. PII: real named individuals (Frances Gilbert, Martha Martin) and end-of-life/hospice health context. No minor is a beneficiary in the narrative (a granddaughter appears only in a photo caption, not the passage), so minor is not flagged."
+      },
+      {
+        "idx": 23,
+        "sha8": "d04d1475",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "service_episode",
+        "fields_faithful": "yes",
+        "pii": [
+          "none"
+        ],
+        "reason": "First paragraph is printed verbatim on the page (modulo line-break hyphenation). It reports org program delivery in the Bryant neighborhood: 80+ free energy assessments and retrofits started/completed on 30 homes, making homes more efficient and affordable — a real past/current change plus a clear intervention. But the only \"beneficiary\" is \"residents of the Bryant neighborhood,\" a generic population/place, not a specific identifiable beneficiary (no named person, family, or particular group). Group-level delivery + change but no specific beneficiary = service_episode, not impact_story; the system over-classified it. (The \"70 homes\" upgrade is future/secured-funding, not a current change.) Fields are faithful to the page: title, beneficiary characterization, and what_changed all match the text with no invented facts. No named private individuals (only orgs: MSHDA, Builders Initiative, McKnight Foundation, City of Ann Arbor, CAN), no sensitive context, no minors."
+      },
+      {
+        "idx": 24,
+        "sha8": "93e81f02",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "sensitive_context"
+        ],
+        "reason": "The claimed span is printed on the page verbatim (modulo parse hyphenation/spacing). The passage about 'Mary' satisfies all three impact-story criteria: (1) a specific identifiable beneficiary — 'Mary', a woman married 44 years; (2) org intervention — she met with a WSS Counselor who provided counseling and support; (3) a real past/current change — she disclosed extensive physical/sexual abuse, filed for divorce, and now receives ongoing counseling and support with pending civil matters (confirmed in the paragraph's continuation visible on the page). Title, primary_beneficiary, and what_changed are all faithful to the page. 'Mary' is shown in single quotes as a pseudonym, so it is not a real named private individual (no named_person flag). The content involves domestic violence, sexual abuse, and the justice system, so sensitive_context applies. No minor is involved in this passage."
+      },
+      {
+        "idx": 25,
+        "sha8": "9fa2652e",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "donor_story",
+        "fields_faithful": "minor_issue",
+        "pii": [
+          "named_person"
+        ],
+        "reason": "The claimed span is printed verbatim on the page (modulo line breaks/hyphenation): the \"more blessed to give than to receive\" opener, Victor Brown the volunteer, Lambrini Nauss, Robert Crouse's quote about Lake Redman/Mack's Ice Cream/Northeastern Senior Center, and the program-design paragraph all appear. Per the DEFINITION, the passage's protagonist and frame are about Victor Brown, a VOLUNTEER/giver in the Senior Companion Program (\"It is more blessed to give than to receive... a volunteer\"), making this a donor/volunteer story. Robert Crouse, the recipient, appears only via testimonial-style praise (\"I enjoy spending time with Victor—he is a true friend,\" \"I enjoy talking and doing activities with him\") and a hypothetical/general aside (\"If I have a doctor's appointment... they have provided me with companionship and a positive outlook on life\"). There is no observable past/current state change asserted about Robert that answers \"what is different now?\"—so it fails the impact-story three-part test (beneficiary + intervention + concrete change). The system's what_changed inflates testimonial/hypothetical sentiment (\"positive outlook,\" \"help with errands and appointments\" derived from an \"If I have...\" conditional) into a concrete outcome; the only loosely supported piece is sentiment, so fields are a minor issue rather than fully faithful. PII: Robert Crouse, Victor Brown, and Lambrini Nauss are named real individuals; no minor and no sensitive context (ordinary senior-companionship program)."
+      },
+      {
+        "idx": 26,
+        "sha8": "36941d40",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "reject",
+        "fields_faithful": "yes",
+        "pii": [
+          "named_person"
+        ],
+        "reason": "The span is printed verbatim on the page (top-left GREAT BARRINGTON block): \"'If you prick me, do I not bleed?' Scott steps to the front of the studio and takes a deep breath. As soon as he finishes delivering his lines, his fellow CATA actors break out into thunderous applause.\" Prongs 1 and 2 are arguably met: Scott is a specific named beneficiary, and a CATA arts program is the implied intervention. But prong 3 (CHANGE — \"what is different now?\") fails. The passage is a present-tense in-the-moment performance vignette: Scott delivers lines and gets applause. Applause is a reaction/praise within a depicted scene, not an observable state change, avoided harm, or sustained improvement in Scott's condition or capability. No before/after, no report-year outcome — it's a program-scene snapshot, which the definition assigns to REJECT (program/event-moment narrative without an outcome). The system's fields faithfully restate the page text (no fabrication); the error is the classification judgment, not invented facts. PII: \"Scott\" is a real private individual named by first name (named_person). No sensitive context and no indication he is a minor."
+      },
+      {
+        "idx": 27,
+        "sha8": "93e81f02",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "sensitive_context",
+          "minor"
+        ],
+        "reason": "The claimed span is printed verbatim on the page (header: \"Domestic Violence Affects Everyone\"). It satisfies all three impact-story criteria: (1) specific beneficiary \"Veronica\" (a pseudonym in quotes, woman in her twenties with three small children, a DV survivor — not a generic population); (2) org intervention by WSS (counseling, short-term shelter, arranged transportation/flights, linked to support services); (3) concrete past-tense change — went from \"no place to go\" to safely relocated to her mother's home in the mid-west with ongoing support services, an observable state change. Fields are faithful: title, beneficiary, and what_changed all map directly to on-page text with no invented facts. PII: sensitive_context (domestic violence) and minor (three small children implied/explicit). Not named_person because \"Veronica\" is explicitly a pseudonym."
+      },
+      {
+        "idx": 28,
+        "sha8": "029625c6",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "sensitive_context"
+        ],
+        "reason": "The claimed span is printed verbatim on the page under \"Making a Difference!\" (modulo line breaks/hyphenation; trailing word \"independent living\" is cut in the span at \"indepen\" but the page completes it). All three impact-story elements are present: (1) identifiable beneficiary in context — Ms. C, a specific individual with health struggles using a wheelchair; (2) intervention — Healthy Homes ran an eligibility/home assessment and brought in a contractor to build a wheelchair ramp; (3) change presented as past/current state — after the ramp, \"I feel free!\", she can now come and go as she pleases without fear, regaining/maintaining independent living. Fields are faithful: title accurately summarizes the ramp restoring independence; primary_beneficiary \"Ms. C\" matches the page; what_changed is directly supported. PII: no real full name (initial-anonymized \"Ms. C\"), but clear sensitive health/disability context (multiple health struggles, wheelchair use, mobility limitation). No minor indicated."
+      },
+      {
+        "idx": 29,
+        "sha8": "e2416d20",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "sensitive_context",
+          "minor"
+        ],
+        "reason": "The claimed span is printed verbatim on the page (modulo line breaks) under the heading \"A Teenage Runaway's Hope\". All three impact-story elements are present: (1) identifiable beneficiary in context — Andrea, a specific 17-year-old runaway; (2) org intervention — a Neighborhood House youth worker encouraged her to set goals and helped find solutions; (3) concrete past/present change — she found a full-time job, stabilized her housing, continued her education at an alternative school, and now pays rent and buys her own food. Classification impact_story is correct. Title, primary_beneficiary, and what_changed are all faithfully supported by the page text. PII: sensitive_context (violent home / domestic violence, homelessness/running away) and minor (explicitly 17 years old). NOT named_person — the footnote \"*Name has been changed\" shows \"Andrea\" is a pseudonym, not a real private individual."
+      },
+      {
+        "idx": 30,
+        "sha8": "8899adf8",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "named_person",
+          "sensitive_context",
+          "minor"
+        ],
+        "reason": "The \"Heating Helpers\" section on the page matches the claimed span verbatim (modulo line-break hyphenation like \"slow-ly\", \"sum-mer\"). The passage satisfies all three impact-story criteria: (1) identifiable beneficiary in context — John, a single dad with a chronic health condition and caregiver for young children; (2) intervention — LISTEN \"stepped in to help\"; (3) change presented as accomplished — he avoided additional electricity reconnection fees and got \"the boost he needed to support his family.\" Fields are faithful: title, primary_beneficiary (John), and what_changed all derive directly from the text without invention. PII: John is a named private individual (named_person); chronic health condition / disability claim is health-related (sensitive_context); young children make a minor implicated (minor)."
+      },
+      {
+        "idx": 31,
+        "sha8": "18bb8c0f",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "named_person",
+          "sensitive_context"
+        ],
+        "reason": "The claimed span matches the printed page verbatim (modulo line-break hyphenation and the source's own typos \"magnifi er\" and \"us a cane\"). The passage has all three impact-story elements: (1) identifiable beneficiary — David, a specific person who lost his vision; (2) explicit org intervention — \"With help from CWD and our Low-Vision Support Groups, David accessed and was trained in screen-reading software, received a video magnifier...\"; (3) concrete change presented as past/current — he gained access to and training in assistive tools (screenreader, magnifier, phone accessibility, cane use), feels supported by peers, and has hope for a happy and meaningful life. Title, primary_beneficiary, and what_changed all faithfully summarize the page with no invented facts. PII: David is a named individual (named_person); his vision loss/disability is a health/sensitive context (sensitive_context). He is an adult, so no minor flag."
+      },
+      {
+        "idx": 32,
+        "sha8": "18bb8c0f",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "named_person",
+          "sensitive_context",
+          "minor"
+        ],
+        "reason": "The Scott passage is printed verbatim on the page (modulo OCR ligature artifacts \"fi nd\"/\"fi ll\"). It satisfies all three impact-story criteria: identifiable beneficiary (Scott, a specific named individual who is deaf and a single dad), org intervention (CPWD Employment Specialists helped him find a job and complete Child Care Assistance applications), and a real past/current change (\"Scott landed a new job as a shipping clerk, that better meets his needs for income and hours\"). Title, primary_beneficiary (Scott), and what_changed are all directly supported by the text. PII: named_person (Scott); sensitive_context (deaf/disability health context); minor (his young daughter is involved)."
+      },
+      {
+        "idx": 33,
+        "sha8": "072b705a",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "named_person",
+          "sensitive_context",
+          "minor"
+        ],
+        "reason": "The claimed span matches the page verbatim (modulo truncation at \"supportive day-care pro...\"). The \"DESIREE'S STORY\" block satisfies all three impact-story elements: (1) identifiable beneficiary in context — Desiree, a specific young woman in foster care; (2) org intervention — Rising Oaks staff/Case Manager found her vocational training, respite services, a day-care slot, and therapy; (3) realized change answering \"what is different now?\" — the closing paragraph on the page states she \"is successfully completing cosmetology training and is becoming more confident as a parent... believes she can provide her son with the family she lacked,\" and earlier \"Desiree discovered a newfound commitment to parenting her son.\" Change is presented as current/past, not hypothetical. Fields are faithful: title, primary_beneficiary (Desiree), and what_changed are all directly supported by the page text. PII: named individual (Desiree), sensitive context (foster care, sexual abuse, sexual exploitation/prostitution), and a minor (she was 17 / her infant son)."
+      },
+      {
+        "idx": 34,
+        "sha8": "f4819890",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "named_person",
+          "sensitive_context"
+        ],
+        "reason": "Page header reads \"JOHN'S STORY\" with a first-person quote attributed to \"John, 2017 program graduate,\" printed verbatim (modulo line breaks) to the claimed span. All three impact-story elements present: (1) identifiable beneficiary — John, a specific veteran program graduate, not a generic population; (2) intervention — the Heroes and Horses program (horses, peer support, \"had my back\"); (3) a presented past/current change answering \"what is different now?\" — he went from feeling \"lost and lonely\" after his 2015 retirement to finding purpose, becoming a better husband/father/son/brother, and gaining an ongoing support network (\"my family is bigger... we talk almost every week\"). Although first-person and containing praise (\"life changing program\"), it reports a concrete personal transformation rather than mere sentiment, so it exceeds TESTIMONIAL; John is the beneficiary, not a donor/volunteer. Fields are faithful: title, primary_beneficiary (\"John, 2017 program graduate\"), and what_changed all match on-page text. PII: named_person (first name \"John\"); sensitive_context (military veteran retirement/reintegration struggle, \"lost and lonely,\" mental-health adjacent)."
+      },
+      {
+        "idx": 35,
+        "sha8": "e6696bd9",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "reject",
+        "fields_faithful": "no",
+        "pii": [
+          "named_person",
+          "minor"
+        ],
+        "reason": "The claimed span is printed verbatim on the page (the \"Not all of us can look back...\" Marilyn Gooch biographical block). But that span is staff origin lore: it narrates how Marilyn Gooch (CRT Head Teacher) was inspired as a child to become an educator and built her career. The subject is a teacher/staff member, not a beneficiary; there is no identifiable beneficiary receiving an intervention with a report-year change within that span. Per the definition that is REJECT (founder/origin lore without a report-year outcome; subject is a service provider). The system's title/primary_beneficiary/what_changed all describe CALEB (\"refused to speak\" → \"leader in kindergarten\"). That Caleb material is genuinely on the page, but in OTHER text — the top-right pull-quote (\"I advocated for Caleb as a teacher...he is a leader in his school\") and a separate middle-column paragraph (\"She mentioned the work she did with one boy, Caleb who refused to speak...\"). None of it appears in the claimed span. So the fields are not faithful to the span the system says it classified; they were sourced from a different passage. PII: the span names Marilyn Gooch (staff) and references preschool-age children/her own preschool childhood (minor)."
+      },
+      {
+        "idx": 36,
+        "sha8": "4ec0d342",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "service_episode",
+        "fields_faithful": "yes",
+        "pii": [
+          "named_person",
+          "sensitive_context"
+        ],
+        "reason": "Span is printed verbatim on the page (modulo line breaks): the Dr. Howard quote plus \"Over the past three months, Dr. Howard has worked with Step Up's Employment Specialists, culminating with eight clients moving into community employment.\" Against the definition this is SERVICE_EPISODE, not impact_story: intervention (Step Up Employment Specialists) and a real past change (clients moved into community employment) are both present, but the beneficiary is an aggregate count — \"eight clients\" — with no specific, individualized beneficiary in context; the narrative subject is the staff member, and the quote itself is testimonial-flavored staff sentiment. Group-level delivery + change + no specific beneficiary = service_episode. Fields are faithful: title, primary_beneficiary (\"eight clients\"), and what_changed all match the page with no invented facts (the aggregate beneficiary is exactly why it falls short of impact_story). PII: Dr. Shonte Howard is a named real person (a Step Up staff member per the photo caption) → named_person; the beneficiaries are unnamed clients of a mental-health/supportive-housing org, so the change pertains to health-service recipients → sensitive_context. No minor involved."
+      },
+      {
+        "idx": 37,
+        "sha8": "93774f84",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "sensitive_context",
+          "minor"
+        ],
+        "reason": "The claimed span is printed verbatim in the bottom-right quote box (modulo line breaks): \"The information aided the family's confidence and preparation for a difficult IEP meeting and offered hope. The family's stress was reduced, because we had answers we could trust.\" — Wendy W., Professional. Though framed as a quote, it carries all three impact-story elements: (1) identifiable beneficiary in context = \"the family\" facing a specific difficult IEP meeting, not a generic population; (2) intervention implied = FACT Oregon provided the information/answers; (3) concrete past-state change = confidence and preparation increased, stress reduced, trustworthy answers obtained. This exceeds a bare praise/sentiment testimonial because it states an observed change. The speaker is a professional (not a donor/volunteer), so not donor_story. Title, beneficiary, and what_changed fields are all faithful to the page. PII: IEP context implies a child with a disability (minor + disability/special-education sensitive_context); the speaker is initialized (\"Wendy W.\") and the beneficiary family is unnamed, so no fully named private individual is profiled."
+      },
+      {
+        "idx": 38,
+        "sha8": "040633b7",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "minor"
+        ],
+        "reason": "Span is verbatim on the page (the Clarkson family Y Learning Center story). The on-page passage qualifies as an impact story: (1) specific beneficiary in context = the Clarkson family / Everett; (2) intervention = the Y's financial assistance replacing the lost Best Beginnings scholarship; (3) change = Everett was able to continue at the Learning Center and the parents continued working — an avoided harm / sustained improvement stated as past/current. Note the change element lives in the later paragraphs of the page, not within the claimed span itself, but judged as the on-page passage it holds. Fields are faithful: title, primary_beneficiary, and what_changed all match the page text. PII: a minor (child care / Everett, age three) is involved. The named individuals are NOT flagged as named_person because the page footer explicitly states \"Names have been changed,\" so these are not real private individuals' names. No health/DV/justice/foster sensitive context."
+      },
+      {
+        "idx": 39,
+        "sha8": "d2e6b6ff",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "named_person",
+          "sensitive_context",
+          "minor"
+        ],
+        "reason": "Both blocks of the claimed span are printed verbatim on the page: the top \"200 students...graduated from...Spaces and I AM HER...Healthy Love Club is forming\" paragraph and the full J'livette quote (\"...when I first joined, I AM HER, I was in a really dark place and a really bad relationship. Ms. G gave me opportunities...It made me feel safe...feel safe too.\" -J'livette, Youth Leader, Healthy Love Club). The dominant passage is J'livette's individual story and meets all three impact-story elements: (1) specific identifiable beneficiary (J'livette, a Youth Leader); (2) org intervention (I AM HER program; Ms. G gave her opportunities; the club gave her a safe space); (3) past/current change (from a dark place and bad relationship to feeling safe and becoming a youth leader who helps other teens). The leading \"200 students graduated\" sentence is aggregate/service framing, but the passage resolves into the individual outcome, so impact_story is correct. Fields are faithful: title, beneficiary, and what_changed are all grounded in the quote. PII: named individual (J'livette; also \"Ms. G\"), sensitive context (dating-violence prevention / \"really bad relationship,\" Violence Intervention & Prevention grant), and minor (high-school-age teen in a youth program)."
+      },
+      {
+        "idx": 40,
+        "sha8": "759c9a94",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "named_person",
+          "sensitive_context",
+          "minor"
+        ],
+        "reason": "The claimed span is printed verbatim on the page (matches modulo line breaks; the parse truncates the final word \"successful\" at \"succes\"). Passage qualifies as impact_story: (1) identifiable beneficiary — Addyson, a specific named child; (2) org intervention — HGF provided Summer Camp experiences/snacks on the BMTU, plus the medical transplant narrative; (3) concrete past-tense change — after two failed transplants, the third (father's stem cells) \"was successful,\" an observable state change. Fields are faithful: title, primary_beneficiary (Addyson), and what_changed all directly supported by the text. PII: named individuals (Addyson, Ericha), sensitive health context (Severe Aplastic Anemia, bone marrow transplants, line infections), and a minor (Addyson is a child/daughter who attended camp)."
+      },
+      {
+        "idx": 41,
+        "sha8": "65c918ec",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "named_person",
+          "minor",
+          "sensitive_context"
+        ],
+        "reason": "The \"Meet Titan\" passage is printed verbatim on the page (only a stray \"P\" parse artifact and hyphenation differ). It satisfies all three impact-story criteria: a specific identifiable beneficiary (Titan, a 3-year-old child at Fun Time Academy, born prematurely with developmental delays), the org's intervention (the caring team, Conscious Discipline guidance, hands-on fine-motor activities), and a real past/current change (\"has blossomed\" — now talks with teachers/peers, recognizes all 26 letters, identifies numbers 1-10, writes his name). Title and beneficiary/what_changed fields are all supported by the page text. PII: Titan is a named child (named_person + minor), and the premature-birth/developmental-delay health framing is sensitive_context."
+      },
+      {
+        "idx": 42,
+        "sha8": "74fdf437",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "named_person",
+          "minor",
+          "sensitive_context"
+        ],
+        "reason": "The claimed span is printed verbatim on the page (left column, wrapping right of a photo) modulo line breaks. It meets all three impact-story criteria: (1) specific beneficiary — Hannah, a named EC client and child; (2) intervention — Equestrian Connection's therapeutic riding program reopening with safety guidelines; (3) real past/current change — after the pandemic closure she resumed riding, regaining movement and joy her other therapies don't provide. It is a parent testimonial quote, but the concrete return-after-closure change lifts it above pure sentiment, so impact_story is correct. Title/primary_beneficiary/what_changed are all supported by the text. PII: Hannah is named (named_person), is a child described from toddlerhood (minor), and is framed as a therapy client with unique movement needs in a special-needs equestrian-therapy context (sensitive_context, health)."
+      },
+      {
+        "idx": 43,
+        "sha8": "8eb7da05",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "sensitive_context",
+          "minor"
+        ],
+        "reason": "Claimed span matches the left column verbatim (it begins \"Grace* is an outgoing seventeen-year-old...\" and runs to the truncated \"After an ou[tburst]\"). The full passage spans left and middle columns and satisfies all three impact-story criteria: (1) specific beneficiary Grace, a 17-year-old in HomeSafe's care (named with asterisk = pseudonym to protect the child); (2) org intervention via HomeSafe therapy/placement (\"connected with her therapist,\" \"anger management therapy\"); (3) concrete past/current change — was angry and acting out due to trauma, \"is now an A-student and has more confidence and self-awareness,\" able to \"visit with her biological mom\" who is in recovery, and \"ready to rejoin her dad\" in Kentucky. Fields are faithful: A-student, gained confidence, reconnected with biological mother, and return-home plans are all printed on the page; reunification with the father is the overall arc. PII: not a real named person (explicit \"*Name changed to protect the child\"), but sensitive_context (childhood trauma, maternal addiction/incarceration/recovery, foster-style placement) and minor (Grace is 17, a child) both apply."
+      },
+      {
+        "idx": 44,
+        "sha8": "e27aec13",
+        "sys_class": "impact_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "sensitive_context"
+        ],
+        "reason": "The claimed span appears verbatim on the page under the heading \"IMPACT STORY: Reaching Education Goals.\" The passage satisfies all three impact-story criteria: (1) identifiable beneficiary in context (Ashley, a specific individual); (2) intervention (CCH support plus WIOA program enrollment, financial and emotional support); (3) completed change presented as past (she graduated with a CDL in spring 2021, and per the next paragraph on the page was hired by a commercial trucking company). Fields are faithful: title, beneficiary \"Ashley (pseudonym)\", and what_changed (earned CDL + hired by trucking company) are all supported by on-page text. PII: not named_person because \"Ashley\" is explicitly a pseudonym; sensitive_context applies due to the homelessness/housing-instability framing (Colorado Coalition for the Homeless, financial support for rent). No minor involved."
+      },
+      {
+        "idx": 45,
+        "sha8": "2995644a",
+        "sys_class": "impact_story",
+        "confidence": "medium",
+        "span_on_page": "verbatim",
+        "correct_class": "service_episode",
+        "fields_faithful": "yes",
+        "pii": [
+          "named_person"
+        ],
+        "reason": "Span is printed verbatim on the page (modulo line breaks) under \"Marc and Floyd: Creativity Across Generations.\" Intervention is clear (Floyd draws caricatures for residents) and a change is stated as current/true (\"gatherings have become cherished moments,\" \"drawings bring smiles,\" \"remind residents of how they saw themselves years ago\"). But the beneficiary is \"residents\" as an undifferentiated group at Kendal at Longwood — no specific, contextualized individual beneficiary. The named individuals (Floyd, Marc) are the artist/volunteer/giver side, not beneficiaries. Group-level delivery + change + no specific beneficiary = SERVICE_EPISODE, not impact_story. Fields are faithful to the page (title, beneficiary=residents, what_changed all supported, no invented facts). PII: real private individuals named (Marc Hopewell, Floyd Hopewell); no sensitive context or minors."
+      },
+      {
+        "idx": 46,
+        "sha8": "db75f054",
+        "sys_class": "impact_story",
+        "confidence": "medium",
+        "span_on_page": "verbatim",
+        "correct_class": "reject",
+        "fields_faithful": "minor_issue",
+        "pii": [
+          "named_person"
+        ],
+        "reason": "The claimed span is printed verbatim as a photo caption (italic, lower-left of the photo): \"A.Y. McDonald Mfg. Co. employee Clint Sharkey, one of the many Opportunity Dubuque graduates, takes a hands-on approach to securing his future.\" (parse artifact \"A. Y .\" vs printed \"A.Y.\"). Applying the three-part test: (1) beneficiary present — Clint Sharkey, a specific named person; (2) org intervention implied — he is an Opportunity Dubuque graduate. But (3) NO concrete CHANGE: \"takes a hands-on approach to securing his future\" is forward-looking/aspirational, not an observable past/current state change for him. The caption never states what is different now (no \"now employed,\" no earned credential/outcome for him); \"securing his future\" gestures at the future. The page body carries aggregate outcomes (81% / 63 graduates employed) but the passage itself is a promotional photo caption without a realized report-year outcome for this individual, so it lands as REJECT, not impact_story. Fields: beneficiary correct; what_changed merely restates the caption and encodes no real change; title \"secures future\" overstates the in-progress \"securing his future.\" No invented facts, hence minor_issue. PII: named real individual."
+      },
+      {
+        "idx": 47,
+        "sha8": "2995644a",
+        "sys_class": "impact_story",
+        "confidence": "medium",
+        "span_on_page": "verbatim",
+        "correct_class": "reject",
+        "fields_faithful": "yes",
+        "pii": [
+          "none"
+        ],
+        "reason": "Span is printed verbatim on the page (the paragraph \"All the moments Coniston residents share offer something powerful: the health benefits of belonging. Residents say they feel more relaxed, accepted, and at ease...\"). But the true class is REJECT, not impact_story. The beneficiary is a generic population (\"Coniston residents\" collectively), not a specific identifiable beneficiary in context — the entire spread (\"WHERE COMMUNITY COMES ALIVE / THE HEART OF CONISTON\") is community/place-capability narrative. There is no concrete org intervention described (it's the community/place itself, \"built on kindness\"), and the passage is mission/atmosphere language (\"the true foundation of Coniston is the people who fill it with life, love, and community\"). A change is present (residents feel more relaxed/accepted), but element (1) identifiable beneficiary and (2) explicit intervention are missing, so it fails the ALL-THREE test. Not SERVICE_EPISODE — no discrete group-level service delivery, just belonging prose. Fields faithfully summarize the printed wording. PII: no private individual named, senior-living wellness framing is not a listed sensitive category, no minors."
+      },
+      {
+        "idx": 48,
+        "sha8": "30a05d18",
+        "sys_class": "impact_story",
+        "confidence": "medium",
+        "span_on_page": "verbatim",
+        "correct_class": "testimonial",
+        "fields_faithful": "no",
+        "pii": [
+          "named_person"
+        ],
+        "reason": "The claimed span is printed verbatim on the page (modulo line breaks) as a pull-quote on the right side. Attribution reads \"Graceiella Marcovici / JFS (Freda Mohr Multipurpose Center Volunteer)\". The passage is praise/sentiment about a book and gratitude for the center (\"I am very grateful... I felt at home\")—no concrete observable change in the speaker's circumstances tied to an org intervention. That is a TESTIMONIAL, not an impact story (no \"what is different now\" state change). The system's fields are unfaithful: primary_beneficiary calls the speaker \"a client of Freda Mohr,\" but the page explicitly identifies her as a Volunteer (a giver, which would point toward donor_story, not client/beneficiary); what_changed restates feeling \"at home,\" which is sentiment, not a change. PII: the speaker is named (Graceiella Marcovici), so named_person applies; no sensitive context or minor."
+      },
+      {
+        "idx": 49,
+        "sha8": "98eb1221",
+        "sys_class": "impact_story",
+        "confidence": "medium",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "named_person",
+          "sensitive_context",
+          "minor"
+        ],
+        "reason": "The claimed span appears verbatim on the page (modulo line breaks) under \"A DETERMINED GEOLOGIST.\" It satisfies all three impact-story criteria: (1) identifiable beneficiary in context — Adrian and his family, a specific named beneficiary, not a generic population; (2) org intervention — RaiseUp Families provided assistance (stated by the mother and implied by the program context); (3) a true past-tense change answering \"what is different now?\" — the family started in a homeless shelter, and the fuller passage on the page shows Adrian moved through high school, attended Baylor on scholarships, and graduated in May 2018, an observable sustained improvement out of homelessness. Fields are faithful: the title (family avoids homelessness), primary_beneficiary (Adrian and his family), and what_changed (left the difficult road / shelter trajectory) are all supported by the on-page text. PII: Adrian is a named real individual (named_person); the homeless-shelter circumstance is a sensitive context (housing instability/poverty); and he is depicted as a high-school-age minor during the narrative."
+      },
+      {
+        "idx": 50,
+        "sha8": "0c2bea9f",
+        "sys_class": "impact_story",
+        "confidence": "medium",
+        "span_on_page": "verbatim",
+        "correct_class": "reject",
+        "fields_faithful": "yes",
+        "pii": [
+          "sensitive_context"
+        ],
+        "reason": "The claimed span is printed verbatim on the page as the first bullet under \"Alongside patients and families on their journey\" (modulo line breaks). On the merits, this is a program description: the \"Sentimental Journeys\" bullet lists what the program is and what it \"included\" in 2024 (a railroad trip, museum/zoo visits, dinners out, airfare). It is a list of program offerings/capabilities for a generic population (\"patients and their families\"), not a specific identifiable beneficiary developed as a story. The only \"change\" stated is sentiment — \"moments of joy and connection... lasting family memories\" — which does not answer \"what is different now?\" with an observable state change, avoided harm, or sustained improvement. The \"airfare to fly in an adult daughter to see her mother one last time\" is the most story-like element but appears as one embedded item in a list of activities, not a developed beneficiary + intervention + change passage. Fails the three-part test → REJECT (program/service description). Fields are faithful to the page (no invented facts; what_changed echoes the page's sentiment language). PII: the end-of-life/hospice framing is sensitive health context; no real individual is named and no minor is involved."
+      },
+      {
+        "idx": 51,
+        "sha8": "1b29d1a0",
+        "sys_class": "impact_story",
+        "confidence": "medium",
+        "span_on_page": "verbatim",
+        "correct_class": "reject",
+        "fields_faithful": "yes",
+        "pii": [
+          "none"
+        ],
+        "reason": "The claimed Spanish span is printed verbatim on the page (modulo line breaks) in the \"Rally Flats\" block under the header \"Nuevas comunidades en crecimiento.\" The passage is a new-development/program description: BHP added 100 new affordable apartments to Boulder's housing supply, with some units reserved for people facing/at risk of homelessness, now a vibrant community. It fails the impact-story test for an identifiable beneficiary in context: \"individuos y familias\" and \"personas que enfrentan la falta de vivienda\" are generic populations, not a specific beneficiary. The \"change\" is capacity/supply added (org-capability/program-portfolio narrative), not a beneficiary-specific outcome. The whole page is a portfolio of property descriptions, so the true class is reject (program/org-capability description), not impact_story. Fields are faithful paraphrases of the text and invent no facts (title, beneficiary, and what_changed all track the page), but the impact_story label is wrong. PII: no named private individual (only the org BHP and an anonymous \"Residente de BHP\" quote), no minors, and homelessness here is framed as a generic housing population rather than a personal sensitive disclosure, so none."
+      },
+      {
+        "idx": 52,
+        "sha8": "8e1cf08b",
+        "sys_class": "impact_story",
+        "confidence": "medium",
+        "span_on_page": "verbatim",
+        "correct_class": "reject",
+        "fields_faithful": "yes",
+        "pii": [
+          "named_person",
+          "sensitive_context"
+        ],
+        "reason": "Span is printed on the page essentially verbatim (modulo line breaks/hyphenation): the Director of Nursing/rounding paragraph, \"Delila Cooper spends 45 minutes at it daily,\" the \"Tayy and Delila use training... more stable and proficient workforce, thereby strengthening resident care\" lines, and the \"Exchanges like the one Delila leads occur weekly across campus... known as rounding...\" paragraph under LEADERSHIP DEVELOPMENT.\n\nTrue class = REJECT. The passage is an org-capability/program description of \"rounding\" (a leadership technique) and the Catalyst leadership-development program. The named people (Delila Cooper, the Director of Nursing) are providers/managers demonstrating the technique, not beneficiaries. There is no specific identifiable beneficiary undergoing a concrete change — \"staff\" appear only as a generic group in a recurring process (\"Exchanges... occur weekly across campus,\" \"opportunities for managers and staff to connect\"). The only outcome is aggregate/organizational (\"led to a more stable and proficient workforce, thereby strengthening resident care\") plus generic process effects (\"makes staff feel valued, and builds trust\"). That fails the impact-story requirement of an identifiable beneficiary in context with an observable change, and it is process/program narrative rather than a group-level service delivery, so it is not SERVICE_EPISODE either.\n\nFields are faithful to the page text — primary_beneficiary, what_changed, and title all reflect printed content and invent nothing; treating staff as the \"beneficiary\" is a classification judgment, not a fabrication.\n\nPII: real individuals are named in the span (Delila Cooper, Tayy); the page is a health-care/dementia setting (residents living with dementia, \"resident care\"), so sensitive_context applies."
+      },
+      {
+        "idx": 53,
+        "sha8": "2ea6005f",
+        "sys_class": "impact_story",
+        "confidence": "medium",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "none"
+        ],
+        "reason": "The claimed span is printed verbatim in the left column of the page (the \"Spotlighting Rusty Roberts\" article). All three impact-story elements are present in the passage: (1) a specific identifiable beneficiary — \"the man,\" an unnamed employee Rusty identified as a potential lead; (2) the org's intervention — Rusty (CMRA staff) approached him and offered him the lead attendant position; (3) a concrete change presented as true past — the man was entrusted with a lead attendant position for the first time (\"this was the first time anyone had entrusted him with such an important position\"), an observable state change with an emotional response. This is a borderline case because the beneficiary is an internal employee being promoted rather than a program client, but the definition's beneficiary category is broad and the change is real and non-hypothetical. The fields are faithful: the title, the unnamed-employee beneficiary, and the what_changed (first-time entrustment causing tears) all match the page. PII: the beneficiary is unnamed; the named individuals (Rusty, Nolan, Reggie) are org staff in the surrounding profile, not the beneficiary; no sensitive context and no minor."
+      },
+      {
+        "idx": 54,
+        "sha8": "7e9ebeba",
+        "sys_class": "impact_story",
+        "confidence": "medium",
+        "span_on_page": "verbatim",
+        "correct_class": "reject",
+        "fields_faithful": "minor_issue",
+        "pii": [
+          "named_person"
+        ],
+        "reason": "The claimed span is printed verbatim on the page (left column, the \"Is this a one-time wash?\" dialogue). It has a specific beneficiary (a new client at Eugene's emergency respite site) and a clear org intervention (laundry service via Roxann O'Brien, SVdP's Director). But it lacks the third required element: a CHANGE answering \"what is different now?\" for that beneficiary. The dialogue only establishes that the laundry service is ongoing/available — it narrates the program's nature, not an observable state change, avoided harm, or sustained improvement in the client's circumstances. The system's what_changed (\"the client learned they have ongoing access\") is a realization-of-availability, not a beneficiary outcome; it stretches the page to manufacture a change, so fields are minor_issue. The genuine outcome language (\"helped maintain healthy hygiene standards at the site\") is group-level and lives in a separate paragraph outside the claimed span. As an anecdote establishing a program's existence without a report-year outcome for the specific beneficiary, the passage is REJECT (program description framed as a vignette). PII: Roxann O'Brien is named, but she is an org staff member (Director), so this is a named_person flag only; homelessness context is not among the enumerated sensitive categories (health/DV/addiction/immigration/justice/foster), and no minor is involved."
+      },
+      {
+        "idx": 55,
+        "sha8": "e27aec13",
+        "sys_class": "impact_story",
+        "confidence": "medium",
+        "span_on_page": "verbatim",
+        "correct_class": "service_episode",
+        "fields_faithful": "yes",
+        "pii": [
+          "none"
+        ],
+        "reason": "The claimed span is printed verbatim on the page (modulo line breaks): \"Women who graduated our Financial Services Training report an average wage increase of $1.56 per hour upon employment. This translates to an additional $3,000 per year, and the opportunity for participants to work in an industry with regular hours, health insurance, and paid time off. The financial services industry also provides opportunity for tuition reimbursement and continuing education.\" — attributed to \"– Direct Service Grantee.\" Against the definition: intervention is present (the Financial Services Training) and a change is stated (average wage increase), but the beneficiary is a generic aggregate class (\"Women who graduated\") with an AVERAGE/statistical outcome, not a specific identifiable beneficiary (no person, family, named group, or place presented as a specific case). Group-level delivery with a change but no specific beneficiary = service_episode, not impact_story. Not a testimonial (concrete change, not mere sentiment); speaker is the service grantee/provider, not a donor. Fields are faithful: title and the $1.56/hr, $3,000/yr, benefits all match the page, and primary_beneficiary fairly characterizes the on-page subject (graduates). PII: none — no named individual, no sensitive context, no minor."
+      },
+      {
+        "idx": 56,
+        "sha8": "2995644a",
+        "sys_class": "impact_story",
+        "confidence": "medium",
+        "span_on_page": "verbatim",
+        "correct_class": "reject",
+        "fields_faithful": "minor_issue",
+        "pii": [
+          "none"
+        ],
+        "reason": "The claimed span is printed verbatim on p21 (matches modulo line-break hyphenation: \"patchwork,\" \"growing more deeply rooted,\" \"even greater sense of belonging\"). On the merits it fails the impact-story test. (1) Beneficiary: the subjects are two researchers and \"some of their neighbors at Cartmel\" — a specific community, OK. (2) Intervention: their own historical research, self-directed rather than an org delivering a service to a beneficiary. (3) CHANGE is the fatal flaw: the only \"what's different\" is an internal/emotional state — \"growing more deeply rooted in its present\" and \"feel an even greater sense of belonging\" — which is sentiment, not an observable state change, avoided harm, or sustained material improvement. It is also explicitly hedged (\"perhaps helped some of them feel\"), so it is not presented as definitively true. This reads as reflective program/heritage-project narrative with an emotional uplift, i.e., REJECT (mission/reflection language; the closest alternative would be testimonial sentiment). fields: title and beneficiary track the page; what_changed paraphrases accurately but strips the \"perhaps\" hedge, mildly overstating certainty (minor_issue). PII: the on-page span itself names no private individual (it says \"the two researchers\"); no sensitive context or minor."
+      },
+      {
+        "idx": 57,
+        "sha8": "1b29d1a0",
+        "sys_class": "impact_story",
+        "confidence": "medium",
+        "span_on_page": "verbatim",
+        "correct_class": "reject",
+        "fields_faithful": "no",
+        "pii": [
+          "minor"
+        ],
+        "reason": "The claimed span is printed verbatim on the page (the \"Programa HIPPY\" body text, modulo line breaks). But the passage is a PROGRAM DESCRIPTION: it explains what HIPPY is and how it works in general/present terms (weekly home visits, daily 15-20 min activities, materials provided) and lists generic program benefits (\"Mejora la preparación escolar,\" \"Aumenta el éxito académico a largo plazo\"). It fails the IMPACT STORY test: (1) no identifiable beneficiary in context — \"familias con niños de 2 a 3 años que viven en comunidades de BHP\" is a generic eligibility population; (2) intervention is present; (3) no concrete CHANGE for a specific beneficiary answering \"what is different now?\" — only program capability/benefit claims stated as what the program does. Correct class is REJECT (program/org-capability narrative). fields_faithful = no: the system's what_changed (\"Families now receive weekly home visits, educational materials...\") merely restates delivery mechanics rather than an observed outcome, manufacturing the appearance of a \"change.\" PII: children aged 2-3 are referenced, so minor applies; no real private individual is named within the claimed span itself (named individuals on the page appear in adjacent quotes, not the graded span)."
+      },
+      {
+        "idx": 58,
+        "sha8": "71709748",
+        "sys_class": "impact_story",
+        "confidence": "medium",
+        "span_on_page": "verbatim",
+        "correct_class": "donor_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "none"
+        ],
+        "reason": "Span is printed verbatim on the page under \"Supporting the Ronald McDonald House\" (modulo the \"mcDonald\" parse-case artifact). The passage's protagonist is New Hope Community's Lawrence house acting as GIVER: they collected can tabs for a year, ran a collection campaign, and delivered 100 lbs to the Albany Ronald McDonald House. That is a giver/volunteer/donation narrative -> DONOR_STORY, not impact_story. The \"beneficiary\" the system cites (\"families in need of a place to stay while their loved ones are in the hospital\") is a generic, downstream population, not a specific identifiable beneficiary in context, and the \"change\" (offsetting costs via donated tabs) is abstract/aggregate, so the impact-story three-part test fails. Fields are faithful to the page text (title, beneficiary phrase, and 100-lb delivery are all on-page; no invented facts) even though the class is wrong. No private individual named (Lawrence house is a residence/program name), no minor, no sensitive context in this passage."
+      },
+      {
+        "idx": 59,
+        "sha8": "1b29d1a0",
+        "sys_class": "impact_story",
+        "confidence": "medium",
+        "span_on_page": "verbatim",
+        "correct_class": "service_episode",
+        "fields_faithful": "yes",
+        "pii": [
+          "none"
+        ],
+        "reason": "Span is printed verbatim on the page (the \"Iris Bistro: comida, comunidad, y oportunidad\" block). The passage has the org intervention (BHP opened Iris Bistro) and a real past/current change (now serves 60+ affordable meals daily; residents now have a kitchen and gathering space). But the beneficiary is a generic population — \"los residentes\" / \"los adultos mayores que viven en Golden West\" — delivered at group level with no specific identifiable individual, family, or distinct group singled out as a beneficiary. That is group-level delivery with change but no specific beneficiary, i.e. SERVICE_EPISODE, not IMPACT_STORY. Fields (title, primary_beneficiary \"senior residents at Golden West\", what_changed) are all faithful to the page. No named private individual, no sensitive context, no minors."
+      },
+      {
+        "idx": 60,
+        "sha8": "8c29956a",
+        "sys_class": "testimonial",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "testimonial",
+        "fields_faithful": "yes",
+        "pii": [
+          "none"
+        ],
+        "reason": "The claimed span is verbatim on the page as a photo caption: \"One mother said, 'This program is a candle in the dark for us.'\" This is a metaphorical praise/sentiment quote with no concrete, observable change (\"what is different now?\") — it is a TESTIMONIAL, correctly classified by the system. Fields are faithful: title accurately summarizes the quote, primary_beneficiary characterizes the unnamed mother speaker (allowed), and what_changed=null is correct since the quote states no state change. PII: the speaker is unnamed (no real private individual named), and the claimed passage itself contains no minor or sensitive context. Note: a separate, stronger passage on this page (the top banner quote from \"Ibtihaj\" about her child progressing with therapy) would more plausibly be an impact story, but the system claimed the candle-in-the-dark caption, which is graded here."
+      },
+      {
+        "idx": 61,
+        "sha8": "5cfbbca2",
+        "sys_class": "testimonial",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "testimonial",
+        "fields_faithful": "yes",
+        "pii": [
+          "sensitive_context"
+        ],
+        "reason": "The claimed span is printed verbatim on the page (top-center lime quote box): \"I feared that he would kill me one day. I didn't want the next time to be the last time.\" attributed to \"- L.C.\" Per the definition this passage is a standalone survivor quote conveying past fear/sentiment with (a) no org intervention stated and (b) no CHANGE answering \"what is different now?\" — it describes a prior fear state, not an outcome. It therefore fails impact_story and best fits testimonial (a quote without a concrete change). Fields are faithful: the title characterizes the DV-survivor speaker, primary_beneficiary \"L.C.\" matches the on-page attribution (an unnamed speaker given by initials, which is allowed), and what_changed=null is correct because no change is present. PII: domestic-violence content is sensitive_context; the speaker is identified only by initials (not a real full name), so named_person does not apply, and no minor is indicated."
+      },
+      {
+        "idx": 62,
+        "sha8": "029625c6",
+        "sys_class": "testimonial",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "minor_issue",
+        "pii": [
+          "named_person"
+        ],
+        "reason": "The pull-quote is printed verbatim on the page (modulo line breaks). The system called it testimonial, but the quote itself carries a concrete change, not just sentiment: an identifiable beneficiary (the speaker, Ms. Wigfall), an org-implied intervention (\"Ana, my savior, got me a new furnace and air conditioning unit\"), and an observable state change (her AC unit had gone out / a $1,000 patch with no guarantee, vs. now a new furnace and AC). All three impact-story criteria are met within the span, and the surrounding body text reinforces it (\"Ms. Wigfall applied for weatherization and now has insulation... a brand new air conditioning unit and furnace... The Wigfalls are now comfortable\"). So the true class is impact_story, not testimonial. Fields: title and primary_beneficiary are supported, but what_changed=null is a defect because a clear change (broken unit -> new furnace+AC installed) is present on the page; hence minor_issue. PII: Ms. Wigfall is a named real private client/beneficiary (named_person); no explicit minor, no sensitive health/DV/justice context."
+      },
+      {
+        "idx": 63,
+        "sha8": "0cca730e",
+        "sys_class": "testimonial",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "testimonial",
+        "fields_faithful": "yes",
+        "pii": [
+          "named_person"
+        ],
+        "reason": "Span is printed verbatim in the top-left quote box of the \"WHY THE YWCA?\" page, attributed to \"Dan Hally, Donor\". The passage is pure sentiment/praise (\"you and your team touch more lives than any of them,\" \"so many people who are alive today because of your support and services,\" \"your work to combat racism is so critical\") with no specific identifiable beneficiary, no narrated intervention, and no concrete observable change — it fails all three IMPACT STORY tests. Although the speaker is labeled a donor, the passage is a praise quote, not a narrative about the donor's giving, so TESTIMONIAL is the correct class over DONOR_STORY. System fields are faithful: title characterizes it as donor praise, primary_beneficiary is the general \"people served by YWCA\" (no specific subject), and what_changed correctly notes no concrete change. PII: \"Dan Hally\" is a named real individual; sensitive DV/victim context is referenced only generically in the praise, not tied to an identifiable victim, so only named_person applies."
+      },
+      {
+        "idx": 64,
+        "sha8": "bb8cb998",
+        "sys_class": "testimonial",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "testimonial",
+        "fields_faithful": "yes",
+        "pii": [
+          "none"
+        ],
+        "reason": "The claimed span \"All of the drivers are so helpful and go out of the way to help me.\" appears verbatim in the first arrow callout on the page (CTN/RideCTN Annual Report FY2016). The passage is pure praise/sentiment about driver helpfulness with no concrete change answering \"what is different now?\" for the rider, so it fails the impact-story test and is correctly a TESTIMONIAL. Fields are faithful: title (driver helpfulness praise) and primary_beneficiary (unnamed rider/speaker) match, and what_changed correctly states no concrete change, only sentiment. PII: speaker is unnamed, no real private individual named, no minor, and this specific quote has no sensitive context (the medical-need quote is a separate adjacent callout, not this span) -> none."
+      },
+      {
+        "idx": 65,
+        "sha8": "dfc9cd3d",
+        "sys_class": "testimonial",
+        "confidence": "high",
+        "span_on_page": "partial",
+        "correct_class": "testimonial",
+        "fields_faithful": "yes",
+        "pii": [
+          "none"
+        ],
+        "reason": "The page (right-middle quote block) prints: \"I have felt like a better leader, better at expressing myself and better at understanding\" — the text is truncated by the design layout at \"understanding\". The claimed span appends \"other people,\" which is NOT visibly printed on this page, so the match is partial (most wording verbatim, trailing words absent). Class: this is a first-person self-perception statement (\"I have felt like a better leader...\") — subjective sentiment about personal growth/capability with no concrete observable state change and no specific beneficiary-in-context beyond a generic \"I\" speaker. It fits TESTIMONIAL (sentiment/praise without a concrete change), not impact story. Fields are faithful: title \"Better leader and communicator\" matches, primary_beneficiary \"the speaker\" correctly characterizes the unnamed quote speaker, and what_changed=null is consistent with a no-concrete-change testimonial. PII: speaker is anonymous; no named private individual, no sensitive context, no minor."
+      },
+      {
+        "idx": 66,
+        "sha8": "10c67887",
+        "sys_class": "testimonial",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "testimonial",
+        "fields_faithful": "yes",
+        "pii": [
+          "named_person",
+          "sensitive_context",
+          "minor"
+        ],
+        "reason": "The banner quote on the page reads verbatim: \"To all the foster youth still in the system, don't be ashamed to be a foster youth because this is preparing you to be the leader you will one day become.\" Darriell Beaumonte, Alumnus of Foster Care. It is an inspirational sentiment/message quote from a foster-care alumnus addressed to other foster youth. It lacks a concrete change (\"what is different now?\") and lacks a stated org intervention tied to a beneficiary's state change, so it does not meet the three-part impact-story test. Among the categories it fits testimonial (a personal sentiment quote from a beneficiary-speaker, no concrete change) rather than impact_story/service_episode/donor_story; it is borderline reject but testimonial is defensible. Fields are faithful: Darriell Beaumonte is the named speaker/alumnus, and what_changed is correctly null. PII: named real individual; foster-care sensitive context; quote addresses foster youth, implying minors."
+      },
+      {
+        "idx": 67,
+        "sha8": "865fb62f",
+        "sys_class": "testimonial",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "testimonial",
+        "fields_faithful": "minor_issue",
+        "pii": [
+          "none"
+        ],
+        "reason": "All eight quotes in the \"WHAT OUR CLIENTS SAY ABOUT US\" box match the claimed span verbatim. Per the definition this is TESTIMONIAL: anonymous client praise expressing trust, safety, comfort, and peace of mind with no concrete observable state change, no identifiable specific beneficiary, and no described intervention tied to a change. \"I now have peace of mind\" is sentiment, not a verifiable past/current outcome. Classification of testimonial is correct. Fields are mostly faithful (title accurate; what_changed correctly notes no concrete change), but primary_beneficiary names \"clients of The Wellspring\" — \"The Wellspring\" does not appear on this page; the section org is the \"Counseling & Family Development Center,\" so the org name is an invented/incorrect detail (minor_issue). The passage itself (the quote box) is generic emotional sentiment with no named individual, no minor, and no sensitive context attached to any person, so pii is none — the sexual-assault/DV/child references are in the surrounding body program description, not the graded passage."
+      },
+      {
+        "idx": 68,
+        "sha8": "ebaed191",
+        "sys_class": "testimonial",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "minor_issue",
+        "pii": [
+          "named_person",
+          "sensitive_context"
+        ],
+        "reason": "The claimed quote is printed on the page (right column), matching verbatim modulo the spelling \"Chandelle\"/\"Chandelle Martel.\" Judging the passage on the page, it is an IMPACT STORY, not a testimonial: (1) specific beneficiary in context — Suzanne Wright, Janet's mother, a named individual; (2) intervention — Bethesda's Geriatric Care Management, with Chandelle Martel coordinating care and transitioning her to home health then hospice; (3) realized change — the page states care management \"made a big difference in the quality of life in her final days,\" letting Suzanne remain in her own apartment surrounded by her things (her Renoir painting, walls in her favorite blue) until she passed, presented as past fact (avoided harm / sustained improvement). The system marked testimonial with what_changed=null, missing the supported change and naming Janet as the beneficiary when the true beneficiary is her mother Suzanne — nothing invented, but a dropped change field and a loose beneficiary, hence minor_issue. PII: real people named (Janet Mulroy, Suzanne Wright, Chandelle Martel) and a sensitive end-of-life/health/hospice context."
+      },
+      {
+        "idx": 69,
+        "sha8": "5cfbbca2",
+        "sys_class": "testimonial",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "testimonial",
+        "fields_faithful": "yes",
+        "pii": [
+          "named_person",
+          "sensitive_context"
+        ],
+        "reason": "The span is printed verbatim in the top-right blue callout: \"My Turning Point was when my doctor told me that I was not safe in my relationship and he feared for my safety and life.\" — Michelle. Per the definition this is a TESTIMONIAL, not an impact story: it has an identifiable beneficiary (Michelle, a client) but lacks (2) the org's intervention (the quote credits her doctor's warning, not Turning Point doing anything) and (3) a concrete change answering \"what is different now?\" — it describes the moment of realization, no observable state change or sustained improvement. The system's classification (testimonial) matches. Fields are faithful: title and primary_beneficiary (Michelle) are page-supported; what_changed=null is correct since no change is stated. PII: named individual presented as a DV client (named_person) within domestic-violence safety context (sensitive_context). No minor indicated."
+      },
+      {
+        "idx": 70,
+        "sha8": "8552b09e",
+        "sys_class": "testimonial",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "testimonial",
+        "fields_faithful": "yes",
+        "pii": [
+          "minor"
+        ],
+        "reason": "The claimed span is printed verbatim in the quote box in the upper-right of the page (FNWC / Healthy Families section): \"I think my favorite thing is that you guys reassure me every week that I am being a good mom. She is learning what she is supposed to be learning, she is on track for what she is supposed to be doing. If it comes down to it and she is not, I have you guys to help me through it and figure it out.\" True class is TESTIMONIAL: it is a parent's sentiment/praise quote about the program (\"my favorite thing... you guys reassure me\"). There is an identifiable beneficiary (the mother and her child) and an implied intervention, but no CHANGE answering \"what is different now?\" — the statements (\"she is learning what she is supposed to be learning, she is on track\") describe an ongoing reassured state, not an observable transition, avoided harm, or sustained improvement framed as a before/after outcome. So it fails the third impact-story element. The system's testimonial classification, null what_changed, title, and beneficiary (the speaker, a mother) are all supported by the page. PII: the quote references a child (\"She\" learning/on track), so the minor flag applies; no real individual is named and no sensitive context (health/DV/etc.) is present."
+      },
+      {
+        "idx": 71,
+        "sha8": "011c1177",
+        "sys_class": "testimonial",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "minor"
+        ],
+        "reason": "The claimed span appears verbatim on the page in the \"Family Survey Feedback\" column: \"My son has gained lifelong friendships, new skills, and a whole lot of joy.\" Against the definition this qualifies as an IMPACT STORY, not a testimonial: (1) specific beneficiary in context — \"my son,\" a particular child, not a generic population; (2) org intervention clearly implied by the family-survey context for the program (camp/program serving children, sibling quotes reference \"Dreams in Brent's life\"); (3) a real state change presented as true/past — \"has gained lifelong friendships, new skills\" are observable acquisitions, not mere sentiment. The system over-weighted the \"whole lot of joy\" sentiment and judged the gains too \"general,\" but friendships and new skills gained are concrete changes tied to a specific beneficiary, which clears the TESTIMONIAL bar. Fields are faithful: title (son gained friendships/skills), beneficiary (the speaker's son), and what_changed all track the page without inventing facts; the what_changed note is a defensible understatement, not a fabrication. PII: the beneficiary is a child (son) — minor flag applies; he is not named (Brent appears only in a separate quote), no sensitive context."
+      },
+      {
+        "idx": 72,
+        "sha8": "d5cb6d0c",
+        "sys_class": "testimonial",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "minor_issue",
+        "pii": [
+          "named_person",
+          "sensitive_context",
+          "minor"
+        ],
+        "reason": "The claimed span is printed verbatim in the quote box on the page (modulo line breaks): \"'Before I came to Return House, I didn't know who I was or what I could hope for. Since I've been here, I've been able to think more about what I want my life to be like. I know that I want to be safe and keep making good choices. The most important thing I've learned here is that I want to be me.'\" — Randy. Against the definition this is an IMPACT STORY, not a testimonial: (1) identifiable beneficiary in context = Randy, a youth at Return House; (2) intervention = Return House (the org/program); (3) explicit before/after change answering \"what is different now?\" = before he \"didn't know who I was or what I could hope for,\" and now (\"Since I've been here\") he is \"able to think more about what I want my life to be like\" and knows he wants to be safe and make good choices — a self-reported internal change presented as current/past, not future or hypothetical. The definition reserves TESTIMONIAL for sentiment/praise WITHOUT a concrete change; this quote contains a concrete stated change, so the system's \"testimonial\" + what_changed=null under-grades it. Fields: title and primary_beneficiary (Randy) are page-supported, but what_changed=null omits the clearly present change (minor_issue, no invented facts). PII: Randy is a named individual (named_person); Return House plus language about safety/good choices/not knowing who he was implies a justice/foster/transitional-housing context (sensitive_context); the page is explicitly about \"youth,\" implying Randy is a minor (minor)."
+      },
+      {
+        "idx": 73,
+        "sha8": "011c1177",
+        "sys_class": "testimonial",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "impact_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "minor"
+        ],
+        "reason": "The span is printed verbatim as the first quote in the right-hand \"Family Survey Feedback\" column. The system labeled it testimonial, but the passage meets all three impact-story criteria: (1) identifiable beneficiary in context — \"my daughter,\" a specific child, not a generic population; (2) org intervention — the summer camp and day program; (3) concrete changes presented as past/current — built friendships, worked on social skills, gained new experiences, tried new things (talent show), is learning critical thinking and coping strategies. That goes beyond a bare praise/sentiment quote, so the true class is impact_story rather than testimonial. Title, primary_beneficiary (daughter of the speaker), and what_changed are all supported by the page. PII: the daughter is a child (minor, implied); no real individual is named (speaker and daughter anonymous), and the content is generic skill-building, not a sensitive health/justice/DV context."
+      },
+      {
+        "idx": 74,
+        "sha8": "36941d40",
+        "sys_class": "testimonial",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "testimonial",
+        "fields_faithful": "yes",
+        "pii": [
+          "named_person"
+        ],
+        "reason": "The pull-quote \"'You can't keep your talent inside of you, you have to let it out.' -CORINNE, CATA ARTIST\" is printed verbatim on the page beneath the photo of CATA artists drumming. It is a sentiment/aspirational statement about letting talent out, with no concrete change answering \"what is different now?\" — no observable outcome, avoided harm, or sustained improvement tied to the speaker. That fits TESTIMONIAL, not IMPACT STORY (fails the change prong), so the system's call is correct. Title and primary_beneficiary (Corinne, the unnamed-beyond-first-name speaker) are supported; what_changed is correctly null since no change is stated. PII: first name \"Corinne\" plus caption names (Anthony, Richard, Karlie) — named program participants, all appearing to be adults; no sensitive context or minor."
+      },
+      {
+        "idx": 75,
+        "sha8": "865fb62f",
+        "sys_class": "service_episode",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "service_episode",
+        "fields_faithful": "yes",
+        "pii": [
+          "minor"
+        ],
+        "reason": "The claimed span is printed verbatim on the page as the opening of the right-column \"Homeless Services Program\" section (truncated mid-word at \"Home\"). The passage describes the program delivering emergency hotel shelter to an aggregate group — \"56 households... including 19 veterans and 52 children\" — with org intervention and a real change (safe place to sleep, working toward transitioning to long-term housing, avoiding being on the street). But the beneficiary is a group-level count, not a specific identifiable person/family/community presented in context, so it is service_episode, not impact_story. The system's class (service_episode) is correct. Fields are faithful: title, primary_beneficiary (verbatim \"56... 19 veterans and 52 children\"), and what_changed all trace to the page text (\"a safe place to sleep while they worked with our staff toward transitioning to long term housing,\" \"would have been on the street... were it not for this program\"). PII: 52 children = minors involved; no named private individual in this passage (Mary's Story is a separate left-column passage). Homelessness is not in the enumerated sensitive_context categories."
+      },
+      {
+        "idx": 76,
+        "sha8": "3517ecdc",
+        "sys_class": "service_episode",
+        "confidence": "medium",
+        "span_on_page": "absent",
+        "correct_class": "reject",
+        "fields_faithful": "minor_issue",
+        "pii": [
+          "none"
+        ],
+        "reason": "Page is a funder's grant-tracking table titled \"IRAF GRANTEES 2020\" with columns Organization / Urgent Need / Amount / Impact. The system's record maps to the \"Why Not Prosper\" row ($10,000): Urgent Need = \"The exterior side and rear wall at one of their housing facilities was in imminent danger of collapse, jeopardizing the safety of the residents\"; Impact = \"Demolition and rebuild of the wall as well as providing temporary shelter for the 10 women residing at the location while the repairs were being made.\" span_on_page = absent: the claimed span text is literal whitespace (\"   \"), not the actual table cells. correct_class = reject: this is an aggregate grant-allocation/program line in a grantees table, which the definition lists under REJECT (program descriptions, aggregate funding records); the \"impact\" is the intended use of the grant, not a delivered report-year change narrative about a specific identifiable beneficiary. It is not a service_episode story (it's a funding-table entry, not a delivery narrative). fields_faithful = minor_issue: title and what_changed roughly track the Impact cell and \"10 women residing at the location\" is on-page verbatim, but the claimed span itself is blank and the framing is grant-funded plan, not confirmed past delivery. pii = none: no named individual, no minor, no DV/health/justice context (wall-collapse housing safety only); \"10 women\" is a generic group."
+      },
+      {
+        "idx": 77,
+        "sha8": "ec5c8930",
+        "sys_class": "service_episode",
+        "confidence": "medium",
+        "span_on_page": "verbatim",
+        "correct_class": "service_episode",
+        "fields_faithful": "yes",
+        "pii": [
+          "none"
+        ],
+        "reason": "The claimed span is printed near-verbatim in the \"2024 Highlights\" bullet list on the page: \"Thanks to our LISC/AT&T grant, we were able to gift 55 laptops to ... several of our participants to support their job search, digital literacy, and English language learning.\" (minor wording variance, meaning identical). Per the definition this is group-level delivery: there is an org intervention (gifting 55 laptops via the LISC/AT&T grant) and a change (participants received laptops supporting job search, digital literacy, English learning), but the beneficiary is \"several of our participants\" — a generic group, not a specific identifiable person/family/named group/place. That fails criterion (1) for impact_story, so it is correctly a SERVICE_EPISODE. Title, primary_beneficiary (\"participants\"), and what_changed are all faithful to the page. No named private individual, no sensitive context, no minor in the passage."
+      },
+      {
+        "idx": 78,
+        "sha8": "8552b09e",
+        "sys_class": "service_episode",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "service_episode",
+        "fields_faithful": "yes",
+        "pii": [
+          "minor"
+        ],
+        "reason": "Span is printed verbatim on the page (modulo line breaks): \"14 adult participants gained the skills and tools needed to become leading advocates on behalf of children. They designed and launched their own community projects that positively impacted homes, schools, and communities in tangible, meaningful ways.\" True class is service_episode: there is a real change (gained skills/tools; launched community projects with positive impact) and an implied intervention (PLTI program), but the beneficiary is a generic group-level cohort (\"14 adult participants\"), not a specific identifiable person/family/community — so it fails the impact_story requirement of a specific beneficiary. System classification matches. Fields are faithful: title, primary_beneficiary (\"14 adult participants,\" verbatim), and what_changed all track the page with no invented facts. PII: children are referenced (\"on behalf of children\"), implying minors; no real private individual is named in the passage itself."
+      },
+      {
+        "idx": 79,
+        "sha8": "c1a9f80b",
+        "sys_class": "service_episode",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "donor_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "none"
+        ],
+        "reason": "Span is printed verbatim on the page (a caption block): \"Fedex volunteers supported community drive-through distributions and hosted a diaper drive, collecting 3,079 diapers.\" The subject is FedEx volunteers — givers running a diaper drive — which makes this a DONOR_STORY, not a service_episode. There is no identifiable beneficiary and no \"what is different now?\" change in any beneficiary's state; only volunteer activity plus an aggregate count of diapers collected (a statistic, not an outcome). The system's title, null beneficiary, and what_changed faithfully restate the page without invented facts, but the class label is wrong. No named private individuals, no sensitive context, no minors in this passage."
+      },
+      {
+        "idx": 80,
+        "sha8": "ee3f949b",
+        "sys_class": "service_episode",
+        "confidence": "medium",
+        "span_on_page": "verbatim",
+        "correct_class": "service_episode",
+        "fields_faithful": "yes",
+        "pii": [
+          "sensitive_context",
+          "minor"
+        ],
+        "reason": "The claimed span appears verbatim in the \"Dear Friends\" Executive Director letter (left column), matching modulo line breaks: \"I watched the unprecedented events of this year bring residents to their knees... All while healing from a lifetime of pain.\" Per the definition, the passage describes group-level subjects (\"residents,\" \"Families\") healing in a DV shelter — concrete past changes (quarantined, maneuvered virtual school, secured jobs) are present and the org intervention (shelter) is implied, but there is no single identifiable specific beneficiary; it is a generic population at the shelter. That is SERVICE_EPISODE (group-level delivery with change, no specific beneficiary), matching the system's class. Fields are faithful: the page's mission column establishes St. Martha's Hall serves \"abused women and their children,\" supporting the primary_beneficiary characterization; what_changed accurately paraphrases the span. PII: domestic-violence shelter context (sensitive_context); children implied via \"virtual school\" and the served population (minor). No private individual is named within this passage (named people on the page — Michelle Schiller-Baker, Jessica Woolbright — are staff, not in the span)."
+      },
+      {
+        "idx": 81,
+        "sha8": "f090f7af",
+        "sys_class": "service_episode",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "service_episode",
+        "fields_faithful": "yes",
+        "pii": [
+          "minor"
+        ],
+        "reason": "The quote is printed verbatim in the bottom-right \"IMPACT IN ACTION\" block, attributed to \"- YMCA Staff\" (matches modulo line breaks/em-dashes). It has an intervention (Emory SEE Learning strategies delivered by YMCA staff) and a stated change (students more open to discussing feelings, taking positive action), but the beneficiary is \"the students in our afterschool programs\" — a group-level generic population, not a specific identifiable beneficiary. That is exactly SERVICE_EPISODE (group delivery with change, no specific beneficiary), so the system's class is correct. Fields are faithful: title, primary_beneficiary (verbatim), and what_changed (trivial reordering, same meaning) are all supported by the page. PII: speaker is unnamed (\"YMCA Staff\"), no private named individual or sensitive context; students are afterschool-program kids, so minor applies."
+      },
+      {
+        "idx": 82,
+        "sha8": "3517ecdc",
+        "sys_class": "service_episode",
+        "confidence": "medium",
+        "span_on_page": "absent",
+        "correct_class": "reject",
+        "fields_faithful": "minor_issue",
+        "pii": [
+          "sensitive_context"
+        ],
+        "reason": "The page is a grants table titled \"IRAF GRANTEES 2020\" (Organization / Urgent Need / Amount / Impact). The claimed span text is empty (\"   \", only whitespace), so the span is absent — no real passage was captured. The actual CRSH-row Impact cell reads: \"They will be about to complete the survey and release a report in the Spring which will inform policy around sexual harassment and violence in the restaurant industry helping 344 women and gender non-confirming / non-binary restaurant workers.\" This is forward-looking grant-purpose language (\"will be about to complete... will release... will inform policy\"); the survey is not yet complete and the outcome is projected, not realized. The DEFINITION requires a change presented as true past/current, never future/hypothetical — this fails that, so it is REJECT (program/projected-impact description, no report-year realized change), not service_episode. Fields: the beneficiary \"344 women and gender non-conforming/non-binary restaurant workers\" and title are supported by the page; what_changed correctly preserves the future tense but mislabels a projection as a change (minor category issue, no invented facts). PII: concerns sexual harassment/violence (sensitive_context); no named individual or minor."
+      },
+      {
+        "idx": 83,
+        "sha8": "bb8cb998",
+        "sys_class": "service_episode",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "service_episode",
+        "fields_faithful": "yes",
+        "pii": [
+          "minor"
+        ],
+        "reason": "The claimed span appears verbatim as the \"Center:\" photo caption on the page: \"A group of children are transported from Early Childhood Alliance to school, and from school back to ECA, which helps low-income families with children of varying ages.\" Per the definition this is SERVICE_EPISODE: there is a group-level delivery (transporting a group of children to/from school) and a clearly-implied org intervention (the transport service), but no specific identifiable beneficiary — \"a group of children\" / \"low-income families with children of varying ages\" is a generic population, not a particular family/child/named group. The benefit (\"which helps low-income families\") is generic program-benefit language rather than a concrete observable change for a specific beneficiary, so it does not reach IMPACT_STORY. The system's class (service_episode) is correct. Fields are faithful: title, primary_beneficiary, and what_changed all paraphrase the on-page caption without inventing facts. PII: children are explicitly involved (minor). No private named individual (ECA is a partner org, not a private person) and no sensitive context."
+      },
+      {
+        "idx": 84,
+        "sha8": "c1a9f80b",
+        "sys_class": "service_episode",
+        "confidence": "high",
+        "span_on_page": "absent",
+        "correct_class": "reject",
+        "fields_faithful": "no",
+        "pii": [
+          "named_person"
+        ],
+        "reason": "The page is a \"Program Highlights & Accomplishments\" stats infographic (Products Distributed, Partners, Service sections of aggregate numbers) plus one testimonial quote. The claimed span text is not printed on this page: the only on-page text resembling it is the Partners line \"First Period Project Advocacy cohort with Youth Enrichment Services\" and the quote attribution \"-Larisa Mednis, Pittsburgh Restaurant Workers Aid.\" There is no sentence about \"Students from Earn to Learn (YES) packed 300 period kits at the end of their six-week Period Poverty Advocacy class\" anywhere on the page — that is fabricated, splicing the attribution line onto an invented event. Hence span_on_page = absent. The actual on-page content is aggregate statistics and program/partner accomplishments with no specific beneficiary or individual change, so the true class is reject. Fields are not faithful: title (\"Students pack period kits\"), what_changed (\"300 period kits were packed by students\"), and the beneficiary (\"Students from Earn to Learn YES\") all assert facts not present on the page — the number 300, the actor \"students,\" and \"Earn to Learn\" do not appear. PII: a real named individual (Larisa Mednis, Pittsburgh Restaurant Workers Aid) is named on the page in the quote. No sensitive-context or minor flag (period-poverty advocacy mentioned as a partner cohort is not a personal health/sensitive disclosure about an identified person)."
+      },
+      {
+        "idx": 85,
+        "sha8": "779d9438",
+        "sys_class": "reject",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "reject",
+        "fields_faithful": "yes",
+        "pii": [
+          "sensitive_context"
+        ],
+        "reason": "The span is printed verbatim on the page (a bullet under \"Significant Findings\"): \"Among the survivors who previously had a protection order (criminal or civil), 14% said they were criticized by court personnel for seeking a protection order after the new incident. 39% said they were criticized by prosecutors.\" This is an aggregate survey statistic from a statewide study of 588 DV survivors — a generic percentage of a population, with no identifiable specific beneficiary, no org intervention tied to a specific person, and no concrete state-change for any specific beneficiary. Per the DEFINITION this is REJECT (aggregate statistics), matching the system's classification. Fields are faithful: title accurately summarizes the statistical finding; primary_beneficiary and what_changed are correctly null. PII: sensitive_context applies (domestic violence / criminal-justice / protection-order context); no real private individual is named and no minor is involved."
+      },
+      {
+        "idx": 86,
+        "sha8": "9dade083",
+        "sys_class": "reject",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "testimonial",
+        "fields_faithful": "yes",
+        "pii": [
+          "named_person"
+        ],
+        "reason": "The span is printed verbatim on the page (modulo line breaks): the italic quote at bottom-left attributed to \"Pastor Diane McCready / Country Meadows.\" The passage is a sentiment/appreciation quote — the chaplain's \"joy\" at seeing the interfaith community come together. It has no specific identifiable beneficiary, no concrete org intervention tied to a change, and no observable \"what is different now\" state change. That is a praise quote without concrete change, which the definition classifies as TESTIMONIAL, not REJECT (REJECT covers program/mission/stats/event-recap material, which this is not). The system's fields are faithful: title is accurate, the beneficiary field correctly characterizes the speaker, and what_changed correctly notes the speaker is a partner/chaplain with no beneficiary change. PII: a real individual is named (Pastor Diane McCready), but in a public clergy/community-partner capacity with no sensitive context and no minor involved."
+      },
+      {
+        "idx": 87,
+        "sha8": "ce7b337f",
+        "sys_class": "reject",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "reject",
+        "fields_faithful": "yes",
+        "pii": [
+          "minor",
+          "sensitive_context"
+        ],
+        "reason": "Both halves of the span are printed verbatim in the right column (the \"thoughtful design...brighter future\" paragraph and the Bernstein/Boca Raton \"Generous support from lead donors...Plans are currently under development\" block). The passage is org-capability and donor/construction narrative: it describes program design plus a planned, future construction project (\"Expected completion summer 2022,\" \"Plans are currently under development\"). Beneficiary is the generic \"these children,\" not a specific identifiable beneficiary, and the only outcome offered is future/hypothetical (\"gives these children the opportunity to change the trajectory of their lives and build a brighter future\") — no past/current observable change. Fails impact-story prongs 1 and 3, so REJECT is correct. Fields are faithful: title accurately summarizes design+donor content, and null beneficiary/what_changed are appropriate since none exist on the page. PII: context is HomeSafe, a residential treatment program for children in the foster-care/abuse-and-neglect system (sensitive_context), and references children/minors (minor); no real private individual is named in this span."
+      },
+      {
+        "idx": 88,
+        "sha8": "0cca730e",
+        "sys_class": "reject",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "reject",
+        "fields_faithful": "yes",
+        "pii": [
+          "sensitive_context",
+          "minor"
+        ],
+        "reason": "The span is printed verbatim on this back-cover mailer page (text is reflowed across multiple boxes: YWCA address/postage permit, \"Help Kids Succeed\" school supply drive, \"Save the Date\" Domestic & Sexual Violence Conference 9/27/2024 with pricing/registration deadline, \"Planting the Seeds of Change,\" and the Inspiring Women Brunch blurb). Content is event announcements, donation appeals, mission/appeal language, and contact info — REJECT per definition (no identifiable specific beneficiary, no org intervention, no past/current change answering \"what is different now?\"). The Brunch blurb describes a recurring \"cornerstone event\" platform, not an outcome. System correctly classified reject with null beneficiary; what_changed and title are page-supported. PII: sensitive_context (domestic/sexual violence/abuse) and minor (school supplies for \"every child\"; \"Help Kids Succeed\"). Garrison Keillor is a quoted public author, not a private named individual, so no named_person flag."
+      },
+      {
+        "idx": 89,
+        "sha8": "ce7b337f",
+        "sys_class": "reject",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "reject",
+        "fields_faithful": "yes",
+        "pii": [
+          "sensitive_context",
+          "minor"
+        ],
+        "reason": "The claimed span is printed verbatim on the page (modulo line breaks/hyphenation) in the \"Residential Group Care\" column: the \"Our residential program provides a safe haven for abused children ages 7-17...\" lead-in plus \"76 girls and boys, ages 7-17, received therapeutic care and educational support in five warm and nurturing specialized therapeutic group homes located in Boca Raton, Lake Worth and West Palm Beach.\" Per the definition this is REJECT: the first sentence is a program/capability description, and the second is an aggregate statistic (a count of 76 children, a generic population — no identifiable specific beneficiary, no individual story, no change answering \"what is different now?\" tied to a specific beneficiary). System's \"reject\" is correct; title is accurate and null beneficiary/what_changed are appropriate. PII: passage concerns abused children removed from their homes for therapeutic/group-home care (sensitive_context: DV/abuse and foster/removal) and explicitly involves minors (ages 7-17); no real private individual is named."
+      },
+      {
+        "idx": 90,
+        "sha8": "ce7b337f",
+        "sys_class": "reject",
+        "confidence": "high",
+        "span_on_page": "partial",
+        "correct_class": "reject",
+        "fields_faithful": "yes",
+        "pii": [
+          "sensitive_context",
+          "minor"
+        ],
+        "reason": "The claimed span's individual fragments are all printed on the page, but the system spliced together text from three separate, non-contiguous regions of a multi-column layout in the wrong reading order: \"Anticipating the ever-growing need, the Board\" (bottom of the middle body column), then the \"WINTER 2021\" sidebar label + the Lake Worth campus caption (\"This fully renovated home will provide eight children...\"), then \"of Directors initiated a plan to transform all four HomeSafe residential campuses... substantially renovating the other two\" (the third body column). As a single contiguous span it does not read this way on the page, so partial. True class is reject: it is a capital/renovation PLAN narrative and forward-looking facility description (\"Board... initiated a plan to transform,\" \"will provide eight children,\" \"Expected completion winter 2021\"). There is no identifiable specific beneficiary (only a generic \"eight children\" in a hypothetical future home), the org \"intervention\" is a future plan, and the change is future/hypothetical, not true past/current — failing all three impact-story criteria. The system's reject is correct. Title \"Board plans for campus renovations\" fairly characterizes the passage, and null beneficiary/what_changed are appropriate, so fields are faithful. PII: passage concerns foster-care children traumatized by abuse and neglect (sensitive_context) and explicitly involves children (minor); no real private individual is named (\"Lake Worth\" is a city, \"the Board\"/\"Board of Directors\" is a body)."
+      },
+      {
+        "idx": 91,
+        "sha8": "0cca730e",
+        "sys_class": "reject",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "reject",
+        "fields_faithful": "yes",
+        "pii": [
+          "named_person",
+          "sensitive_context"
+        ],
+        "reason": "The claimed span matches the printed \"Welcome New Staff\" section verbatim (modulo line breaks/hyphenation): new-hire bios for Abbi Lord (Legal Advocate), Rebecca Pendergrass (Volunteer & Outreach Coordinator), and Mike Wulf (Facilities Manager). This is org-capability/staff-introduction narrative describing roles and duties, with no identifiable beneficiary in context and no change answering \"what is different now\" — correctly REJECT. The system's fields (title \"New staff introductions\", null beneficiary, \"No beneficiary story; staff bios\") are faithful to the page. PII: real individuals are named (staff, not private beneficiaries), and the surrounding context is DV/violence-against-women legal advocacy (protection orders, criminal charges), so sensitive_context applies; no minor referenced in this passage."
+      },
+      {
+        "idx": 92,
+        "sha8": "ec5c8930",
+        "sys_class": "reject",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "reject",
+        "fields_faithful": "yes",
+        "pii": [
+          "none"
+        ],
+        "reason": "The claimed span is printed verbatim as the closing paragraph of the \"FROM OUR CEO\" letter. It is donor/staff/volunteer acknowledgment plus a mission restatement (\"to improve lives in Latino communities\") and a thank-you appeal — mission/appeal language with no identifiable specific beneficiary, no specific intervention, and no \"what is different now\" change. REJECT is correct. Title is a fair summary; primary_beneficiary and what_changed are correctly null. The span itself names no private individual (the CEO byline Beto Lopez is elsewhere on the page, a public org leader, not in the claimed passage)."
+      },
+      {
+        "idx": 93,
+        "sha8": "4afba9fd",
+        "sys_class": "reject",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "reject",
+        "fields_faithful": "yes",
+        "pii": [
+          "none"
+        ],
+        "reason": "Span is printed verbatim as the page's first line. The passage is a generic donor thank-you (\"would like to thank our numerous corporate and individual donors\") followed by aggregate statistics (131,520 meals, 6,264 clients, 2,546 households) and an org-description blurb. No identifiable beneficiary in context — only \"the most vulnerable,\" a generic population — and no specific change answering \"what is different now?\" for a person/family/specific group. This is appreciation/aggregate-stats/org-capability language = REJECT, matching the system. Fields are faithful: title \"General thank you\" fits, beneficiary and what_changed correctly null. No named private individual, no sensitive context, no minor."
+      },
+      {
+        "idx": 94,
+        "sha8": "5370f17e",
+        "sys_class": "reject",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "reject",
+        "fields_faithful": "yes",
+        "pii": [
+          "minor"
+        ],
+        "reason": "The claimed span is printed verbatim on the page (modulo line breaks): the intro paragraph (\"For over 35 years Drew CDC has prepared the children of Watts-Willowbrook, Compton, and South Los Angeles...\") plus the aggregate stat blocks (Families Served 3,834; Child Care Providers Served 2,550; in Trauma-Informed Care Training 2,482 / 97.50%; Staff Engagement Rating 9.4/10). True class is REJECT: this is mission/org-capability language (\"our mission and values are manifested and measured through our work\") combined with agency-wide aggregate statistics and demographic charts. There is no identifiable specific beneficiary (only a generic population \"the children of [neighborhoods]\") and no individual change narrative answering \"what is different now?\" — only aggregate counts. The system's REJECT classification and null beneficiary/what_changed fields are faithful; the title (\"Statistics and tables only\") reasonably characterizes the page. PII: \"minor\" applies because the page explicitly concerns children (and shows child photos/age-group data), though no named private individual appears (Drew CDC is the org name)."
+      },
+      {
+        "idx": 95,
+        "sha8": "65dd3092",
+        "sys_class": "donor_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "donor_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "none"
+        ],
+        "reason": "The quoted passage at the top of the page is verbatim on the page (modulo line breaks): Chris Bartlett, a COMMIT mentor and Brown Advisory executive, praising the partnership (\"very pleased to partner,\" the work has been \"inspiring,\" \"I learn as much or more from my mentees as they do from me\"). The subject is a mentor/volunteer — a giver — so it is a donor_story, not an impact story: there is no identifiable beneficiary undergoing an observable change (\"my mentees\" is generic, no \"what is different now\"). It is praise sentiment from a contributor's perspective. The system's classification (donor_story), title, primary_beneficiary (Chris Bartlett), and null what_changed are all supported by the page; what_changed is correctly null since no concrete change is stated. PII: Chris Bartlett is named but appears in his professional capacity as a corporate executive/mentor in a published annual report, no sensitive context and no minor — none."
+      },
+      {
+        "idx": 96,
+        "sha8": "8899adf8",
+        "sys_class": "donor_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "donor_story",
+        "fields_faithful": "minor_issue",
+        "pii": [
+          "named_person"
+        ],
+        "reason": "Claimed span is printed verbatim on the page (modulo line breaks/hyphenation): the Hypertherm corporate-social-responsibility blurb, Stacey Chiocchio quotes, and the list of volunteer activities (cooking/serving dinners, sorting clothes at Miracle Mile thrift, painting walls in LISTEN's food pantry). True class is donor_story: the subject is Hypertherm and its Associates, a corporate giver/volunteer that donates time and money; the listed \"activities\" are the donor's volunteer service, not a state change in an identifiable beneficiary's life. LISTEN's actual program beneficiaries are described only as a generic regional population (\"people across this region\"), so no specific beneficiary + change is present — fails the impact-story three-part test. System's donor_story call is correct. Fields are minor_issue: title and primary_beneficiary (Hypertherm Associates) are page-supported, and what_changed restates real page facts, but it frames donor volunteer activities as a \"change,\" which is a labeling stretch rather than invented content. PII: Stacey Chiocchio is a named real individual quoted on the page (named_person); no minor and no sensitive (health/DV/addiction/immigration/justice/foster) context present."
+      },
+      {
+        "idx": 97,
+        "sha8": "36941d40",
+        "sys_class": "donor_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "donor_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "named_person"
+        ],
+        "reason": "The claimed span is printed verbatim on the page (left column body text, matching modulo line breaks/hyphenation), e.g. \"CATA supporters Mary Pope Osborne and Will Osborne, the duo behind the wildly popular Magic Tree House books, plays and musicals, are driven to make the arts accessible for everyone,\" followed by their quotes about loving CATA's openness and feeling exhilarated. Per the DEFINITION this is a DONOR_STORY: the named subjects are explicitly \"CATA supporters\" (givers), and the passage is sentiment/praise about why they support — no identifiable beneficiary in context and no CHANGE answering \"what is different now?\" It fails the impact-story test and is praise from a giver rather than a beneficiary testimonial, so donor_story is correct, matching the system. Fields are faithful: title accurately characterizes the donor subjects; primary_beneficiary and what_changed are correctly null since the page provides neither. PII: Mary Pope Osborne and Will Osborne are real named individuals (named_person); no sensitive context or minor involved."
+      },
+      {
+        "idx": 98,
+        "sha8": "8c29956a",
+        "sys_class": "donor_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "donor_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "named_person",
+          "minor"
+        ],
+        "reason": "Span verified on page right column (\"CONNECTIONS ACROSS THE MILES\"): the narrative (\"Five years ago, after a visit to the Jerusalem Princess Basma Centre, AFEDJ Trustee Barbara Boehm shared her experience...\", caption \"Barbara Boehm delivers letters from Montclair students to children at JPBC\", the quote, and the Sky's the Limit Thrift Store paragraph) is printed verbatim (modulo line breaks/hyphenation). The \"Betsy Wilson, Development Manager bwilson@afedj.org\" prefix is also on the page but belongs to the separate STAFF list and was wrongly prepended by the parse; it does not change the span's substance. Correct class is donor_story: the subjects are St. James Episcopal Church members acting as givers/volunteers (visits, annual outreach giving, launching a thrift store). No identifiable individual beneficiary with a realized change is present — disabled youth are a generic population and the thrift store launch states an aim (\"to help young people with disabilities gain employment\"), not an observed past/current outcome for a specific beneficiary, so it fails the impact-story CHANGE+beneficiary tests and is not a service_episode either. Fields are faithful: title is supported; primary_beneficiary null and what_changed null are appropriate. PII: Barbara Boehm (named, pictured) and Betsy Wilson (named) are real named individuals; minors are implied (children with disabilities, Montclair students, young people with disabilities). Disability is not among the enumerated sensitive_context categories, so that flag does not apply."
+      },
+      {
+        "idx": 99,
+        "sha8": "8899adf8",
+        "sys_class": "donor_story",
+        "confidence": "high",
+        "span_on_page": "verbatim",
+        "correct_class": "donor_story",
+        "fields_faithful": "yes",
+        "pii": [
+          "named_person"
+        ],
+        "reason": "The claimed span is printed verbatim on the page (modulo line breaks/hyphenation): the Terry Grigsby Volunteer Service Award paragraph in the right-hand text block. The passage's subject is a volunteer/giver — Terry \"gifted the Upper Valley with several thousand hours of her time organizing jewelry and clothing\" for LISTEN's thrift stores and was honored with a Volunteer Service Award — so per the definition this is a DONOR_STORY (subject is a giver/volunteer), not an impact story about a beneficiary. The system's donor_story classification is correct. Fields are faithful: title accurately summarizes, primary_beneficiary \"Terry Grigsby\" is named on the page, and what_changed (\"contributed thousands of hours organizing items for sale\") matches the printed text. PII: a real private individual is named (Terry Grigsby). No sensitive context or minor involved."
+      }
+    ]
+  }
+}

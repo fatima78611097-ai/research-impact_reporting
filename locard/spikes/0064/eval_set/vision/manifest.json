@@ -1,0 +1,1330 @@
+[
+ {
+  "sha": "42601e39a5adfc34f25f2deb80a7117ee33a6747198385bae6c5a185c4ff4bbf",
+  "page": 2,
+  "classification": "annual",
+  "band": "severe",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 1131.0,
+    "metric_text": "1,131 people impacted by housing assistance",
+    "metric_type": "people impacted by housing assistance",
+    "source_snippet": "Housing - People Impacted: 1,131",
+    "longest_run": 0.4,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "2162c0deea69c0cc661476a8e38b0717859ae4e2b9876a28306ed99cb79d22f1",
+  "page": 1,
+  "classification": "annual",
+  "band": "severe",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 615.0,
+    "metric_text": "615 people impacted by utility assistance",
+    "metric_type": "people impacted by utility assistance",
+    "source_snippet": "Utility Assistance People Impacted: 615",
+    "longest_run": 0.4,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "04ffe1c4f24efd73d9cca73537fe2b7c61fb763d6159c5e1234929fac3b65926",
+  "page": 1,
+  "classification": "impact",
+  "band": "severe",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 350.0,
+    "metric_text": "350 families in Jefferson County received groceries",
+    "metric_type": "families served",
+    "source_snippet": "Distributed healthy groceries to over 350 families in Jefferson County",
+    "longest_run": 0.4,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "f92248ef9fa5d0676a6b957f14aecc1cbda62df28f2df7620c45a22a9b9c7f1f",
+  "page": 2,
+  "classification": "annual",
+  "band": "severe",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 5886.0,
+    "metric_text": "5,886 hours of volunteer service",
+    "metric_type": "volunteer hours",
+    "source_snippet": "contributing more than 5,886 hours of service.",
+    "longest_run": 0.429,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "7db4fcbb9fdfb8807f02160d401054f4c045cf4083f04cf7049386ebf7296260",
+  "page": 7,
+  "classification": "annual",
+  "band": "severe",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 5421.0,
+    "metric_text": "5,421 people trained in oral disciple-making since 2009",
+    "metric_type": "people trained in oral disciple-making",
+    "source_snippet": "5421 PEOPLE HAVE BEEN TRAINED IN ORAL DISCIPLE-MAKING SINCE 2009",
+    "longest_run": 0.4,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "6e967b2a4d02d0cc5a22e2d1dd724e5c46fe3d83abf7d9fd4f2afdcce2eb2c56",
+  "page": 4,
+  "classification": "annual",
+  "band": "severe",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 531.0,
+    "metric_text": "531 Days of service in Birmingham, Montgomery & Tuscaloosa",
+    "metric_type": "days of service",
+    "source_snippet": "531 [are the heart of Life On Wheels! VOLUNTEERS] Days of service in Birmingham, Montgomery & Tuscaloosa",
+    "longest_run": 0.471,
+    "word_coverage": 0.824
+   }
+  ]
+ },
+ {
+  "sha": "2a781d91a6712fe87990ae49b54dbcb5f515d9ed8064a2b82598563765fce7a0",
+  "page": 15,
+  "classification": "annual",
+  "band": "severe",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 1389.0,
+    "metric_text": "1,389 families at Night of Hope in 2015",
+    "metric_type": "families served",
+    "source_snippet": "2015 1,389 families",
+    "longest_run": 0.333,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "d1f6abc2d00b797321d1bae65e10e4980097b2df4763bcda16ef08b9cdf8d4c9",
+  "page": 2,
+  "classification": "annual",
+  "band": "severe",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 1.0,
+    "metric_text": "1 child with Health Impairment",
+    "metric_type": "children with health impairment",
+    "source_snippet": "1 Health Impairment",
+    "longest_run": 0.333,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "959c06798d096d1176a06e3fc194666651ea1e22b2452c5e832fc266084d06ae",
+  "page": 8,
+  "classification": "annual",
+  "band": "severe",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 85.0,
+    "metric_text": "85% say they have overcome a challenge since joining Free to Run",
+    "metric_type": "percentage reporting overcoming a challenge",
+    "source_snippet": "85% say they have overcome a challenge since joining Free to Run",
+    "longest_run": 0.333,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "2a781d91a6712fe87990ae49b54dbcb5f515d9ed8064a2b82598563765fce7a0",
+  "page": 14,
+  "classification": "annual",
+  "band": "severe",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 1021.0,
+    "metric_text": "1,021 families at Night of Hope in 2013",
+    "metric_type": "families served",
+    "source_snippet": "2013 1021 families",
+    "longest_run": 0.333,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "e551f65ea2962479d484e1592ac783fb9b1c9807d934c8a1c6eb7380dedf0ffd",
+  "page": 5,
+  "classification": "annual",
+  "band": "severe",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 66.0,
+    "metric_text": "66 cancer survivors received help",
+    "metric_type": "cancer survivors supported",
+    "source_snippet": "66 CANCER SURVIVORS received help",
+    "longest_run": 0.4,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "d4387c602ebc6ab660f47e43fdc3b71bc394e7c2c8bdb737670734a8fc54ac24",
+  "page": 4,
+  "classification": "annual",
+  "band": "severe",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 7300.0,
+    "metric_text": "more than 7,300 participants in Steps to Success case management",
+    "metric_type": "program participants",
+    "source_snippet": "In 2013, more than 7,300 participants in Steps to Success case management",
+    "longest_run": 0.417,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "bad2c36c63950da4f5c4b089f369576dda63194cf81249283736f180375c76ed",
+  "page": 1,
+  "classification": "impact",
+  "band": "severe",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 810.0,
+    "metric_text": "810 youth served in Summer Camp",
+    "metric_type": "youth served",
+    "source_snippet": "SUMMER CAMP 810 YOUTH SERVED",
+    "longest_run": 0.4,
+    "word_coverage": 1.0
+   },
+   {
+    "metric_value": 219.0,
+    "metric_text": "219 youth served in Adventure Guides",
+    "metric_type": "youth served",
+    "source_snippet": "ADVENTURE GUIDES 219 YOUTH SERVED",
+    "longest_run": 0.4,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "2f02e0b244ca70386d65f8596e7854dd5e907c8621bd433954df7d2183e1e027",
+  "page": 40,
+  "classification": "impact",
+  "band": "severe",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 342469.0,
+    "metric_text": "Total Income: $342,469",
+    "metric_type": "total revenue",
+    "source_snippet": "Total Income: $342,469",
+    "longest_run": 0.333,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "4bec863484d1f277e8c41e19c1c659e2b539d5dfcbbf6cf31bed25c4abf081a4",
+  "page": 1,
+  "classification": "impact",
+  "band": "severe",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 18081.0,
+    "metric_text": "18,081 hours of youth services provided",
+    "metric_type": "hours of youth services",
+    "source_snippet": "18,081 HOURS OF YOUTH SERVICES",
+    "longest_run": 0.4,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "7cd334fc2468a971a14864ed6eaf5a02b85f83fa45e897d0901b29cda52ce01f",
+  "page": 11,
+  "classification": "annual",
+  "band": "severe",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 17024140.0,
+    "metric_text": "17,024,140 liters distributed from Kiunga, Kenya Solar Water Farm",
+    "metric_type": "liters distributed",
+    "source_snippet": "KIUNGA, KENYA -MAX ... Liters distributed: 17,024,140",
+    "longest_run": 0.429,
+    "word_coverage": 0.857
+   }
+  ]
+ },
+ {
+  "sha": "4aaf1bcc80b7bdffd07fb3965af505cce5a216dccaa3d5bf9acde07c2f85f3a5",
+  "page": 10,
+  "classification": "impact",
+  "band": "severe",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 352.8,
+    "metric_text": "352.8% increase in withholding/destruction of documents as control method",
+    "metric_type": "percentage increase in withholding documents as control",
+    "source_snippet": "Withholding and destruction of victims' documents ... has increased by 352.8% in 2022",
+    "longest_run": 0.462,
+    "word_coverage": 0.923
+   }
+  ]
+ },
+ {
+  "sha": "2986b138138fe28a948c7483cd7c428eacd1f4e9a7d08e313eac562854411fc6",
+  "page": 16,
+  "classification": "impact",
+  "band": "severe",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 3247.0,
+    "metric_text": "Licensed child care capacity dropped from 3,870 in 2008 to 3,247 in 2013",
+    "metric_type": "licensed child care slots",
+    "source_snippet": "capacity for 3,870 children in 2008 to ... 3,247 children at the end of 2013",
+    "longest_run": 0.467,
+    "word_coverage": 0.933
+   }
+  ]
+ },
+ {
+  "sha": "c76d2de06f3cbe7f5d64e4ff5c0e87f16dfd16b4fd4e69f8fbdaa5bbd2a1abde",
+  "page": 11,
+  "classification": "impact",
+  "band": "severe",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 72.0,
+    "metric_text": "72% of Philly HopeLine calls were from callers interested in joining a grief group",
+    "metric_type": "callers interested in grief groups",
+    "source_snippet": "72% of calls made to Uplift's Philly HopeLine are from callers expressing interest in joining a grief group, with the remaining 28% of calls being for program inquiries, emotional support, and referrals to other services.",
+    "longest_run": 0.486,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "203388b72f141337c23f305ecf7311430e525bcd06c7b453c97ee82c1acd3a92",
+  "page": 2,
+  "classification": "annual",
+  "band": "severe",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 5.0,
+    "metric_text": "fundraising expense as a percentage of cash income in 2014 was 5.0%",
+    "metric_type": "fundraising expense percentage",
+    "source_snippet": "Think New Mexico's fundraising expense as a percentage of cash income in 2014 was 5.0%.",
+    "longest_run": 0.467,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "26ceeafa30ac792bdabe5c93f78dced3d4102bb986949d3226f5e0e491326d58",
+  "page": 2,
+  "classification": "annual",
+  "band": "severe",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 3480754.0,
+    "metric_text": "$3,480,754 in private donations from individuals, businesses, and foundations",
+    "metric_type": "private donations",
+    "source_snippet": "$3,480,754 in private donations from individuals, businesses, and foundations",
+    "longest_run": 0.444,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "76a707c16c1940770d7645355551b0c9aca72ca6ba65ed0832a9cddfd7099e42",
+  "page": 8,
+  "classification": "annual",
+  "band": "severe",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 222.0,
+    "metric_text": "222 guests hosted at Journey to Healing tours",
+    "metric_type": "guests at tours",
+    "source_snippet": "222 guests at our Journey to Healing tours",
+    "longest_run": 0.375,
+    "word_coverage": 0.875
+   }
+  ]
+ },
+ {
+  "sha": "52e76474cd0e0a894e1ca8ae815c6a655224dfb4bbfab883f17fcdaf8dc5dde8",
+  "page": 1,
+  "classification": "impact",
+  "band": "severe",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 200.0,
+    "metric_text": "close to 200 additional jobs supported in the local economy",
+    "metric_type": "additional jobs supported",
+    "source_snippet": "Close to 200 additional jobs are supported in the local economy from the non-profit's operations and the household demands placed upon the local economy from its employees.",
+    "longest_run": 0.481,
+    "word_coverage": 0.963
+   }
+  ]
+ },
+ {
+  "sha": "4531167bafed74e6455d3debf9dc9881ec3e0b7049fa21d70a25ff305fb926e4",
+  "page": 6,
+  "classification": "annual",
+  "band": "severe",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 10.0,
+    "metric_text": "raised awareness to over 10 schools",
+    "metric_type": "schools reached",
+    "source_snippet": "raised awareness of services ... to over 10 schools",
+    "longest_run": 0.444,
+    "word_coverage": 0.889
+   }
+  ]
+ },
+ {
+  "sha": "61d4b4bb7f83fa0750ddd063568fb7505afb64c1d810d19c94aff8b91e94dfc7",
+  "page": 1,
+  "classification": "impact",
+  "band": "severe",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 50.0,
+    "metric_text": "50 families received complete Thanksgiving meals",
+    "metric_type": "families served",
+    "source_snippet": "50 FAMILIES RECEIVED COMPLETE THANKSGIVING MEALS",
+    "longest_run": 0.333,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "37c813719836e0d808e996eba4db2a451803090ea772d8305c352946e52df21e",
+  "page": 2,
+  "classification": "annual",
+  "band": "moderate",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 14.0,
+    "metric_text": "14 off-campus youth from local school district at Howard School",
+    "metric_type": "off-campus youth at Howard School",
+    "source_snippet": "14 were off-campus youth from the local school district",
+    "longest_run": 0.667,
+    "word_coverage": 0.889
+   }
+  ]
+ },
+ {
+  "sha": "4d2d0f1648b0cea38946c74bbf9dd4cc18a0a9e2e325b986f3eac5cf9e3fd340",
+  "page": 5,
+  "classification": "impact",
+  "band": "moderate",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 7060.0,
+    "metric_text": "7,060 veterans in Wright County",
+    "metric_type": "veterans",
+    "source_snippet": "Veterans 7,060",
+    "longest_run": 0.5,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "42359654cab8afd60cfca2141e23a1b70669ff69974dc56723b728c7e23e83c2",
+  "page": 1,
+  "classification": "impact",
+  "band": "moderate",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 9084.0,
+    "metric_text": "9,084 skateboards donated",
+    "metric_type": "skateboards donated",
+    "source_snippet": "9,084 Skateboards Donated",
+    "longest_run": 0.667,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "1c0e8ebdca50a66099c4a74bb50322d2bd4cbb2db7fd20d02e1977977a705956",
+  "page": 1,
+  "classification": "impact",
+  "band": "moderate",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 36566.0,
+    "metric_text": "$36,566 estimated earnings at start of program, $45,708 at end",
+    "metric_type": "estimated earnings",
+    "source_snippet": "$36,566, Estimated Earnings at END of Program = $45,708",
+    "longest_run": 0.556,
+    "word_coverage": 0.889
+   }
+  ]
+ },
+ {
+  "sha": "95f2d6534b9661852fc20c69320b13a077fc5f21eb628d5fd12f08812c94562a",
+  "page": 6,
+  "classification": "impact",
+  "band": "moderate",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 614.0,
+    "metric_text": "614 children denied (Q3)",
+    "metric_type": "children denied",
+    "source_snippet": "Children Denied: 614",
+    "longest_run": 0.667,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "39f267013401edcc562dfd4e4bd56135840091fb2b9e11365f1b6eb502fe1685",
+  "page": 10,
+  "classification": "impact",
+  "band": "moderate",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 597.0,
+    "metric_text": "597 mentees in Boston",
+    "metric_type": "mentees",
+    "source_snippet": "BOSTON 597 Mentees",
+    "longest_run": 0.667,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "1d64181ad987b8003db87907beba3f451ed17fb7882bfa61c814ddee73027f7e",
+  "page": 3,
+  "classification": "annual",
+  "band": "moderate",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 3149.0,
+    "metric_text": "3,149 people completed an intake with a Resource Navigator",
+    "metric_type": "program participants",
+    "source_snippet": "3,149 LAST YEAR, PEOPLE COMPLETED AN INTAKE WITH A RESOURCE NAVIGATOR",
+    "longest_run": 0.727,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "91655b0a2871eef081d61dfe43499fdf40aac0bd597d79b8320cf263ccd77097",
+  "page": 4,
+  "classification": "annual",
+  "band": "moderate",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 412.0,
+    "metric_text": "412 medical services provided",
+    "metric_type": "medical services",
+    "source_snippet": "Medical 412",
+    "longest_run": 0.5,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "d7da0c433bff3f07732ca03bb0a70fcf27b4cf135a2938c5a66336c1657a7858",
+  "page": 5,
+  "classification": "impact",
+  "band": "moderate",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 72.0,
+    "metric_text": "72% (33) of students in Graham SLAM persisted in college",
+    "metric_type": "college persistence rate",
+    "source_snippet": "72% (33) of students in Graham SLAM persisted in college",
+    "longest_run": 0.7,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "a199d3699ff9a0d40f1f658b7837782b102e175e3cbcf67ebbab6c9ef87eb877",
+  "page": 2,
+  "classification": "annual",
+  "band": "moderate",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 28111000.0,
+    "metric_text": "Total Expense $28,111,000",
+    "metric_type": "total expenses",
+    "source_snippet": "Total Expense $28,111,000",
+    "longest_run": 0.667,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "c4baf1ffceb426f503a37a250cd6662a448ff7dad312e5a50b7f86dd1cd693c6",
+  "page": 3,
+  "classification": "annual",
+  "band": "moderate",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 12000.0,
+    "metric_text": "$12,000 Awarded in Scholarships",
+    "metric_type": "scholarship funds awarded",
+    "source_snippet": "$12,000 Awarded",
+    "longest_run": 0.5,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "b3c518d3ab20d37a7d0f7acb312174779ddc02b2a63a17f329b2bb7b0b50e9cb",
+  "page": 6,
+  "classification": "annual",
+  "band": "moderate",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 100.0,
+    "metric_text": "100% NAEYC accreditation retained for all operating centers",
+    "metric_type": "centers accredited",
+    "source_snippet": "CAPE Head Start has retained 100% N.A.E.Y.C. accreditation for all operating centers.",
+    "longest_run": 0.583,
+    "word_coverage": 0.917
+   }
+  ]
+ },
+ {
+  "sha": "2c946e78ffc21efdd095cfb62820cb411046cfcf2b685472a20bfd41e6947955",
+  "page": 9,
+  "classification": "impact",
+  "band": "moderate",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 106.0,
+    "metric_text": "106 new volunteers",
+    "metric_type": "new volunteers",
+    "source_snippet": "106 New Volunteers",
+    "longest_run": 0.667,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "28ffc40bc7355b8c14d85df7275e5216d76402e38681afaa629db84cc7fa83d2",
+  "page": 4,
+  "classification": "impact",
+  "band": "moderate",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 47.0,
+    "metric_text": "47% black leaders",
+    "metric_type": "black leaders",
+    "source_snippet": "47% black",
+    "longest_run": 0.5,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "218a5f56b5ac52c5f7678396e2706777df3983205bdaa56da3b0b851f98e64c3",
+  "page": 2,
+  "classification": "annual",
+  "band": "moderate",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 74047.0,
+    "metric_text": "74,047 total fresh food for all",
+    "metric_type": "food distributions",
+    "source_snippet": "Total Fresh Food For All # of food 74,047",
+    "longest_run": 0.556,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "d58cd817b2975439feaad20706fc72eed875cade0f1753b0be5701b244b10f69",
+  "page": 3,
+  "classification": "annual",
+  "band": "moderate",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 5600.0,
+    "metric_text": "5,600 lbs of clay thrown in the COMO Pottery Studio",
+    "metric_type": "clay used",
+    "source_snippet": "5,600 lbs of clay thrown in the COMO Pottery Studio",
+    "longest_run": 0.5,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "1fd1e4deb25d915cb2f4db883345cd7e0e77062b7f0ef048a55e5f258e216701",
+  "page": 5,
+  "classification": "annual",
+  "band": "moderate",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 183110.0,
+    "metric_text": "183,110 meals to an average of 365 children per month",
+    "metric_type": "meals served",
+    "source_snippet": "The Federally-funded program sponsored 183,110 meals to an average of 365 children per month",
+    "longest_run": 0.571,
+    "word_coverage": 0.929
+   }
+  ]
+ },
+ {
+  "sha": "a2cff96edd50db0d05a99aa7db594c3d3fb186367c8f27c60c4d6a72e69b4b8f",
+  "page": 1,
+  "classification": "annual",
+  "band": "moderate",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 2.0,
+    "metric_text": "2 customers completing training or earning certificates",
+    "metric_type": "customers completing training",
+    "source_snippet": "# of Customers Completing Training or Earning Certificates, FY23 Totals = 2",
+    "longest_run": 0.583,
+    "word_coverage": 0.917
+   }
+  ]
+ },
+ {
+  "sha": "d92b5760c6935ea8dfd75514892f2c398a6d223aa93129889857e1922f0e153e",
+  "page": 1,
+  "classification": "annual",
+  "band": "moderate",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 20.0,
+    "metric_text": "20 Change Reaction encounters",
+    "metric_type": "change reaction encounters",
+    "source_snippet": "Change Reaction, Encounters FY21-22 = 20",
+    "longest_run": 0.667,
+    "word_coverage": 0.833
+   }
+  ]
+ },
+ {
+  "sha": "e9fee2407dd1f7e763b5866764b458d9823aa2f34536569be76af1d144be7aae",
+  "page": 10,
+  "classification": "annual",
+  "band": "moderate",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 100.0,
+    "metric_text": "100% of Head Start children received immunizations",
+    "metric_type": "immunization completion rate",
+    "source_snippet": "Immunization, 1 = 499. Immunization, 4 = 100%",
+    "longest_run": 0.625,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "d3786c0c275984e85c6787ad7a76016c3b0040dcd3d3dee33068e351989b8964",
+  "page": 1,
+  "classification": "annual",
+  "band": "near",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 10642.0,
+    "metric_text": "10,642 total hours of EMCC use",
+    "metric_type": "hours of facility use",
+    "source_snippet": "Total Hours of EMCC Use: 10,642",
+    "longest_run": 0.833,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "006bcf30c9a5ac2b3db1baf5b1f741ffd4d6b7ad4b3458b38702f71f4d15eaf1",
+  "page": 1,
+  "classification": "annual",
+  "band": "near",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 159.0,
+    "metric_text": "159 Total Number of Veterans Served",
+    "metric_type": "veterans served",
+    "source_snippet": "159 Total Number of Veterans Served",
+    "longest_run": 0.833,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "ea088319924e32f1522ffdb0421740cd6c7231021bc9137ed0d6e3b6a718771d",
+  "page": 13,
+  "classification": "annual",
+  "band": "near",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 38.0,
+    "metric_text": "38 summer day campers supported through financial assistance",
+    "metric_type": "summer day campers supported through financial assistance",
+    "source_snippet": "38 SUMMER DAY CAMPERS SUPPORTED THROUGH FINANCIAL ASSISTANCE",
+    "longest_run": 0.875,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "2fccbb57fe9b7d4e64e4e44a8f635fa0652f776bc37e55d7bf284a15cbd1b1fc",
+  "page": 1,
+  "classification": "annual",
+  "band": "near",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 58.0,
+    "metric_text": "58 total learning hours in Classes & Days Off K-5",
+    "metric_type": "learning hours",
+    "source_snippet": "58 Total Learning Hours",
+    "longest_run": 0.75,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "90c39894a106f613897f012f47d6f1f6f4fca239b08852558e6e3bd338f443ca",
+  "page": 3,
+  "classification": "annual",
+  "band": "near",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 376.0,
+    "metric_text": "376 employees participating in the State Use Program",
+    "metric_type": "program participants",
+    "source_snippet": "There was year-over-year decrease from FY 2019 to FY 2020 in the number of employees participating in the State Use Program (from 689 to 376)",
+    "longest_run": 0.96,
+    "word_coverage": 0.96
+   }
+  ]
+ },
+ {
+  "sha": "b663b6a360edc8200605ee98d5f4e2e473dce73668f996a070a0f6dc713a6db8",
+  "page": 8,
+  "classification": "impact",
+  "band": "near",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 1118.0,
+    "metric_text": "1,118 referrals made to community partners",
+    "metric_type": "referrals made",
+    "source_snippet": "1,118 Referrals made to community partners.",
+    "longest_run": 0.833,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "2a4e7c563a480de555cdf1607d6385de42bcae7fb671211b2d0530e90916e23c",
+  "page": 15,
+  "classification": "annual",
+  "band": "near",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 90.0,
+    "metric_text": "90% of services self-performed",
+    "metric_type": "services self-performed",
+    "source_snippet": "90% OF SERVICES SELF-PERFORMED",
+    "longest_run": 0.75,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "6d0e3354d0c3d685191f4024b2a402e1d48bbe8df2525dfaeea8b4120ee8cf2a",
+  "page": 8,
+  "classification": "annual",
+  "band": "near",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 45934000.0,
+    "metric_text": "Fiscal Year 2016 Revenue: $45,934,000",
+    "metric_type": "total revenue",
+    "source_snippet": "Fiscal Year 2016 Revenue: $45,934,000",
+    "longest_run": 0.8,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "f23e829015bd8033874108b06c39b93eab142bd156cca414b0561c827398beb8",
+  "page": 5,
+  "classification": "annual",
+  "band": "near",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 89.0,
+    "metric_text": "89% of survivors were 18 or under",
+    "metric_type": "survivors 18 or under",
+    "source_snippet": "of the survivors we saw were 18 or under 89%",
+    "longest_run": 0.9,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "ab00e9972119b45e2330f51f2bc55b3c5b30751edc7380269d9ddee4da7d60f0",
+  "page": 15,
+  "classification": "annual",
+  "band": "near",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 833.0,
+    "metric_text": "833 youth sports participants",
+    "metric_type": "youth sports participants",
+    "source_snippet": "833 YOUTH SPORTS PARTICIPANTS",
+    "longest_run": 0.75,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "35887724cf0f7e3f0b6a1404a7aafc36acd6eb0766ab5eab496678188188eb99",
+  "page": 3,
+  "classification": "annual",
+  "band": "near",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 30.0,
+    "metric_text": "30% employment of parents reported a positive change",
+    "metric_type": "employment positive change",
+    "source_snippet": "30% EMPLOYMENT OF PARENTS REPORTED A POSITIVE CHANGE IN",
+    "longest_run": 0.778,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "0dec8ae308fbd11eef4b2fa4d5827b32500cc94c082a2eee9a262224505ce1cc",
+  "page": 5,
+  "classification": "annual",
+  "band": "near",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 14.0,
+    "metric_text": "14 individuals served in CSP Financial Capabilities Program",
+    "metric_type": "individuals served in financial capabilities program",
+    "source_snippet": "CSP Financial Capabilities Program 14",
+    "longest_run": 0.8,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "39ce518419a6fb67f8ca05fd44099a666ceacf6a04e0983ca2fec6e19340fff0",
+  "page": 7,
+  "classification": "annual",
+  "band": "near",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 25578.0,
+    "metric_text": "25,578 total one-way trips on CATS",
+    "metric_type": "one-way trips",
+    "source_snippet": "Total One Way Trips : 25,578",
+    "longest_run": 0.833,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "03a2edf1d8e8a013c3df5dd45f5201afedc4dc1b0b1eadf940ce32c1cb963db3",
+  "page": 5,
+  "classification": "annual",
+  "band": "near",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 618.0,
+    "metric_text": "618 lives impacted by over 240 donors participating in monthly blood drives",
+    "metric_type": "lives impacted by blood drives",
+    "source_snippet": "618 LIVES IMPACTED BY OVER 240 DONORS PARTICIPATING IN MONTHLY BLOOD DRIVES",
+    "longest_run": 0.917,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "c5fb5180b501759fb47c794fc4adcaddb95ff17f55373a6e4b10c69a5b56c15f",
+  "page": 4,
+  "classification": "annual",
+  "band": "near",
+  "kind": "recovery",
+  "drafts": [
+   {
+    "metric_value": 57.0,
+    "metric_text": "57 people with disabilities",
+    "metric_type": "people with disabilities served",
+    "source_snippet": "57 people with disabilities",
+    "longest_run": 0.75,
+    "word_coverage": 1.0
+   }
+  ]
+ },
+ {
+  "sha": "60ad28bbbc0769252933577fab9e9faf0c70686270ce94c418a2679ec4940052",
+  "page": 2,
+  "classification": "impact",
+  "band": "control",
+  "kind": "control",
+  "drafts": [
+   {
+    "metric_value": 32000.0,
+    "metric_text": "More than $32,000 in scholarships in Aquatics and Wellness",
+    "metric_type": "scholarships provided",
+    "source_snippet": "We've provided more than $32,000 in scholarships in Aquatics and Wellness"
+   }
+  ]
+ },
+ {
+  "sha": "357c4264011b7bf431e416332b5a24b090fc1fdb0e4fb00e96b871fc0677cf35",
+  "page": 12,
+  "classification": "impact",
+  "band": "control",
+  "kind": "control",
+  "drafts": [
+   {
+    "metric_value": 11.0,
+    "metric_text": "11 obtained employment at Camp Genesis",
+    "metric_type": "employment obtained at camp genesis",
+    "source_snippet": "11 obtained employment at Camp Genesis"
+   }
+  ]
+ },
+ {
+  "sha": "78efcb859e0ce411b1cdd46c00d9b69c7f69b1e3ba4d18764eba1944fa55c0fd",
+  "page": 7,
+  "classification": "annual",
+  "band": "control",
+  "kind": "control",
+  "drafts": [
+   {
+    "metric_value": 77.0,
+    "metric_text": "77 participants trained in Truist Bank program",
+    "metric_type": "participants trained",
+    "source_snippet": "77 participants trained"
+   }
+  ]
+ },
+ {
+  "sha": "495f1ffcdf18f44c0a2a47e53c3db9b3876028dea5f3950abe4b911980d0acd3",
+  "page": 5,
+  "classification": "annual",
+  "band": "control",
+  "kind": "control",
+  "drafts": [
+   {
+    "metric_value": 34.0,
+    "metric_text": "34 residents housed at Palo Duro I & II",
+    "metric_type": "residents housed",
+    "source_snippet": "NSO's Palo Duro I and Palo Duro II provided a home to 34 residents"
+   }
+  ]
+ },
+ {
+  "sha": "06b47850a8654c6b3f0aae50a3b0a028a5a153ebfd188578bac27b370183aa60",
+  "page": 34,
+  "classification": "annual",
+  "band": "control",
+  "kind": "control",
+  "drafts": [
+   {
+    "metric_value": 157.0,
+    "metric_text": "157 people attended Fall Resource Fair",
+    "metric_type": "event attendees",
+    "source_snippet": "157 people in attendance"
+   }
+  ]
+ },
+ {
+  "sha": "75dff0f85d7123051c70b95cdde932529cebd074f26ea69df604fe149b41063e",
+  "page": 8,
+  "classification": "annual",
+  "band": "control",
+  "kind": "control",
+  "drafts": [
+   {
+    "metric_value": 115000.0,
+    "metric_text": "115,000 farm workers and their dependents identified",
+    "metric_type": "farmworkers and dependents identified",
+    "source_snippet": "There were 115,000 farm workers and their dependents identified"
+   }
+  ]
+ },
+ {
+  "sha": "5fe7632e2640fd98ae512e89c99e795911b380cc2c1ef057815ec44372a1b4fb",
+  "page": 3,
+  "classification": "annual",
+  "band": "control",
+  "kind": "control",
+  "drafts": [
+   {
+    "metric_value": 0.0,
+    "metric_text": "Zero Maternal Mortalities among these 104 women",
+    "metric_type": "maternal mortalities",
+    "source_snippet": "Zero Maternal Mortalities among these 104 women"
+   }
+  ]
+ },
+ {
+  "sha": "26713209245519c23220b5eff2fdfbcf5a1c1e43be4c68b27067c11afd958889",
+  "page": 6,
+  "classification": "annual",
+  "band": "control",
+  "kind": "control",
+  "drafts": [
+   {
+    "metric_value": 218.0,
+    "metric_text": "218 children ministered to during 3 summer camps",
+    "metric_type": "children ministered",
+    "source_snippet": "218 children were ministered to during 3 summer camps in Poltava and the Carpathian mountains."
+   }
+  ]
+ },
+ {
+  "sha": "f6e46daa9475f6d685e85374320659de80942ee6e301a102f209a254e7f97465",
+  "page": 13,
+  "classification": "annual",
+  "band": "control",
+  "kind": "control",
+  "drafts": [
+   {
+    "metric_value": 1778.0,
+    "metric_text": "Saint Martha's Hall offered support and information to more than 1,778 hotline callers",
+    "metric_type": "hotline callers supported",
+    "source_snippet": "offered support and information to more than 1,778 hotline callers"
+   }
+  ]
+ },
+ {
+  "sha": "55af457522efaf08158d90369212795f61eae7a592d1ea0fb6e490175867c1e0",
+  "page": 4,
+  "classification": "annual",
+  "band": "control",
+  "kind": "control",
+  "drafts": [
+   {
+    "metric_value": 12790.0,
+    "metric_text": "12,790 households received heating benefits",
+    "metric_type": "households served",
+    "source_snippet": "delivering over $17 MILLION IN HEATING BENEFITS via 58 vendors to 12,790 HOUSEHOLDS"
+   }
+  ]
+ },
+ {
+  "sha": "4e667ef35d3d8105087792090f29da1a1910d49cb088680dec6ee246cca9e288",
+  "page": 1,
+  "classification": "annual",
+  "band": "control",
+  "kind": "control",
+  "drafts": [
+   {
+    "metric_value": 1.0,
+    "metric_text": "Opened a new store in West Ames",
+    "metric_type": "new store opened",
+    "source_snippet": "Opened a new store in West Ames at 4723 Lincoln Way"
+   }
+  ]
+ },
+ {
+  "sha": "c3504dd0cf0037c07809930247e1a218fc11ef58542f13d5ff5077c7b46c1af8",
+  "page": 8,
+  "classification": "annual",
+  "band": "control",
+  "kind": "control",
+  "drafts": [
+   {
+    "metric_value": 227.0,
+    "metric_text": "227 volunteers in elderly nutrition program",
+    "metric_type": "volunteers",
+    "source_snippet": "Warner is one of 227 volunteers in CRt's elderly nutrition program"
+   }
+  ]
+ },
+ {
+  "sha": "9d2d6c3815bc20684f37e123cdd5f90f4326f7c2264c2f6ba90890ea09c6d3b1",
+  "page": 5,
+  "classification": "impact",
+  "band": "control",
+  "kind": "control",
+  "drafts": [
+   {
+    "metric_value": 80.0,
+    "metric_text": "80% of preschoolers successfully achieved core cognitive, communication, personal, social, and motor skills",
+    "metric_type": "preschoolers achieving school readiness skills",
+    "source_snippet": "80% of preschoolers successfully achieved core cognitive, communication, personal, social, and motor skills that are key components for school readiness"
+   }
+  ]
+ },
+ {
+  "sha": "de17dae4b2824e3bc9a77c4aef024780372c387c0686bc49db88aae9f9c1420b",
+  "page": 4,
+  "classification": "annual",
+  "band": "control",
+  "kind": "control",
+  "drafts": [
+   {
+    "metric_value": 61.0,
+    "metric_text": "61 women lived in transitional housing",
+    "metric_type": "women in transitional housing",
+    "source_snippet": "61 women lived in transitional housing"
+   }
+  ]
+ },
+ {
+  "sha": "5f8a6eaab6279891310396b3958f44a53aadfd86e889a23cd122936b9a569aac",
+  "page": 9,
+  "classification": "annual",
+  "band": "control",
+  "kind": "control",
+  "drafts": [
+   {
+    "metric_value": 70000000.0,
+    "metric_text": "70,000,000+ total lbs of food rescued",
+    "metric_type": "food rescued",
+    "source_snippet": "70,000,000+ total lbs of food rescued"
+   }
+  ]
+ },
+ {
+  "sha": "8beb3eb8cbefa115c849489db40c1e9e370134b167c979088e51a0fd6f2a5b82",
+  "page": 7,
+  "classification": "annual",
+  "band": "control",
+  "kind": "control",
+  "drafts": [
+   {
+    "metric_value": 138.0,
+    "metric_text": "138 completers of transitional housing program from FY12-17",
+    "metric_type": "program completers",
+    "source_snippet": "Of the 138 completers, 13 were deceased, 39 were unreachable, and 67 were located and completed the survey for a 49% response rate (67 of 125)."
+   }
+  ]
+ },
+ {
+  "sha": "e80b7d1e13e4d9a98cac0da50b10f803947d8512497e279cd433295f491b4455",
+  "page": 4,
+  "classification": "annual",
+  "band": "control",
+  "kind": "control",
+  "drafts": [
+   {
+    "metric_value": 200.0,
+    "metric_text": "200 household water filters",
+    "metric_type": "household water filters provided",
+    "source_snippet": "Provided 200 household water filters to families who had contaminated water in their homes following Hurricane Maria."
+   }
+  ]
+ },
+ {
+  "sha": "65ad492acd8ac0179e5c2ae078dc918a5a803e3de2e1db43cd4819b43b5ab155",
+  "page": 3,
+  "classification": "annual",
+  "band": "control",
+  "kind": "control",
+  "drafts": [
+   {
+    "metric_value": 123.0,
+    "metric_text": "123 businesses supported through micro business development",
+    "metric_type": "businesses supported through micro business development",
+    "source_snippet": "123"
+   }
+  ]
+ },
+ {
+  "sha": "1a6db554d481d279ed6f56520d1ab12a5186bef4d3c3284700d4615235df602b",
+  "page": 11,
+  "classification": "annual",
+  "band": "control",
+  "kind": "control",
+  "drafts": [
+   {
+    "metric_value": 49000.0,
+    "metric_text": "49,000 nutritional meals prepared and served to children, Head Start, staff and volunteers",
+    "metric_type": "meals served in child care",
+    "source_snippet": "Food Preparation Specialists prepared and served 49,000 nutritional meals to the children from the Child Care Center, Head Start program, staff and volunteers."
+   }
+  ]
+ },
+ {
+  "sha": "2f6619396337dd368bb3abbd5059edb2c9705a919816f7c24862e7523ade6770",
+  "page": 23,
+  "classification": "annual",
+  "band": "control",
+  "kind": "control",
+  "drafts": [
+   {
+    "metric_value": 278.0,
+    "metric_text": "Children Receiving Early Intervention Services: 278",
+    "metric_type": "children receiving early intervention",
+    "source_snippet": "Children Receiving Early Intervention Services, 1 = 278."
+   }
+  ]
+ }
+]

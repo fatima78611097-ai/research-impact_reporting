@@ -1,0 +1,15 @@
+{
+ "check": "item1-nonmetric-rules",
+ "flagged": [
+  "0cca730e:8",
+  "d58e3d5b:14"
+ ],
+ "by": {
+  "d58e3d5b:14": [
+   "episode-duration"
+  ],
+  "0cca730e:8": [
+   "episode-duration"
+  ]
+ }
+}

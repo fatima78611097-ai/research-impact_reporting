@@ -1,0 +1,113 @@
+[
+ {
+  "id": "1a70e980:0",
+  "sha8": "1a70e980",
+  "value_parsed": 6,
+  "label": "Kids in foster family programs",
+  "img": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/1a70e980_0.png",
+  "figs_per_page": 2.8,
+  "v_page": 1,
+  "statement": "In 2025, Skookum Kids cared for over 6 kids through its foster family programs.",
+  "true_value_KNOWN": 56
+ },
+ {
+  "id": "2ec17b37:0",
+  "sha8": "2ec17b37",
+  "value_parsed": 5000,
+  "label": "People served in 2025",
+  "img": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/2ec17b37_0.png",
+  "figs_per_page": 19.0,
+  "v_page": 2,
+  "statement": "In 2025, people turned to AVA for help."
+ },
+ {
+  "id": "9d9ae097:0",
+  "sha8": "9d9ae097",
+  "value_parsed": 820857,
+  "label": "Total spending on services",
+  "img": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/9d9ae097_0.png",
+  "figs_per_page": 15.5,
+  "v_page": 1,
+  "statement": "Irving Cares spent $820,857 on services including rent, utilities, food, and edu"
+ },
+ {
+  "id": "c6d70581:0",
+  "sha8": "c6d70581",
+  "value_parsed": 16825965,
+  "label": "Pounds of food distributed",
+  "img": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/c6d70581_0.png",
+  "figs_per_page": 15.0,
+  "v_page": 2,
+  "statement": "The organization distributed 16,825,965 pounds of food across a seven-county are"
+ },
+ {
+  "id": "ec055971:0",
+  "sha8": "ec055971",
+  "value_parsed": 6670,
+  "label": "Total people served",
+  "img": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/ec055971_0.png",
+  "figs_per_page": 14.0,
+  "v_page": 1,
+  "statement": "Ada S. McKinley served 6,670 people across its programs."
+ },
+ {
+  "id": "28bb72ee:0",
+  "sha8": "28bb72ee",
+  "value_parsed": 45,
+  "label": "Return on investment",
+  "img": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/28bb72ee_0.png",
+  "figs_per_page": 13.0,
+  "v_page": 1,
+  "statement": "The total state investment in the EITC program yields a return of $45 for every "
+ },
+ {
+  "id": "b42e6f95:0",
+  "sha8": "b42e6f95",
+  "value_parsed": 7806,
+  "label": "Total people impacted",
+  "img": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/b42e6f95_0.png",
+  "figs_per_page": 12.0,
+  "v_page": 1,
+  "statement": "Calm Waters impacted 7,806 people in fiscal year 2025."
+ },
+ {
+  "id": "011c1177:0",
+  "sha8": "011c1177",
+  "value_parsed": null,
+  "label": "Mission and services",
+  "img": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/011c1177_0.png",
+  "figs_per_page": 12.0,
+  "v_page": 1,
+  "statement": "Dreams With Wings served children and adults with intellectual and developmental"
+ },
+ {
+  "id": "a79f5931:0",
+  "sha8": "a79f5931",
+  "value_parsed": 915907,
+  "label": "Pounds of food distributed",
+  "img": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/a79f5931_0.png",
+  "figs_per_page": 11.0,
+  "v_page": 1,
+  "statement": "THRIVE distributed 915,907 pounds of food to the community."
+ },
+ {
+  "id": "93774f84:0",
+  "sha8": "93774f84",
+  "value_parsed": 34,
+  "label": "Counties served",
+  "img": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/93774f84_0.png",
+  "figs_per_page": 10.0,
+  "v_page": 1,
+  "statement": "FACT Oregon served families across 34 of Oregon's 36 counties."
+ },
+ {
+  "id": "149d2e8e:0",
+  "sha8": "149d2e8e",
+  "value_parsed": 1446,
+  "label": "Total people served",
+  "img": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/149d2e8e_0.png",
+  "figs_per_page": 10.0,
+  "v_page": 1,
+  "statement": "Unleashing Potential served 1,015 youth and 431 family members in 2024."
+ }
+]

@@ -1,0 +1,2172 @@
+[
+ {
+  "sha": "011c1177b9369cb8725b728a1c99e59ad3301eab28881f6caba043e8c0f1a8ac",
+  "title": "Independent living with support",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage identifies a specific beneficiary (the son), describes a concrete change (independent living with support, growth in confidence, safety, and pride), and presents it as a true current state."
+ },
+ {
+  "sha": "011c1177b9369cb8725b728a1c99e59ad3301eab28881f6caba043e8c0f1a8ac",
+  "title": "Safer and more independent",
+  "stage1_confidence": "high",
+  "stage2_verdict": "testimonial",
+  "stage2_reason": "passage is a quote expressing sentiment without a concrete intervention or observable change"
+ },
+ {
+  "sha": "011c1177b9369cb8725b728a1c99e59ad3301eab28881f6caba043e8c0f1a8ac",
+  "title": "Son happy and safe daily",
+  "stage1_confidence": "high",
+  "stage2_verdict": "testimonial",
+  "stage2_reason": "The passage is a quote expressing sentiment and peace of mind, but lacks a concrete, observable change or specific intervention tied to the beneficiary."
+ },
+ {
+  "sha": "029625c61ba3fe38783ba67241a9b415b477192a21e75b5e153af8fc35a6965d",
+  "title": "Wheelchair ramp restores independence",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Specific beneficiary Ms. C, concrete change from being stuck to freely coming and going via a wheelchair ramp built by Healthy Homes."
+ },
+ {
+  "sha": "029625c61ba3fe38783ba67241a9b415b477192a21e75b5e153af8fc35a6965d",
+  "title": "Weatherization provides comfort and savings",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Specific beneficiary Ms. Wigfall and her family, concrete change from broken AC to new insulation/AC/furnace/weather stripping resulting in comfort."
+ },
+ {
+  "sha": "0405ab89d0aa1694545aa1f45e7ad829d4045f350ff7c427fb2787188e16d822",
+  "title": "Corinne Schioppo uses new golf simulator",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Specific beneficiary Corinne Schioppo, observable change of being able to play golf anytime and avoid winter rust, with concrete details."
+ },
+ {
+  "sha": "0405ab89d0aa1694545aa1f45e7ad829d4045f350ff7c427fb2787188e16d822",
+  "title": "Guongyue King learns pool from MacNeill",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Identifies specific beneficiary Guongyue King, describes a concrete change from never playing pool to learning, playing tournaments, and making friends."
+ },
+ {
+  "sha": "040633b7a34f1db50e6c174dcacf1d3f2b8d62ea847b5d994f3c17aa8be6c912",
+  "title": "Clarkson family keeps child in care",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage identifies a specific family (Debbie, Chris, and Everett Clarkson) and describes a concrete change: Everett continued at the Learning Center and parents kept working after losing scholarship funds."
+ },
+ {
+  "sha": "0455b54f83b9898543204415859a6c2f832835d005a36cce24e16acfd129c841",
+  "title": "Geomaly and daughter find forever home",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Names specific beneficiaries (Geomaly and Arahileen), describes a concrete change from living in a closet to a forever home with thriving childcare and career pursuit."
+ },
+ {
+  "sha": "072b705afccc4ee981685b4b88cb16611da69ce7aa76a3280752b165637c2bed",
+  "title": "Desiree's transformation at Rising Oaks",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Desiree is a specific beneficiary, and the passage describes a concrete change: she is completing cosmetology training and becoming more confident as a parent."
+ },
+ {
+  "sha": "072b705afccc4ee981685b4b88cb16611da69ce7aa76a3280752b165637c2bed",
+  "title": "Greg's progress through Avalon and Rising Oaks",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Greg is a specific beneficiary, and the passage describes concrete changes: graduating, learning verbal skills, securing a job, and moving to housing."
+ },
+ {
+  "sha": "0c2bea9fb771d17a186bdc325c272a71c3acf077e4ea4e20a97951acc83ab34d",
+  "title": "Sentimental Journeys family trips",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "primary beneficiary is a population category ('patients and their families'), not a specific identifiable person or group"
+ },
+ {
+  "sha": "10c67887e3fc2d59b29817fbf84580492ccc780086d49313c8367f476186f9d4",
+  "title": "Deonate's lasting family connection",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Specific beneficiary Deonate Cruz describes an ongoing, concrete change: maintaining a strong family-like relationship and regular dinners with Hub Home parents after exiting care."
+ },
+ {
+  "sha": "128de60763931f1506f346f7b11b314b86b03f7a0ad6d86cee39e06c5995b96d",
+  "title": "Emma's story of pandemic hardship",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "(full-text re-judge) Emma is a specific single mom; she was called back to work and is striving to get back on her feet, an observable change from being laid off and needing help."
+ },
+ {
+  "sha": "128de60763931f1506f346f7b11b314b86b03f7a0ad6d86cee39e06c5995b96d",
+  "title": "Michelle lives at Seton House",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "The passage describes routine housing provision without a specific change or episode for Michelle."
+ },
+ {
+  "sha": "131309e30ccd4041e157bc295a92e816ab536ca35a18672fddaba53536d25a78",
+  "title": "Greg's final days with CSS care",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Greg is a specific beneficiary, and the change is the 24/7 compassionate care that made his final days peaceful."
+ },
+ {
+  "sha": "18bb8c0fcdfff314874c259fb070ed95736e46dba648ceb6746e350e3461c7c5",
+  "title": "Amanda works as kennel tech",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Amanda is a specific beneficiary, and the passage describes a concrete change: she is now successfully employed as a kennel tech."
+ },
+ {
+  "sha": "18bb8c0fcdfff314874c259fb070ed95736e46dba648ceb6746e350e3461c7c5",
+  "title": "Scott lands better-paying job",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Specific beneficiary Scott, concrete change of landing a better job with improved income and hours"
+ },
+ {
+  "sha": "18bb8c0fcdfff314874c259fb070ed95736e46dba648ceb6746e350e3461c7c5",
+  "title": "David gains vision tools and hope",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "David is a specific beneficiary who gained concrete vision tools and training, resulting in a changed state of hope and support."
+ },
+ {
+  "sha": "1a70e980f93fc611db1239352afb06c42daf2b3eecdcd1686ba194274837883c",
+  "title": "Foster family completes guardianship journey",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage describes a specific foster family that completed guardianship, a concrete change for that identifiable beneficiary."
+ },
+ {
+  "sha": "1a70e980f93fc611db1239352afb06c42daf2b3eecdcd1686ba194274837883c",
+  "title": "New foster family supports high-needs newborn",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage describes a specific newborn beneficiary, a concrete change (family licensed, welcomed child, managed appointments, maintained connection), and is not a count or routine delivery."
+ },
+ {
+  "sha": "1b29d1a064dc3e6499aa076579d8ed1faee882c886e64181a1dc5a9c156fc31f",
+  "title": "Resident finds community and purpose at Hilltop",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage features a specific, unnamed resident as the beneficiary, describes a concrete change from stable housing to community, pets, creative space, and improved quality of life, and is presented as a true current state."
+ },
+ {
+  "sha": "1b29d1a064dc3e6499aa076579d8ed1faee882c886e64181a1dc5a9c156fc31f",
+  "title": "Resident disposes of hard-to-recycle items",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage features a specific unnamed resident who disposed of a dozen bulky items through a recycling event, showing a concrete change from having hard-to-recycle clutter to successfully recycling them."
+ },
+ {
+  "sha": "1b29d1a064dc3e6499aa076579d8ed1faee882c886e64181a1dc5a9c156fc31f",
+  "title": "HIPPY participant learns and strengthens skills",
+  "stage1_confidence": "high",
+  "stage2_verdict": "testimonial",
+  "stage2_reason": "The passage is a quote expressing praise and sentiment without a concrete, observable change for a specific beneficiary."
+ },
+ {
+  "sha": "1b29d1a064dc3e6499aa076579d8ed1faee882c886e64181a1dc5a9c156fc31f",
+  "title": "BHP is a lifeline for low-income seniors",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "testimonial",
+  "stage2_reason": "The passage is a quote expressing sentiment and praise without a concrete, observable change for a specific beneficiary."
+ },
+ {
+  "sha": "1b29d1a064dc3e6499aa076579d8ed1faee882c886e64181a1dc5a9c156fc31f",
+  "title": "Hilltop provides stability for seniors",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "Beneficiary is a population category (senior residents) not a specific person or group, and change is a program-level outcome."
+ },
+ {
+  "sha": "1b29d1a064dc3e6499aa076579d8ed1faee882c886e64181a1dc5a9c156fc31f",
+  "title": "Golden West Tower North updated for independence",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "primary beneficiary is a population category ('senior residents') not a specific individual or group"
+ },
+ {
+  "sha": "1b29d1a064dc3e6499aa076579d8ed1faee882c886e64181a1dc5a9c156fc31f",
+  "title": "Rally Flats provides homes for homeless",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "The beneficiary is a population category ('individuals and families facing homelessness'), not a specific person or group, and the change is an aggregate count of apartments."
+ },
+ {
+  "sha": "1b29d1a064dc3e6499aa076579d8ed1faee882c886e64181a1dc5a9c156fc31f",
+  "title": "Hawthorn Court offers stability for families",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "central beneficiary is a population category ('families exiting homelessness'), not a specific identifiable person, family, or group"
+ },
+ {
+  "sha": "1b29d1a064dc3e6499aa076579d8ed1faee882c886e64181a1dc5a9c156fc31f",
+  "title": "Iris Bistro serves meals to seniors",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "The central beneficiary is a group (senior residents at Golden West), not a specific individual, and the change is routine service delivery (serving over 60 meals daily)."
+ },
+ {
+  "sha": "1b29d1a064dc3e6499aa076579d8ed1faee882c886e64181a1dc5a9c156fc31f",
+  "title": "Iris Bistro addresses food insecurity and isolation",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "Beneficiary is a population category ('senior residents'), not a specific person or group"
+ },
+ {
+  "sha": "1b29d1a064dc3e6499aa076579d8ed1faee882c886e64181a1dc5a9c156fc31f",
+  "title": "Emergency response strengthened for resident safety",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "reject",
+  "stage2_reason": "central beneficiary is a population category ('residents of BHP communities'), not a specific identifiable person, family, group, or place"
+ },
+ {
+  "sha": "1b29d1a064dc3e6499aa076579d8ed1faee882c886e64181a1dc5a9c156fc31f",
+  "title": "HIPPY program improves school readiness",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "reject",
+  "stage2_reason": "describes a program launch and its components, not a specific beneficiary with an observed change"
+ },
+ {
+  "sha": "1c0ad786b5a2542841ba901b45564dd3bf0462e50a270ae23d9800181f06c097",
+  "title": "Amanda's Wraparound Program success",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Amanda is a specific beneficiary; the passage describes a concrete change from severe anxiety and school absence to emotional stability, school attendance, and case closure."
+ },
+ {
+  "sha": "1c0ad786b5a2542841ba901b45564dd3bf0462e50a270ae23d9800181f06c097",
+  "title": "Robert's release and new career",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Robert is a specific beneficiary; the change is his release, employment, and reintegration as a productive community member."
+ },
+ {
+  "sha": "2995644abfc6d9b11a4989cab65f1720a2088bfd79ff6d51fe1f097bb76cb068",
+  "title": "Reiki sessions help residents feel grounded",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "Primary beneficiary is a group ('Crosslands residents'), not a specific identifiable person."
+ },
+ {
+  "sha": "2995644abfc6d9b11a4989cab65f1720a2088bfd79ff6d51fe1f097bb76cb068",
+  "title": "Home Care helps residents transition safely",
+  "stage1_confidence": "high",
+  "stage2_verdict": "reject",
+  "stage2_reason": "central beneficiary is a population category ('Residents returning from hospital or rehab'), not a specific identifiable person, family, group, community, or place"
+ },
+ {
+  "sha": "2995644abfc6d9b11a4989cab65f1720a2088bfd79ff6d51fe1f097bb76cb068",
+  "title": "Floyd's caricatures bring joy to residents",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "Beneficiary is a group ('residents'), not a specific identifiable person"
+ },
+ {
+  "sha": "2995644abfc6d9b11a4989cab65f1720a2088bfd79ff6d51fe1f097bb76cb068",
+  "title": "Joe Deckman's mother lives in community",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "testimonial",
+  "stage2_reason": "The passage focuses on the emotional bond and personal sentiment between Joe and Laura, lacking a concrete, observable change in Laura's situation beyond routine daily visits."
+ },
+ {
+  "sha": "2995644abfc6d9b11a4989cab65f1720a2088bfd79ff6d51fe1f097bb76cb068",
+  "title": "Composting pilot collects 250 pounds daily",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "Beneficiary is a broad category (environment/public gardens) not a specific person, family, group, community, or place"
+ },
+ {
+  "sha": "2995644abfc6d9b11a4989cab65f1720a2088bfd79ff6d51fe1f097bb76cb068",
+  "title": "Coniston residents feel relaxed and accepted",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "testimonial",
+  "stage2_reason": "The beneficiary is a group ('Coniston residents'), not a specific individual, and the change is subjective sentiment without a concrete observable state change."
+ },
+ {
+  "sha": "2995644abfc6d9b11a4989cab65f1720a2088bfd79ff6d51fe1f097bb76cb068",
+  "title": "Sweet Potato Fries music transforms afternoons",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "testimonial",
+  "stage2_reason": "The passage describes a general uplifting atmosphere and emotional sentiment without a specific, identifiable beneficiary or a concrete observable change for a particular person."
+ },
+ {
+  "sha": "2995644abfc6d9b11a4989cab65f1720a2088bfd79ff6d51fe1f097bb76cb068",
+  "title": "Historical research deepens residents' belonging",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Specific beneficiaries (Mark Knight, John Milner, and neighbors) experienced a concrete change: deeper rootedness and belonging from historical research."
+ },
+ {
+  "sha": "2995644abfc6d9b11a4989cab65f1720a2088bfd79ff6d51fe1f097bb76cb068",
+  "title": "38 Personal Care residents move into renovated spaces",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "primary beneficiary is a count (38 residents), not a specific identifiable person or group"
+ },
+ {
+  "sha": "2995644abfc6d9b11a4989cab65f1720a2088bfd79ff6d51fe1f097bb76cb068",
+  "title": "13 Crosslands households receive fee assistance",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "beneficiary is a count of households, not a specific identifiable entity"
+ },
+ {
+  "sha": "2995644abfc6d9b11a4989cab65f1720a2088bfd79ff6d51fe1f097bb76cb068",
+  "title": "7 Kendal households receive fee assistance",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "beneficiary is a count of households, not a specific identifiable person or group"
+ },
+ {
+  "sha": "2995644abfc6d9b11a4989cab65f1720a2088bfd79ff6d51fe1f097bb76cb068",
+  "title": "13 staff receive emergency financial assistance",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "beneficiary is a count of staff members, not a specific identifiable person or group"
+ },
+ {
+  "sha": "2995644abfc6d9b11a4989cab65f1720a2088bfd79ff6d51fe1f097bb76cb068",
+  "title": "11 staff receive child development assistance",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "primary beneficiary is a count of staff members, not a specific identifiable person"
+ },
+ {
+  "sha": "2995644abfc6d9b11a4989cab65f1720a2088bfd79ff6d51fe1f097bb76cb068",
+  "title": "5 staff members receive scholarships/employment",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "central beneficiary is a count of staff members, not a specific identifiable person"
+ },
+ {
+  "sha": "2995644abfc6d9b11a4989cab65f1720a2088bfd79ff6d51fe1f097bb76cb068",
+  "title": "3 staff receive professional development funds",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "primary beneficiary is a count of staff members, not a specific identifiable person"
+ },
+ {
+  "sha": "2cf7c1e8c73c386a53def1ba6d3f8cc3a9187c92b78333ae027a95f248b8974f",
+  "title": "Joaqu\u00edn's increased self-esteem and independence",
+  "stage1_confidence": "high",
+  "stage2_verdict": "testimonial",
+  "stage2_reason": "The passage is a quote from Joaqu\u00edn's mother expressing gratitude and sentiment about his improved well-being, but lacks a concrete, observable change or specific intervention details."
+ },
+ {
+  "sha": "2ea6005fa39102e65581b9a0c548fd49f6414c22a9124b90ebd034563f71194d",
+  "title": "Three janitors at TPS Complex",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Three named janitors are specific beneficiaries, and the passage describes their concrete change: they are employed, earning money, saving, and feeling good about themselves."
+ },
+ {
+  "sha": "2ea6005fa39102e65581b9a0c548fd49f6414c22a9124b90ebd034563f71194d",
+  "title": "Jerremy transitions to community employment",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Jerremy is a specific beneficiary, and the passage describes a concrete change: he secured and maintained community employment for over six months, with observable outcomes."
+ },
+ {
+  "sha": "2ea6005fa39102e65581b9a0c548fd49f6414c22a9124b90ebd034563f71194d",
+  "title": "James recognized and awarded",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "James is a specific beneficiary, and the passage describes a concrete change in his behavior (increased attentiveness, helping a coworker, calling a name) that led to a Shining Star award."
+ },
+ {
+  "sha": "2ea6005fa39102e65581b9a0c548fd49f6414c22a9124b90ebd034563f71194d",
+  "title": "Lead attendant offered position",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Specific beneficiary (unnamed employee) experiences a concrete change (offered lead attendant position, causing emotional response)."
+ },
+ {
+  "sha": "30a05d187c9b94ca96c0a91453468cf70ece31424211098089f2b3a40285bba1",
+  "title": "Client finds help at Freda Mohr",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "testimonial",
+  "stage2_reason": "passage is a quote expressing gratitude and sentiment without a concrete, observable change for a specific beneficiary"
+ },
+ {
+  "sha": "35494eab7418b7d2ccb34ae269ebbac8a5fe74a537f208a4cbb420dc23dad569",
+  "title": "Pregnant newcomer receives medical care",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage features a specific beneficiary (a pregnant newcomer), a concrete change (gave birth to a healthy baby and is taking ESL classes), and the intervention (TFCLF staff found support) is clear."
+ },
+ {
+  "sha": "36941d4078e7e3c5a6c47d27c6458f71638ef7390f770430b2f8853f432513a4",
+  "title": "Connor, Grace, Katrina explore new arts",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Names specific beneficiaries (Connor, Grace, Katrina) and describes concrete changes in their artistic skills."
+ },
+ {
+  "sha": "36941d4078e7e3c5a6c47d27c6458f71638ef7390f770430b2f8853f432513a4",
+  "title": "John sells paintings through CATA",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "John is a specific beneficiary, sold paintings is a concrete change, and the passage provides beneficiary, intervention, and outcome."
+ },
+ {
+  "sha": "36941d4078e7e3c5a6c47d27c6458f71638ef7390f770430b2f8853f432513a4",
+  "title": "Scott performs Shakespeare lines",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Scott is a specific beneficiary, and the passage describes a concrete change: he delivered lines and received applause."
+ },
+ {
+  "sha": "36941d4078e7e3c5a6c47d27c6458f71638ef7390f770430b2f8853f432513a4",
+  "title": "Nursing home resident recalls memory",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage identifies a specific beneficiary (a resident at a local nursing home) and describes a concrete change (recalling a childhood memory and having a song improvised based on it)."
+ },
+ {
+  "sha": "36941d4078e7e3c5a6c47d27c6458f71638ef7390f770430b2f8853f432513a4",
+  "title": "Students practice yoga in school",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "Beneficiary is a group ('CATA artists in a local elementary school'), not a specific identifiable person, family, or community."
+ },
+ {
+  "sha": "36941d4078e7e3c5a6c47d27c6458f71638ef7390f770430b2f8853f432513a4",
+  "title": "Kambree keeps beat on drum",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Kambree is a specific beneficiary, and the passage describes an observable change in her ability to keep a steady beat on the drum."
+ },
+ {
+  "sha": "36941d4078e7e3c5a6c47d27c6458f71638ef7390f770430b2f8853f432513a4",
+  "title": "Jeri strengthens coordination through dance",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Jeri is a specific beneficiary, and the passage describes an observable change in her coordination and muscle memory through dance."
+ },
+ {
+  "sha": "370cd02175ca98ac5a1edc9d2fad7e8df4153da9eab0389638b95a68aadbe5e8",
+  "title": "Shelly helps man find residence",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage describes a specific beneficiary (a gentleman who works in the building), a concrete intervention (phone calls, paperwork, site visits), and a clear change (obtained a better home)."
+ },
+ {
+  "sha": "370cd02175ca98ac5a1edc9d2fad7e8df4153da9eab0389638b95a68aadbe5e8",
+  "title": "Young woman starts paper shredding business",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage names a specific young woman on the autism spectrum, describes a concrete change (starting a mobile paper shredding service, gaining 10 clients, increasing income), and the quote provides beneficiary, intervention, and change."
+ },
+ {
+  "sha": "370cd02175ca98ac5a1edc9d2fad7e8df4153da9eab0389638b95a68aadbe5e8",
+  "title": "Young man starts dog grooming service",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "The beneficiary is a generic 'young man' category, not a specific named individual or identifiable person."
+ },
+ {
+  "sha": "370cd02175ca98ac5a1edc9d2fad7e8df4153da9eab0389638b95a68aadbe5e8",
+  "title": "Young woman gets oven for bakery",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage names a specific young woman who used creative funding to acquire an oven, creating a sustainable job and boosting bakery capacity, which is a concrete change for an identifiable beneficiary."
+ },
+ {
+  "sha": "370cd02175ca98ac5a1edc9d2fad7e8df4153da9eab0389638b95a68aadbe5e8",
+  "title": "Shelly helps older man get housing",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "specific beneficiary (an older gentleman), concrete change (secured affordable senior housing)"
+ },
+ {
+  "sha": "370cd02175ca98ac5a1edc9d2fad7e8df4153da9eab0389638b95a68aadbe5e8",
+  "title": "Ester DuRante joins NCIL board",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Ester DuRante is a specific beneficiary; the change is her progression from mentee to NCIL board member, an observable leadership outcome."
+ },
+ {
+  "sha": "370cd02175ca98ac5a1edc9d2fad7e8df4153da9eab0389638b95a68aadbe5e8",
+  "title": "Home Access Program funding increased",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "reject",
+  "stage2_reason": "central beneficiary is a population category ('individuals with disabilities in Georgia'), not a specific identifiable person, family, group, community, or place"
+ },
+ {
+  "sha": "38c9a81d70c1e0f1858e21d6a6897ab07bdcbc9e639157a13e08d3487e81fca9",
+  "title": "Guidance on buying a house",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Specific beneficiary (participant), concrete change (closing on a house after guidance on budgeting and costs)."
+ },
+ {
+  "sha": "38c9a81d70c1e0f1858e21d6a6897ab07bdcbc9e639157a13e08d3487e81fca9",
+  "title": "Registering a business",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Specific beneficiary (participant), concrete change (registering business on May 10th after coach resources)."
+ },
+ {
+  "sha": "38c9a81d70c1e0f1858e21d6a6897ab07bdcbc9e639157a13e08d3487e81fca9",
+  "title": "Reduced stress and saved money",
+  "stage1_confidence": "high",
+  "stage2_verdict": "testimonial",
+  "stage2_reason": "The passage is a quote expressing sentiment and personal praise without a specific, observable change for an identifiable beneficiary."
+ },
+ {
+  "sha": "38c9a81d70c1e0f1858e21d6a6897ab07bdcbc9e639157a13e08d3487e81fca9",
+  "title": "Paid debt and boosted credit",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Specific beneficiary (a participant), concrete change (debt paid, credit score boosted, savings achieved) as a true past event."
+ },
+ {
+  "sha": "38c9a81d70c1e0f1858e21d6a6897ab07bdcbc9e639157a13e08d3487e81fca9",
+  "title": "Learned financial skills",
+  "stage1_confidence": "high",
+  "stage2_verdict": "testimonial",
+  "stage2_reason": "passage is a quote expressing personal sentiment and learned skills without a concrete observable change or specific beneficiary identity"
+ },
+ {
+  "sha": "3c185ba6396b8f1a677e6f8edc6d01f6223e7be3d42460a1913951e209a63e51",
+  "title": "Rob Walter expands routines and choices",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Rob Walter is a specific beneficiary, and the passage describes a concrete change from a rigid routine to expanded choices and community engagement."
+ },
+ {
+  "sha": "3c185ba6396b8f1a677e6f8edc6d01f6223e7be3d42460a1913951e209a63e51",
+  "title": "Jared Sizemore finds his voice",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Jared Sizemore is a specific beneficiary, and the passage describes a concrete change in his behavior and engagement."
+ },
+ {
+  "sha": "3c185ba6396b8f1a677e6f8edc6d01f6223e7be3d42460a1913951e209a63e51",
+  "title": "Junior Beanblossom improves diabetes and flies",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Specific beneficiary Junior Beanblossom shows observable health and personal changes from the intervention."
+ },
+ {
+  "sha": "3c185ba6396b8f1a677e6f8edc6d01f6223e7be3d42460a1913951e209a63e51",
+  "title": "Larry Miller adjusts to group home",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Larry Miller is a specific beneficiary, and the passage describes a clear positive change in his behavior and well-being after moving to the group home."
+ },
+ {
+  "sha": "3e3ff326cdf03e70b1b18eddb4d1bd01318ffdb894088bf3f18a488487fead04",
+  "title": "MMT cohort self-efficacy gains",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "central beneficiary is a cohort group, not a specific identifiable person"
+ },
+ {
+  "sha": "3e3ff326cdf03e70b1b18eddb4d1bd01318ffdb894088bf3f18a488487fead04",
+  "title": "Cash disbursements for water crisis",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "beneficiary is a population category ('all families'), not a specific identifiable entity"
+ },
+ {
+  "sha": "4ec0d3425b3c7958acf18b47d781d5768fcbc91df722b8b613c18185635fa404",
+  "title": "Eight clients gain community employment",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "primary beneficiary is a count ('eight clients'), not a specific identifiable person or group"
+ },
+ {
+  "sha": "519266c282e2251ac3654e204b51e6946c4d77d3532971f8735348811998ed92",
+  "title": "Mary regains independence with magnifier",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Mary is a specific beneficiary, and the passage describes a concrete change: she can now read important communications and is learning to become more mobile safely and independently."
+ },
+ {
+  "sha": "519266c282e2251ac3654e204b51e6946c4d77d3532971f8735348811998ed92",
+  "title": "Mike transitions from nursing home to apartment",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Specific beneficiary Mike, a stroke survivor, moved from a nursing home to his own apartment and is getting a specialized bicycle, showing a clear observable change."
+ },
+ {
+  "sha": "566885143af9bbb23ee28b8584a5d27e8af7f7bfa627b1404757dd24eed31667",
+  "title": "Dennis transitions from nursing home to home",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Dennis is a specific beneficiary, and the passage describes a concrete change: he moved from a nursing home to his own apartment with in-home care services."
+ },
+ {
+  "sha": "566885143af9bbb23ee28b8584a5d27e8af7f7bfa627b1404757dd24eed31667",
+  "title": "John and Rowena transition from nursing home",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage describes a specific couple (John and Rowena) who transitioned from a nursing home to an apartment with in-home care, a concrete change in their living situation and independence."
+ },
+ {
+  "sha": "566885143af9bbb23ee28b8584a5d27e8af7f7bfa627b1404757dd24eed31667",
+  "title": "Dolores receives in-home help after stroke",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Dolores is a specific beneficiary; the change is receiving homemaking help and transportation to visit her mother, allowing her to remain in her apartment."
+ },
+ {
+  "sha": "566885143af9bbb23ee28b8584a5d27e8af7f7bfa627b1404757dd24eed31667",
+  "title": "Jack avoids hospital readmission with coaching",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Jack is a specific beneficiary, and the passage describes a concrete change: he avoided hospital readmission through coaching, wound care, and diabetes management."
+ },
+ {
+  "sha": "5b8eae73ee84e00620f660eddce653bec55cf1874b0b24b16e51f359f3b3f2a1",
+  "title": "Family finds peace at Celia's House",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage describes a specific family and their father, details an observable change (father feeling warmth and small joys, family finding peace), and includes a concrete intervention (caregivers providing medical care, flowers, music, hand-holding)."
+ },
+ {
+  "sha": "5b8eae73ee84e00620f660eddce653bec55cf1874b0b24b16e51f359f3b3f2a1",
+  "title": "Helene's final days at Celia's House",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Helene is a specific beneficiary, and the change is her being embraced by caregivers and considering her time at Celia's House among her best days while dying."
+ },
+ {
+  "sha": "5b8eae73ee84e00620f660eddce653bec55cf1874b0b24b16e51f359f3b3f2a1",
+  "title": "Family member's son cared for",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Specific beneficiary (S.'s son), concrete change (staff dressed him in favorite pajamas at death), and clear intervention from the hospice."
+ },
+ {
+  "sha": "5b8eae73ee84e00620f660eddce653bec55cf1874b0b24b16e51f359f3b3f2a1",
+  "title": "Resident rediscovers beauty of world",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage identifies a specific resident who withdrew, describes a concrete change (interacting, commenting on beauty, sharper mind) from outdoor stimulation, and meets all tests."
+ },
+ {
+  "sha": "5b8eae73ee84e00620f660eddce653bec55cf1874b0b24b16e51f359f3b3f2a1",
+  "title": "Resistant resident calmed by volunteer",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage describes a specific beneficiary (a new resident who resisted medications), a concrete change (became calm, opened eyes, felt understood), and the intervention (volunteer reading and singing)."
+ },
+ {
+  "sha": "5b98b66f86929b98d10618e35c9758e2509a7e2245f06eda5293a9ea9516485b",
+  "title": "Cassidy's journey from teen pregnancy to teacher",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Specific beneficiary Cassidy with a clear change from teen pregnancy to stable housing and becoming a Head Start teacher."
+ },
+ {
+  "sha": "5b98b66f86929b98d10618e35c9758e2509a7e2245f06eda5293a9ea9516485b",
+  "title": "Terrance's culinary training and new career",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Terrance is a specific beneficiary, and the passage describes a concrete change: he was hired as a banquet cook and enrolled in community college after completing culinary training."
+ },
+ {
+  "sha": "5b98b66f86929b98d10618e35c9758e2509a7e2245f06eda5293a9ea9516485b",
+  "title": "Delbert's weatherization savings",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Delbert is a specific beneficiary, and the passage describes a concrete change: his home was weatherized, leading to expected fuel savings of about half."
+ },
+ {
+  "sha": "5cfbbca2d292dc0e3163aa0ddb615fa3848a637d8dca9a1887229dd5301b095b",
+  "title": "Young woman fleeing abuse finds safe haven",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "testimonial",
+  "stage2_reason": "The passage is a personal reflection from a board president about a chance meeting, lacking a concrete, observable change for the beneficiary beyond her gratitude."
+ },
+ {
+  "sha": "5d03563c5beafda811603a9258795452d9feb4fc0dc535ffd57d72091cf1f071",
+  "title": "Peer mentorship would have helped",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "testimonial",
+  "stage2_reason": "The passage is a quote expressing a hypothetical wish for past support, not a report of an actual change that occurred."
+ },
+ {
+  "sha": "5d03563c5beafda811603a9258795452d9feb4fc0dc535ffd57d72091cf1f071",
+  "title": "Parent views lab results via tablet",
+  "stage1_confidence": "high",
+  "stage2_verdict": "testimonial",
+  "stage2_reason": "passage is a quote expressing praise and sentiment without a concrete observable change beyond routine tablet use"
+ },
+ {
+  "sha": "5d03563c5beafda811603a9258795452d9feb4fc0dc535ffd57d72091cf1f071",
+  "title": "Most connected in 12 years",
+  "stage1_confidence": "high",
+  "stage2_verdict": "testimonial",
+  "stage2_reason": "passage is a quote expressing sentiment and praise without a concrete, observable change in the beneficiary's situation beyond feeling more connected"
+ },
+ {
+  "sha": "5f0a0f547d84410e1cefb0f11a5eb6d378ffc11128cfdfbd236157d05e8e793d",
+  "title": "Single dad moves into new home",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage identifies a specific single dad and his family as beneficiaries, describes a concrete change (moving into a new home), and presents it as a true past event."
+ },
+ {
+  "sha": "5f0a0f547d84410e1cefb0f11a5eb6d378ffc11128cfdfbd236157d05e8e793d",
+  "title": "Teenager gets bike for school",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Identifies a specific teenager, describes a concrete change (reliable transport and freedom to be a kid), and includes a specific episode (riding in the rain with a grin)."
+ },
+ {
+  "sha": "5f0a0f547d84410e1cefb0f11a5eb6d378ffc11128cfdfbd236157d05e8e793d",
+  "title": "Teenager gets football cleats",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Specific beneficiary (a teenager), clear change from sideline to playing football due to scholarship fund."
+ },
+ {
+  "sha": "64670634466868b7ad2a8cfc84b36ef2a56966056d2351b7040692dbd2fa72d6",
+  "title": "Family heals after traumatic loss",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage describes a specific family's trauma symptoms resolving and improved communication after attending camp programs, showing a clear change for a specific beneficiary."
+ },
+ {
+  "sha": "65c918ec05295bde40746c8241fc239dc79409fe1bc239b7f1943c9fd1466be8",
+  "title": "Luna learns to manage emotions",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Luna is a specific named child, the passage describes a clear change from explosive outbursts to managing emotions and playing with friends, and the intervention (Conscious Discipline strategies by teachers and family partnership) is explicit."
+ },
+ {
+  "sha": "65c918ec05295bde40746c8241fc239dc79409fe1bc239b7f1943c9fd1466be8",
+  "title": "Titan overcomes developmental delays",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Titan is a specific child beneficiary, and the passage describes a clear observable change from developmental struggles to talking, recognizing letters, and writing his name."
+ },
+ {
+  "sha": "65c918ec05295bde40746c8241fc239dc79409fe1bc239b7f1943c9fd1466be8",
+  "title": "Sebastian's journey from struggle to triumph",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage features a specific beneficiary (Sebastian), describes a concrete change from verbal/physical/emotional challenges to improved articulation, motor skills, and emotional regulation, and presents this as an observed outcome."
+ },
+ {
+  "sha": "65c918ec05295bde40746c8241fc239dc79409fe1bc239b7f1943c9fd1466be8",
+  "title": "Single mother empowered by Head Start",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Mirsa is a specific beneficiary, and the passage describes a concrete change: access to childcare enabled her to pursue education and jobs while her daughter graduated from the program."
+ },
+ {
+  "sha": "65dd30920411f7ee645ca43b8cc144a5eb4bfa9f056b1363522dad4982af8761",
+  "title": "Ijeoma Mbadiwe transitions after 21 years",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Ijeoma is a specific beneficiary, and the change is her transition to self-employment after the workshop."
+ },
+ {
+  "sha": "65dd30920411f7ee645ca43b8cc144a5eb4bfa9f056b1363522dad4982af8761",
+  "title": "Doug Hight lands dream job in Texas",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Doug Hight is a specific beneficiary, and the passage describes a concrete change: he landed a dream job and is relocating his family, with COMMIT's support explicitly linked to the outcome."
+ },
+ {
+  "sha": "65dd30920411f7ee645ca43b8cc144a5eb4bfa9f056b1363522dad4982af8761",
+  "title": "Andrew Carter finds job at Anduril",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Andrew Carter is a specific beneficiary, and the passage describes a concrete change: he secured a senior director role at Anduril, relocated near family, and enrolled his kids in a desired school."
+ },
+ {
+  "sha": "65dd30920411f7ee645ca43b8cc144a5eb4bfa9f056b1363522dad4982af8761",
+  "title": "Nicholas Mumm finds value-aligned career",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Nicholas Mumm is a specific beneficiary, and the change is his new career path and move to Denver, presented as a true current outcome."
+ },
+ {
+  "sha": "65dd30920411f7ee645ca43b8cc144a5eb4bfa9f056b1363522dad4982af8761",
+  "title": "Phil Kornachuk starts dream job",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Phil Kornachuk is a specific beneficiary who received a scholarship and started a dream job, an observable change."
+ },
+ {
+  "sha": "682c59596d3961e8606395e4575e988cf92d1de0a32162417943530209082d7a",
+  "title": "Fruit World CEO on certification impact",
+  "stage1_confidence": "high",
+  "stage2_verdict": "testimonial",
+  "stage2_reason": "The passage is a CEO quote praising the certification process without a specific, identifiable beneficiary or a concrete change for a particular person or group."
+ },
+ {
+  "sha": "682c59596d3961e8606395e4575e988cf92d1de0a32162417943530209082d7a",
+  "title": "Worker-manager design team interviews",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "central beneficiary is a group ('workers on two California farms'), not a specific individual or place"
+ },
+ {
+  "sha": "682c59596d3961e8606395e4575e988cf92d1de0a32162417943530209082d7a",
+  "title": "AgSocio earns first labor contractor certification",
+  "stage1_confidence": "high",
+  "stage2_verdict": "reject",
+  "stage2_reason": "central beneficiary is an organization, not a specific person, family, group, community, or place"
+ },
+ {
+  "sha": "682c59596d3961e8606395e4575e988cf92d1de0a32162417943530209082d7a",
+  "title": "Worker engagement reduces emissions",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "primary beneficiary is a group category ('three California-based farming operations'), not a specific identifiable beneficiary"
+ },
+ {
+  "sha": "68e0e142fe783318729aaf8245d879eb446bd6139b9a78a10a79930b45082673",
+  "title": "Graduate's transformation from suicide attempt",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage features a specific beneficiary (Webb Meredith) and describes a concrete change from suicidal depression to a transformed life with faith, career, and family."
+ },
+ {
+  "sha": "68e0e142fe783318729aaf8245d879eb446bd6139b9a78a10a79930b45082673",
+  "title": "Graduate returns to college successfully",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage describes a specific unnamed graduate who changed his identity at NG, returned to college, completed his degree, and earned top grades \u2014 a concrete, observable change for an identifiable beneficiary."
+ },
+ {
+  "sha": "68e0e142fe783318729aaf8245d879eb446bd6139b9a78a10a79930b45082673",
+  "title": "Graduate finds joy and hope through obedience",
+  "stage1_confidence": "high",
+  "stage2_verdict": "testimonial",
+  "stage2_reason": "The passage is a quote-based reflection on personal beliefs and feelings, lacking a specific named beneficiary and a concrete observable change beyond internal sentiment."
+ },
+ {
+  "sha": "68e0e142fe783318729aaf8245d879eb446bd6139b9a78a10a79930b45082673",
+  "title": "Graduate becomes more generous",
+  "stage1_confidence": "high",
+  "stage2_verdict": "testimonial",
+  "stage2_reason": "The passage is a quote expressing a personal sentiment and belief change, but lacks a specific, observable change or intervention tied to a named beneficiary."
+ },
+ {
+  "sha": "68e0e142fe783318729aaf8245d879eb446bd6139b9a78a10a79930b45082673",
+  "title": "Graduate gains confidence to marry",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage features a specific unnamed graduate as beneficiary, describes a concrete change from lacking confidence to gaining it and marrying, and the quote provides beneficiary, intervention (Narrow Gate), and change."
+ },
+ {
+  "sha": "68e0e142fe783318729aaf8245d879eb446bd6139b9a78a10a79930b45082673",
+  "title": "Graduate overcomes fear of failure",
+  "stage1_confidence": "high",
+  "stage2_verdict": "testimonial",
+  "stage2_reason": "The passage is a quote expressing sentiment and personal growth without a concrete, observable change tied to a specific beneficiary or intervention."
+ },
+ {
+  "sha": "68e0e142fe783318729aaf8245d879eb446bd6139b9a78a10a79930b45082673",
+  "title": "Introvert finds community and nature",
+  "stage1_confidence": "high",
+  "stage2_verdict": "testimonial",
+  "stage2_reason": "The passage is a quote expressing personal sentiment and praise without a concrete, observable change tied to a specific beneficiary or intervention."
+ },
+ {
+  "sha": "68e0e142fe783318729aaf8245d879eb446bd6139b9a78a10a79930b45082673",
+  "title": "Graduate's paradigm shift on relationships",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage features a specific unnamed graduate as beneficiary, describes a concrete change in mindset from self-serving to God-centered relationships, and presents it as a realized past event."
+ },
+ {
+  "sha": "714f6f9ad80704ab21581d4bf1bd6fe3f5841bb032d4b15a78a556642d4eacd4",
+  "title": "Siblings kept together after death",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "central beneficiary is a group category 'new sibling set' not a specific identifiable person or family"
+ },
+ {
+  "sha": "714f6f9ad80704ab21581d4bf1bd6fe3f5841bb032d4b15a78a556642d4eacd4",
+  "title": "Youth conquers fear and goes to college",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The beneficiary is a specific youth in the program, and the change is an observable state change of gaining courage and forming a new identity to attend college."
+ },
+ {
+  "sha": "715b253122ead2e306c5984590a772d91313b79501a295e5795f3414b0fc6442",
+  "title": "Mia and Evie's progress at Caterpillars Clubhouse",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Identifies specific beneficiaries (Mia, Evie, grandmother) and describes concrete changes in emotional/cognitive/physical abilities and grandmother's parenting skills."
+ },
+ {
+  "sha": "715b253122ead2e306c5984590a772d91313b79501a295e5795f3414b0fc6442",
+  "title": "Jade's recovery and stable life",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Jade is a specific beneficiary, and the passage describes a concrete change: 2 years of sobriety, stable housing with her son, and employment."
+ },
+ {
+  "sha": "71709748dfe56a0f530f32468ec8a696d0f806b3cca0d05a46f57b440a5d6eae",
+  "title": "Can tab collection for Ronald McDonald House",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "beneficiary is a population category ('families in need'), not a specific person or group, and the change is a delivered quantity of tabs, not an observed state change for a specific beneficiary."
+ },
+ {
+  "sha": "71709748dfe56a0f530f32468ec8a696d0f806b3cca0d05a46f57b440a5d6eae",
+  "title": "Mask Avengers produce 10,000 masks",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "The central beneficiary is a population category (New Hope residents, staff, frontline workers) rather than a specific identifiable person, family, group, community, or place."
+ },
+ {
+  "sha": "71709748dfe56a0f530f32468ec8a696d0f806b3cca0d05a46f57b440a5d6eae",
+  "title": "Community Outreach Holiday Dinner",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "central beneficiary is a count (82 carloads of families) not a specific identifiable person or group"
+ },
+ {
+  "sha": "71709748dfe56a0f530f32468ec8a696d0f806b3cca0d05a46f57b440a5d6eae",
+  "title": "Sock drive for homeless",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "beneficiary is a population category ('Sullivan County homeless individuals'), not a specific person or group"
+ },
+ {
+  "sha": "71709748dfe56a0f530f32468ec8a696d0f806b3cca0d05a46f57b440a5d6eae",
+  "title": "Thanksgiving meals and Head Start gifts",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "beneficiaries are population counts ('local families in need', '100 children'), not specific identifiable individuals"
+ },
+ {
+  "sha": "71709748dfe56a0f530f32468ec8a696d0f806b3cca0d05a46f57b440a5d6eae",
+  "title": "Hope Farm donates produce",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "beneficiary is a group-level category (food banks and nutrition programs), not a specific person, family, or community"
+ },
+ {
+  "sha": "71709748dfe56a0f530f32468ec8a696d0f806b3cca0d05a46f57b440a5d6eae",
+  "title": "Special Olympics athletes compete",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "central beneficiary is a group ('New Hope Knights Special Olympics athletes'), not a specific identifiable person, family, or community"
+ },
+ {
+  "sha": "71709748dfe56a0f530f32468ec8a696d0f806b3cca0d05a46f57b440a5d6eae",
+  "title": "Anne Sweazey's grandson Sam",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "testimonial",
+  "stage2_reason": "The passage is a quote of gratitude from Anne, lacking a concrete observable change for Sam beyond general positive sentiment."
+ },
+ {
+  "sha": "74fdf437a9fde40f4bf87cedb8dfaa3349383562438b9153a9ed9712368eca5c",
+  "title": "Hannah returns to riding after pandemic closure",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Hannah is a specific beneficiary, and the change is her resuming horseback riding after the pandemic closure, an observable state change."
+ },
+ {
+  "sha": "74fdf437a9fde40f4bf87cedb8dfaa3349383562438b9153a9ed9712368eca5c",
+  "title": "Clients rebuild lost strength and skills",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "central beneficiary is a population category ('therapy clients who returned to EC'), not a specific identifiable person or group"
+ },
+ {
+  "sha": "752d2b78cdbfdef68251abdf3e3a3b699d4f45fa5ec115a1f4d0b7e1ffb953c9",
+  "title": "Ms. Long and family stably housed",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Identifies specific beneficiary Ms. Long and describes a concrete change from housing instability to stable housing after receiving rent and utility assistance."
+ },
+ {
+  "sha": "759c9a9445c733253dc49f99962b5222aa91acc1448356721dcb0d02b6d1539c",
+  "title": "Hala connects with survivor, starts college",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Hala is a specific beneficiary; the change is her starting college after transplant and receiving a scholarship, an observable state change."
+ },
+ {
+  "sha": "759c9a9445c733253dc49f99962b5222aa91acc1448356721dcb0d02b6d1539c",
+  "title": "Owen and Sarah volunteer after treatment",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Owen and Sarah are specific beneficiaries; the change is Owen surviving and now volunteering at the golf tournament and Sarah volunteering on the BMTU, an observable sustained improvement."
+ },
+ {
+  "sha": "759c9a9445c733253dc49f99962b5222aa91acc1448356721dcb0d02b6d1539c",
+  "title": "Laila recovers and returns home",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Laila is a specific beneficiary, and the passage describes her recovery from AML and return home, an observable state change."
+ },
+ {
+  "sha": "759c9a9445c733253dc49f99962b5222aa91acc1448356721dcb0d02b6d1539c",
+  "title": "Addyson's third transplant succeeds",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Identifies specific beneficiary Addyson, describes a concrete change (successful third transplant after failures), and includes intervention (father's stem cells)."
+ },
+ {
+  "sha": "759c9a9445c733253dc49f99962b5222aa91acc1448356721dcb0d02b6d1539c",
+  "title": "Jailyne becomes art major with scholarship",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Jailyne is a specific beneficiary who changed from a cancer patient to an art major at university via an HGF scholarship, with observable outcomes."
+ },
+ {
+  "sha": "759c9a9445c733253dc49f99962b5222aa91acc1448356721dcb0d02b6d1539c",
+  "title": "Nick studies history after transplant",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Nick is a specific beneficiary, and the passage describes a concrete change: after a successful transplant, he now studies history at university with a near-perfect GPA and volunteers."
+ },
+ {
+  "sha": "7e9ebebac79d3ec0c5130d2861f46148e59d84e3e28863b7e7aa7ac026c2650f",
+  "title": "Client learns laundry is ongoing service",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "The change is learning about ongoing service availability, not an observable state change or avoided harm for the beneficiary."
+ },
+ {
+  "sha": "7e9ebebac79d3ec0c5130d2861f46148e59d84e3e28863b7e7aa7ac026c2650f",
+  "title": "Clients receive daily laundry service",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "beneficiary is a population category ('most vulnerable neighbors'), not a specific person or group"
+ },
+ {
+  "sha": "7e9ebebac79d3ec0c5130d2861f46148e59d84e3e28863b7e7aa7ac026c2650f",
+  "title": "22 families built their own homes",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "central beneficiary is a count of 22 families, not a specific identifiable person or group"
+ },
+ {
+  "sha": "812657228353a7b84803f5a60403bcd77ad9ce4c2c709b6c80eb9f39510c9041",
+  "title": "Past youth participant got job and license",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage features a specific past youth participant who got a job and driver's license, enabling them to care for their family, which is a concrete change for an identifiable beneficiary."
+ },
+ {
+  "sha": "812657228353a7b84803f5a60403bcd77ad9ce4c2c709b6c80eb9f39510c9041",
+  "title": "Youth got tutoring and a ride",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage names a specific youth participant, describes a concrete change (tutoring enrollment and a ride), and the quote provides beneficiary, intervention, and change."
+ },
+ {
+  "sha": "812657228353a7b84803f5a60403bcd77ad9ce4c2c709b6c80eb9f39510c9041",
+  "title": "Brother stopped squeegeeing, got job",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Specific beneficiary (the brother of a youth participant), observable change (stopped squeegeeing, now works for DPW), and intervention implied by program participation."
+ },
+ {
+  "sha": "812657228353a7b84803f5a60403bcd77ad9ce4c2c709b6c80eb9f39510c9041",
+  "title": "Youth stayed on track with school",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Specific youth participant, mentor called school and talked to teacher, resulting in staying on track \u2014 a concrete change for that beneficiary."
+ },
+ {
+  "sha": "82d111251b5220f198200f94e36c42b93e2cd6628baa5a7454fadbbf75dc261b",
+  "title": "103-year-old Kitty Hodges skydives",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Specific beneficiary Kitty Hodges, clear change of breaking a world record via skydiving, presented as a past event."
+ },
+ {
+  "sha": "8552b09e81999fd0e48d77803a74792e54ad0f11d17c6bdafc77beb8e1ca2327",
+  "title": "Survivor leaves abuse with help",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage features a specific beneficiary (the speaker, a domestic violence survivor), describes a concrete change (leaving an abusive situation and starting life over), and includes the intervention (therapist, Birth to Three, Families Network, home visitor)."
+ },
+ {
+  "sha": "8552b09e81999fd0e48d77803a74792e54ad0f11d17c6bdafc77beb8e1ca2327",
+  "title": "Family rebuilds with respect and peace",
+  "stage1_confidence": "high",
+  "stage2_verdict": "testimonial",
+  "stage2_reason": "passage expresses sentiment and praise about family changes but lacks a concrete, observable change or specific intervention"
+ },
+ {
+  "sha": "865fb62f4d7bd07e03908836ca6c27fee97580f657d8cdcfe63e61c97d1d019c",
+  "title": "Mary returns to therapy after husband's illness",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Mary is a specific beneficiary, and the passage describes a concrete change: she returned to work and is doing well after therapy helped her cope."
+ },
+ {
+  "sha": "865fb62f4d7bd07e03908836ca6c27fee97580f657d8cdcfe63e61c97d1d019c",
+  "title": "Sarah and Faith escape abuse and thrive",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Sarah and Faith are specific, identifiable beneficiaries; the passage describes a concrete change from living in fear and at risk of eviction to obtaining employment, rental assistance, counseling, and feeling hopeful and confident."
+ },
+ {
+  "sha": "865fb62f4d7bd07e03908836ca6c27fee97580f657d8cdcfe63e61c97d1d019c",
+  "title": "Sharon and six children escape to Washington",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Sharon and her six children are specific beneficiaries, and the change is their safe transport to family in Washington, escaping severe danger."
+ },
+ {
+  "sha": "8899adf8699365b9f1be369d6fd8b18bcf219c512e7b6b72d9a2889134d6bd5a",
+  "title": "Julia visits food pantry",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Julia is a specific beneficiary, and she received fresh produce and cereal to feed her family, which is an observable change from her previous situation of food insecurity."
+ },
+ {
+  "sha": "8899adf8699365b9f1be369d6fd8b18bcf219c512e7b6b72d9a2889134d6bd5a",
+  "title": "Sonya gets medication and rent help",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Sonya is a specific beneficiary, and the change is that she could afford medication and rent due to LISTEN's grant."
+ },
+ {
+  "sha": "8899adf8699365b9f1be369d6fd8b18bcf219c512e7b6b72d9a2889134d6bd5a",
+  "title": "Linda receives food and guidance",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Linda is a specific beneficiary; the change is that she received groceries, toiletries, clothes, and guidance to a warm dinner after not eating for three days."
+ },
+ {
+  "sha": "8899adf8699365b9f1be369d6fd8b18bcf219c512e7b6b72d9a2889134d6bd5a",
+  "title": "John avoids electricity reconnection fees",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "John is a specific beneficiary, and the passage describes a concrete change: he avoided reconnection fees and received support."
+ },
+ {
+  "sha": "88bfa5f45ad9d7e437c24fd0571c99b319c34435e1db84bb27f4299ccba9b16e",
+  "title": "Veteran reunites with children after RRRP",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage describes a specific veteran who, through RRRP's intervention, achieved multiple concrete changes: reuniting with estranged children, securing housing, receiving mental health support, winning a disability appeal, and gaining financial coaching."
+ },
+ {
+  "sha": "8b8cd8e155abacf150ae3f7d5aa1294bfac3ded10535010ca00bfe622bdff1f3",
+  "title": "Taub family visits choice market",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "Primary beneficiary is a population category ('CUMAC clients'), not a specific identifiable person, family, or group."
+ },
+ {
+  "sha": "8bf029616351995f2960cbc765465eadc1124fdb11d620c80804b444fd8d4f85",
+  "title": "Bob reconnects with family after housing",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Bob is a specific beneficiary, and the passage describes a concrete change \u2014 reconnecting with family and getting his life back after housing \u2014 as a true past/current event."
+ },
+ {
+  "sha": "8bf029616351995f2960cbc765465eadc1124fdb11d620c80804b444fd8d4f85",
+  "title": "Mitchell St apartments transform youth lives",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage describes a specific group of beneficiaries (Compass Rose participants exiting foster care) who now have their own safe space, learn self-care, and experience reduced interpersonal conflicts, which is a concrete change from their prior situation."
+ },
+ {
+  "sha": "8bf029616351995f2960cbc765465eadc1124fdb11d620c80804b444fd8d4f85",
+  "title": "Velda moves from shelter to apartment",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Velda is a specific beneficiary, and the change is her moving from a shelter to her own apartment and celebrating milestones there."
+ },
+ {
+  "sha": "8c29956aaaaaf8504bf0100809963fa818a9e5d202fd97333cd761174f93a8b5",
+  "title": "Mother finds hope at Princess Basma Centre",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Ibtihaj is a specific beneficiary, and the change is her feeling hope after learning and seeing progress at the centre."
+ },
+ {
+  "sha": "8c29956aaaaaf8504bf0100809963fa818a9e5d202fd97333cd761174f93a8b5",
+  "title": "Ahli Arab Hospital clinic expands services",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "primary beneficiary is a population category ('patients at Ahli Arab Hospital's community clinic'), not a specific identifiable person, family, group, community, or place"
+ },
+ {
+  "sha": "8c29956aaaaaf8504bf0100809963fa818a9e5d202fd97333cd761174f93a8b5",
+  "title": "Sign and Dine Cafe graduates first class",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "central beneficiary is a group count ('six deaf and hearing-impaired students'), not a specific identifiable person or family"
+ },
+ {
+  "sha": "8c29956aaaaaf8504bf0100809963fa818a9e5d202fd97333cd761174f93a8b5",
+  "title": "Lara gains confidence at inclusive school",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Lara is a specific beneficiary, and the passage describes a concrete change in her self-confidence as a result of attending the inclusive school."
+ },
+ {
+  "sha": "8c29956aaaaaf8504bf0100809963fa818a9e5d202fd97333cd761174f93a8b5",
+  "title": "Aseel and Lara thrive with therapy support",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Names specific beneficiaries (Aseel and Lara) and describes a concrete change in their confidence and accomplishment due to therapy."
+ },
+ {
+  "sha": "8c29956aaaaaf8504bf0100809963fa818a9e5d202fd97333cd761174f93a8b5",
+  "title": "St. Luke's Hospital gets new ambulance",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "beneficiary is a patient population, not a specific identifiable person or group"
+ },
+ {
+  "sha": "8e1cf08b1fd1661e468a84ad11f56a3d733d76e56fd21e95ac64ec74d6613b9c",
+  "title": "Richard enjoys dining and activities in Fireside Lounge",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Richard is a specific beneficiary, and the change is his observable shift from eating alone to dining in the renovated lounge."
+ },
+ {
+  "sha": "8e1cf08b1fd1661e468a84ad11f56a3d733d76e56fd21e95ac64ec74d6613b9c",
+  "title": "Chimere identifies infection in Helen's foot",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Helen is a specific beneficiary, and the passage describes a concrete change: early infection identification leading to hospital treatment, potentially preventing decline."
+ },
+ {
+  "sha": "8e1cf08b1fd1661e468a84ad11f56a3d733d76e56fd21e95ac64ec74d6613b9c",
+  "title": "Tayy uses dementia training to improve care",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage describes a specific beneficiary (Robert, a resident with dementia) and a concrete change (Tayy learned and applied tailored communication techniques, improving care and her confidence)."
+ },
+ {
+  "sha": "8e1cf08b1fd1661e468a84ad11f56a3d733d76e56fd21e95ac64ec74d6613b9c",
+  "title": "Delila uses rounding to improve staff issues",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "The central beneficiary is a group ('staff members'), not a specific individual, and the change described is a routine management practice rather than a specific, observable outcome for a particular person."
+ },
+ {
+  "sha": "8e1cf08b1fd1661e468a84ad11f56a3d733d76e56fd21e95ac64ec74d6613b9c",
+  "title": "More residents dine in Fireside Lounge",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "central beneficiary is a population category ('residents'), not a specific identifiable person or group"
+ },
+ {
+  "sha": "8eb7da0589052386dd770ca29d978127c41d99914fa05ae154d4218f2965e5d1",
+  "title": "Nicole's journey from trauma to cosmetology degree",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Nicole is a specific beneficiary, and the passage describes a concrete change: earning a cosmetology degree and developing coping skills after trauma."
+ },
+ {
+  "sha": "8eb7da0589052386dd770ca29d978127c41d99914fa05ae154d4218f2965e5d1",
+  "title": "Grace's healing and reunification with family",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Grace is a specific beneficiary; the passage describes a concrete change from being angry and acting out to becoming an A-student, gaining confidence, and reuniting with family."
+ },
+ {
+  "sha": "93774f8426fa0343471f984bc216ea3880a79e6bf9246b7d4ae16399993e70b4",
+  "title": "Rebecca's IEP navigation support",
+  "stage1_confidence": "high",
+  "stage2_verdict": "testimonial",
+  "stage2_reason": "passage is a quote expressing gratitude and sentiment without a concrete observable change"
+ },
+ {
+  "sha": "93774f8426fa0343471f984bc216ea3880a79e6bf9246b7d4ae16399993e70b4",
+  "title": "Family's IEP meeting preparation",
+  "stage1_confidence": "high",
+  "stage2_verdict": "testimonial",
+  "stage2_reason": "The passage is a quote from a professional praising the service's effect on a family, but lacks a specific, identifiable beneficiary and a concrete observable change beyond sentiment."
+ },
+ {
+  "sha": "93774f8426fa0343471f984bc216ea3880a79e6bf9246b7d4ae16399993e70b4",
+  "title": "Bonnie's supported decision-making training",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Bonnie D. is a specific beneficiary, and the passage describes a concrete change in her approach and outlook after training."
+ },
+ {
+  "sha": "93774f8426fa0343471f984bc216ea3880a79e6bf9246b7d4ae16399993e70b4",
+  "title": "Yusilla's positive perspective shift",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "testimonial",
+  "stage2_reason": "The passage is a quote expressing sentiment and a perspective shift, but lacks a concrete, observable change or specific intervention tied to the beneficiary's situation."
+ },
+ {
+  "sha": "93774f8426fa0343471f984bc216ea3880a79e6bf9246b7d4ae16399993e70b4",
+  "title": "Reyna's language framework change",
+  "stage1_confidence": "high",
+  "stage2_verdict": "testimonial",
+  "stage2_reason": "The passage is a quote expressing gratitude and personal learning, but lacks a concrete, observable change in the beneficiary's situation or a specific intervention."
+ },
+ {
+  "sha": "93e81f0227c55bc7e351cbf1dadadd5b495b1c1d524400b923c7cdf5be1b8458",
+  "title": "Catherine's safety and financial stability",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Catherine is a specific beneficiary, and the passage describes concrete changes: physical safety via protective order, financial assistance for rent, and ongoing support services."
+ },
+ {
+  "sha": "93e81f0227c55bc7e351cbf1dadadd5b495b1c1d524400b923c7cdf5be1b8458",
+  "title": "Mary's escape from long-term abuse",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Mary is a specific beneficiary who disclosed abuse, filed for divorce, and now receives ongoing counseling \u2014 a clear, sustained change from her trapped situation."
+ },
+ {
+  "sha": "93e81f0227c55bc7e351cbf1dadadd5b495b1c1d524400b923c7cdf5be1b8458",
+  "title": "Anthony's dual arrest case dismissed",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Anthony is a specific beneficiary, and the passage describes a concrete change: his case was dismissed after receiving support and a court letter."
+ },
+ {
+  "sha": "93e81f0227c55bc7e351cbf1dadadd5b495b1c1d524400b923c7cdf5be1b8458",
+  "title": "Veronica's relocation to safety",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Veronica is a specific beneficiary, and the passage describes a concrete change: safe relocation with transportation and support services arranged."
+ },
+ {
+  "sha": "95f2054c9ff47aa26f31f400daebbc9052640911c69b9110c48940277df78f8f",
+  "title": "Rachel's transition from institution to community",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Rachel is a specific beneficiary, and the passage describes a concrete change from being restrained and considered too violent to excelling in school and community."
+ },
+ {
+  "sha": "98dd921dca1d251fae8f22276edeaaed676f458443d9d15fd91850c8f382b9c3",
+  "title": "Eight individuals transitioned from nursing homes",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "primary beneficiary is a count ('eight individuals'), not a specific identifiable person or group"
+ },
+ {
+  "sha": "98eb12214dd32b8a412f0d21750e3f0b6dce5d1950d3c3b014aae68b995b11f0",
+  "title": "Jesus's family moves to a house",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Identifies specific family (Jesus and his family), describes a concrete change (moving from tiny apartment to house) due to the matching savings program."
+ },
+ {
+  "sha": "98eb12214dd32b8a412f0d21750e3f0b6dce5d1950d3c3b014aae68b995b11f0",
+  "title": "Adrian's family avoids homelessness",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Adrian and his family are specific beneficiaries who left a homeless shelter, an observable change from homelessness to stable housing."
+ },
+ {
+  "sha": "98eb12214dd32b8a412f0d21750e3f0b6dce5d1950d3c3b014aae68b995b11f0",
+  "title": "Stacy's family achieves financial stability",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Stacy is a specific beneficiary, the change is her mother's improved financial management enabling college, and the outcome is a sustained improvement (Stacy becoming a teacher)."
+ },
+ {
+  "sha": "9ba0a1b0e4cf3d279a45c84832daffae470fc9afc4e3be4dc8e345d45b9ac491",
+  "title": "Tianna enlists in Army for nursing career",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Tianna is a specific beneficiary, and the passage describes a concrete change: her decision to enlist in the Army with a path to nursing and long-term independence."
+ },
+ {
+  "sha": "9ba0a1b0e4cf3d279a45c84832daffae470fc9afc4e3be4dc8e345d45b9ac491",
+  "title": "Allan graduates high school and pursues computer science degree",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Allan is a specific beneficiary who graduated high school and moved to pursue a computer science degree, a clear observable change."
+ },
+ {
+  "sha": "9fa2652e70119d744eb49229c1f0cda9221322996f72d342af6e9d73947e9f1a",
+  "title": "Victor and Robert's companionship",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Robert Crouse is a specific beneficiary, and the passage describes a concrete change: he gained companionship, help with errands, and a positive outlook through weekly visits with Victor."
+ },
+ {
+  "sha": "9fa2652e70119d744eb49229c1f0cda9221322996f72d342af6e9d73947e9f1a",
+  "title": "Frances Gilbert's hospice care",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage features a specific beneficiary (Frances Gilbert and her daughter Martha), describes a concrete change (dignified end-of-life care at home with family support), and provides a detailed narrative of the intervention and its outcome."
+ },
+ {
+  "sha": "9fa2652e70119d744eb49229c1f0cda9221322996f72d342af6e9d73947e9f1a",
+  "title": "Melissa and Jeff Marks move",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage describes a specific couple (Melissa and Jeff Marks) who experienced a concrete change: a smooth move into a senior living community with personalized support, followed by their donation to a campaign."
+ },
+ {
+  "sha": "a00adaa5cec76c473761b12fe92c047773258bfa1a19d8892517c7ceb86cab2a",
+  "title": "Nicole becomes nurse with Bridge of Hope",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Nicole is a specific beneficiary; the passage describes a concrete change \u2014 she avoided eviction, stayed in her home, and completed nursing degrees \u2014 with clear intervention details."
+ },
+ {
+  "sha": "b60a49eb6c241148e7ac763e70f0e4174a89d952b68e3a7642497d437b2ba45e",
+  "title": "Sam discloses abuse after school lesson",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Sam is a specific beneficiary, and the passage describes a concrete change: disclosure, arrest, and move to safety."
+ },
+ {
+  "sha": "b60a49eb6c241148e7ac763e70f0e4174a89d952b68e3a7642497d437b2ba45e",
+  "title": "Noelle and mother report stepfather",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Noelle is a specific beneficiary, the change is the stepfather's arrest and conviction, and the intervention (hotline counseling) is clearly linked."
+ },
+ {
+  "sha": "b60a49eb6c241148e7ac763e70f0e4174a89d952b68e3a7642497d437b2ba45e",
+  "title": "Krista learns skills and reunites with father",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Krista is a specific child; she learned skills and was reunited with family, an observable change from her initial state of neglect."
+ },
+ {
+  "sha": "b670f18136acf17c3ffa18d46a0bb0d1cd5997086f04d4c032780871b811b20c",
+  "title": "479 children prepared for kindergarten",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "beneficiary is a count (479 children), not a specific individual or group"
+ },
+ {
+  "sha": "bdad09217d68b198028e14372e1ac92c50f6a9f045400273ef2a0a55bc9b1888",
+  "title": "Reyna termina secundaria y consigue trabajo",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Reyna is a specific beneficiary; she completed secondary school, started professional training, got a new job, and supports her siblings \u2014 a concrete, observable change."
+ },
+ {
+  "sha": "be50ade67589378ef775633a4d32e1a2a538829afba46c12d395fd3aefbde7d0",
+  "title": "Kevin's journey from withdrawal to determination",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Kevin is a specific beneficiary, and the change is his shift from withdrawal to showing up determined and self-motivated with a consistent mentor."
+ },
+ {
+  "sha": "be50ade67589378ef775633a4d32e1a2a538829afba46c12d395fd3aefbde7d0",
+  "title": "Kamara's growth and college acceptance",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Kamara is a specific beneficiary, and the passage describes a concrete change from a shy second grader to a high school graduate accepted to two universities, with active participation in leadership groups."
+ },
+ {
+  "sha": "c03251503915399902c43c830a9bfebb938ffd65143fcf98f36d714dad578a75",
+  "title": "Adopt-a-Family holiday support for family",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage features a specific family with four children as the beneficiary, describes a concrete change (receiving gifts and gift cards to avoid a Christmas without presents), and includes a quote that provides context for the intervention and emotional impact."
+ },
+ {
+  "sha": "c03251503915399902c43c830a9bfebb938ffd65143fcf98f36d714dad578a75",
+  "title": "Kade graduates on time with diploma",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Kade is a specific beneficiary, and the passage describes a concrete change: he recovered credits and graduated on time with his diploma."
+ },
+ {
+  "sha": "c03251503915399902c43c830a9bfebb938ffd65143fcf98f36d714dad578a75",
+  "title": "Single mom secures job and education",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage describes a specific single mother who secured a job and continued her education, a concrete change from her prior situation."
+ },
+ {
+  "sha": "c1a9f80bd92d43d8db9f64d5bd9003f3516cbccbd2e809267d92a374d3969358",
+  "title": "Restaurant worker finds peace of mind",
+  "stage1_confidence": "high",
+  "stage2_verdict": "testimonial",
+  "stage2_reason": "The passage is a quote expressing gratitude and sentiment without a concrete, observable change beyond the client's feeling of peace of mind."
+ },
+ {
+  "sha": "c1a9f80bd92d43d8db9f64d5bd9003f3516cbccbd2e809267d92a374d3969358",
+  "title": "Mt. Pleasant Hub client supports family",
+  "stage1_confidence": "high",
+  "stage2_verdict": "testimonial",
+  "stage2_reason": "passage is a quote expressing gratitude and sentiment without a concrete, observable change beyond receiving diapers"
+ },
+ {
+  "sha": "c1a9f80bd92d43d8db9f64d5bd9003f3516cbccbd2e809267d92a374d3969358",
+  "title": "700 families receive diapers at distributions",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "primary beneficiary is a count of families, not a specific identifiable beneficiary"
+ },
+ {
+  "sha": "c1a9f80bd92d43d8db9f64d5bd9003f3516cbccbd2e809267d92a374d3969358",
+  "title": "United Somali Bantu distributes care items",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "beneficiary is a population category ('families in need'), not a specific identifiable entity"
+ },
+ {
+  "sha": "c31a2d634c61d9d9c7b3b20ef5d85e509bddd43ef7517d6fa6f1d73614c19360",
+  "title": "Say Paw's growth as mother and student",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Specific beneficiary Say Paw with observable change in parenting and student success"
+ },
+ {
+  "sha": "c94ad3f61adb1380bcfd44d109536694a0a89ee9c2be3ece3894acf26ac597d0",
+  "title": "Sabrina escapes abuse with DSVS help",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Sabrina is a specific beneficiary who left an abusive husband and is now safe and building a new life, a clear change from her prior situation."
+ },
+ {
+  "sha": "ccb0dcadca0a3fa256534e89ff9cbfcf0259b8dcde316904e4c9cb1428f7038e",
+  "title": "Rebecca's flood recovery story",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Rebecca is a specific beneficiary, and the passage describes a concrete change: her basement is dry, foundation repaired, and family recovered from flood damage with JFS help."
+ },
+ {
+  "sha": "ce7b337fed8231af0e7b3dd516fde824a9fbe2fedc8472f57984f9e12a12f22e",
+  "title": "Michael's journey from trauma to healing",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Michael is a specific 13-year-old boy, and the passage describes a concrete change from trauma and violent behavior to excelling in school, enjoying sports, and reunifying with his mother."
+ },
+ {
+  "sha": "ce7b337fed8231af0e7b3dd516fde824a9fbe2fedc8472f57984f9e12a12f22e",
+  "title": "Megan finds safety and happiness",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Megan is a specific beneficiary, and the passage describes a concrete change from severe behavioral issues to being safe, happy, and having a home at HomeSafe."
+ },
+ {
+  "sha": "d04d1475b14f4de815a7d8342522473cb1be68de38b4e3a45e996108696fd414",
+  "title": "30 families supported with rent and utilities",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "beneficiary is a count of families, not a specific identifiable individual or group"
+ },
+ {
+  "sha": "d04d1475b14f4de815a7d8342522473cb1be68de38b4e3a45e996108696fd414",
+  "title": "Energy retrofits on 30 homes",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "beneficiary is a population category ('residents of the Bryant neighborhood'), not a specific identifiable person, family, or place"
+ },
+ {
+  "sha": "d04d1475b14f4de815a7d8342522473cb1be68de38b4e3a45e996108696fd414",
+  "title": "Back-to-school BBQs and holiday parties",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "beneficiary is a population category ('youth and families'), not a specific identifiable person or group"
+ },
+ {
+  "sha": "d04d1475b14f4de815a7d8342522473cb1be68de38b4e3a45e996108696fd414",
+  "title": "Murals designed by children",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "primary beneficiary is a population category ('children in CAN programs') not a specific identifiable person or group"
+ },
+ {
+  "sha": "d04d1475b14f4de815a7d8342522473cb1be68de38b4e3a45e996108696fd414",
+  "title": "Rest & Return spaces created",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "primary beneficiary is a population category ('students at all six CAN sites'), not a specific identifiable person, family, group, community, or place"
+ },
+ {
+  "sha": "d04d1475b14f4de815a7d8342522473cb1be68de38b4e3a45e996108696fd414",
+  "title": "Food delivery via DoorDash partnership",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "beneficiary is a population category ('clients who cannot make it to the Bryant pantry'), not a specific identifiable person or group"
+ },
+ {
+  "sha": "d04d1475b14f4de815a7d8342522473cb1be68de38b4e3a45e996108696fd414",
+  "title": "Upgrades at multiple community centers",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "Beneficiary is a list of community centers/residents as a group, not a specific identifiable person, family, or place in its own situation."
+ },
+ {
+  "sha": "d04d1475b14f4de815a7d8342522473cb1be68de38b4e3a45e996108696fd414",
+  "title": "ALICE and CPR training implemented",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "Beneficiary is a staff cohort, not a specific individual or group in its own situation"
+ },
+ {
+  "sha": "d04d1475b14f4de815a7d8342522473cb1be68de38b4e3a45e996108696fd414",
+  "title": "New teen programming launched",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "beneficiary is a population category ('teens from different CAN communities'), not a specific identifiable person or group"
+ },
+ {
+  "sha": "d04d1475b14f4de815a7d8342522473cb1be68de38b4e3a45e996108696fd414",
+  "title": "Brick students participated in Battle of the Books",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "primary beneficiary is a group category ('Brick students'), not a specific identifiable person or family"
+ },
+ {
+  "sha": "d2e6b6ffc0e20a482a402b3c520eb11089d1e7e2bc2a07b8e4fb23af941c7425",
+  "title": "Graduate of New Beginnings finds stability",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage features a specific beneficiary (a graduate of New Beginnings) and describes a concrete, observable change: stable housing for two years, a good job, and a promotion."
+ },
+ {
+  "sha": "d2e6b6ffc0e20a482a402b3c520eb11089d1e7e2bc2a07b8e4fb23af941c7425",
+  "title": "J'livette finds safety and purpose",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "J'livette is a specific beneficiary, and the passage describes a concrete change from a dark place and bad relationship to feeling safe and becoming a youth leader."
+ },
+ {
+  "sha": "d58e3d5b13eb3ca695e896bf552bc29246f209c6bfc6612764b38af41954dee9",
+  "title": "Anthony's transformation at shelter",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Anthony is a specific beneficiary, and the passage describes a concrete change from angry and distrustful to thoughtful and caring, with observable outcomes like walking away from provocation and reuniting with family."
+ },
+ {
+  "sha": "d58e3d5b13eb3ca695e896bf552bc29246f209c6bfc6612764b38af41954dee9",
+  "title": "Adrienne's journey through TLP",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Adrienne is a specific beneficiary, and the passage describes concrete changes: obtaining a full-time job, becoming a leader, moving into her own apartment, and gaining life skills through TLP."
+ },
+ {
+  "sha": "d58e3d5b13eb3ca695e896bf552bc29246f209c6bfc6612764b38af41954dee9",
+  "title": "Mary's family receives abalone shell",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Mary is a specific beneficiary; she and her children were placed in a host home, received 138 needed items, and Mary's emotional change from loss to hope via the abalone shell is a concrete, observable change."
+ },
+ {
+  "sha": "d58e3d5b13eb3ca695e896bf552bc29246f209c6bfc6612764b38af41954dee9",
+  "title": "Debra's journey from homelessness to stability",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Debra is a specific beneficiary; the passage describes concrete changes: regained housing, driver's license, vehicle, Peer Support certification, and volunteering."
+ },
+ {
+  "sha": "d5cb6d0ca181e75466c644a6331a2e7d92bd883ef927b29db84a00e0683a1983",
+  "title": "Randy's transformation at Return House",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Randy is a specific beneficiary, and the passage describes a concrete, observable change from substance use and lack of direction to earning a GED, driver's license, part-time job, and having a support network and vision for the future."
+ },
+ {
+  "sha": "d9fef44f7b6fbfca7d006b9eab64fe466490cdc99026225ca7cbbd1baf16a793",
+  "title": "Janelle's path to stability",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Janelle is a specific beneficiary, and the passage describes a concrete change: stable housing and employment secured."
+ },
+ {
+  "sha": "db75f05426757ec44f2b73bf1398d06c0dff212800d74dcc7ba41cc7a75d2304",
+  "title": "Clint Sharkey secures future through program",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "reject",
+  "stage2_reason": "no specific change; only states he is taking a hands-on approach without an observable outcome"
+ },
+ {
+  "sha": "db75f05426757ec44f2b73bf1398d06c0dff212800d74dcc7ba41cc7a75d2304",
+  "title": "Graduates employed after certification",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "central beneficiary is a cohort count (63 graduates), not a specific identifiable person or group"
+ },
+ {
+  "sha": "db75f05426757ec44f2b73bf1398d06c0dff212800d74dcc7ba41cc7a75d2304",
+  "title": "Design Mill relocates to Dubuque",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The beneficiary is a specific company (Design Mill, Inc.), and the change is its relocation to Dubuque bringing new jobs, which is an observable state change."
+ },
+ {
+  "sha": "db75f05426757ec44f2b73bf1398d06c0dff212800d74dcc7ba41cc7a75d2304",
+  "title": "Telecom outage resolved with fiber upgrade",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "primary beneficiary is a population category ('Hundreds of companies') not a specific identifiable entity"
+ },
+ {
+  "sha": "dfc9cd3dff995c769d5c0d6562e9da6740dada2fefa7fed4f024c899bd0aab09",
+  "title": "First-time participation and Spanish access",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage describes specific changes for a defined community (women, parents, youth) including first-time participation, Spanish classes, interpreters, and graduation interpretation, which are observable state changes."
+ },
+ {
+  "sha": "dfc9cd3dff995c769d5c0d6562e9da6740dada2fefa7fed4f024c899bd0aab09",
+  "title": "Transformative capacity building trainings",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "Beneficiary is a population category ('mainly female participants'), not a specific identifiable person or group"
+ },
+ {
+  "sha": "e136ede419d5d50bd07986542aff82a25ecbc428948a58bbbda229527a5745e8",
+  "title": "Colette Haywood buys first Vine City home",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Specific beneficiary Colette Haywood, clear change of purchasing first home through program, observable past event."
+ },
+ {
+  "sha": "e2416d20a5dc81e26e24485b4379e6620e9e863d2df50a2493f95fd708b77806",
+  "title": "Irma escapes war, cares for mother",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Irma is a specific beneficiary, and the passage describes a concrete change: she found a way to care for her mother, keep housing, and work as a translator."
+ },
+ {
+  "sha": "e2416d20a5dc81e26e24485b4379e6620e9e863d2df50a2493f95fd708b77806",
+  "title": "Andrea finds job, housing, education",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Specific beneficiary Andrea with a clear change from homelessness/dropping out to job, housing, and education."
+ },
+ {
+  "sha": "e2416d20a5dc81e26e24485b4379e6620e9e863d2df50a2493f95fd708b77806",
+  "title": "Maria receives therapy, takes step forward",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Maria is a specific beneficiary, and the passage describes a concrete change: she is now receiving therapy and has taken an important step forward."
+ },
+ {
+  "sha": "e27aec13db0c17974a93fc07f418dfffd9e8dff1807786ffcb0358bd20d0d67d",
+  "title": "Alea's journey to financial stability",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Alea is a specific beneficiary, and the passage describes concrete changes: obtaining a GED, securing a livable-wage job, promotion, and overcoming the Cliff Effect."
+ },
+ {
+  "sha": "e27aec13db0c17974a93fc07f418dfffd9e8dff1807786ffcb0358bd20d0d67d",
+  "title": "Ashley obtains CDL and job",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Ashley is a specific beneficiary who earned a CDL and got a job, an observable state change."
+ },
+ {
+  "sha": "e27aec13db0c17974a93fc07f418dfffd9e8dff1807786ffcb0358bd20d0d67d",
+  "title": "Participant gains career-potential job",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Specific beneficiary (one participant), clear change from outside-sector work to career-potential job with degree plans."
+ },
+ {
+  "sha": "e27aec13db0c17974a93fc07f418dfffd9e8dff1807786ffcb0358bd20d0d67d",
+  "title": "Financial Services Training wage increase",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "central beneficiary is a population category ('Women who graduated'), not a specific identifiable person or group"
+ },
+ {
+  "sha": "e31d17df049e527bd9ce43c3671ea389ab9b21567af86b8c2e5f54ba027b544e",
+  "title": "Pat Dickerson regains mobility after knee surgery",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Identifies specific beneficiary Pat Dickerson, describes a clear change from post-surgery immobility to walking over a mile and driving again, and includes concrete intervention details."
+ },
+ {
+  "sha": "e31d17df049e527bd9ce43c3671ea389ab9b21567af86b8c2e5f54ba027b544e",
+  "title": "Douglas Sword receives hospice care at home",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage names a specific beneficiary (Douglas Sword), describes a concrete change (receiving hospice care at home instead of being moved elsewhere), and presents it as a true past event."
+ },
+ {
+  "sha": "e31d17df049e527bd9ce43c3671ea389ab9b21567af86b8c2e5f54ba027b544e",
+  "title": "Lance Longbrake builds butterfly sanctuary for residents",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage describes a specific change for residents of Luther Community \u2014 a butterfly sanctuary giving them a daily reason to come outside and experience hope \u2014 with a concrete intervention by Lance and a clear observable outcome."
+ },
+ {
+  "sha": "e31d17df049e527bd9ce43c3671ea389ab9b21567af86b8c2e5f54ba027b544e",
+  "title": "Tovertafel games engage residents with dementia",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "The primary beneficiary is a population category ('residents with dementia at Bethany Village'), not a specific identifiable person, family, group, community, or place."
+ },
+ {
+  "sha": "e6696bd9360752b922919bd2d99929689b9908d3dd7b63bd7a5a927e66f54fa2",
+  "title": "Family housed from van in four days",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Identifies specific family (Esteban and his family), describes a concrete change from sleeping in a van to permanent housing within four days, and includes a specific intervention (shelter, case management, security deposit)."
+ },
+ {
+  "sha": "e6696bd9360752b922919bd2d99929689b9908d3dd7b63bd7a5a927e66f54fa2",
+  "title": "Terri transitions from methadone to Suboxone",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Terri is a specific beneficiary, and the passage describes a concrete change: she successfully tapered off methadone, switched to Suboxone, and now lives at The Retreat with her needs met."
+ },
+ {
+  "sha": "e6696bd9360752b922919bd2d99929689b9908d3dd7b63bd7a5a927e66f54fa2",
+  "title": "Henry and Marge's home weatherized",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage features specific beneficiaries Henry and Marge, describes a concrete change (their home is now weatherized and energy efficient), and presents this as a completed past event."
+ },
+ {
+  "sha": "e6696bd9360752b922919bd2d99929689b9908d3dd7b63bd7a5a927e66f54fa2",
+  "title": "Nikki regains son and works part-time",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Nikki is a specific beneficiary; the change is her regaining custody of her son Elijah and working part-time, an observable state change."
+ },
+ {
+  "sha": "e6696bd9360752b922919bd2d99929689b9908d3dd7b63bd7a5a927e66f54fa2",
+  "title": "Monique starts Inspired Girls Club after Fresh Start",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Monique is a specific beneficiary who completed Fresh Start, reunited with family, and launched a nonprofit, which is an observable change from her past situation."
+ },
+ {
+  "sha": "e6696bd9360752b922919bd2d99929689b9908d3dd7b63bd7a5a927e66f54fa2",
+  "title": "Marilyn helps Caleb speak and excel",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "(full-text re-judge) Caleb is a specific beneficiary who changed from refusing to speak to excelling as a leader in kindergarten."
+ },
+ {
+  "sha": "e6696bd9360752b922919bd2d99929689b9908d3dd7b63bd7a5a927e66f54fa2",
+  "title": "Raul secures apartment and volunteers at shelter",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Raul is a specific beneficiary who moved from homelessness to his own apartment and now volunteers daily, a clear observable change."
+ },
+ {
+  "sha": "e83840a484e62643c1a140485a42f2fd01209b470f987579d2e49ef3cebfea51",
+  "title": "Paul's DJ business Timeless Classics grows",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Paul is a specific beneficiary, and the passage describes a concrete change: his DJ business secured standing gigs and repeat bookings, and he is learning new software to expand."
+ },
+ {
+  "sha": "e83840a484e62643c1a140485a42f2fd01209b470f987579d2e49ef3cebfea51",
+  "title": "Individual fades from job coaching",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "beneficiary is a count ('1 individual'), not a specific identifiable person"
+ },
+ {
+  "sha": "ebaed191b7244881219c589649ad919030f93a41eaf63bfa6395b4dc454905a3",
+  "title": "Elizabeth Herring hip replacement recovery",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Identifies specific beneficiary Elizabeth Herring, describes a concrete change (return to active lifestyle after hip replacement and rehab), and is presented as a true past event."
+ },
+ {
+  "sha": "ebaed191b7244881219c589649ad919030f93a41eaf63bfa6395b4dc454905a3",
+  "title": "Dick Corbet completes 5K after hip replacement",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Specific beneficiary Dick Corbet, clear change of completing a 5K post-surgery with improved time."
+ },
+ {
+  "sha": "ebaed191b7244881219c589649ad919030f93a41eaf63bfa6395b4dc454905a3",
+  "title": "Suzanne Wright stays in apartment until death",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Suzanne Wright is a specific beneficiary who avoided a harmful move and remained in her apartment until death, an observable state change."
+ },
+ {
+  "sha": "ebaed191b7244881219c589649ad919030f93a41eaf63bfa6395b4dc454905a3",
+  "title": "Harris Frank introduces Computer Comfort program",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "central beneficiary is a population category ('Bethesda residents'), not a specific identifiable person"
+ },
+ {
+  "sha": "ecd677efcf03ec8b4f6d80c58848801714291f819f44156b73df57ea16f209b7",
+  "title": "Reina Gomez becomes Registered Nurse",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Specific beneficiary Reina Gomez, clear change of graduating as RN in Dec 2022, with intervention from Catholic Charities."
+ },
+ {
+  "sha": "ecd677efcf03ec8b4f6d80c58848801714291f819f44156b73df57ea16f209b7",
+  "title": "Ana Jasso maintains progress after loss",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Specific beneficiary Ana Jasso, concrete change of maintaining progress after loss through counseling and support."
+ },
+ {
+  "sha": "ecd677efcf03ec8b4f6d80c58848801714291f819f44156b73df57ea16f209b7",
+  "title": "DaAliyah becomes CNA and accepted to UNT",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "DaAliyah is a specific beneficiary, and the passage describes concrete changes: completed CNA training, accepted a lead position, and accepted to UNT's CHW program."
+ },
+ {
+  "sha": "ecd677efcf03ec8b4f6d80c58848801714291f819f44156b73df57ea16f209b7",
+  "title": "Jasmine increases credit and savings",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Jasmine is a specific beneficiary, and the passage describes a concrete change in her financial and housing situation."
+ },
+ {
+  "sha": "ecd677efcf03ec8b4f6d80c58848801714291f819f44156b73df57ea16f209b7",
+  "title": "Tishutin family resettles after fleeing Ukraine",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Specific family beneficiary with concrete change of resettlement and self-sufficiency"
+ },
+ {
+  "sha": "ee33d0e30b95b3f576e5e58386d283a0a694b736518166974b20a62f77a5901a",
+  "title": "Single mother gains housing stability",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "beneficiary is a population category ('a single mother of two children'), not a specific identifiable person"
+ },
+ {
+  "sha": "ee33d0e30b95b3f576e5e58386d283a0a694b736518166974b20a62f77a5901a",
+  "title": "Breadwinner eliminates arrears and starts business",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage describes a specific breadwinner who lost his job, received ERAP to clear arrears and stay housed, and started a successful business, showing a clear change for an identifiable beneficiary."
+ },
+ {
+  "sha": "ee33d0e30b95b3f576e5e58386d283a0a694b736518166974b20a62f77a5901a",
+  "title": "Couple with cancer diagnosis avoids eviction",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Names a specific couple (Mark and Sarah) with a concrete change: ERAP covered rental arrears, preventing eviction during a cancer crisis."
+ },
+ {
+  "sha": "ee33d0e30b95b3f576e5e58386d283a0a694b736518166974b20a62f77a5901a",
+  "title": "Pregnant mother avoids eviction",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage describes a specific family (pregnant mother and her family of three) who avoided eviction due to ERAP assistance, showing a concrete change for an identifiable beneficiary."
+ },
+ {
+  "sha": "ee33d0e30b95b3f576e5e58386d283a0a694b736518166974b20a62f77a5901a",
+  "title": "Student mother gets back on feet",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Identifies a specific beneficiary (student mother), describes a concrete change (ERAP rental assistance prevented eviction and helped her recover), and meets all criteria."
+ },
+ {
+  "sha": "ee33d0e30b95b3f576e5e58386d283a0a694b736518166974b20a62f77a5901a",
+  "title": "Unemployed individual secures new apartment",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage describes a specific unemployed individual who avoided homelessness and secured housing and a job with ERAP assistance, showing a concrete change."
+ },
+ {
+  "sha": "ee33d0e30b95b3f576e5e58386d283a0a694b736518166974b20a62f77a5901a",
+  "title": "Widowed mother gains housing stability",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Marita is a specific beneficiary, and ERAP covering her arrears and providing housing stability is a concrete change from her eviction-threatened situation."
+ },
+ {
+  "sha": "ee33d0e30b95b3f576e5e58386d283a0a694b736518166974b20a62f77a5901a",
+  "title": "Couple remains housed after reduced hours",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Specific beneficiary (the tenant and his wife), concrete change (remained housed due to ERAP covering past due rent)."
+ },
+ {
+  "sha": "ee33d0e30b95b3f576e5e58386d283a0a694b736518166974b20a62f77a5901a",
+  "title": "Family of four avoids eviction",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage identifies a specific family (mother of four) and describes a concrete change: ERAP paid past-due rent and prevented eviction."
+ },
+ {
+  "sha": "ee9087ae2c6f3a03d91aaafe17b172446ae466c2405bd807a6e8bfadec6a279c",
+  "title": "Covills rely on transit for 25 years",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Ron and Winnie Covill are specific beneficiaries, and the passage describes a sustained change: they continue to stay connected and active through reliable transit service in 2024."
+ },
+ {
+  "sha": "ee9087ae2c6f3a03d91aaafe17b172446ae466c2405bd807a6e8bfadec6a279c",
+  "title": "Harper's early intervention leads to success",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Harper Phillips is a specific beneficiary; the change is from not babbling to speaking and now reading at grade level with college prospects, an observable sustained improvement."
+ },
+ {
+  "sha": "ee9087ae2c6f3a03d91aaafe17b172446ae466c2405bd807a6e8bfadec6a279c",
+  "title": "Dayton avoids COVID developmental setbacks",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Specific beneficiary Dayton Phillips, observable change of avoiding developmental setbacks due to teacher engagement, presented as a true past event."
+ },
+ {
+  "sha": "f090f7af115d5ba02b469934e485c14a76c1aadb182dc4558a60b12ff1cac3b9",
+  "title": "Emily's Miracle League transformation",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Emily is a specific beneficiary, and the passage describes a concrete change in her self-confidence and a notable achievement (singing at an Astros game) resulting from the program."
+ },
+ {
+  "sha": "f090f7af115d5ba02b469934e485c14a76c1aadb182dc4558a60b12ff1cac3b9",
+  "title": "Camp parent's sons gain confidence",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage names a specific beneficiary (the youngest son of a YMCA Camp Parent), describes a concrete change (returned from camp with confidence and excitement for trying new things after being scared and struggling), and the change is presented as a true past event."
+ },
+ {
+  "sha": "f090f7af115d5ba02b469934e485c14a76c1aadb182dc4558a60b12ff1cac3b9",
+  "title": "Family helped after domestic abuse",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage identifies a specific family (sister-in-law and her children) as beneficiaries, describes a concrete change (increased confidence, consistent support, doing well now), and attributes it to the Y's financial assistance and soccer program."
+ },
+ {
+  "sha": "f090f7af115d5ba02b469934e485c14a76c1aadb182dc4558a60b12ff1cac3b9",
+  "title": "Theresa's family stability regained",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Theresa is a specific beneficiary; the change is her ability to save on childcare, pursue a nursing degree, and improve family connection due to YMCA assistance."
+ },
+ {
+  "sha": "f11892466c7727acc69fe2c58527e6755101ecce053d2fd52e94dc29a2979565",
+  "title": "David gets job at Qdoba",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "David is a specific beneficiary, and the passage describes a concrete change: he got a job at Qdoba after a long unemployment, with improved mood and self-esteem."
+ },
+ {
+  "sha": "f46565eb9ffaeca9108776703d0924aa59459d592aea1c8df13671b83bd09edf",
+  "title": "Shaniqua's journey from foster care to college",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage features a specific beneficiary (Shaniqua) and describes concrete changes: adoption, high GPA, class rank, and college attendance."
+ },
+ {
+  "sha": "f46565eb9ffaeca9108776703d0924aa59459d592aea1c8df13671b83bd09edf",
+  "title": "Ashlie finds focus through Career Connections",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Specific beneficiary Ashlie with concrete changes: diploma, college enrollment, 6 months substance-free."
+ },
+ {
+  "sha": "f46565eb9ffaeca9108776703d0924aa59459d592aea1c8df13671b83bd09edf",
+  "title": "Anvil reunites with father and enters Job Corps",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "The passage names a specific beneficiary (Anvil), describes a concrete change (reunited with father, graduated high school, accepted into Job Corps), and provides a clear intervention (Orchards Kinship Care and Youth-In-Transition programs)."
+ },
+ {
+  "sha": "f48198903967ebf1c2b6e7da8c1a4dfe78c15ebbddfeae54a71fdfb0c7e003c6",
+  "title": "Will's transformation after program",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Will is a specific beneficiary, and the passage describes a concrete change in his relationships and engagement after the program."
+ },
+ {
+  "sha": "f48198903967ebf1c2b6e7da8c1a4dfe78c15ebbddfeae54a71fdfb0c7e003c6",
+  "title": "John's regained purpose and family",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "John is a specific beneficiary, and the passage describes a concrete change in his family relationships and sense of purpose after the program."
+ },
+ {
+  "sha": "f92248ef9fa5d0676a6b957f14aecc1cbda62df28f2df7620c45a22a9b9c7f1f",
+  "title": "Homeowners helped with repairs",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "beneficiary is a population category ('local homeowners'), not a specific identifiable person or group"
+ },
+ {
+  "sha": "f92248ef9fa5d0676a6b957f14aecc1cbda62df28f2df7620c45a22a9b9c7f1f",
+  "title": "Free shares to refugee families",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "primary beneficiary is a population category ('refugee families') not a specific individual or group"
+ },
+ {
+  "sha": "f92248ef9fa5d0676a6b957f14aecc1cbda62df28f2df7620c45a22a9b9c7f1f",
+  "title": "Native seed library distributed",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "beneficiary is a population category ('neighbors'), not a specific identifiable person or group"
+ },
+ {
+  "sha": "f92248ef9fa5d0676a6b957f14aecc1cbda62df28f2df7620c45a22a9b9c7f1f",
+  "title": "Grow-A-Row families registered",
+  "stage1_confidence": "high",
+  "stage2_verdict": "service_episode",
+  "stage2_reason": "Beneficiary is a count of families, not a specific identifiable entity"
+ },
+ {
+  "sha": "fb8f56bdd13ace65881dc8b457225edef35d362eb3cc6a04ea5580270118f68b",
+  "title": "Scholar feels heard and helped",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "testimonial",
+  "stage2_reason": "The passage is a quote expressing sentiment and praise without a concrete, observable change or specific intervention details."
+ },
+ {
+  "sha": "fb8f56bdd13ace65881dc8b457225edef35d362eb3cc6a04ea5580270118f68b",
+  "title": "Scholar's problems getting solved",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "testimonial",
+  "stage2_reason": "The passage is a quote expressing sentiment and praise without a concrete, observable change for a specific beneficiary."
+ },
+ {
+  "sha": "fb8f56bdd13ace65881dc8b457225edef35d362eb3cc6a04ea5580270118f68b",
+  "title": "Scholar feels supported by advisor",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "testimonial",
+  "stage2_reason": "passage is a quote expressing praise and sentiment without a concrete observable change"
+ },
+ {
+  "sha": "fb8f56bdd13ace65881dc8b457225edef35d362eb3cc6a04ea5580270118f68b",
+  "title": "Scholar revises education plan",
+  "stage1_confidence": "high",
+  "stage2_verdict": "testimonial",
+  "stage2_reason": "The passage is a quote expressing happiness and praise for the advisor, but lacks a concrete, observable change beyond the routine act of revising a plan."
+ },
+ {
+  "sha": "fb8f56bdd13ace65881dc8b457225edef35d362eb3cc6a04ea5580270118f68b",
+  "title": "Scholar feels most supported",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "testimonial",
+  "stage2_reason": "The passage is a quote expressing sentiment/praise without a concrete observable change or specific beneficiary details."
+ },
+ {
+  "sha": "fb8f56bdd13ace65881dc8b457225edef35d362eb3cc6a04ea5580270118f68b",
+  "title": "Scholar feels important",
+  "stage1_confidence": "medium",
+  "stage2_verdict": "testimonial",
+  "stage2_reason": "The passage is a quote expressing sentiment/praise without a concrete observable change."
+ },
+ {
+  "sha": "fd032b1438b2460183131cabc6a722c5d073b24fcde6565d4e4c56e292739fe9",
+  "title": "Tyesha and Capri's journey",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Specific beneficiaries Tyesha and Capri with concrete changes: Capri's reading and potty training progress, Tyesha's GED and college plans."
+ },
+ {
+  "sha": "fd032b1438b2460183131cabc6a722c5d073b24fcde6565d4e4c56e292739fe9",
+  "title": "Danielle becomes a registered nurse",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Danielle is a specific beneficiary who completed a program and became a registered nurse, a concrete change in her life."
+ },
+ {
+  "sha": "fd032b1438b2460183131cabc6a722c5d073b24fcde6565d4e4c56e292739fe9",
+  "title": "Three resident success stories",
+  "stage1_confidence": "high",
+  "stage2_verdict": "impact_story",
+  "stage2_reason": "Three specific beneficiaries with concrete, observable changes: certification and job, food basket, and bill catch-up/school supplies."
+ }
+]

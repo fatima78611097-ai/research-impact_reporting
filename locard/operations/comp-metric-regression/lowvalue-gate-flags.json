@@ -1,0 +1,74 @@
+[
+ {
+  "sha8": "12a4557a",
+  "org": "Texas Network Of Youth Services Incorporated",
+  "reasons": [
+   "C:narrative/event (12/13 non-measurable)"
+  ],
+  "metrics": 13,
+  "published": 0
+ },
+ {
+  "sha8": "30259c4d",
+  "org": "Gbcanada Usa",
+  "reasons": [
+   "C:narrative/event (5/6 non-measurable)"
+  ],
+  "metrics": 6,
+  "published": 0
+ },
+ {
+  "sha8": "3517ecdc",
+  "org": "Womens Way",
+  "reasons": [
+   "A:plain-text (figs=0, 2152 chars/pg)"
+  ],
+  "metrics": 5,
+  "published": 0
+ },
+ {
+  "sha8": "3c185ba6",
+  "org": "Jay   Randolph Developmental Services Inc Rfd 3",
+  "reasons": [
+   "C:narrative/event (7/8 non-measurable)"
+  ],
+  "metrics": 8,
+  "published": 0
+ },
+ {
+  "sha8": "4afba9fd",
+  "org": "Emergency Assistance Center Inc",
+  "reasons": [
+   "A:plain-text (figs=0, 1598 chars/pg)"
+  ],
+  "metrics": 6,
+  "published": 0
+ },
+ {
+  "sha8": "5fcaa0e6",
+  "org": "Missouri Valley Family Young Mens Christian Association",
+  "reasons": [
+   "C:narrative/event (7/10 non-measurable)"
+  ],
+  "metrics": 10,
+  "published": 0
+ },
+ {
+  "sha8": "92cf711c",
+  "org": "Potomac Community Resources Inc",
+  "reasons": [
+   "C:narrative/event (5/8 non-measurable)"
+  ],
+  "metrics": 8,
+  "published": 0
+ },
+ {
+  "sha8": "dca5a824",
+  "org": "Grapevine Family & Community Resource Center",
+  "reasons": [
+   "A:plain-text (figs=0, 2596 chars/pg)"
+  ],
+  "metrics": 14,
+  "published": 0
+ }
+]

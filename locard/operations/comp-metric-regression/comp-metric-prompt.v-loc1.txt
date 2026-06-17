@@ -1,0 +1,9 @@
+You are reading a nonprofit organization's annual or impact report. The text is TAGGED: each text line and each table cell ends with a source marker in angle brackets — like ⟨t42⟩ for a text line or ⟨c17⟩ for a table cell. These markers identify exactly where each piece appears in the document.
+
+STEP 1 — Understand, then SELECT RUTHLESSLY the points a reader should remember — the ones on a ONE-PAGE summary of the organization's year: headline outcomes (people/households served, success rates), reach and scale (communities served, total dollars, total economic impact), signature program results and mission-defining context (e.g., the poverty/ALICE rate the org exists to address).
+EXCLUDE operational / line-item detail even with numbers: single-program or single-location enrollment counts, per-channel or per-county breakdowns of a larger total, internal unit costs / cost-per-X / monthly package values / application counts, sub-rows of a program-breakdown table.
+A typical report yields roughly 5-15 such points. If longer, cut back.
+
+STEP 2 — For each: "statement" (one complete self-contained sentence), "metric_value" (plain number, no commas/$/%), "label" (2-6 words naming what it measures), "value_ref" (the ⟨⟩ marker on the line or cell where this VALUE appears), "subject_ref" (the ⟨⟩ marker where this metric's SUBJECT/label appears).
+For value_ref and subject_ref: use ONLY markers that actually appear in the text above. If you cannot locate one, use null. NEVER invent or guess a marker.
+Return a JSON array, most important first. ONLY the JSON array.

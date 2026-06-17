@@ -1,0 +1,8 @@
+You are reading a nonprofit organization's annual or impact report.
+
+STEP 1 — Understand, then SELECT RUTHLESSLY the points a reader should remember — the ones on a ONE-PAGE summary of the organization's year: headline outcomes (people/households served, success rates), reach and scale (communities served, total dollars, total economic impact), signature program results and mission-defining context (e.g., the poverty/ALICE rate the org exists to address).
+EXCLUDE operational / line-item detail even with numbers: single-program or single-location enrollment counts, per-channel or per-county breakdowns of a larger total, internal unit costs / cost-per-X / monthly package values / application counts, sub-rows of a program-breakdown table.
+A typical report yields roughly 5-15 such points. If longer, cut back.
+
+STEP 2 — For each: "statement" (one complete self-contained sentence), "metric_value" (plain number, no commas/$/%), "label" (2-6 words naming what it measures).
+Return a JSON array, most important first. ONLY the JSON array.

@@ -117,9 +117,12 @@ def _parse_version() -> str:
     from importlib.metadata import version as _pkg_version
 
     try:
-        return f"docling-{_pkg_version('docling')}"
+        base = f"docling-{_pkg_version('docling')}"
     except Exception:
-        return "docling-unknown"
+        base = "docling-unknown"
+    # Append the output-schema version so reparse --min-version can target docs parsed
+    # before a schema change (e.g. before page_dimensions). See config.PARSE_SCHEMA_VERSION.
+    return f"{base}+{config.PARSE_SCHEMA_VERSION}"
 
 
 def _ship_log_on_exit(run_tag: str | None, instance_id: str | None) -> None:
@@ -163,6 +166,13 @@ def main() -> None:
     if args.worker_id:
         with conn.cursor() as cur:
             cur.execute("SET app.worker_id = %s", (args.worker_id,))
+        # COMMIT the session SET immediately. A plain SET is reverted if the
+        # transaction it was issued in is rolled back; without this commit, any
+        # _safe_rollback(conn) before the first work-claim commit (e.g. a failed
+        # pdftotext-backfill query) would silently drop app.worker_id and the
+        # RLS worker_claim_policy would then reject every claim. (Spec 0058 prod
+        # bug, run 33.)
+        conn.commit()
 
         status = db.get_run_status_by_id(conn, args.run_id)
         if status is None:
@@ -655,6 +665,10 @@ def _process_one(runner, pdf_path: Path, item: dict, options: "chunking.ParseOpt
         "metadata_json": config.filter_metadata(meta.get("metadata")),
         "sections": sections,
         "tables": tables,
+        # Per-page dimensions -> lava_parse.pages (first-class; nullable for legacy callers).
+        "pages": meta.get("page_dimensions") or [],
+        # Figure/picture regions -> lava_parse.figures (the infographic / vision-verify router).
+        "figures": meta.get("picture_locations") or [],
     }
 
 

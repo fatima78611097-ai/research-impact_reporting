@@ -5,6 +5,13 @@ import re
 
 
 PARSE_VERSION_PREFIX = "docling"
+# Parse OUTPUT-schema version, independent of the Docling library version. Appended to
+# parse_version as "+<schema>" so `reparse --min-version` can target docs parsed before a
+# schema change. Lexically "docling-X.Y.Z" < "docling-X.Y.Z+s2" (prefix), so bumping this
+# makes every prior doc sort below the new version -> a clean, idempotent reparse.
+# History: (no suffix) = source_locations/bbox/charspan era; s2 = + page_dimensions (lava_parse.pages);
+# s3 = + figure/picture regions (lava_parse.figures) — the infographic / vision-verify router.
+PARSE_SCHEMA_VERSION = "s3"
 BATCH_SIZE = 500
 STATS_UPDATE_INTERVAL = 50
 MAX_ERROR_LEN = 500
@@ -85,13 +92,19 @@ PARSE_TIMEOUT_SECONDS = 180
 PARSE_CHILD_SOFT_TIMEOUT_SECONDS = 150
 
 # Address-space cap on the child (resource.RLIMIT_AS), so an OOM / image bomb is
-# bounded at the OS level instead of taking down the worker or the host. Spike
-# peak RSS was 5.2 GB (49 MB single-page doc) + warm model; 14 GB leaves headroom
-# and stays below the g6.2xlarge 32 GB host. Set None to DISABLE (see the caveat
-# in parse_runner._apply_rlimit: CUDA reserves large *virtual* address space, so
-# RLIMIT_AS that is too low can break CUDA init — the Phase-6 smoke test must
-# confirm the child inits CUDA and parses a normal doc under this cap).
-PARSE_CHILD_RLIMIT_AS_BYTES = 14 * 1024 * 1024 * 1024
+# DISABLED (None) — the Phase-6 smoke test (run 34) proved RLIMIT_AS is the WRONG
+# tool for a GPU worker: it caps VIRTUAL address space, and CUDA/cuDNN reserve a
+# very large virtual footprint + load sublibraries on demand. A 14 GB cap starved
+# that init -> every convert failed with std::bad_alloc / "Cannot load symbol
+# cudnnCreateTensorDescriptor / CUDNN_STATUS_NOT_SUPPORTED_SUBLIBRARY_UNAVAILABLE".
+# Isolation test on an L4: RLIMIT_AS 14 GB -> FAIL, 28 GB -> OK, None -> OK.
+# The OOM defense does NOT depend on this: a memory bomb in the child is killed by
+# the OS OOM-killer (the bloated child, not the parent worker, is the target) ->
+# the parent sees the dead child -> parse_crash -> worker survives + circuit
+# breaker. Subprocess isolation + per-doc timeout are the real bounds. A proper
+# RESIDENT-memory cap (cgroup memory.max, not virtual RLIMIT_AS) is the right
+# future enhancement if a hard in-child bound is wanted.
+PARSE_CHILD_RLIMIT_AS_BYTES = None
 
 # How often the parent polls child liveness while awaiting a result — bounds how
 # fast a segfault (child dies without sending) is detected (vs waiting full T).

@@ -1,0 +1,9683 @@
+[
+ {
+  "sha8": "1a70e980",
+  "org": "Skookum Kids",
+  "figs_per_page": 2.8,
+  "img": "bakeoff/pages/1a70e980.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "2025",
+      "label": "Report Year",
+      "box": [
+       133.0,
+       230.0,
+       276.0,
+       770.0
+      ]
+     },
+     {
+      "value": "56",
+      "label": "Kids through our foster family programs",
+      "box": [
+       530.0,
+       720.0,
+       640.0,
+       890.0
+      ]
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "56",
+      "label": "KIDS THROUGH OUR FOSTER FAMILY PROGRAMS",
+      "box": [
+       483.0,
+       732.0,
+       675.0,
+       954.0
+      ]
+     },
+     {
+      "value": "2025",
+      "label": "IMPACT REPORT",
+      "box": [
+       132.0,
+       236.0,
+       252.0,
+       763.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "5b98b66f",
+  "org": "Capstone Community Action Inc",
+  "figs_per_page": 1.8,
+  "img": "bakeoff/pages/5b98b66f.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "1562",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "799,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "107,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "850,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "260",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "3256",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "799,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "290,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "850,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "44",
+      "label": "",
+      "box": null
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "1562",
+      "label": "Children accessed healthy meals and snacks",
+      "box": [
+       799.0,
+       119.0,
+       833.0,
+       231.0
+      ]
+     },
+     {
+      "value": "3256",
+      "label": "Vermonters fed through our food shelf",
+      "box": [
+       799.0,
+       291.0,
+       826.0,
+       365.0
+      ]
+     },
+     {
+      "value": "2971",
+      "label": "Beneficiaries of heating assistance",
+      "box": [
+       804.0,
+       424.0,
+       835.0,
+       532.0
+      ]
+     },
+     {
+      "value": "181",
+      "label": "Homes weatherized",
+      "box": [
+       804.0,
+       575.0,
+       831.0,
+       643.0
+      ]
+     },
+     {
+      "value": "218",
+      "label": "Entrepreneurs supported to start or expand a business",
+      "box": [
+       892.0,
+       106.0,
+       922.0,
+       187.0
+      ]
+     },
+     {
+      "value": "353",
+      "label": "Children prepared for school through Head Start",
+      "box": [
+       892.0,
+       296.0,
+       922.0,
+       380.0
+      ]
+     },
+     {
+      "value": "967",
+      "label": "People assisted with counseling to access stable and safe housing",
+      "box": [
+       892.0,
+       508.0,
+       922.0,
+       573.0
+      ]
+     },
+     {
+      "value": "369",
+      "label": "Participants in financial literacy, credit & planning programs",
+      "box": [
+       892.0,
+       716.0,
+       922.0,
+       799.0
+      ]
+     },
+     {
+      "value": "1903873",
+      "label": "In tax refunds for low-income households resulting from tax preparation assistance",
+      "box": [
+       745.0,
+       685.0,
+       777.0,
+       892.0
+      ]
+     },
+     {
+      "value": "32",
+      "label": "Graduates of our Community Kitchen Academy",
+      "box": [
+       831.0,
+       688.0,
+       856.0,
+       741.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "2ec17b37",
+  "org": "Atlanta Victim Assistance Inc",
+  "figs_per_page": 19.0,
+  "img": "bakeoff/pages/2ec17b37.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "6101",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "68,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "153,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "198,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "319",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "24677",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "38,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "340,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "198,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "460",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "84",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "2025",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "230,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "153,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "280,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "220",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "48",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "290,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "398,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "315,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "430",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "18",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "328,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "320,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "353,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "350",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "9",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "365,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "298,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "390,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "320",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "6",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "402,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "280,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "427,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "300",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "5",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "440,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "270,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "465,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "290",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "5068",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "2021",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "538,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "29,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "558,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "70",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "5765",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "2022",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "510,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "88,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "530,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "129",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "5162",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "2023",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "535,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "148,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "555,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "189",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "4595",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "2024",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "560,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "208,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "580,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "249",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "6101",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "2025",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "490,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "268,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "510,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "309",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "55",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "1981",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "520,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "200,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "600,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "340",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "1050",
+      "label": "",
+      "box": null
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "6101",
+      "label": "people turned to AVA for help",
+      "box": [
+       68.0,
+       153.0,
+       146.0,
+       306.0
+      ]
+     },
+     {
+      "value": "24677",
+      "label": "service interactions where AVA advocates walked alongside survivors through multiple moments of need",
+      "box": [
+       40.0,
+       340.0,
+       177.0,
+       470.0
+      ]
+     },
+     {
+      "value": "84",
+      "label": "% of the individuals served in 2025 received help related to the following:",
+      "box": [
+       222.0,
+       180.0,
+       255.0,
+       251.0
+      ]
+     },
+     {
+      "value": "48",
+      "label": "Assault/Battery/Fighting",
+      "box": [
+       290.0,
+       270.0,
+       303.0,
+       303.0
+      ]
+     },
+     {
+      "value": "18",
+      "label": "Domestic Violence",
+      "box": [
+       327.0,
+       243.0,
+       339.0,
+       306.0
+      ]
+     },
+     {
+      "value": "9",
+      "label": "Intimidation",
+      "box": [
+       366.0,
+       215.0,
+       379.0,
+       258.0
+      ]
+     },
+     {
+      "value": "6",
+      "label": "Compensation Claims",
+      "box": [
+       403.0,
+       215.0,
+       415.0,
+       285.0
+      ]
+     },
+     {
+      "value": "5",
+      "label": "Traffic Related",
+      "box": [
+       440.0,
+       203.0,
+       452.0,
+       258.0
+      ]
+     },
+     {
+      "value": "5068",
+      "label": "clients served 2021-2025",
+      "box": [
+       593.0,
+       51.0,
+       605.0,
+       74.0
+      ]
+     },
+     {
+      "value": "5765",
+      "label": "clients served 2021-2025",
+      "box": [
+       576.0,
+       109.0,
+       588.0,
+       132.0
+      ]
+     },
+     {
+      "value": "5162",
+      "label": "clients served 2021-2025",
+      "box": [
+       593.0,
+       167.0,
+       605.0,
+       190.0
+      ]
+     },
+     {
+      "value": "4595",
+      "label": "clients served 2021-2025",
+      "box": [
+       610.0,
+       138.0,
+       622.0,
+       161.0
+      ]
+     },
+     {
+      "value": "6101",
+      "label": "clients served 2021-2025",
+      "box": [
+       530.0,
+       167.0,
+       622.0,
+       190.0
+      ]
+     },
+     {
+      "value": "55",
+      "label": "AVA has served more than",
+      "box": [
+       530.0,
+       218.0,
+       598.0,
+       339.0
+      ]
+     },
+     {
+      "value": "1050",
+      "label": "students and their families",
+      "box": [
+       515.0,
+       529.0,
+       574.0,
+       650.0
+      ]
+     },
+     {
+      "value": "2025",
+      "label": "clients served 2021-2025",
+      "box": [
+       738.0,
+       138.0,
+       750.0,
+       161.0
+      ]
+     },
+     {
+      "value": "2026",
+      "label": "Save the date for this year's 5K on Saturday, Oct. 3",
+      "box": [
+       840.0,
+       582.0,
+       853.0,
+       660.0
+      ]
+     },
+     {
+      "value": "5",
+      "label": "Saturday, Oct. 3",
+      "box": [
+       840.0,
+       663.0,
+       853.0,
+       711.0
+      ]
+     },
+     {
+      "value": "2026",
+      "label": "Saturday, Oct. 3",
+      "box": [
+       840.0,
+       714.0,
+       853.0,
+       748.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "9d9ae097",
+  "org": "Irving Cares Inc",
+  "figs_per_page": 15.5,
+  "img": "bakeoff/pages/9d9ae097.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "199",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "340,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "166,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "380,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "219",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "223445",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "380,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "230,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "400,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "290",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "1123",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "400,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "370,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "420,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "420",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "364",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "448,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "166,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "488,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "219",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "152370",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "488,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "230,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "508,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "290",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "419",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "508,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "380,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "528,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "420",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "480",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "556,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "166,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "596,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "219",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "1440",
+      "label": "",
+      "box": null
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "199",
+      "label": "Irving families received assistance with payments",
+      "box": [
+       338.0,
+       165.0,
+       354.0,
+       290.0
+      ]
+     },
+     {
+      "value": "223,445",
+      "label": "was provided to families",
+      "box": [
+       365.0,
+       231.0,
+       379.0,
+       327.0
+      ]
+     },
+     {
+      "value": "1,123",
+      "label": "Average rent bill paid was",
+      "box": [
+       394.0,
+       382.0,
+       407.0,
+       424.0
+      ]
+     },
+     {
+      "value": "364",
+      "label": "Irving families received assistance with gas and electric bills",
+      "box": [
+       444.0,
+       171.0,
+       467.0,
+       226.0
+      ]
+     },
+     {
+      "value": "152,370",
+      "label": "was provided to families",
+      "box": [
+       456.0,
+       231.0,
+       470.0,
+       327.0
+      ]
+     },
+     {
+      "value": "419",
+      "label": "Average utility bill paid was",
+      "box": [
+       484.0,
+       389.0,
+       497.0,
+       424.0
+      ]
+     },
+     {
+      "value": "480",
+      "label": "individuals participated in 1,440 hours of financial coaching",
+      "box": [
+       517.0,
+       185.0,
+       533.0,
+       313.0
+      ]
+     },
+     {
+      "value": "1,440",
+      "label": "hours of financial coaching",
+      "box": [
+       533.0,
+       382.0,
+       546.0,
+       416.0
+      ]
+     },
+     {
+      "value": "820,857.00",
+      "label": "spent on services -- specifically rent, utilities, food and education/employment",
+      "box": [
+       338.0,
+       649.0,
+       364.0,
+       840.0
+      ]
+     },
+     {
+      "value": "146",
+      "label": "Irving households were seen by Invest In Yourself / Employment Services",
+      "box": [
+       441.0,
+       592.0,
+       463.0,
+       648.0
+      ]
+     },
+     {
+      "value": "28",
+      "label": "Irving residents completed education or GED certifications",
+      "box": [
+       491.0,
+       605.0,
+       512.0,
+       645.0
+      ]
+     },
+     {
+      "value": "304",
+      "label": "Irving families per month (on average) received nutritious groceries",
+      "box": [
+       690.0,
+       94.0,
+       712.0,
+       153.0
+      ]
+     },
+     {
+      "value": "3,653",
+      "label": "Irving families were assisted",
+      "box": [
+       735.0,
+       60.0,
+       757.0,
+       151.0
+      ]
+     },
+     {
+      "value": "25,571",
+      "label": "days of food for a total of",
+      "box": [
+       780.0,
+       41.0,
+       804.0,
+       147.0
+      ]
+     },
+     {
+      "value": "76,713",
+      "label": "meals for Irving families",
+      "box": [
+       780.0,
+       301.0,
+       804.0,
+       410.0
+      ]
+     },
+     {
+      "value": "12,628",
+      "label": "targeted referrals were made",
+      "box": [
+       863.0,
+       163.0,
+       877.0,
+       221.0
+      ]
+     },
+     {
+      "value": "6,364",
+      "label": "hours",
+      "box": [
+       831.0,
+       706.0,
+       845.0,
+       747.0
+      ]
+     },
+     {
+      "value": "190,060",
+      "label": "value",
+      "box": [
+       831.0,
+       835.0,
+       845.0,
+       899.0
+      ]
+     },
+     {
+      "value": "11",
+      "label": "full-time employees",
+      "box": [
+       893.0,
+       715.0,
+       907.0,
+       735.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "c6d70581",
+  "org": "Action Pathways Inc",
+  "figs_per_page": 15.0,
+  "img": "bakeoff/pages/c6d70581.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "20227981",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "206,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "10,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "230,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "168",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "8339899",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "269,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "10,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "293,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "168",
+      "label": "",
+      "box": null
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "20227981",
+      "label": "Total Uses of Funds",
+      "box": [
+       226.0,
+       17.0,
+       245.0,
+       115.0
+      ]
+     },
+     {
+      "value": "8689253",
+      "label": "Early Childhood Development",
+      "box": [
+       359.0,
+       33.0,
+       375.0,
+       79.0
+      ]
+     },
+     {
+      "value": "3021252",
+      "label": "Low Income Housing",
+      "box": [
+       404.0,
+       17.0,
+       420.0,
+       80.0
+      ]
+     },
+     {
+      "value": "22120451",
+      "label": "Total Net Assets",
+      "box": [
+       362.0,
+       146.0,
+       379.0,
+       196.0
+      ]
+     },
+     {
+      "value": "19545489",
+      "label": "Net Assets Without Donor Restrictions",
+      "box": [
+       398.0,
+       146.0,
+       414.0,
+       204.0
+      ]
+     },
+     {
+      "value": "2574962",
+      "label": "Net Assets With Donor Restrictions",
+      "box": [
+       477.0,
+       146.0,
+       493.0,
+       200.0
+      ]
+     },
+     {
+      "value": "16299233",
+      "label": "Federal Funding Revenue",
+      "box": [
+       566.0,
+       181.0,
+       581.0,
+       231.0
+      ]
+     },
+     {
+      "value": "74484",
+      "label": "Program Fees Revenue",
+      "box": [
+       584.0,
+       181.0,
+       599.0,
+       231.0
+      ]
+     },
+     {
+      "value": "2526043",
+      "label": "State Grants Revenue",
+      "box": [
+       602.0,
+       181.0,
+       618.0,
+       231.0
+      ]
+     },
+     {
+      "value": "1543552",
+      "label": "Other Grants - local/private foundations Revenue",
+      "box": [
+       620.0,
+       181.0,
+       636.0,
+       231.0
+      ]
+     },
+     {
+      "value": "616329",
+      "label": "Contract Services Revenue",
+      "box": [
+       639.0,
+       181.0,
+       654.0,
+       231.0
+      ]
+     },
+     {
+      "value": "588144",
+      "label": "Donations Revenue",
+      "box": [
+       657.0,
+       181.0,
+       672.0,
+       231.0
+      ]
+     },
+     {
+      "value": "209010",
+      "label": "Donations - services, materials, and space Revenue",
+      "box": [
+       675.0,
+       181.0,
+       690.0,
+       231.0
+      ]
+     },
+     {
+      "value": "107714",
+      "label": "Rent Revenue",
+      "box": [
+       693.0,
+       181.0,
+       708.0,
+       231.0
+      ]
+     },
+     {
+      "value": "155672",
+      "label": "Other Income Revenue",
+      "box": [
+       710.0,
+       181.0,
+       726.0,
+       231.0
+      ]
+     },
+     {
+      "value": "22120451",
+      "label": "Total Revenue",
+      "box": [
+       747.0,
+       175.0,
+       762.0,
+       231.0
+      ]
+     },
+     {
+      "value": "37810229",
+      "label": "Total Donations - food",
+      "box": [
+       783.0,
+       175.0,
+       798.0,
+       231.0
+      ]
+     },
+     {
+      "value": "59930680",
+      "label": "GRAND TOTAL",
+      "box": [
+       820.0,
+       172.0,
+       837.0,
+       231.0
+      ]
+     },
+     {
+      "value": "5335328",
+      "label": "Total Agency Salaries Excluding Benefits",
+      "box": [
+       891.0,
+       181.0,
+       906.0,
+       231.0
+      ]
+     },
+     {
+      "value": "15057522",
+      "label": "Total Expenses (Less Salaries and In-Kind)",
+      "box": [
+       907.0,
+       181.0,
+       923.0,
+       231.0
+      ]
+     },
+     {
+      "value": "117910",
+      "label": "Total In-kind without food donations",
+      "box": [
+       924.0,
+       181.0,
+       939.0,
+       231.0
+      ]
+     },
+     {
+      "value": "36722429",
+      "label": "Total In-kind with food donations",
+      "box": [
+       938.0,
+       181.0,
+       953.0,
+       231.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "ec055971",
+  "org": "Ada S Mckinley Community Services Inc",
+  "figs_per_page": 14.0,
+  "img": "bakeoff/pages/ec055971.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "70",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "370,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "58,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "400,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "169",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "3409",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "707,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "58,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "737,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "139",
+      "label": "",
+      "box": null
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "70",
+      "label": "LOCATIONS",
+      "box": [
+       378.0,
+       55.0,
+       408.0,
+       162.0
+      ]
+     },
+     {
+      "value": "38865878",
+      "label": "Total Community Investment",
+      "box": [
+       540.0,
+       753.0,
+       593.0,
+       900.0
+      ]
+     },
+     {
+      "value": "44272937",
+      "label": "Total Agency Budget",
+      "box": [
+       608.0,
+       753.0,
+       661.0,
+       898.0
+      ]
+     },
+     {
+      "value": "12",
+      "label": "General and Admin Costs",
+      "box": [
+       698.0,
+       753.0,
+       731.0,
+       800.0
+      ]
+     },
+     {
+      "value": "3409",
+      "label": "Behavioral Health & Clinical Services",
+      "box": [
+       682.0,
+       55.0,
+       725.0,
+       139.0
+      ]
+     },
+     {
+      "value": "1660",
+      "label": "Educational Services",
+      "box": [
+       682.0,
+       184.0,
+       725.0,
+       263.0
+      ]
+     },
+     {
+      "value": "826",
+      "label": "Employment & Community Support Services",
+      "box": [
+       682.0,
+       316.0,
+       725.0,
+       394.0
+      ]
+     },
+     {
+      "value": "383",
+      "label": "Head Start & Early Learning",
+      "box": [
+       682.0,
+       448.0,
+       725.0,
+       526.0
+      ]
+     },
+     {
+      "value": "392",
+      "label": "Foster Care & Emergency Shelter",
+      "box": [
+       682.0,
+       577.0,
+       725.0,
+       655.0
+      ]
+     },
+     {
+      "value": "6670",
+      "label": "Total people served",
+      "box": [
+       742.0,
+       55.0,
+       765.0,
+       411.0
+      ]
+     },
+     {
+      "value": "8530584",
+      "label": "Head Start & Early Learning",
+      "box": [
+       755.0,
+       571.0,
+       780.0,
+       700.0
+      ]
+     },
+     {
+      "value": "5420507",
+      "label": "Foster Care & Emergency Shelter",
+      "box": [
+       791.0,
+       469.0,
+       825.0,
+       599.0
+      ]
+     },
+     {
+      "value": "973310",
+      "label": "Educational Services",
+      "box": [
+       791.0,
+       614.0,
+       827.0,
+       695.0
+      ]
+     },
+     {
+      "value": "2890140",
+      "label": "Behavioral Health & Clinical Services",
+      "box": [
+       753.0,
+       808.0,
+       787.0,
+       931.0
+      ]
+     },
+     {
+      "value": "21051337",
+      "label": "Employment & Community Support Services",
+      "box": [
+       797.0,
+       808.0,
+       845.0,
+       931.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "28bb72ee",
+  "org": "Virginia Community Action Partnership",
+  "figs_per_page": 13.0,
+  "img": "bakeoff/pages/28bb72ee.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "45",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "1",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "229,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "429,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "250,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "450",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "1",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "240,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "429,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "260,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "440",
+      "label": "",
+      "box": null
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "45",
+      "label": "return of $45 for every $1 invested",
+      "box": [
+       235.0,
+       419.0,
+       269.0,
+       477.0
+      ]
+     },
+     {
+      "value": "3700",
+      "label": "taxpayers claim EITC",
+      "box": [
+       227.0,
+       743.0,
+       263.0,
+       928.0
+      ]
+     },
+     {
+      "value": "2",
+      "label": "Increase in Federal/State Refunds",
+      "box": [
+       360.0,
+       67.0,
+       413.0,
+       164.0
+      ]
+     },
+     {
+      "value": "19.6",
+      "label": "Total Federal Refunds",
+      "box": [
+       359.0,
+       252.0,
+       413.0,
+       351.0
+      ]
+     },
+     {
+      "value": "3.2",
+      "label": "Total State Refunds",
+      "box": [
+       359.0,
+       446.0,
+       413.0,
+       545.0
+      ]
+     },
+     {
+      "value": "6.5",
+      "label": "in EITC Refunds",
+      "box": [
+       382.0,
+       743.0,
+       417.0,
+       879.0
+      ]
+     },
+     {
+      "value": "4.9",
+      "label": "saved in tax prep fees",
+      "box": [
+       540.0,
+       743.0,
+       575.0,
+       879.0
+      ]
+     },
+     {
+      "value": "20,200",
+      "label": "Federal Returns Filed",
+      "box": [
+       510.0,
+       135.0,
+       563.0,
+       220.0
+      ]
+     },
+     {
+      "value": "15,500",
+      "label": "State Returns Filed",
+      "box": [
+       510.0,
+       394.0,
+       563.0,
+       479.0
+      ]
+     },
+     {
+      "value": "900+",
+      "label": "Volunteers",
+      "box": [
+       761.0,
+       55.0,
+       779.0,
+       113.0
+      ]
+     },
+     {
+      "value": "30,000",
+      "label": "Hours of Tax Prep Time",
+      "box": [
+       756.0,
+       309.0,
+       780.0,
+       389.0
+      ]
+     },
+     {
+      "value": "8.2",
+      "label": "Increase in Number of Volunteers",
+      "box": [
+       859.0,
+       47.0,
+       878.0,
+       117.0
+      ]
+     },
+     {
+      "value": "1.7",
+      "label": "Value of volunteer hours",
+      "box": [
+       859.0,
+       316.0,
+       878.0,
+       386.0
+      ]
+     },
+     {
+      "value": "4.7",
+      "label": "Child Tax Credit/Additional Child Tax Credit Refunds as of May 2025",
+      "box": [
+       700.0,
+       672.0,
+       785.0,
+       928.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "b42e6f95",
+  "org": "Calm Waters Center For Children And Families Inc",
+  "figs_per_page": 12.0,
+  "img": "bakeoff/pages/b42e6f95.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "7806",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "300,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "100,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "420,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "450",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "84043",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "1992",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "250,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "630,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "360,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "900",
+      "label": "",
+      "box": null
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "7,806",
+      "label": "total people impacted",
+      "box": [
+       296.0,
+       106.0,
+       374.0,
+       451.0
+      ]
+     },
+     {
+      "value": "84,043",
+      "label": "children & families impacted since 1992",
+      "box": [
+       248.0,
+       637.0,
+       296.0,
+       904.0
+      ]
+     },
+     {
+      "value": "2,787",
+      "label": "students and families benefitted from School Support Groups",
+      "box": [
+       510.0,
+       91.0,
+       549.0,
+       244.0
+      ]
+     },
+     {
+      "value": "653",
+      "label": "parents attended the Co-Parenting Seminar",
+      "box": [
+       514.0,
+       411.0,
+       552.0,
+       517.0
+      ]
+     },
+     {
+      "value": "1,282",
+      "label": "clients and families benefitted from Private Counseling",
+      "box": [
+       623.0,
+       91.0,
+       661.0,
+       237.0
+      ]
+     },
+     {
+      "value": "1,575",
+      "label": "individuals received Grief Training",
+      "box": [
+       625.0,
+       403.0,
+       664.0,
+       547.0
+      ]
+     },
+     {
+      "value": "703",
+      "label": "individuals attended Grief Support Groups",
+      "box": [
+       735.0,
+       91.0,
+       774.0,
+       198.0
+      ]
+     },
+     {
+      "value": "180",
+      "label": "individuals attended Divorce Support Groups",
+      "box": [
+       739.0,
+       403.0,
+       778.0,
+       505.0
+      ]
+     },
+     {
+      "value": "75",
+      "label": "medical residents & students received Grief Support & Education",
+      "box": [
+       400.0,
+       692.0,
+       439.0,
+       759.0
+      ]
+     },
+     {
+      "value": "15",
+      "label": "organizations served through Community Partnerships",
+      "box": [
+       507.0,
+       690.0,
+       546.0,
+       747.0
+      ]
+     },
+     {
+      "value": "458",
+      "label": "people served through Community Partnership Programming",
+      "box": [
+       621.0,
+       689.0,
+       660.0,
+       800.0
+      ]
+     },
+     {
+      "value": "258",
+      "label": "detained individuals received Incarcerated Grief Support",
+      "box": [
+       739.0,
+       689.0,
+       778.0,
+       800.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "011c1177",
+  "org": "Dreams With Wings Inc",
+  "figs_per_page": 12.0,
+  "img": "bakeoff/pages/011c1177.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "25",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "140,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "90,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "160,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "160",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "7056005",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "378,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "810,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "394,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "890",
+      "label": "",
+      "box": null
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "7056005",
+      "label": "TOTAL REVENUE & SUPPORT",
+      "box": [
+       378.0,
+       868.0,
+       392.0,
+       949.0
+      ]
+     },
+     {
+      "value": "4935806",
+      "label": "Medicaid & Service Revenue",
+      "box": [
+       472.0,
+       580.0,
+       486.0,
+       659.0
+      ]
+     },
+     {
+      "value": "195072",
+      "label": "Charitable Gaming",
+      "box": [
+       489.0,
+       580.0,
+       503.0,
+       659.0
+      ]
+     },
+     {
+      "value": "83112",
+      "label": "Special Events",
+      "box": [
+       457.0,
+       796.0,
+       471.0,
+       845.0
+      ]
+     },
+     {
+      "value": "719256",
+      "label": "Contributions/Grants",
+      "box": [
+       491.0,
+       796.0,
+       505.0,
+       853.0
+      ]
+     },
+     {
+      "value": "1122759",
+      "label": "Other",
+      "box": [
+       525.0,
+       796.0,
+       539.0,
+       868.0
+      ]
+     },
+     {
+      "value": "4454276",
+      "label": "Program Services Expenses",
+      "box": [
+       594.0,
+       552.0,
+       608.0,
+       631.0
+      ]
+     },
+     {
+      "value": "986443",
+      "label": "Administrative Expenses",
+      "box": [
+       628.0,
+       552.0,
+       642.0,
+       631.0
+      ]
+     },
+     {
+      "value": "79400",
+      "label": "Fund-raising Expenses",
+      "box": [
+       662.0,
+       552.0,
+       676.0,
+       631.0
+      ]
+     },
+     {
+      "value": "5520119",
+      "label": "TOTAL EXPENSES",
+      "box": [
+       698.0,
+       552.0,
+       712.0,
+       631.0
+      ]
+     },
+     {
+      "value": "4172310",
+      "label": "Beginning of year Net Assets",
+      "box": [
+       612.0,
+       773.0,
+       626.0,
+       850.0
+      ]
+     },
+     {
+      "value": "5708196",
+      "label": "End of Year Net Assets",
+      "box": [
+       647.0,
+       773.0,
+       661.0,
+       850.0
+      ]
+     },
+     {
+      "value": "1535886",
+      "label": "INCREASE IN NET ASSETS",
+      "box": [
+       681.0,
+       773.0,
+       695.0,
+       850.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "a79f5931",
+  "org": "Thrive Peninsula",
+  "figs_per_page": 11.0,
+  "img": "bakeoff/pages/a79f5931.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "35",
+      "label": "families weekly (Hispanic Foods section)",
+      "box": [
+       160.0,
+       799.0,
+       174.0,
+       817.0
+      ]
+     },
+     {
+      "value": "240",
+      "label": "furloughed families (critical support)",
+      "box": [
+       329.0,
+       799.0,
+       343.0,
+       827.0
+      ]
+     },
+     {
+      "value": "300",
+      "label": "weekly volunteers",
+      "box": [
+       350.0,
+       260.0,
+       364.0,
+       288.0
+      ]
+     },
+     {
+      "value": "19",
+      "label": "media placements",
+      "box": [
+       371.0,
+       600.0,
+       385.0,
+       618.0
+      ]
+     },
+     {
+      "value": "40463",
+      "label": "Total number of people served",
+      "box": [
+       540.0,
+       790.0,
+       589.0,
+       950.0
+      ]
+     },
+     {
+      "value": "37074",
+      "label": "People served at The Market at THRIVE",
+      "box": [
+       610.0,
+       400.0,
+       629.0,
+       470.0
+      ]
+     },
+     {
+      "value": "915907",
+      "label": "pounds of food distributed",
+      "box": [
+       638.0,
+       300.0,
+       652.0,
+       369.0
+      ]
+     },
+     {
+      "value": "1179",
+      "label": "home deliveries completed",
+      "box": [
+       659.0,
+       300.0,
+       673.0,
+       338.0
+      ]
+     },
+     {
+      "value": "538290",
+      "label": "Financial services distributed",
+      "box": [
+       682.0,
+       400.0,
+       701.0,
+       470.0
+      ]
+     },
+     {
+      "value": "476",
+      "label": "families stabilized",
+      "box": [
+       710.0,
+       290.0,
+       724.0,
+       318.0
+      ]
+     },
+     {
+      "value": "1172",
+      "label": "people stabilized",
+      "box": [
+       710.0,
+       370.0,
+       724.0,
+       407.0
+      ]
+     },
+     {
+      "value": "692",
+      "label": "financial coaching sessions",
+      "box": [
+       731.0,
+       290.0,
+       745.0,
+       318.0
+      ]
+     },
+     {
+      "value": "571",
+      "label": "children receiving Christmas assistance",
+      "box": [
+       752.0,
+       400.0,
+       766.0,
+       428.0
+      ]
+     },
+     {
+      "value": "832",
+      "label": "People served by Project Connect",
+      "box": [
+       775.0,
+       390.0,
+       794.0,
+       427.0
+      ]
+     },
+     {
+      "value": "14530",
+      "label": "Books provided by Free Bookstore",
+      "box": [
+       796.0,
+       400.0,
+       815.0,
+       469.0
+      ]
+     },
+     {
+      "value": "706",
+      "label": "lbs of food grown by The Garden at THRIVE",
+      "box": [
+       817.0,
+       500.0,
+       836.0,
+       537.0
+      ]
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "37074",
+      "label": "The Market at THRIVE: Served",
+      "box": [
+       605.0,
+       413.0,
+       624.0,
+       609.0
+      ]
+     },
+     {
+      "value": "915907",
+      "label": "Distributed pounds of food",
+      "box": [
+       633.0,
+       290.0,
+       650.0,
+       392.0
+      ]
+     },
+     {
+      "value": "1179",
+      "label": "Completed home deliveries",
+      "box": [
+       650.0,
+       290.0,
+       667.0,
+       362.0
+      ]
+     },
+     {
+      "value": "538290",
+      "label": "Financial Services: Distributed $",
+      "box": [
+       677.0,
+       413.0,
+       696.0,
+       655.0
+      ]
+     },
+     {
+      "value": "476",
+      "label": "Stabilized families",
+      "box": [
+       706.0,
+       290.0,
+       723.0,
+       337.0
+      ]
+     },
+     {
+      "value": "1172",
+      "label": "people",
+      "box": [
+       706.0,
+       454.0,
+       723.0,
+       510.0
+      ]
+     },
+     {
+      "value": "692",
+      "label": "Provided financial coaching sessions",
+      "box": [
+       723.0,
+       290.0,
+       741.0,
+       337.0
+      ]
+     },
+     {
+      "value": "571",
+      "label": "Extended Christmas assistance to children",
+      "box": [
+       757.0,
+       290.0,
+       774.0,
+       337.0
+      ]
+     },
+     {
+      "value": "832",
+      "label": "Project Connect: People Served",
+      "box": [
+       786.0,
+       384.0,
+       805.0,
+       602.0
+      ]
+     },
+     {
+      "value": "14530",
+      "label": "Free Bookstore: Provided Books+",
+      "box": [
+       815.0,
+       413.0,
+       834.0,
+       635.0
+      ]
+     },
+     {
+      "value": "706",
+      "label": "The Garden at THRIVE Grew: lbs of food",
+      "box": [
+       845.0,
+       413.0,
+       864.0,
+       465.0
+      ]
+     },
+     {
+      "value": "40463",
+      "label": "TOTAL NUMBER OF PEOPLE SERVED:",
+      "box": [
+       547.0,
+       792.0,
+       583.0,
+       950.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "93774f84",
+  "org": "Family And Community Together",
+  "figs_per_page": 10.0,
+  "img": "bakeoff/pages/93774f84.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "28",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "276,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "329,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "300,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "355",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "15",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "314,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "329,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "338,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "355",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "2",
+      "label": "",
+      "box": null
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "28",
+      "label": "percent increase in people served",
+      "box": [
+       249.0,
+       310.0,
+       262.0,
+       347.0
+      ]
+     },
+     {
+      "value": "15",
+      "label": "percent increase in requests",
+      "box": [
+       311.0,
+       382.0,
+       324.0,
+       423.0
+      ]
+     },
+     {
+      "value": "52",
+      "label": "percent of families calling out behavior support",
+      "box": [
+       456.0,
+       126.0,
+       476.0,
+       177.0
+      ]
+     },
+     {
+      "value": "48",
+      "label": "percent of families navigating disability alongside other marginalized intersecting identities",
+      "box": [
+       456.0,
+       373.0,
+       476.0,
+       425.0
+      ]
+     },
+     {
+      "value": "34",
+      "label": "school districts",
+      "box": [
+       924.0,
+       218.0,
+       935.0,
+       321.0
+      ]
+     },
+     {
+      "value": "36",
+      "label": "counties",
+      "box": [
+       924.0,
+       63.0,
+       935.0,
+       162.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "149d2e8e",
+  "org": "Unleashing Potential",
+  "figs_per_page": 10.0,
+  "img": "bakeoff/pages/149d2e8e.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "1015",
+      "label": "youth served",
+      "box": [
+       390.0,
+       109.0,
+       409.0,
+       150.0
+      ]
+     },
+     {
+      "value": "431",
+      "label": "family members served",
+      "box": [
+       409.0,
+       109.0,
+       429.0,
+       140.0
+      ]
+     },
+     {
+      "value": "100",
+      "label": "early childhood education kids ready for kindergarten",
+      "box": [
+       449.0,
+       59.0,
+       480.0,
+       105.0
+      ]
+     },
+     {
+      "value": "82",
+      "label": "early childhood education kids met and exceeded age appropriate milestones",
+      "box": [
+       480.0,
+       129.0,
+       499.0,
+       158.0
+      ]
+     },
+     {
+      "value": "95",
+      "label": "Before and After School Care and Summer Enrichment students gained or maintained independent living/essential life skills",
+      "box": [
+       530.0,
+       59.0,
+       561.0,
+       105.0
+      ]
+     },
+     {
+      "value": "88",
+      "label": "students managed, identified, and appropriately expressed their emotions and behaviors",
+      "box": [
+       600.0,
+       129.0,
+       619.0,
+       158.0
+      ]
+     },
+     {
+      "value": "94",
+      "label": "families maintained/improved their quality of life",
+      "box": [
+       660.0,
+       59.0,
+       691.0,
+       105.0
+      ]
+     },
+     {
+      "value": "92",
+      "label": "resilient families increased knowledge of available community resources",
+      "box": [
+       691.0,
+       129.0,
+       710.0,
+       158.0
+      ]
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "yes",
+    "numbers": []
+   }
+  }
+ },
+ {
+  "sha8": "c31a2d63",
+  "org": "Young Womens Resource Center",
+  "figs_per_page": 8.4,
+  "img": "bakeoff/pages/c31a2d63.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "39,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "289,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "175,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "300,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "187",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "6,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "303,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "175,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "314,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "182",
+      "label": "",
+      "box": null
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "39",
+      "label": "United Way revenue",
+      "box": [
+       290.0,
+       137.0,
+       300.0,
+       181.0
+      ]
+     },
+     {
+      "value": "6",
+      "label": "Contracts revenue",
+      "box": [
+       304.0,
+       137.0,
+       314.0,
+       175.0
+      ]
+     },
+     {
+      "value": "55",
+      "label": "Contributions revenue",
+      "box": [
+       318.0,
+       137.0,
+       328.0,
+       195.0
+      ]
+     },
+     {
+      "value": "77",
+      "label": "Program Services expenses",
+      "box": [
+       280.0,
+       320.0,
+       290.0,
+       382.0
+      ]
+     },
+     {
+      "value": "9",
+      "label": "Administration expenses",
+      "box": [
+       290.0,
+       320.0,
+       300.0,
+       365.0
+      ]
+     },
+     {
+      "value": "14",
+      "label": "Fund Raising expenses",
+      "box": [
+       304.0,
+       320.0,
+       314.0,
+       368.0
+      ]
+     },
+     {
+      "value": "32",
+      "label": "# of Schools with YWRC Programs",
+      "box": [
+       178.0,
+       555.0,
+       204.0,
+       704.0
+      ]
+     },
+     {
+      "value": "112",
+      "label": "# of Programs Offered",
+      "box": [
+       270.0,
+       555.0,
+       292.0,
+       667.0
+      ]
+     },
+     {
+      "value": "1300",
+      "label": "Total # of Clients Served",
+      "box": [
+       360.0,
+       555.0,
+       382.0,
+       681.0
+      ]
+     },
+     {
+      "value": "4",
+      "label": "# of Client Events",
+      "box": [
+       178.0,
+       747.0,
+       200.0,
+       828.0
+      ]
+     },
+     {
+      "value": "91",
+      "label": "% of participants can identify the parts of the internal reproductive health system",
+      "box": [
+       326.0,
+       747.0,
+       340.0,
+       766.0
+      ]
+     },
+     {
+      "value": "94",
+      "label": "% of participants can define self-esteem",
+      "box": [
+       386.0,
+       747.0,
+       400.0,
+       766.0
+      ]
+     },
+     {
+      "value": "50",
+      "label": "Special Events contributions",
+      "box": [
+       492.0,
+       124.0,
+       502.0,
+       177.0
+      ]
+     },
+     {
+      "value": "23",
+      "label": "Corporations & Foundations contributions",
+      "box": [
+       500.0,
+       124.0,
+       510.0,
+       193.0
+      ]
+     },
+     {
+      "value": "27",
+      "label": "Individual Contributions contributions",
+      "box": [
+       512.0,
+       124.0,
+       522.0,
+       200.0
+      ]
+     },
+     {
+      "value": "980",
+      "label": "# of Individual Donors",
+      "box": [
+       556.0,
+       268.0,
+       582.0,
+       406.0
+      ]
+     },
+     {
+      "value": "235",
+      "label": "# of New Donors",
+      "box": [
+       590.0,
+       288.0,
+       616.0,
+       386.0
+      ]
+     },
+     {
+      "value": "118.11",
+      "label": "Average Individual Gift",
+      "box": [
+       622.0,
+       259.0,
+       648.0,
+       414.0
+      ]
+     },
+     {
+      "value": "2,359.50",
+      "label": "Average Major Gift",
+      "box": [
+       656.0,
+       259.0,
+       682.0,
+       416.0
+      ]
+     },
+     {
+      "value": "23",
+      "label": "African American clients",
+      "box": [
+       852.0,
+       598.0,
+       862.0,
+       656.0
+      ]
+     },
+     {
+      "value": "4",
+      "label": "Asian clients",
+      "box": [
+       864.0,
+       598.0,
+       874.0,
+       636.0
+      ]
+     },
+     {
+      "value": "9",
+      "label": "Multi-Racial clients",
+      "box": [
+       874.0,
+       598.0,
+       884.0,
+       658.0
+      ]
+     },
+     {
+      "value": "46",
+      "label": "Caucasian clients",
+      "box": [
+       884.0,
+       598.0,
+       894.0,
+       639.0
+      ]
+     },
+     {
+      "value": "11",
+      "label": "Hispanic clients",
+      "box": [
+       892.0,
+       598.0,
+       902.0,
+       642.0
+      ]
+     },
+     {
+      "value": "7",
+      "label": "Other clients",
+      "box": [
+       902.0,
+       598.0,
+       912.0,
+       624.0
+      ]
+     },
+     {
+      "value": "0",
+      "label": "Age 0 to 5",
+      "box": [
+       758.0,
+       766.0,
+       768.0,
+       780.0
+      ]
+     },
+     {
+      "value": "10",
+      "label": "Age 10 & 11",
+      "box": [
+       758.0,
+       795.0,
+       768.0,
+       809.0
+      ]
+     },
+     {
+      "value": "12",
+      "label": "Age 12 & 13",
+      "box": [
+       758.0,
+       823.0,
+       768.0,
+       837.0
+      ]
+     },
+     {
+      "value": "14",
+      "label": "Age 14 & 15",
+      "box": [
+       758.0,
+       852.0,
+       768.0,
+       866.0
+      ]
+     },
+     {
+      "value": "16",
+      "label": "Age 16 to 18",
+      "box": [
+       758.0,
+       881.0,
+       768.0,
+       895.0
+      ]
+     },
+     {
+      "value": "19",
+      "label": "Age 19 to 21",
+      "box": [
+       758.0,
+       909.0,
+       768.0,
+       923.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "5cfbbca2",
+  "org": "Turning Point Of Lehigh Valley Inc",
+  "figs_per_page": 8.0,
+  "img": "bakeoff/pages/5cfbbca2.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "117",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "2017",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "239,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "757,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "306,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "946",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "1950663",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "380,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "609,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "395",
+      "label": "",
+      "box": null
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "117",
+      "label": "people killed in Pennsylvania as a result of domestic violence",
+      "box": [
+       244.0,
+       758.0,
+       294.0,
+       928.0
+      ]
+     },
+     {
+      "value": "1950663",
+      "label": "REVENUES TOTAL",
+      "box": [
+       365.0,
+       617.0,
+       379.0,
+       675.0
+      ]
+     },
+     {
+      "value": "1364309",
+      "label": "GOVERNMENT GRANTS",
+      "box": [
+       548.0,
+       535.0,
+       560.0,
+       574.0
+      ]
+     },
+     {
+      "value": "70",
+      "label": "GOVERNMENT GRANTS percentage",
+      "box": [
+       560.0,
+       546.0,
+       571.0,
+       561.0
+      ]
+     },
+     {
+      "value": "375232",
+      "label": "PRIVATE CONTRIBUTIONS",
+      "box": [
+       548.0,
+       587.0,
+       560.0,
+       625.0
+      ]
+     },
+     {
+      "value": "19",
+      "label": "PRIVATE CONTRIBUTIONS percentage",
+      "box": [
+       560.0,
+       600.0,
+       571.0,
+       613.0
+      ]
+     },
+     {
+      "value": "115000",
+      "label": "UNITED WAY",
+      "box": [
+       548.0,
+       635.0,
+       560.0,
+       667.0
+      ]
+     },
+     {
+      "value": "6",
+      "label": "UNITED WAY percentage",
+      "box": [
+       560.0,
+       646.0,
+       571.0,
+       656.0
+      ]
+     },
+     {
+      "value": "56898",
+      "label": "ENDOWMENTS & TRUSTS",
+      "box": [
+       548.0,
+       675.0,
+       560.0,
+       703.0
+      ]
+     },
+     {
+      "value": "3",
+      "label": "ENDOWMENTS & TRUSTS percentage",
+      "box": [
+       560.0,
+       683.0,
+       571.0,
+       693.0
+      ]
+     },
+     {
+      "value": "39224",
+      "label": "EVENTS & REVENUE",
+      "box": [
+       548.0,
+       715.0,
+       560.0,
+       742.0
+      ]
+     },
+     {
+      "value": "2",
+      "label": "EVENTS & REVENUE percentage",
+      "box": [
+       560.0,
+       725.0,
+       571.0,
+       735.0
+      ]
+     },
+     {
+      "value": "2035420",
+      "label": "EXPENSES TOTAL",
+      "box": [
+       365.0,
+       827.0,
+       379.0,
+       883.0
+      ]
+     },
+     {
+      "value": "1320566",
+      "label": "PROGRAM DELIVERY",
+      "box": [
+       548.0,
+       777.0,
+       560.0,
+       819.0
+      ]
+     },
+     {
+      "value": "65",
+      "label": "PROGRAM DELIVERY percentage",
+      "box": [
+       560.0,
+       789.0,
+       571.0,
+       803.0
+      ]
+     },
+     {
+      "value": "513187",
+      "label": "MANAGEMENT & GENERAL",
+      "box": [
+       548.0,
+       833.0,
+       560.0,
+       867.0
+      ]
+     },
+     {
+      "value": "25",
+      "label": "MANAGEMENT & GENERAL percentage",
+      "box": [
+       560.0,
+       844.0,
+       571.0,
+       858.0
+      ]
+     },
+     {
+      "value": "101155",
+      "label": "FUNDRAISING",
+      "box": [
+       548.0,
+       878.0,
+       560.0,
+       906.0
+      ]
+     },
+     {
+      "value": "5",
+      "label": "FUNDRAISING percentage",
+      "box": [
+       560.0,
+       886.0,
+       571.0,
+       896.0
+      ]
+     },
+     {
+      "value": "100512",
+      "label": "ADMINISTRATIVE UPDATES",
+      "box": [
+       548.0,
+       913.0,
+       560.0,
+       946.0
+      ]
+     },
+     {
+      "value": "5",
+      "label": "ADMINISTRATIVE UPDATES percentage",
+      "box": [
+       560.0,
+       922.0,
+       571.0,
+       932.0
+      ]
+     },
+     {
+      "value": "2540",
+      "label": "new people served",
+      "box": [
+       646.0,
+       549.0,
+       660.0,
+       721.0
+      ]
+     },
+     {
+      "value": "252",
+      "label": "children",
+      "box": [
+       667.0,
+       567.0,
+       679.0,
+       615.0
+      ]
+     },
+     {
+      "value": "117",
+      "label": "people over the age of 60",
+      "box": [
+       684.0,
+       567.0,
+       697.0,
+       682.0
+      ]
+     },
+     {
+      "value": "100",
+      "label": "people with disabilities",
+      "box": [
+       700.0,
+       567.0,
+       713.0,
+       675.0
+      ]
+     },
+     {
+      "value": "18",
+      "label": "veterans",
+      "box": [
+       717.0,
+       567.0,
+       729.0,
+       610.0
+      ]
+     },
+     {
+      "value": "43",
+      "label": "people identifying as LGBTQIA",
+      "box": [
+       733.0,
+       567.0,
+       746.0,
+       705.0
+      ]
+     },
+     {
+      "value": "1052",
+      "label": "Helpline Calls received",
+      "box": [
+       684.0,
+       755.0,
+       699.0,
+       883.0
+      ]
+     },
+     {
+      "value": "5559",
+      "label": "hours of counseling provided for adults",
+      "box": [
+       735.0,
+       735.0,
+       750.0,
+       928.0
+      ]
+     },
+     {
+      "value": "491",
+      "label": "hours of counseling provided to kids",
+      "box": [
+       750.0,
+       735.0,
+       763.0,
+       829.0
+      ]
+     },
+     {
+      "value": "180",
+      "label": "Prevention programs",
+      "box": [
+       804.0,
+       572.0,
+       819.0,
+       751.0
+      ]
+     },
+     {
+      "value": "3624",
+      "label": "people reached by Prevention programs",
+      "box": [
+       804.0,
+       680.0,
+       819.0,
+       751.0
+      ]
+     },
+     {
+      "value": "140",
+      "label": "Educational Awareness programs",
+      "box": [
+       862.0,
+       547.0,
+       877.0,
+       765.0
+      ]
+     },
+     {
+      "value": "4621",
+      "label": "people reached by Educational Awareness programs",
+      "box": [
+       862.0,
+       693.0,
+       877.0,
+       765.0
+      ]
+     },
+     {
+      "value": "130",
+      "label": "adults & 146 kids under 18 received combined 8,190 nights of Safe House shelter services",
+      "box": [
+       795.0,
+       825.0,
+       893.0,
+       900.0
+      ]
+     },
+     {
+      "value": "146",
+      "label": "adults & 146 kids under 18 received combined 8,190 nights of Safe House shelter services",
+      "box": [
+       795.0,
+       825.0,
+       893.0,
+       900.0
+      ]
+     },
+     {
+      "value": "8190",
+      "label": "adults & 146 kids under 18 received combined 8,190 nights of Safe House shelter services",
+      "box": [
+       795.0,
+       825.0,
+       893.0,
+       900.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "4ec0d342",
+  "org": "Step Up On Second Street Inc",
+  "figs_per_page": 8.0,
+  "img": "bakeoff/pages/4ec0d342.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "13",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "420,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "309,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "434,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "326",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "30",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "769,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "399,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "783,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "426",
+      "label": "",
+      "box": null
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "13",
+      "label": "individuals in scattered sites",
+      "box": [
+       470.0,
+       308.0,
+       483.0,
+       415.0
+      ]
+     },
+     {
+      "value": "30",
+      "label": "percent of their income gained through employment, Social Security or General Relief benefits",
+      "box": [
+       699.0,
+       161.0,
+       712.0,
+       434.0
+      ]
+     },
+     {
+      "value": "14",
+      "label": "years with Step Up",
+      "box": [
+       482.0,
+       808.0,
+       494.0,
+       948.0
+      ]
+     },
+     {
+      "value": "2004",
+      "label": "year career began",
+      "box": [
+       505.0,
+       808.0,
+       517.0,
+       930.0
+      ]
+     },
+     {
+      "value": "2007",
+      "label": "year interned",
+      "box": [
+       574.0,
+       783.0,
+       586.0,
+       897.0
+      ]
+     },
+     {
+      "value": "2008",
+      "label": "year received Doctorate",
+      "box": [
+       597.0,
+       700.0,
+       609.0,
+       935.0
+      ]
+     },
+     {
+      "value": "8",
+      "label": "clients moving into community employment",
+      "box": [
+       709.0,
+       793.0,
+       722.0,
+       926.0
+      ]
+     },
+     {
+      "value": "1",
+      "label": "one hour breakfast tours",
+      "box": [
+       837.0,
+       723.0,
+       887.0,
+       946.0
+      ]
+     },
+     {
+      "value": "310",
+      "label": "phone number",
+      "box": [
+       937.0,
+       754.0,
+       949.0,
+       927.0
+      ]
+     },
+     {
+      "value": "696",
+      "label": "phone number",
+      "box": [
+       937.0,
+       791.0,
+       949.0,
+       832.0
+      ]
+     },
+     {
+      "value": "4510",
+      "label": "phone number",
+      "box": [
+       937.0,
+       838.0,
+       949.0,
+       884.0
+      ]
+     },
+     {
+      "value": "2210",
+      "label": "extension",
+      "box": [
+       937.0,
+       891.0,
+       949.0,
+       927.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "f46565eb",
+  "org": "Orchards Childrens Services Inc",
+  "figs_per_page": 7.8,
+  "img": "bakeoff/pages/f46565eb.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "no",
+    "numbers": []
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "1",
+      "label": "page number",
+      "box": [
+       941.0,
+       29.0,
+       958.0,
+       37.0
+      ]
+     },
+     {
+      "value": "22",
+      "label": "page number",
+      "box": [
+       941.0,
+       959.0,
+       958.0,
+       971.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "c19607d8",
+  "org": "Fair Chance",
+  "figs_per_page": 7.5,
+  "img": "bakeoff/pages/c19607d8.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "14000",
+      "label": "children, youth, and families reached",
+      "box": [
+       489.0,
+       399.0,
+       509.0,
+       459.0
+      ]
+     },
+     {
+      "value": "25",
+      "label": "increase in implementation of best practices in Program Evaluation and Resource Alignment",
+      "box": [
+       763.0,
+       360.0,
+       783.0,
+       399.0
+      ]
+     },
+     {
+      "value": "25",
+      "label": "increase in implementation of best practices in Board Development, Fundraising, Leadership Development, Outreach & Communications, Program Evaluation",
+      "box": [
+       763.0,
+       689.0,
+       783.0,
+       728.0
+      ]
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "31",
+      "label": "organizations served",
+      "box": [
+       490.0,
+       197.0,
+       506.0,
+       215.0
+      ]
+     },
+     {
+      "value": "14000",
+      "label": "children, youth, and families reached",
+      "box": [
+       490.0,
+       370.0,
+       506.0,
+       412.0
+      ]
+     },
+     {
+      "value": "25",
+      "label": "percent increase in implementation of best practices",
+      "box": [
+       759.0,
+       203.0,
+       773.0,
+       221.0
+      ]
+     },
+     {
+      "value": "25",
+      "label": "percent increase in implementation of best practices",
+      "box": [
+       759.0,
+       708.0,
+       773.0,
+       726.0
+      ]
+     },
+     {
+      "value": "7",
+      "label": "organizations implemented at least one new effective practice",
+      "box": [
+       906.0,
+       405.0,
+       921.0,
+       412.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "71d70742",
+  "org": "South Carolina Respite Coalition",
+  "figs_per_page": 7.5,
+  "img": "bakeoff/pages/71d70742.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "130",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "272,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "230,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "287,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "259",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "91",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "380,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "609,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "395,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "638",
+      "label": "",
+      "box": null
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "130",
+      "label": "responses",
+      "box": [
+       267.0,
+       189.0,
+       282.0,
+       210.0
+      ]
+     },
+     {
+      "value": "91",
+      "label": "of responding caregivers were female",
+      "box": [
+       360.0,
+       592.0,
+       376.0,
+       618.0
+      ]
+     },
+     {
+      "value": "56",
+      "label": "The average age of caregivers was",
+      "box": [
+       398.0,
+       218.0,
+       413.0,
+       237.0
+      ]
+     },
+     {
+      "value": "29",
+      "label": "with a range of",
+      "box": [
+       398.0,
+       569.0,
+       413.0,
+       588.0
+      ]
+     },
+     {
+      "value": "85",
+      "label": "with a range of",
+      "box": [
+       398.0,
+       604.0,
+       413.0,
+       623.0
+      ]
+     },
+     {
+      "value": "57",
+      "label": "Most respondents",
+      "box": [
+       415.0,
+       280.0,
+       431.0,
+       306.0
+      ]
+     },
+     {
+      "value": "13",
+      "label": "and",
+      "box": [
+       415.0,
+       400.0,
+       431.0,
+       420.0
+      ]
+     },
+     {
+      "value": "98",
+      "label": "The age range of those being cared for was infant to",
+      "box": [
+       452.0,
+       561.0,
+       467.0,
+       580.0
+      ]
+     },
+     {
+      "value": "54",
+      "label": "The disabling condition of the care recipient most often cited was intellectual/developmental disability",
+      "box": [
+       488.0,
+       294.0,
+       504.0,
+       320.0
+      ]
+     },
+     {
+      "value": "28",
+      "label": "Alzheimer's disease or other irreversible dementia was noted by",
+      "box": [
+       488.0,
+       667.0,
+       504.0,
+       693.0
+      ]
+     },
+     {
+      "value": "23",
+      "label": "and physical disability by",
+      "box": [
+       507.0,
+       330.0,
+       522.0,
+       356.0
+      ]
+     },
+     {
+      "value": "76",
+      "label": "The overwhelming majority",
+      "box": [
+       525.0,
+       375.0,
+       541.0,
+       401.0
+      ]
+     },
+     {
+      "value": "75",
+      "label": "the responses listed most often were being tired/worn out a lot of the time and having a decreased social life (both",
+      "box": [
+       579.0,
+       678.0,
+       595.0,
+       704.0
+      ]
+     },
+     {
+      "value": "72",
+      "label": "Some",
+      "box": [
+       598.0,
+       405.0,
+       613.0,
+       431.0
+      ]
+     },
+     {
+      "value": "52",
+      "label": "and",
+      "box": [
+       598.0,
+       579.0,
+       613.0,
+       605.0
+      ]
+     },
+     {
+      "value": "55",
+      "label": "Over half",
+      "box": [
+       762.0,
+       619.0,
+       778.0,
+       645.0
+      ]
+     },
+     {
+      "value": "47",
+      "label": "A bit less than half",
+      "box": [
+       799.0,
+       280.0,
+       815.0,
+       306.0
+      ]
+     },
+     {
+      "value": "40",
+      "label": "jobs, 53% said caregiving had caused them to decrease work hours and",
+      "box": [
+       817.0,
+       664.0,
+       833.0,
+       690.0
+      ]
+     },
+     {
+      "value": "72",
+      "label": "Almost three quarters",
+      "box": [
+       854.0,
+       346.0,
+       870.0,
+       372.0
+      ]
+     },
+     {
+      "value": "54",
+      "label": "with",
+      "box": [
+       872.0,
+       490.0,
+       888.0,
+       516.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "1b29d1a0",
+  "org": "Golden West Communities Inc",
+  "figs_per_page": 7.4,
+  "img": "bakeoff/pages/1b29d1a0.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "2025",
+      "label": "Report Year",
+      "box": [
+       420.0,
+       660.0,
+       538.0,
+       970.0
+      ]
+     },
+     {
+      "value": "40",
+      "label": "Comunidades",
+      "box": [
+       504.0,
+       60.0,
+       570.0,
+       140.0
+      ]
+     },
+     {
+      "value": "517",
+      "label": "viviendas (added in 2025)",
+      "box": [
+       717.0,
+       700.0,
+       735.0,
+       725.0
+      ]
+     },
+     {
+      "value": "2000",
+      "label": "unidades (total)",
+      "box": [
+       735.0,
+       590.0,
+       750.0,
+       630.0
+      ]
+     },
+     {
+      "value": "7205644610",
+      "label": "Phone Number",
+      "box": [
+       950.0,
+       448.0,
+       970.0,
+       570.0
+      ]
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "40",
+      "label": "Comunidades",
+      "box": [
+       517.0,
+       77.0,
+       544.0,
+       118.0
+      ]
+     },
+     {
+      "value": "2025",
+      "label": "Informe Anual",
+      "box": [
+       415.0,
+       646.0,
+       517.0,
+       968.0
+      ]
+     },
+     {
+      "value": "517",
+      "label": "viviendas",
+      "box": [
+       715.0,
+       741.0,
+       730.0,
+       779.0
+      ]
+     },
+     {
+      "value": "2,000",
+      "label": "unidades",
+      "box": [
+       731.0,
+       654.0,
+       747.0,
+       707.0
+      ]
+     },
+     {
+      "value": "720-564-4610",
+      "label": "phone number",
+      "box": [
+       952.0,
+       448.0,
+       971.0,
+       574.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "65c918ec",
+  "org": "Fun Time Early Childhood Academy Inc",
+  "figs_per_page": 7.2,
+  "img": "bakeoff/pages/65c918ec.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "1",
+      "label": "LOCATION",
+      "box": [
+       200.0,
+       64.0,
+       240.0,
+       189.0
+      ]
+     },
+     {
+      "value": "96",
+      "label": "STUDENTS",
+      "box": [
+       248.0,
+       47.0,
+       290.0,
+       225.0
+      ]
+     },
+     {
+      "value": "20",
+      "label": "STAFF",
+      "box": [
+       296.0,
+       47.0,
+       338.0,
+       190.0
+      ]
+     },
+     {
+      "value": "4",
+      "label": "LOCATIONS",
+      "box": [
+       200.0,
+       338.0,
+       240.0,
+       463.0
+      ]
+     },
+     {
+      "value": "350",
+      "label": "STUDENTS",
+      "box": [
+       248.0,
+       321.0,
+       290.0,
+       500.0
+      ]
+     },
+     {
+      "value": "71",
+      "label": "STAFF",
+      "box": [
+       296.0,
+       321.0,
+       338.0,
+       464.0
+      ]
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "1",
+      "label": "LOCATION",
+      "box": [
+       197.0,
+       62.0,
+       217.0,
+       200.0
+      ]
+     },
+     {
+      "value": "96",
+      "label": "STUDENTS",
+      "box": [
+       241.0,
+       50.0,
+       266.0,
+       227.0
+      ]
+     },
+     {
+      "value": "20",
+      "label": "STAFF",
+      "box": [
+       289.0,
+       50.0,
+       315.0,
+       177.0
+      ]
+     },
+     {
+      "value": "4",
+      "label": "LOCATIONS",
+      "box": [
+       197.0,
+       335.0,
+       217.0,
+       494.0
+      ]
+     },
+     {
+      "value": "350",
+      "label": "STUDENTS",
+      "box": [
+       241.0,
+       328.0,
+       267.0,
+       531.0
+      ]
+     },
+     {
+      "value": "71",
+      "label": "STAFF",
+      "box": [
+       290.0,
+       335.0,
+       315.0,
+       452.0
+      ]
+     },
+     {
+      "value": "8000",
+      "label": "square-foot facility",
+      "box": [
+       585.0,
+       136.0,
+       601.0,
+       233.0
+      ]
+     },
+     {
+      "value": "96",
+      "label": "students",
+      "box": [
+       618.0,
+       177.0,
+       634.0,
+       200.0
+      ]
+     },
+     {
+      "value": "84",
+      "label": "additional children ages 1-5",
+      "box": [
+       913.0,
+       185.0,
+       930.0,
+       453.0
+      ]
+     },
+     {
+      "value": "350",
+      "label": "children",
+      "box": [
+       930.0,
+       391.0,
+       946.0,
+       414.0
+      ]
+     },
+     {
+      "value": "50",
+      "label": "children per year",
+      "box": [
+       778.0,
+       615.0,
+       794.0,
+       641.0
+      ]
+     },
+     {
+      "value": "300",
+      "label": "over",
+      "box": [
+       794.0,
+       579.0,
+       809.0,
+       608.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "a00adaa5",
+  "org": "Bridge Of Hope Greater Denver",
+  "figs_per_page": 7.0,
+  "img": "bakeoff/pages/a00adaa5.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "97",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "60,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "820,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "110,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "890",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "93",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "160,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "590,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "200,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "660",
+      "label": "",
+      "box": null
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "97",
+      "label": "Neighboring Churches",
+      "box": [
+       50.0,
+       821.0,
+       104.0,
+       900.0
+      ]
+     },
+     {
+      "value": "93",
+      "label": "Families living in safe and sustainable housing when exiting the program.",
+      "box": [
+       129.0,
+       581.0,
+       170.0,
+       683.0
+      ]
+     },
+     {
+      "value": "32",
+      "label": "Days on average to find housing",
+      "box": [
+       254.0,
+       830.0,
+       314.0,
+       925.0
+      ]
+     },
+     {
+      "value": "314",
+      "label": "Parents and children served.",
+      "box": [
+       381.0,
+       770.0,
+       418.0,
+       876.0
+      ]
+     },
+     {
+      "value": "96",
+      "label": "Employed when exiting the program.",
+      "box": [
+       476.0,
+       616.0,
+       515.0,
+       729.0
+      ]
+     },
+     {
+      "value": "27",
+      "label": "Increase in the number of families served.",
+      "box": [
+       494.0,
+       821.0,
+       527.0,
+       920.0
+      ]
+     },
+     {
+      "value": "30",
+      "label": "African-American",
+      "box": [
+       763.0,
+       612.0,
+       775.0,
+       643.0
+      ]
+     },
+     {
+      "value": "7",
+      "label": "African",
+      "box": [
+       782.0,
+       618.0,
+       793.0,
+       643.0
+      ]
+     },
+     {
+      "value": "47",
+      "label": "Caucasian",
+      "box": [
+       800.0,
+       615.0,
+       811.0,
+       645.0
+      ]
+     },
+     {
+      "value": "10",
+      "label": "Hispanic",
+      "box": [
+       818.0,
+       613.0,
+       830.0,
+       645.0
+      ]
+     },
+     {
+      "value": "4",
+      "label": "Multi-racial",
+      "box": [
+       837.0,
+       618.0,
+       849.0,
+       645.0
+      ]
+     },
+     {
+      "value": "1",
+      "label": "Pacific Islander",
+      "box": [
+       856.0,
+       618.0,
+       867.0,
+       645.0
+      ]
+     },
+     {
+      "value": "2",
+      "label": "Asian",
+      "box": [
+       873.0,
+       618.0,
+       885.0,
+       645.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "128de607",
+  "org": "District Council Of Madison Inc Society Of St Vincent De Paul",
+  "figs_per_page": 7.0,
+  "img": "bakeoff/pages/128de607.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "30",
+      "label": "Doses",
+      "box": [
+       880.0,
+       36.0,
+       930.0,
+       100.0
+      ]
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "30",
+      "label": "Doses",
+      "box": [
+       883.0,
+       33.0,
+       923.0,
+       141.0
+      ]
+     },
+     {
+      "value": "2",
+      "label": "grader",
+      "box": [
+       407.0,
+       136.0,
+       423.0,
+       149.0
+      ]
+     },
+     {
+      "value": "7",
+      "label": "year-old",
+      "box": [
+       407.0,
+       215.0,
+       423.0,
+       228.0
+      ]
+     },
+     {
+      "value": "20",
+      "label": "year",
+      "box": [
+       266.0,
+       451.0,
+       283.0,
+       483.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "bdad0921",
+  "org": "Willow International",
+  "figs_per_page": 6.8,
+  "img": "bakeoff/pages/bdad0921.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "1000000000",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "127,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "118,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "142,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "230",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "14",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "220,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "379,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "235,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "407",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "2045",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "220,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "416,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "235,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "456",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "1000000000",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "363,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "199,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "378,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "311",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "1100000000",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "378,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "470,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "393,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "582",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "2025",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "393,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "400,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "408,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "440",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "123000000",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "393,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "590,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "408,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "692",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "455000000",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "408,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "470",
+      "label": "",
+      "box": null
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "mil millones",
+      "label": "personas en todo el mundo se enfrentan a abusos y explotaci\u00f3n constantes",
+      "box": [
+       123.0,
+       100.0,
+       140.0,
+       895.0
+      ]
+     },
+     {
+      "value": "14",
+      "label": "La victimizaci\u00f3n aumentar\u00e1 un 14% para 2045 si se retrasa la adopci\u00f3n de medidas (OIT)",
+      "box": [
+       218.0,
+       270.0,
+       235.0,
+       365.0
+      ]
+     },
+     {
+      "value": "mil millones",
+      "label": "pobreza extrema",
+      "box": [
+       393.0,
+       585.0,
+       408.0,
+       643.0
+      ]
+     },
+     {
+      "value": "123",
+      "label": "desplazamiento forzado",
+      "box": [
+       409.0,
+       599.0,
+       424.0,
+       643.0
+      ]
+     },
+     {
+      "value": "455",
+      "label": "zona de guerra",
+      "box": [
+       425.0,
+       470.0,
+       440.0,
+       504.0
+      ]
+     },
+     {
+      "value": "mil millones",
+      "label": "zona de guerra",
+      "box": [
+       425.0,
+       508.0,
+       440.0,
+       575.0
+      ]
+     },
+     {
+      "value": "mil millones",
+      "label": "personas viven en condiciones que las hacen altamente vulnerables al abuso y la explotaci\u00f3n",
+      "box": [
+       361.0,
+       135.0,
+       376.0,
+       209.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "752d2b78",
+  "org": "Area Congregations Together In Service",
+  "figs_per_page": 6.0,
+  "img": "bakeoff/pages/752d2b78.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "5430899.63",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "469,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "685,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "510,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "929",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "96805.52",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "556,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "711",
+      "label": "",
+      "box": null
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "5430899.63",
+      "label": "Rent/Mortgage",
+      "box": [
+       473.0,
+       682.0,
+       510.0,
+       924.0
+      ]
+     },
+     {
+      "value": "96805.52",
+      "label": "Electricity",
+      "box": [
+       557.0,
+       713.0,
+       590.0,
+       903.0
+      ]
+     },
+     {
+      "value": "33766.27",
+      "label": "Water",
+      "box": [
+       644.0,
+       708.0,
+       677.0,
+       903.0
+      ]
+     },
+     {
+      "value": "16314.84",
+      "label": "Gas",
+      "box": [
+       724.0,
+       726.0,
+       757.0,
+       898.0
+      ]
+     },
+     {
+      "value": "29182.82",
+      "label": "Other Types of assistance",
+      "box": [
+       806.0,
+       717.0,
+       839.0,
+       898.0
+      ]
+     },
+     {
+      "value": "5606969.08",
+      "label": "in assistance provided in Calendar Year 2022",
+      "box": [
+       861.0,
+       582.0,
+       975.0,
+       972.0
+      ]
+     },
+     {
+      "value": "90438",
+      "label": "calls for assistance",
+      "box": [
+       752.0,
+       34.0,
+       771.0,
+       131.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "b670f181",
+  "org": "Human Resources Agency Of New Britain Inc",
+  "figs_per_page": 6.0,
+  "img": "bakeoff/pages/b670f181.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "20",
+      "label": "improvement in all areas of development",
+      "box": [
+       409.0,
+       298.0,
+       424.0,
+       329.0
+      ]
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "20",
+      "label": "improvement in all areas of development of students",
+      "box": [
+       408.0,
+       297.0,
+       426.0,
+       350.0
+      ]
+     },
+     {
+      "value": "7",
+      "label": "areas of development",
+      "box": [
+       551.0,
+       485.0,
+       569.0,
+       499.0
+      ]
+     },
+     {
+      "value": "3",
+      "label": "year olds",
+      "box": [
+       663.0,
+       117.0,
+       681.0,
+       151.0
+      ]
+     },
+     {
+      "value": "4",
+      "label": "year olds",
+      "box": [
+       679.0,
+       117.0,
+       697.0,
+       151.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "da2ba72a",
+  "org": "Abbott House Inc",
+  "figs_per_page": 6.0,
+  "img": "bakeoff/pages/da2ba72a.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "74",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "17",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "379,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "790,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "394,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "808",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "35",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "17",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "394,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "309,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "409,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "32",
+      "label": "",
+      "box": null
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "75",
+      "label": "girls served each year",
+      "box": [
+       379.0,
+       667.0,
+       394.0,
+       689.0
+      ]
+     },
+     {
+      "value": "100",
+      "label": "girls served each year",
+      "box": [
+       379.0,
+       700.0,
+       394.0,
+       722.0
+      ]
+     },
+     {
+      "value": "74",
+      "label": "girls served in FY17",
+      "box": [
+       379.0,
+       799.0,
+       394.0,
+       819.0
+      ]
+     },
+     {
+      "value": "35",
+      "label": "newly enrolled",
+      "box": [
+       394.0,
+       294.0,
+       409.0,
+       314.0
+      ]
+     },
+     {
+      "value": "7",
+      "label": "minimum age",
+      "box": [
+       394.0,
+       600.0,
+       409.0,
+       610.0
+      ]
+     },
+     {
+      "value": "17",
+      "label": "maximum age",
+      "box": [
+       394.0,
+       620.0,
+       409.0,
+       639.0
+      ]
+     },
+     {
+      "value": "5",
+      "label": "girls aged 7-12yrs",
+      "box": [
+       444.0,
+       362.0,
+       458.0,
+       372.0
+      ]
+     },
+     {
+      "value": "95",
+      "label": "girls aged 13-18yrs",
+      "box": [
+       459.0,
+       362.0,
+       474.0,
+       384.0
+      ]
+     },
+     {
+      "value": "5",
+      "label": "percentage of girls aged 7-12yrs",
+      "box": [
+       444.0,
+       480.0,
+       458.0,
+       500.0
+      ]
+     },
+     {
+      "value": "95",
+      "label": "percentage of girls aged 13-18yrs",
+      "box": [
+       459.0,
+       480.0,
+       474.0,
+       513.0
+      ]
+     },
+     {
+      "value": "45",
+      "label": "percentage Caucasian",
+      "box": [
+       444.0,
+       774.0,
+       458.0,
+       807.0
+      ]
+     },
+     {
+      "value": "44",
+      "label": "percentage Native American",
+      "box": [
+       459.0,
+       774.0,
+       474.0,
+       807.0
+      ]
+     },
+     {
+      "value": "4",
+      "label": "percentage African American",
+      "box": [
+       475.0,
+       774.0,
+       489.0,
+       794.0
+      ]
+     },
+     {
+      "value": "1",
+      "label": "percentage Hispanic",
+      "box": [
+       491.0,
+       774.0,
+       505.0,
+       794.0
+      ]
+     },
+     {
+      "value": "6",
+      "label": "percentage Other/Multi race",
+      "box": [
+       506.0,
+       774.0,
+       521.0,
+       794.0
+      ]
+     },
+     {
+      "value": "35",
+      "label": "girls served in FY17",
+      "box": [
+       581.0,
+       460.0,
+       596.0,
+       480.0
+      ]
+     },
+     {
+      "value": "67",
+      "label": "percentage Occupancy for FY17",
+      "box": [
+       596.0,
+       474.0,
+       611.0,
+       507.0
+      ]
+     },
+     {
+      "value": "4",
+      "label": "apartments",
+      "box": [
+       648.0,
+       496.0,
+       663.0,
+       506.0
+      ]
+     },
+     {
+      "value": "10",
+      "label": "girls served in FY17",
+      "box": [
+       663.0,
+       474.0,
+       678.0,
+       496.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "3e3ff326",
+  "org": "Springboard To Opportunities",
+  "figs_per_page": 6.0,
+  "img": "bakeoff/pages/3e3ff326.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "2022",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "102,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "47,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "199,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "307",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "1227350",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "2022",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "200,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "610,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "220,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "700",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "10078",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "280,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "47,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "319,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "180",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "10088",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "360,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "47,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "399,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "180",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "4234",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "440,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "47,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "479,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "180",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "5264",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "520,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "47,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "559,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "163",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "3207",
+      "label": "",
+      "box": null
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "10078",
+      "label": "participations in Springboard programming",
+      "box": [
+       267.0,
+       45.0,
+       336.0,
+       300.0
+      ]
+     },
+     {
+      "value": "10088",
+      "label": "meals, food boxes, and water cases distributed in communities",
+      "box": [
+       348.0,
+       45.0,
+       429.0,
+       265.0
+      ]
+     },
+     {
+      "value": "4234",
+      "label": "instances of staff supporting residents with housing stability",
+      "box": [
+       443.0,
+       45.0,
+       527.0,
+       293.0
+      ]
+     },
+     {
+      "value": "5264",
+      "label": "items distributed to residents through Community Care Closets and Back to School giveaways",
+      "box": [
+       539.0,
+       45.0,
+       640.0,
+       298.0
+      ]
+     },
+     {
+      "value": "3207",
+      "label": "engagements with summer camps & after school programs in-person after 2 virtual years",
+      "box": [
+       653.0,
+       45.0,
+       753.0,
+       277.0
+      ]
+     },
+     {
+      "value": "1227350",
+      "label": "of direct cash assistance to families in 2022",
+      "box": [
+       199.0,
+       611.0,
+       228.0,
+       950.0
+      ]
+     },
+     {
+      "value": "3",
+      "label": "new fellowship programs",
+      "box": [
+       258.0,
+       433.0,
+       274.0,
+       462.0
+      ]
+     },
+     {
+      "value": "97.6",
+      "label": "felt somewhat or extremely supported by The Magnolia Mother's Trust to meet their family's needs",
+      "box": [
+       585.0,
+       369.0,
+       615.0,
+       619.0
+      ]
+     },
+     {
+      "value": "79",
+      "label": "of mothers reported feeling more hopeful about their future",
+      "box": [
+       635.0,
+       369.0,
+       666.0,
+       600.0
+      ]
+     },
+     {
+      "value": "82",
+      "label": "felt more hopeful about their children's futures",
+      "box": [
+       585.0,
+       673.0,
+       615.0,
+       914.0
+      ]
+     },
+     {
+      "value": "70",
+      "label": "felt capable of caring for their own emotional, physical, and mental health needs",
+      "box": [
+       621.0,
+       673.0,
+       666.0,
+       923.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "5370f17e",
+  "org": "Drew Child Development Corporation Inc",
+  "figs_per_page": 6.0,
+  "img": "bakeoff/pages/5370f17e.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "6824",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "320,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "125,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "344,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "178",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "3834",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "320,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "300,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "344,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "353",
+      "label": "",
+      "box": null
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "6,824",
+      "label": "Children & Youth Served",
+      "box": [
+       325.0,
+       125.0,
+       341.0,
+       176.0
+      ]
+     },
+     {
+      "value": "3,834",
+      "label": "Families Served",
+      "box": [
+       325.0,
+       300.0,
+       341.0,
+       351.0
+      ]
+     },
+     {
+      "value": "2,550",
+      "label": "Child Care Providers Served",
+      "box": [
+       325.0,
+       456.0,
+       341.0,
+       507.0
+      ]
+     },
+     {
+      "value": "2,482",
+      "label": "Child Care Providers in Trauma-Informed Care Training",
+      "box": [
+       325.0,
+       612.0,
+       341.0,
+       663.0
+      ]
+     },
+     {
+      "value": "9.4/10",
+      "label": "Staff Engagement Rating",
+      "box": [
+       325.0,
+       811.0,
+       341.0,
+       868.0
+      ]
+     },
+     {
+      "value": "49%",
+      "label": "Female",
+      "box": [
+       525.0,
+       143.0,
+       535.0,
+       170.0
+      ]
+     },
+     {
+      "value": "51%",
+      "label": "Male",
+      "box": [
+       525.0,
+       337.0,
+       535.0,
+       364.0
+      ]
+     },
+     {
+      "value": "17%",
+      "label": "Age Group 0-2",
+      "box": [
+       497.0,
+       497.0,
+       507.0,
+       519.0
+      ]
+     },
+     {
+      "value": "27%",
+      "label": "Age Group 3-5",
+      "box": [
+       483.0,
+       591.0,
+       493.0,
+       613.0
+      ]
+     },
+     {
+      "value": "51%",
+      "label": "Age Group 6-13",
+      "box": [
+       464.0,
+       678.0,
+       474.0,
+       700.0
+      ]
+     },
+     {
+      "value": "5%",
+      "label": "Age Group 14-20",
+      "box": [
+       513.0,
+       773.0,
+       523.0,
+       795.0
+      ]
+     },
+     {
+      "value": "0%",
+      "label": "Age Group >=21",
+      "box": [
+       513.0,
+       867.0,
+       523.0,
+       889.0
+      ]
+     },
+     {
+      "value": "52%",
+      "label": "Hispanic",
+      "box": [
+       634.0,
+       119.0,
+       644.0,
+       141.0
+      ]
+     },
+     {
+      "value": "41%",
+      "label": "Not Hispanic/Latino",
+      "box": [
+       634.0,
+       245.0,
+       644.0,
+       267.0
+      ]
+     },
+     {
+      "value": "7%",
+      "label": "Unspecified Ethnicity",
+      "box": [
+       678.0,
+       370.0,
+       688.0,
+       392.0
+      ]
+     },
+     {
+      "value": "44%",
+      "label": "African American",
+      "box": [
+       629.0,
+       503.0,
+       639.0,
+       530.0
+      ]
+     },
+     {
+      "value": "31%",
+      "label": "Caucasian",
+      "box": [
+       655.0,
+       611.0,
+       665.0,
+       638.0
+      ]
+     },
+     {
+      "value": "19%",
+      "label": "Unspecified Race",
+      "box": [
+       662.0,
+       738.0,
+       672.0,
+       760.0
+      ]
+     },
+     {
+      "value": "6%",
+      "label": "Other Race",
+      "box": [
+       678.0,
+       858.0,
+       688.0,
+       880.0
+      ]
+     },
+     {
+      "value": "9,475",
+      "label": "Back2School Community Resource Value",
+      "box": [
+       764.0,
+       266.0,
+       774.0,
+       306.0
+      ]
+     },
+     {
+      "value": "4,800",
+      "label": "Thanks for Giving Value",
+      "box": [
+       782.0,
+       266.0,
+       792.0,
+       306.0
+      ]
+     },
+     {
+      "value": "20,000+",
+      "label": "Winter Wonderland Value",
+      "box": [
+       799.0,
+       259.0,
+       809.0,
+       306.0
+      ]
+     },
+     {
+      "value": "60",
+      "label": "Thanks for Giving Meals",
+      "box": [
+       782.0,
+       373.0,
+       792.0,
+       389.0
+      ]
+     },
+     {
+      "value": "247",
+      "label": "Back2School Community Resource Participants",
+      "box": [
+       764.0,
+       855.0,
+       774.0,
+       880.0
+      ]
+     },
+     {
+      "value": "60",
+      "label": "Thanks for Giving Participants",
+      "box": [
+       782.0,
+       491.0,
+       792.0,
+       507.0
+      ]
+     },
+     {
+      "value": "30",
+      "label": "Thanks for Giving Turkeys",
+      "box": [
+       782.0,
+       618.0,
+       792.0,
+       634.0
+      ]
+     },
+     {
+      "value": "1,080",
+      "label": "Winter Wonderland Participants",
+      "box": [
+       799.0,
+       485.0,
+       809.0,
+       519.0
+      ]
+     },
+     {
+      "value": "2,095",
+      "label": "Winter Wonderland Donated Toys",
+      "box": [
+       799.0,
+       731.0,
+       809.0,
+       764.0
+      ]
+     },
+     {
+      "value": "97.50%",
+      "label": "Satisfaction Rate",
+      "box": [
+       845.0,
+       438.0,
+       859.0,
+       526.0
+      ]
+     },
+     {
+      "value": "63.30%",
+      "label": "Very Satisfied",
+      "box": [
+       881.0,
+       183.0,
+       891.0,
+       233.0
+      ]
+     },
+     {
+      "value": "34.20%",
+      "label": "Satisfied",
+      "box": [
+       881.0,
+       471.0,
+       891.0,
+       523.0
+      ]
+     },
+     {
+      "value": "2.50%",
+      "label": "Not Satisfied",
+      "box": [
+       881.0,
+       764.0,
+       891.0,
+       807.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "fa5c5fe6",
+  "org": "Abbott House Inc",
+  "figs_per_page": 6.0,
+  "img": "bakeoff/pages/fa5c5fe6.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "2019",
+      "label": "Fiscal Year",
+      "box": [
+       192.0,
+       876.0,
+       206.0,
+       919.0
+      ]
+     },
+     {
+      "value": "6059962486",
+      "label": "Phone Number",
+      "box": [
+       220.0,
+       489.0,
+       234.0,
+       610.0
+      ]
+     },
+     {
+      "value": "77",
+      "label": "Girls served in Residential Program in FY19",
+      "box": [
+       375.0,
+       690.0,
+       389.0,
+       707.0
+      ]
+     },
+     {
+      "value": "35",
+      "label": "New girls enrolled in Residential Program",
+      "box": [
+       375.0,
+       726.0,
+       389.0,
+       743.0
+      ]
+     },
+     {
+      "value": "5",
+      "label": "Residential Program girls aged 7-12",
+      "box": [
+       429.0,
+       360.0,
+       443.0,
+       369.0
+      ]
+     },
+     {
+      "value": "30",
+      "label": "Residential Program girls aged 13-18",
+      "box": [
+       447.0,
+       360.0,
+       461.0,
+       378.0
+      ]
+     },
+     {
+      "value": "24",
+      "label": "Percentage of Residential Program girls aged 7-12",
+      "box": [
+       429.0,
+       489.0,
+       443.0,
+       506.0
+      ]
+     },
+     {
+      "value": "76",
+      "label": "Percentage of Residential Program girls aged 13-18",
+      "box": [
+       447.0,
+       489.0,
+       461.0,
+       506.0
+      ]
+     },
+     {
+      "value": "43",
+      "label": "Percentage of Caucasian Residential Program participants",
+      "box": [
+       429.0,
+       775.0,
+       443.0,
+       792.0
+      ]
+     },
+     {
+      "value": "32",
+      "label": "Percentage of Native American Residential Program participants",
+      "box": [
+       447.0,
+       775.0,
+       461.0,
+       792.0
+      ]
+     },
+     {
+      "value": "3",
+      "label": "Percentage of African American Residential Program participants",
+      "box": [
+       465.0,
+       775.0,
+       479.0,
+       783.0
+      ]
+     },
+     {
+      "value": "6",
+      "label": "Percentage of Hispanic Residential Program participants",
+      "box": [
+       483.0,
+       775.0,
+       497.0,
+       783.0
+      ]
+     },
+     {
+      "value": "16",
+      "label": "Percentage of Other/Multi race Residential Program participants",
+      "box": [
+       501.0,
+       775.0,
+       515.0,
+       792.0
+      ]
+     },
+     {
+      "value": "68",
+      "label": "Youth served in Therapeutic Foster Care Program in FY19",
+      "box": [
+       566.0,
+       700.0,
+       580.0,
+       717.0
+      ]
+     },
+     {
+      "value": "81",
+      "label": "Therapeutic Foster Care Program occupancy for FY19",
+      "box": [
+       584.0,
+       700.0,
+       598.0,
+       717.0
+      ]
+     },
+     {
+      "value": "4",
+      "label": "Independent Living apartments",
+      "box": [
+       629.0,
+       409.0,
+       643.0,
+       418.0
+      ]
+     },
+     {
+      "value": "8",
+      "label": "Youth served in Independent Living program in past year",
+      "box": [
+       647.0,
+       700.0,
+       661.0,
+       709.0
+      ]
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "60",
+      "label": "girls served each year",
+      "box": [
+       360.0,
+       375.0,
+       373.0,
+       400.0
+      ]
+     },
+     {
+      "value": "90",
+      "label": "girls served each year",
+      "box": [
+       360.0,
+       403.0,
+       373.0,
+       428.0
+      ]
+     },
+     {
+      "value": "77",
+      "label": "served in FY19",
+      "box": [
+       373.0,
+       590.0,
+       387.0,
+       615.0
+      ]
+     },
+     {
+      "value": "35",
+      "label": "new enrolled",
+      "box": [
+       373.0,
+       760.0,
+       387.0,
+       802.0
+      ]
+     },
+     {
+      "value": "7",
+      "label": "ages ranging from",
+      "box": [
+       386.0,
+       306.0,
+       400.0,
+       314.0
+      ]
+     },
+     {
+      "value": "17",
+      "label": "ages ranging from",
+      "box": [
+       386.0,
+       432.0,
+       400.0,
+       457.0
+      ]
+     },
+     {
+      "value": "5",
+      "label": "ages",
+      "box": [
+       431.0,
+       363.0,
+       444.0,
+       371.0
+      ]
+     },
+     {
+      "value": "24",
+      "label": "ages",
+      "box": [
+       431.0,
+       479.0,
+       444.0,
+       504.0
+      ]
+     },
+     {
+      "value": "30",
+      "label": "ages",
+      "box": [
+       446.0,
+       363.0,
+       459.0,
+       382.0
+      ]
+     },
+     {
+      "value": "76",
+      "label": "ages",
+      "box": [
+       446.0,
+       479.0,
+       459.0,
+       504.0
+      ]
+     },
+     {
+      "value": "43",
+      "label": "Ethnic Background",
+      "box": [
+       431.0,
+       774.0,
+       444.0,
+       805.0
+      ]
+     },
+     {
+      "value": "32",
+      "label": "Ethnic Background",
+      "box": [
+       446.0,
+       774.0,
+       459.0,
+       805.0
+      ]
+     },
+     {
+      "value": "3",
+      "label": "Ethnic Background",
+      "box": [
+       461.0,
+       774.0,
+       474.0,
+       797.0
+      ]
+     },
+     {
+      "value": "6",
+      "label": "Ethnic Background",
+      "box": [
+       476.0,
+       774.0,
+       489.0,
+       797.0
+      ]
+     },
+     {
+      "value": "16",
+      "label": "Ethnic Background",
+      "box": [
+       491.0,
+       774.0,
+       504.0,
+       805.0
+      ]
+     },
+     {
+      "value": "68",
+      "label": "youth served in FY19",
+      "box": [
+       556.0,
+       517.0,
+       570.0,
+       542.0
+      ]
+     },
+     {
+      "value": "81",
+      "label": "Occupancy for FY19",
+      "box": [
+       570.0,
+       661.0,
+       584.0,
+       686.0
+      ]
+     },
+     {
+      "value": "4",
+      "label": "apartments and independent living support services",
+      "box": null
+     },
+     {
+      "value": "8",
+      "label": "youth were served in this program",
+      "box": null
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "714f6f9a",
+  "org": "Genesis Hopeful Haven Inc",
+  "figs_per_page": 5.8,
+  "img": "bakeoff/pages/714f6f9a.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "no",
+    "numbers": []
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "2020",
+      "label": "year",
+      "box": [
+       360.0,
+       182.0,
+       376.0,
+       220.0
+      ]
+     },
+     {
+      "value": "EVER",
+      "label": "best year",
+      "box": [
+       360.0,
+       473.0,
+       376.0,
+       517.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "6b3b6732",
+  "org": "Coastal Georgia Area Community Action Authority Inc",
+  "figs_per_page": 5.6,
+  "img": "bakeoff/pages/6b3b6732.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "7",
+      "label": "classrooms",
+      "box": [
+       600.0,
+       390.0,
+       615.0,
+       465.0
+      ]
+     },
+     {
+      "value": "38",
+      "label": "research-based objectives",
+      "box": [
+       440.0,
+       650.0,
+       455.0,
+       800.0
+      ]
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "3",
+      "label": "year old children",
+      "box": [
+       586.0,
+       226.0,
+       601.0,
+       240.0
+      ]
+     },
+     {
+      "value": "7",
+      "label": "year old children",
+      "box": [
+       601.0,
+       226.0,
+       616.0,
+       240.0
+      ]
+     },
+     {
+      "value": "5",
+      "label": "Central Domains",
+      "box": [
+       503.0,
+       709.0,
+       518.0,
+       717.0
+      ]
+     },
+     {
+      "value": "38",
+      "label": "research-based objects",
+      "box": [
+       436.0,
+       609.0,
+       451.0,
+       622.0
+      ]
+     },
+     {
+      "value": "0-5",
+      "label": "Head Start",
+      "box": [
+       274.0,
+       709.0,
+       289.0,
+       730.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "f1189246",
+  "org": "Chrysalis Inc",
+  "figs_per_page": 5.5,
+  "img": "bakeoff/pages/f1189246.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "44",
+      "label": "consumers working",
+      "box": [
+       109.0,
+       44.0,
+       278.0,
+       130.0
+      ]
+     },
+     {
+      "value": "63482",
+      "label": "consumer-earned income",
+      "box": [
+       40.0,
+       139.0,
+       278.0,
+       225.0
+      ]
+     },
+     {
+      "value": "41",
+      "label": "local employers",
+      "box": [
+       109.0,
+       234.0,
+       278.0,
+       320.0
+      ]
+     },
+     {
+      "value": "4245",
+      "label": "peer support hours provided",
+      "box": [
+       40.0,
+       329.0,
+       278.0,
+       415.0
+      ]
+     },
+     {
+      "value": "134",
+      "label": "consumer volunteer hours",
+      "box": [
+       90.0,
+       424.0,
+       278.0,
+       510.0
+      ]
+     },
+     {
+      "value": "395605",
+      "label": "Total Income",
+      "box": [
+       349.0,
+       420.0,
+       366.0,
+       499.0
+      ]
+     },
+     {
+      "value": "190197",
+      "label": "Dane County Income",
+      "box": [
+       374.0,
+       430.0,
+       390.0,
+       499.0
+      ]
+     },
+     {
+      "value": "111192",
+      "label": "Medicaid Revenue",
+      "box": [
+       396.0,
+       430.0,
+       412.0,
+       499.0
+      ]
+     },
+     {
+      "value": "72850",
+      "label": "Dept. of Vocational Rehabilitation Income",
+      "box": [
+       418.0,
+       438.0,
+       434.0,
+       499.0
+      ]
+     },
+     {
+      "value": "10763",
+      "label": "Community Shares of Wisconsin Income",
+      "box": [
+       440.0,
+       446.0,
+       456.0,
+       499.0
+      ]
+     },
+     {
+      "value": "9915",
+      "label": "Fundraising & Donations Income",
+      "box": [
+       462.0,
+       454.0,
+       478.0,
+       499.0
+      ]
+     },
+     {
+      "value": "385039",
+      "label": "Total Expenses",
+      "box": [
+       506.0,
+       420.0,
+       522.0,
+       499.0
+      ]
+     },
+     {
+      "value": "284484",
+      "label": "Salaries & Wages Expense",
+      "box": [
+       530.0,
+       430.0,
+       546.0,
+       499.0
+      ]
+     },
+     {
+      "value": "25579",
+      "label": "Employee Benefits Expense",
+      "box": [
+       552.0,
+       446.0,
+       568.0,
+       499.0
+      ]
+     },
+     {
+      "value": "38859",
+      "label": "Program Expense",
+      "box": [
+       574.0,
+       454.0,
+       590.0,
+       499.0
+      ]
+     },
+     {
+      "value": "33098",
+      "label": "Facility Expense",
+      "box": [
+       596.0,
+       454.0,
+       612.0,
+       499.0
+      ]
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "63482",
+      "label": "consumer-earned income",
+      "box": [
+       47.0,
+       141.0,
+       67.0,
+       248.0
+      ]
+     },
+     {
+      "value": "44",
+      "label": "consumers working",
+      "box": [
+       91.0,
+       68.0,
+       109.0,
+       101.0
+      ]
+     },
+     {
+      "value": "41",
+      "label": "local employers",
+      "box": [
+       91.0,
+       284.0,
+       109.0,
+       312.0
+      ]
+     },
+     {
+      "value": "4245",
+      "label": "peer support hours provided",
+      "box": [
+       47.0,
+       377.0,
+       67.0,
+       440.0
+      ]
+     },
+     {
+      "value": "134",
+      "label": "consumer volunteer hours",
+      "box": [
+       71.0,
+       491.0,
+       89.0,
+       536.0
+      ]
+     },
+     {
+      "value": "395605",
+      "label": "Total Income",
+      "box": [
+       350.0,
+       379.0,
+       367.0,
+       525.0
+      ]
+     },
+     {
+      "value": "190197",
+      "label": "Dane County Income",
+      "box": [
+       371.0,
+       441.0,
+       388.0,
+       525.0
+      ]
+     },
+     {
+      "value": "111192",
+      "label": "Medicaid Revenue Income",
+      "box": [
+       393.0,
+       441.0,
+       410.0,
+       525.0
+      ]
+     },
+     {
+      "value": "72850",
+      "label": "Dept. of Vocational Rehabilitation Income",
+      "box": [
+       415.0,
+       451.0,
+       432.0,
+       525.0
+      ]
+     },
+     {
+      "value": "10763",
+      "label": "Community Shares of Wisconsin Income",
+      "box": [
+       437.0,
+       451.0,
+       454.0,
+       525.0
+      ]
+     },
+     {
+      "value": "9915",
+      "label": "Fundraising & Donations Income",
+      "box": [
+       459.0,
+       461.0,
+       476.0,
+       525.0
+      ]
+     },
+     {
+      "value": "385039",
+      "label": "Total Expenses",
+      "box": [
+       504.0,
+       377.0,
+       521.0,
+       525.0
+      ]
+     },
+     {
+      "value": "284484",
+      "label": "Salaries & Wages Expenses",
+      "box": [
+       525.0,
+       437.0,
+       542.0,
+       525.0
+      ]
+     },
+     {
+      "value": "25579",
+      "label": "Employee Benefits Expenses",
+      "box": [
+       547.0,
+       451.0,
+       564.0,
+       525.0
+      ]
+     },
+     {
+      "value": "38859",
+      "label": "Program Expenses",
+      "box": [
+       569.0,
+       451.0,
+       586.0,
+       525.0
+      ]
+     },
+     {
+      "value": "33098",
+      "label": "Facility Expenses",
+      "box": [
+       591.0,
+       451.0,
+       608.0,
+       525.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "10c67887",
+  "org": "Mockingbird Society",
+  "figs_per_page": 5.5,
+  "img": "bakeoff/pages/10c67887.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "47",
+      "label": "youth and community trainings were facilitated throughout the state.",
+      "box": [
+       799.0,
+       44.0,
+       886.0,
+       290.0
+      ]
+     },
+     {
+      "value": "226",
+      "label": "community members attended a Culture of Foster Care training.",
+      "box": [
+       780.0,
+       389.0,
+       868.0,
+       617.0
+      ]
+     },
+     {
+      "value": "53",
+      "label": "youth participated in more than 26 speaking events where they either testified, participated on panels, or shared insight about their experience in foster care or with homelessness.",
+      "box": [
+       862.0,
+       286.0,
+       960.0,
+       642.0
+      ]
+     },
+     {
+      "value": "92",
+      "label": "% of Youth Network participants reported feeling empowered after attending Youth Advocacy Day.",
+      "box": [
+       840.0,
+       672.0,
+       926.0,
+       958.0
+      ]
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "47",
+      "label": "youth and community trainings were facilitated throughout the state",
+      "box": [
+       799.0,
+       45.0,
+       850.0,
+       134.0
+      ]
+     },
+     {
+      "value": "226",
+      "label": "community members attended a Culture of Foster Care training",
+      "box": [
+       777.0,
+       389.0,
+       830.0,
+       525.0
+      ]
+     },
+     {
+      "value": "53",
+      "label": "youth participated in more than 26 speaking events where they either testified, participated on panels, or shared insight about their experience in foster care or with homelessness",
+      "box": [
+       864.0,
+       287.0,
+       911.0,
+       372.0
+      ]
+     },
+     {
+      "value": "92%",
+      "label": "of Youth Network participants reported feeling empowered after attending Youth Advocacy Day",
+      "box": [
+       842.0,
+       677.0,
+       888.0,
+       829.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "30259c4d",
+  "org": "Gbcanada Usa",
+  "figs_per_page": 5.5,
+  "img": "bakeoff/pages/30259c4d.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "11",
+      "label": "February graduation date",
+      "box": [
+       626.0,
+       392.0,
+       636.0,
+       408.0
+      ]
+     },
+     {
+      "value": "10",
+      "label": "March graduation date",
+      "box": [
+       673.0,
+       627.0,
+       683.0,
+       643.0
+      ]
+     },
+     {
+      "value": "21",
+      "label": "April graduation date",
+      "box": [
+       719.0,
+       729.0,
+       730.0,
+       746.0
+      ]
+     },
+     {
+      "value": "150",
+      "label": "people attended New Day Banquet",
+      "box": [
+       800.0,
+       102.0,
+       810.0,
+       133.0
+      ]
+     },
+     {
+      "value": "25",
+      "label": "New Day Banquet date",
+      "box": [
+       847.0,
+       314.0,
+       857.0,
+       329.0
+      ]
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "1",
+      "label": "Bridge Church (Martinsburg, WV; Andrew Leasure, Pastor) completing their revitalization process with graduation February 11!",
+      "box": [
+       608.0,
+       57.0,
+       633.0,
+       78.0
+      ]
+     },
+     {
+      "value": "2",
+      "label": "Grace Church of Aiken (Aiken, SC; Shannon Hollinger, Pastor) completing their revitalization process with graduation March 10!",
+      "box": [
+       653.0,
+       57.0,
+       678.0,
+       78.0
+      ]
+     },
+     {
+      "value": "3",
+      "label": "Contrast Church (a young church in Columbus, OH; Trey Gilmore, Pastor) graduating from our church planting partnership April 21.",
+      "box": [
+       698.0,
+       57.0,
+       723.0,
+       78.0
+      ]
+     },
+     {
+      "value": "4",
+      "label": "The installations of Pastor Bill Seng at Findlay Grace Brethren Church in January and Pastor Jesse Jackson at Hope Bible Church in Roanoke, VA in May!",
+      "box": [
+       743.0,
+       57.0,
+       768.0,
+       78.0
+      ]
+     },
+     {
+      "value": "5",
+      "label": "Over 150 people attended our New Day Banquet in Warsaw, IN (held at Community Grace Brethren Church; Reg Overstreet, Pastor) on February 25 where we were excited to announce a new church plant in Ft. Wayne, IN (championed by Community of Hope, Columbia City, IN; Jeremy Wike, Pastor)!",
+      "box": [
+       788.0,
+       57.0,
+       813.0,
+       78.0
+      ]
+     },
+     {
+      "value": "150",
+      "label": "Over 150 people attended our New Day Banquet in Warsaw, IN (held at Community Grace Brethren Church; Reg Overstreet, Pastor) on February 25 where we were excited to announce a new church plant in Ft. Wayne, IN (championed by Community of Hope, Columbia City, IN; Jeremy Wike, Pastor)!",
+      "box": [
+       790.0,
+       97.0,
+       819.0,
+       150.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "8b8cd8e1",
+  "org": "Cumac Echo Inc",
+  "figs_per_page": 5.3,
+  "img": "bakeoff/pages/8b8cd8e1.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "no",
+    "numbers": []
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "01",
+      "label": "ANNUAL REPORT",
+      "box": [
+       981.0,
+       487.0,
+       997.0,
+       525.0
+      ]
+     },
+     {
+      "value": "2020",
+      "label": "ANNUAL REPORT",
+      "box": [
+       981.0,
+       725.0,
+       997.0,
+       777.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "9fcf82e5",
+  "org": "Worcester Youth & Family Counseling Service Inc",
+  "figs_per_page": 5.2,
+  "img": "bakeoff/pages/9fcf82e5.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "286",
+      "label": "clients served",
+      "box": [
+       316.0,
+       166.0,
+       334.0,
+       195.0
+      ]
+     },
+     {
+      "value": "3796",
+      "label": "hours served",
+      "box": [
+       316.0,
+       340.0,
+       334.0,
+       380.0
+      ]
+     },
+     {
+      "value": "54",
+      "label": "clients seen for free through the Victims of Crime Act",
+      "box": [
+       346.0,
+       166.0,
+       364.0,
+       185.0
+      ]
+     },
+     {
+      "value": "2",
+      "label": "clinical interns hired post-graduation",
+      "box": [
+       376.0,
+       166.0,
+       394.0,
+       175.0
+      ]
+     },
+     {
+      "value": "28",
+      "label": "students served",
+      "box": [
+       447.0,
+       166.0,
+       465.0,
+       185.0
+      ]
+     },
+     {
+      "value": "11",
+      "label": "volunteer mentors",
+      "box": [
+       447.0,
+       320.0,
+       465.0,
+       339.0
+      ]
+     },
+     {
+      "value": "1",
+      "label": "free group mentor events a month (min)",
+      "box": [
+       477.0,
+       166.0,
+       495.0,
+       175.0
+      ]
+     },
+     {
+      "value": "2",
+      "label": "free group mentor events a month (max)",
+      "box": [
+       477.0,
+       186.0,
+       495.0,
+       195.0
+      ]
+     },
+     {
+      "value": "22",
+      "label": "families given long-term case navigation",
+      "box": [
+       568.0,
+       166.0,
+       586.0,
+       185.0
+      ]
+     },
+     {
+      "value": "131",
+      "label": "referrals for food and basic needs help",
+      "box": [
+       598.0,
+       166.0,
+       616.0,
+       195.0
+      ]
+     },
+     {
+      "value": "100",
+      "label": "callers report a reduced sense of food insecurity",
+      "box": [
+       628.0,
+       166.0,
+       646.0,
+       204.0
+      ]
+     },
+     {
+      "value": "26",
+      "label": "children enrolled in free summer camp",
+      "box": [
+       699.0,
+       166.0,
+       717.0,
+       185.0
+      ]
+     },
+     {
+      "value": "192",
+      "label": "hours of summer enrichment activities",
+      "box": [
+       729.0,
+       166.0,
+       747.0,
+       195.0
+      ]
+     },
+     {
+      "value": "4",
+      "label": "teen helpers involved as volunteers",
+      "box": [
+       759.0,
+       166.0,
+       777.0,
+       175.0
+      ]
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "286",
+      "label": "clients served",
+      "box": [
+       314.0,
+       167.0,
+       341.0,
+       215.0
+      ]
+     },
+     {
+      "value": "3,796",
+      "label": "hours",
+      "box": [
+       314.0,
+       436.0,
+       341.0,
+       493.0
+      ]
+     },
+     {
+      "value": "54",
+      "label": "clients seen for free",
+      "box": [
+       357.0,
+       66.0,
+       385.0,
+       91.0
+      ]
+     },
+     {
+      "value": "2",
+      "label": "clinical interns hired post-graduation",
+      "box": [
+       403.0,
+       144.0,
+       431.0,
+       154.0
+      ]
+     },
+     {
+      "value": "28",
+      "label": "students served",
+      "box": [
+       503.0,
+       109.0,
+       531.0,
+       137.0
+      ]
+     },
+     {
+      "value": "11",
+      "label": "volunteer mentors",
+      "box": [
+       503.0,
+       275.0,
+       531.0,
+       297.0
+      ]
+     },
+     {
+      "value": "1-2",
+      "label": "free group mentor events a month",
+      "box": [
+       548.0,
+       150.0,
+       576.0,
+       180.0
+      ]
+     },
+     {
+      "value": "22",
+      "label": "families given long-term case navigation",
+      "box": [
+       690.0,
+       124.0,
+       718.0,
+       147.0
+      ]
+     },
+     {
+      "value": "131",
+      "label": "referrals for food and basic needs help",
+      "box": [
+       734.0,
+       164.0,
+       762.0,
+       192.0
+      ]
+     },
+     {
+      "value": "100",
+      "label": "of callers report a reduced sense of food insecurity",
+      "box": [
+       779.0,
+       73.0,
+       807.0,
+       101.0
+      ]
+     },
+     {
+      "value": "26",
+      "label": "children enrolled in free summer camp",
+      "box": [
+       873.0,
+       140.0,
+       901.0,
+       161.0
+      ]
+     },
+     {
+      "value": "192",
+      "label": "hours of summer enrichment activities",
+      "box": [
+       916.0,
+       171.0,
+       944.0,
+       200.0
+      ]
+     },
+     {
+      "value": "4",
+      "label": "teen helpers involved as volunteers",
+      "box": [
+       959.0,
+       161.0,
+       987.0,
+       171.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "d58e3d5b",
+  "org": "Hearts With A Mission",
+  "figs_per_page": 5.1,
+  "img": "bakeoff/pages/d58e3d5b.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "2",
+      "label": "transitional living homes for vulnerable young adults",
+      "box": [
+       489.0,
+       524.0,
+       503.0,
+       700.0
+      ]
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "2009",
+      "label": "year our first shelter opened",
+      "box": [
+       666.0,
+       800.0,
+       682.0,
+       826.0
+      ]
+     },
+     {
+      "value": "18-22",
+      "label": "youth ages served by Transitional Living Program",
+      "box": [
+       563.0,
+       114.0,
+       579.0,
+       130.0
+      ]
+     },
+     {
+      "value": "25:40",
+      "label": "Bible verse reference",
+      "box": [
+       174.0,
+       609.0,
+       189.0,
+       630.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "b60a49eb",
+  "org": "Childhelp Inc",
+  "figs_per_page": 5.1,
+  "img": "bakeoff/pages/b60a49eb.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "92.5",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "449,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "290,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "470,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "340",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "4",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "330,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "540,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "380,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "570",
+      "label": "",
+      "box": null
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "4",
+      "label": "Founders' Message",
+      "box": [
+       168.0,
+       555.0,
+       195.0,
+       568.0
+      ]
+     },
+     {
+      "value": "6",
+      "label": "Our Work",
+      "box": [
+       168.0,
+       806.0,
+       195.0,
+       819.0
+      ]
+     },
+     {
+      "value": "8",
+      "label": "The Challenge",
+      "box": [
+       168.0,
+       930.0,
+       195.0,
+       943.0
+      ]
+     },
+     {
+      "value": "9",
+      "label": "Five Too Many",
+      "box": [
+       333.0,
+       681.0,
+       365.0,
+       693.0
+      ]
+     },
+     {
+      "value": "10",
+      "label": "Childhelp Solutions",
+      "box": [
+       333.0,
+       800.0,
+       365.0,
+       827.0
+      ]
+     },
+     {
+      "value": "16",
+      "label": "Lifelong Impact",
+      "box": [
+       333.0,
+       924.0,
+       365.0,
+       951.0
+      ]
+     },
+     {
+      "value": "92.5",
+      "label": "cents invested into serving the children in need of our program services",
+      "box": [
+       433.0,
+       263.0,
+       460.0,
+       302.0
+      ]
+     },
+     {
+      "value": "18",
+      "label": "Childhelp Chapters",
+      "box": [
+       503.0,
+       549.0,
+       535.0,
+       575.0
+      ]
+     },
+     {
+      "value": "20",
+      "label": "Financial Summary",
+      "box": [
+       503.0,
+       673.0,
+       535.0,
+       701.0
+      ]
+     },
+     {
+      "value": "22",
+      "label": "Ways You Can Help",
+      "box": [
+       503.0,
+       924.0,
+       535.0,
+       951.0
+      ]
+     },
+     {
+      "value": "24",
+      "label": "Supporter Spotlight",
+      "box": [
+       670.0,
+       673.0,
+       701.0,
+       701.0
+      ]
+     },
+     {
+      "value": "26",
+      "label": "Leadership",
+      "box": [
+       670.0,
+       798.0,
+       701.0,
+       825.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "2ea6005f",
+  "org": "Community Rehabilitation Agencies Of Tennessee",
+  "figs_per_page": 4.9,
+  "img": "bakeoff/pages/2ea6005f.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "318",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "709,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "700,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "724,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "726",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "65",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "724,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "800,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "739,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "826",
+      "label": "",
+      "box": null
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "320",
+      "label": "Tennesseans were employed",
+      "box": [
+       508.0,
+       242.0,
+       523.0,
+       283.0
+      ]
+     },
+     {
+      "value": "65",
+      "label": "hours worked by persons with disabilities",
+      "box": [
+       523.0,
+       286.0,
+       538.0,
+       315.0
+      ]
+     },
+     {
+      "value": "12,000,000",
+      "label": "gross revenues were generated",
+      "box": [
+       569.0,
+       58.0,
+       584.0,
+       127.0
+      ]
+     },
+     {
+      "value": "300,000",
+      "label": "increase over FY 2022",
+      "box": [
+       584.0,
+       331.0,
+       599.0,
+       399.0
+      ]
+     },
+     {
+      "value": "3,000,000",
+      "label": "dollars in products produced",
+      "box": [
+       599.0,
+       153.0,
+       614.0,
+       211.0
+      ]
+     },
+     {
+      "value": "9,000,000",
+      "label": "dollars in services provided",
+      "box": [
+       614.0,
+       127.0,
+       629.0,
+       185.0
+      ]
+     },
+     {
+      "value": "318",
+      "label": "Total employees",
+      "box": [
+       695.0,
+       645.0,
+       709.0,
+       685.0
+      ]
+     },
+     {
+      "value": "65",
+      "label": "hours worked with disabilities",
+      "box": [
+       713.0,
+       662.0,
+       727.0,
+       691.0
+      ]
+     },
+     {
+      "value": "35",
+      "label": "hours worked without disabilities",
+      "box": [
+       731.0,
+       662.0,
+       745.0,
+       691.0
+      ]
+     },
+     {
+      "value": "32",
+      "label": "Female",
+      "box": [
+       749.0,
+       687.0,
+       763.0,
+       716.0
+      ]
+     },
+     {
+      "value": "68",
+      "label": "Male",
+      "box": [
+       767.0,
+       699.0,
+       781.0,
+       728.0
+      ]
+     },
+     {
+      "value": "27",
+      "label": "Over 60",
+      "box": [
+       785.0,
+       687.0,
+       799.0,
+       716.0
+      ]
+     },
+     {
+      "value": "73",
+      "label": "Under 60",
+      "box": [
+       803.0,
+       687.0,
+       817.0,
+       716.0
+      ]
+     },
+     {
+      "value": "28",
+      "label": "African American",
+      "box": [
+       821.0,
+       653.0,
+       835.0,
+       682.0
+      ]
+     },
+     {
+      "value": "68",
+      "label": "Caucasian",
+      "box": [
+       839.0,
+       680.0,
+       853.0,
+       709.0
+      ]
+     },
+     {
+      "value": "3",
+      "label": "Hispanic",
+      "box": [
+       857.0,
+       687.0,
+       871.0,
+       716.0
+      ]
+     },
+     {
+      "value": "1",
+      "label": "Other",
+      "box": [
+       875.0,
+       700.0,
+       889.0,
+       728.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "8552b09e",
+  "org": "Families Network Of Western Connecticut Inc",
+  "figs_per_page": 4.9,
+  "img": "bakeoff/pages/8552b09e.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "1700",
+      "label": "home visits",
+      "box": [
+       389.0,
+       94.0,
+       405.0,
+       290.0
+      ]
+     },
+     {
+      "value": "82",
+      "label": "families",
+      "box": [
+       389.0,
+       366.0,
+       405.0,
+       500.0
+      ]
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "1,700",
+      "label": "home visits",
+      "box": [
+       389.0,
+       91.0,
+       405.0,
+       141.0
+      ]
+     },
+     {
+      "value": "82",
+      "label": "families",
+      "box": [
+       389.0,
+       393.0,
+       405.0,
+       415.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "8eb7da05",
+  "org": "The Childrens Place At Home Safe Inc",
+  "figs_per_page": 4.8,
+  "img": "bakeoff/pages/8eb7da05.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "4",
+      "label": "million raised",
+      "box": [
+       360.0,
+       600.0,
+       374.0,
+       659.0
+      ]
+     },
+     {
+      "value": "10",
+      "label": "million raised total",
+      "box": [
+       374.0,
+       600.0,
+       388.0,
+       660.0
+      ]
+     },
+     {
+      "value": "15",
+      "label": "million goal",
+      "box": [
+       374.0,
+       689.0,
+       388.0,
+       749.0
+      ]
+     },
+     {
+      "value": "400000",
+      "label": "raised from fundraiser",
+      "box": [
+       500.0,
+       690.0,
+       514.0,
+       760.0
+      ]
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "4",
+      "label": "million raised",
+      "box": [
+       350.0,
+       612.0,
+       364.0,
+       641.0
+      ]
+     },
+     {
+      "value": "10",
+      "label": "million toward goal",
+      "box": [
+       369.0,
+       572.0,
+       383.0,
+       595.0
+      ]
+     },
+     {
+      "value": "15",
+      "label": "million goal",
+      "box": [
+       369.0,
+       652.0,
+       383.0,
+       675.0
+      ]
+     },
+     {
+      "value": "400,000",
+      "label": "raised through fundraisers",
+      "box": [
+       563.0,
+       603.0,
+       577.0,
+       662.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "e136ede4",
+  "org": "Westside Future Fund",
+  "figs_per_page": 4.7,
+  "img": "bakeoff/pages/e136ede4.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "10",
+      "label": "new single-family homeowners",
+      "box": [
+       299.0,
+       58.0,
+       314.0,
+       449.0
+      ]
+     },
+     {
+      "value": "55",
+      "label": "million capital campaign",
+      "box": [
+       299.0,
+       540.0,
+       314.0,
+       640.0
+      ]
+     },
+     {
+      "value": "2028",
+      "label": "housing goals by year",
+      "box": [
+       314.0,
+       709.0,
+       329.0,
+       749.0
+      ]
+     },
+     {
+      "value": "12",
+      "label": "months (milestones reached)",
+      "box": [
+       409.0,
+       800.0,
+       424.0,
+       869.0
+      ]
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "10",
+      "label": "new single-family homeowners",
+      "box": [
+       282.0,
+       299.0,
+       301.0,
+       317.0
+      ]
+     },
+     {
+      "value": "55",
+      "label": "million capital campaign",
+      "box": [
+       292.0,
+       570.0,
+       311.0,
+       588.0
+      ]
+     },
+     {
+      "value": "2028",
+      "label": "affordable housing goals by",
+      "box": [
+       313.0,
+       701.0,
+       332.0,
+       731.0
+      ]
+     },
+     {
+      "value": "12",
+      "label": "months",
+      "box": [
+       428.0,
+       760.0,
+       447.0,
+       777.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "ce7b337f",
+  "org": "The Childrens Place At Home Safe Inc",
+  "figs_per_page": 4.6,
+  "img": "bakeoff/pages/ce7b337f.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "12",
+      "label": "young women (Sylvester Family West Campus)",
+      "box": [
+       243.0,
+       590.0,
+       258.0,
+       609.0
+      ]
+     },
+     {
+      "value": "32",
+      "label": "bedrooms (Sylvester Family Foundation North Campus)",
+      "box": [
+       399.0,
+       609.0,
+       414.0,
+       628.0
+      ]
+     },
+     {
+      "value": "44",
+      "label": "total bedrooms (Sylvester Family Foundation North Campus)",
+      "box": [
+       399.0,
+       646.0,
+       414.0,
+       665.0
+      ]
+     },
+     {
+      "value": "12",
+      "label": "remaining beds (Boca Raton campus)",
+      "box": [
+       434.0,
+       609.0,
+       449.0,
+       628.0
+      ]
+     },
+     {
+      "value": "13",
+      "label": "old starting wage (per hour)",
+      "box": [
+       690.0,
+       690.0,
+       705.0,
+       709.0
+      ]
+     },
+     {
+      "value": "15",
+      "label": "new starting wage (per hour)",
+      "box": [
+       690.0,
+       727.0,
+       705.0,
+       746.0
+      ]
+     },
+     {
+      "value": "62",
+      "label": "positions affected by wage increase",
+      "box": [
+       707.0,
+       700.0,
+       722.0,
+       722.0
+      ]
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "12",
+      "label": "young women to live, grow and heal",
+      "box": [
+       284.0,
+       533.0,
+       300.0,
+       609.0
+      ]
+     },
+     {
+      "value": "44",
+      "label": "bedrooms for our kids",
+      "box": [
+       400.0,
+       600.0,
+       416.0,
+       614.0
+      ]
+     },
+     {
+      "value": "12",
+      "label": "remaining beds reside",
+      "box": [
+       458.0,
+       555.0,
+       474.0,
+       569.0
+      ]
+     },
+     {
+      "value": "13",
+      "label": "starting wages for our Youth Development Professionals",
+      "box": [
+       673.0,
+       637.0,
+       689.0,
+       651.0
+      ]
+     },
+     {
+      "value": "15",
+      "label": "starting wages for our Youth Development Professionals",
+      "box": [
+       673.0,
+       654.0,
+       689.0,
+       668.0
+      ]
+     },
+     {
+      "value": "62",
+      "label": "positions",
+      "box": [
+       712.0,
+       644.0,
+       728.0,
+       658.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "24e18655",
+  "org": "Island Harvest Ltd",
+  "figs_per_page": 4.6,
+  "img": "bakeoff/pages/24e18655.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "221000",
+      "label": "people experience food insecurity",
+      "box": [
+       410.0,
+       190.0,
+       423.0,
+       240.0
+      ]
+     },
+     {
+      "value": "18.3",
+      "label": "million pounds of food distributed",
+      "box": [
+       439.0,
+       230.0,
+       452.0,
+       260.0
+      ]
+     },
+     {
+      "value": "275000",
+      "label": "pounds of food in early days",
+      "box": [
+       453.0,
+       100.0,
+       466.0,
+       150.0
+      ]
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "2023-2024",
+      "label": "Annual Report",
+      "box": [
+       371.0,
+       194.0,
+       388.0,
+       264.0
+      ]
+     },
+     {
+      "value": "1",
+      "label": "one in thirteen Long Islanders",
+      "box": [
+       514.0,
+       30.0,
+       531.0,
+       40.0
+      ]
+     },
+     {
+      "value": "221000",
+      "label": "people",
+      "box": [
+       514.0,
+       265.0,
+       531.0,
+       306.0
+      ]
+     },
+     {
+      "value": "1",
+      "label": "one in fourteen children",
+      "box": [
+       514.0,
+       30.0,
+       531.0,
+       40.0
+      ]
+     },
+     {
+      "value": "32",
+      "label": "years",
+      "box": [
+       628.0,
+       103.0,
+       645.0,
+       119.0
+      ]
+     },
+     {
+      "value": "18.3",
+      "label": "million pounds of food",
+      "box": [
+       628.0,
+       260.0,
+       645.0,
+       283.0
+      ]
+     },
+     {
+      "value": "275000",
+      "label": "pounds of food",
+      "box": [
+       664.0,
+       175.0,
+       681.0,
+       215.0
+      ]
+     },
+     {
+      "value": "19",
+      "label": "COVID-19",
+      "box": [
+       664.0,
+       306.0,
+       681.0,
+       322.0
+      ]
+     },
+     {
+      "value": "1992",
+      "label": "year",
+      "box": [
+       283.0,
+       899.0,
+       300.0,
+       927.0
+      ]
+     },
+     {
+      "value": "16",
+      "label": "July",
+      "box": [
+       283.0,
+       870.0,
+       300.0,
+       886.0
+      ]
+     },
+     {
+      "value": "2024",
+      "label": "year",
+      "box": [
+       283.0,
+       930.0,
+       300.0,
+       958.0
+      ]
+     },
+     {
+      "value": "1995",
+      "label": "year",
+      "box": [
+       737.0,
+       958.0,
+       754.0,
+       986.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "2cf7c1e8",
+  "org": "Forward Stride",
+  "figs_per_page": 4.5,
+  "img": "bakeoff/pages/2cf7c1e8.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "506",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "290,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "110,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "375,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "240",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "351",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "400,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "120,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "465,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "230",
+      "label": "",
+      "box": null
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "506",
+      "label": "Total clients served",
+      "box": [
+       264.0,
+       130.0,
+       281.0,
+       264.0
+      ]
+     },
+     {
+      "value": "10942",
+      "label": "Total program hours",
+      "box": [
+       264.0,
+       412.0,
+       281.0,
+       586.0
+      ]
+     },
+     {
+      "value": "237",
+      "label": "Total volunteers",
+      "box": [
+       264.0,
+       716.0,
+       281.0,
+       886.0
+      ]
+     },
+     {
+      "value": "351",
+      "label": "Forward Stride clients",
+      "box": [
+       377.0,
+       168.0,
+       401.0,
+       222.0
+      ]
+     },
+     {
+      "value": "3515",
+      "label": "Vaulting",
+      "box": [
+       377.0,
+       386.0,
+       401.0,
+       473.0
+      ]
+     },
+     {
+      "value": "6407",
+      "label": "Riding & Groundwork",
+      "box": [
+       377.0,
+       519.0,
+       401.0,
+       609.0
+      ]
+     },
+     {
+      "value": "52",
+      "label": "Volunteers retained 5+ years",
+      "box": [
+       377.0,
+       782.0,
+       401.0,
+       830.0
+      ]
+     },
+     {
+      "value": "155",
+      "label": "Clients served via Forward Stride partnerships",
+      "box": [
+       438.0,
+       168.0,
+       463.0,
+       224.0
+      ]
+     },
+     {
+      "value": "360",
+      "label": "Equine Assisted Psychotherapy",
+      "box": [
+       438.0,
+       352.0,
+       463.0,
+       415.0
+      ]
+     },
+     {
+      "value": "377",
+      "label": "Physical, Occupational, and Speech Therapy",
+      "box": [
+       438.0,
+       481.0,
+       463.0,
+       535.0
+      ]
+     },
+     {
+      "value": "283",
+      "label": "Equine Assisted Learning",
+      "box": [
+       438.0,
+       598.0,
+       463.0,
+       657.0
+      ]
+     },
+     {
+      "value": "29",
+      "label": "Volunteers retained 10+ years",
+      "box": [
+       438.0,
+       782.0,
+       463.0,
+       821.0
+      ]
+     },
+     {
+      "value": "10",
+      "label": "increase in clients served over last year",
+      "box": [
+       854.0,
+       536.0,
+       871.0,
+       577.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "98eb1221",
+  "org": "Raiseup Families",
+  "figs_per_page": 4.3,
+  "img": "bakeoff/pages/98eb1221.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "24",
+      "label": "years of operation",
+      "box": [
+       330.0,
+       229.0,
+       346.0,
+       249.0
+      ]
+     },
+     {
+      "value": "92",
+      "label": "percent of students remaining at the same school",
+      "box": [
+       756.0,
+       290.0,
+       772.0,
+       310.0
+      ]
+     },
+     {
+      "value": "100",
+      "label": "percent of students promoted to the next grade",
+      "box": [
+       772.0,
+       390.0,
+       788.0,
+       420.0
+      ]
+     },
+     {
+      "value": "100000",
+      "label": "youth estimated to be facing homelessness",
+      "box": [
+       730.0,
+       300.0,
+       746.0,
+       350.0
+      ]
+     },
+     {
+      "value": "9",
+      "label": "month Hand-Up program duration",
+      "box": [
+       710.0,
+       600.0,
+       726.0,
+       609.0
+      ]
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "24",
+      "label": "years",
+      "box": [
+       394.0,
+       231.0,
+       407.0,
+       344.0
+      ]
+     },
+     {
+      "value": "92",
+      "label": "percent of students remaining at the same school",
+      "box": [
+       639.0,
+       128.0,
+       653.0,
+       320.0
+      ]
+     },
+     {
+      "value": "100",
+      "label": "percent being promoted to the next grade",
+      "box": [
+       653.0,
+       156.0,
+       667.0,
+       248.0
+      ]
+     },
+     {
+      "value": "15",
+      "label": "age",
+      "box": [
+       679.0,
+       509.0,
+       693.0,
+       523.0
+      ]
+     },
+     {
+      "value": "9",
+      "label": "month Hand-Up program",
+      "box": [
+       721.0,
+       691.0,
+       735.0,
+       733.0
+      ]
+     },
+     {
+      "value": "100,000",
+      "label": "youth are estimated to be facing homelessness",
+      "box": [
+       749.0,
+       147.0,
+       763.0,
+       356.0
+      ]
+     },
+     {
+      "value": "2016",
+      "label": "year",
+      "box": [
+       790.0,
+       566.0,
+       803.0,
+       601.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "0cca730e",
+  "org": "Young Womens Christian Association Of Lewiston Clarkston Inc",
+  "figs_per_page": 4.2,
+  "img": "bakeoff/pages/0cca730e.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "57",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "140,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "100,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "155,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "125",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "90",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "155,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "200,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "170,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "225",
+      "label": "",
+      "box": null
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "yes",
+    "numbers": [
+     {
+      "value": "57",
+      "label": "of all homeless women report that domestic violence was the immediate cause of their homelessness",
+      "box": [
+       141.0,
+       299.0,
+       155.0,
+       365.0
+      ]
+     },
+     {
+      "value": "90",
+      "label": "over 90% of homeless women have experienced severe physical or sexual abuse",
+      "box": [
+       155.0,
+       330.0,
+       169.0,
+       365.0
+      ]
+     },
+     {
+      "value": "98",
+      "label": "in 98% of abusive relationships",
+      "box": [
+       273.0,
+       240.0,
+       287.0,
+       268.0
+      ]
+     },
+     {
+      "value": "7.25",
+      "label": "at minimum wage ($7.25/hr)",
+      "box": [
+       475.0,
+       133.0,
+       489.0,
+       176.0
+      ]
+     },
+     {
+      "value": "72",
+      "label": "to work 72 hours a week",
+      "box": [
+       475.0,
+       399.0,
+       489.0,
+       427.0
+      ]
+     },
+     {
+      "value": "680",
+      "label": "fair market rent ($680/month)",
+      "box": [
+       489.0,
+       277.0,
+       503.0,
+       310.0
+      ]
+     },
+     {
+      "value": "42",
+      "label": "42% of the population is considered low to moderate income",
+      "box": [
+       518.0,
+       165.0,
+       532.0,
+       192.0
+      ]
+     },
+     {
+      "value": "8",
+      "label": "Section 8 Housing vouchers",
+      "box": [
+       705.0,
+       279.0,
+       719.0,
+       297.0
+      ]
+     },
+     {
+      "value": "18",
+      "label": "18 month wait list",
+      "box": [
+       719.0,
+       268.0,
+       733.0,
+       291.0
+      ]
+     },
+     {
+      "value": "2",
+      "label": "2-3 year wait",
+      "box": [
+       733.0,
+       236.0,
+       747.0,
+       259.0
+      ]
+     },
+     {
+      "value": "6",
+      "label": "around 6-10 months",
+      "box": [
+       733.0,
+       291.0,
+       747.0,
+       314.0
+      ]
+     },
+     {
+      "value": "90",
+      "label": "only 60 - 90 days",
+      "box": [
+       747.0,
+       216.0,
+       761.0,
+       240.0
+      ]
+     },
+     {
+      "value": "1",
+      "label": "Issue Education",
+      "box": [
+       749.0,
+       940.0,
+       762.0,
+       948.0
+      ]
+     },
+     {
+      "value": "2",
+      "label": "Stats & Services",
+      "box": [
+       776.0,
+       940.0,
+       788.0,
+       948.0
+      ]
+     },
+     {
+      "value": "3",
+      "label": "Program Updates",
+      "box": [
+       805.0,
+       940.0,
+       817.0,
+       948.0
+      ]
+     },
+     {
+      "value": "4",
+      "label": "Why the YWCA?",
+      "box": [
+       835.0,
+       940.0,
+       847.0,
+       948.0
+      ]
+     },
+     {
+      "value": "5",
+      "label": "Support our Mission",
+      "box": [
+       865.0,
+       940.0,
+       877.0,
+       948.0
+      ]
+     },
+     {
+      "value": "6",
+      "label": "Volunteers/Members",
+      "box": [
+       895.0,
+       940.0,
+       907.0,
+       948.0
+      ]
+     },
+     {
+      "value": "7",
+      "label": "Supporters",
+      "box": [
+       924.0,
+       940.0,
+       936.0,
+       948.0
+      ]
+     },
+     {
+      "value": "8",
+      "label": "Up-coming events",
+      "box": [
+       953.0,
+       940.0,
+       965.0,
+       948.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "88bfa5f4",
+  "org": "Iraq And Afghanistan Veterans Of America Inc",
+  "figs_per_page": 4.2,
+  "img": "bakeoff/pages/88bfa5f4.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "27",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "430,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "25,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "445,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "55",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "300",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "445,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "25,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "460,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "65",
+      "label": "",
+      "box": null
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "27",
+      "label": "of IAVA women veterans feel the public respects their service",
+      "box": [
+       434.0,
+       136.0,
+       449.0,
+       160.0
+      ]
+     },
+     {
+      "value": "300",
+      "label": "rate of suicide for women vets is % higher than for civilian women",
+      "box": [
+       449.0,
+       134.0,
+       464.0,
+       154.0
+      ]
+     },
+     {
+      "value": "88",
+      "label": "million people reached in 2017",
+      "box": [
+       568.0,
+       107.0,
+       583.0,
+       128.0
+      ]
+     },
+     {
+      "value": "3",
+      "label": "million post-9/11 veterans--and our brothers and sisters in the broader national community of 22 million veterans",
+      "box": [
+       597.0,
+       176.0,
+       612.0,
+       183.0
+      ]
+     },
+     {
+      "value": "900",
+      "label": "veterans navigating their returns home",
+      "box": [
+       672.0,
+       118.0,
+       687.0,
+       141.0
+      ]
+     },
+     {
+      "value": "1,700",
+      "label": "veterans used our online GI Bill Calculator",
+      "box": [
+       702.0,
+       118.0,
+       717.0,
+       141.0
+      ]
+     },
+     {
+      "value": "4",
+      "label": "LIFE CHANGING TRANSITION SUPPORT",
+      "box": [
+       540.0,
+       955.0,
+       555.0,
+       962.0
+      ]
+     },
+     {
+      "value": "6",
+      "label": "UNPARALLELED TECHNOLOGY TO POWER THE MISSION",
+      "box": [
+       583.0,
+       955.0,
+       598.0,
+       962.0
+      ]
+     },
+     {
+      "value": "8",
+      "label": "ENGAGING OUR MEMBERSHIP, BUILDING COMMUNITY",
+      "box": [
+       626.0,
+       955.0,
+       641.0,
+       962.0
+      ]
+     },
+     {
+      "value": "10",
+      "label": "ENGAGING THE PUBLIC, INCREASING AWARENESS",
+      "box": [
+       668.0,
+       955.0,
+       683.0,
+       962.0
+      ]
+     },
+     {
+      "value": "12",
+      "label": "THE LEADER IN VETERANS ADVOCACY",
+      "box": [
+       711.0,
+       955.0,
+       726.0,
+       962.0
+      ]
+     },
+     {
+      "value": "14",
+      "label": "GROUNDBREAKING AND EXCLUSIVE RESEARCH",
+      "box": [
+       754.0,
+       955.0,
+       769.0,
+       962.0
+      ]
+     },
+     {
+      "value": "16",
+      "label": "TALENT TO DRIVE THE MISSION",
+      "box": [
+       797.0,
+       955.0,
+       812.0,
+       962.0
+      ]
+     },
+     {
+      "value": "17",
+      "label": "AN UNPARALLELED RETURN ON INVESTMENT",
+      "box": [
+       839.0,
+       955.0,
+       854.0,
+       962.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "d9fef44f",
+  "org": "Facing Forward To End Homelessness",
+  "figs_per_page": 4.2,
+  "img": "bakeoff/pages/d9fef44f.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "3000",
+      "label": "individuals affected by homelessness",
+      "box": [
+       190.0,
+       670.0,
+       206.0,
+       700.0
+      ]
+     },
+     {
+      "value": "100",
+      "label": "families through the Home Connection program",
+      "box": [
+       559.0,
+       609.0,
+       575.0,
+       637.0
+      ]
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "3,000",
+      "label": "individuals affected by homelessness",
+      "box": [
+       232.0,
+       607.0,
+       252.0,
+       637.0
+      ]
+     },
+     {
+      "value": "100",
+      "label": "families through the Home Connection program",
+      "box": [
+       552.0,
+       613.0,
+       572.0,
+       637.0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ {
+  "sha8": "5a23e2e5",
+  "org": "Scottsdale Training And Rehabilitation Services Inc",
+  "figs_per_page": 4.1,
+  "img": "bakeoff/pages/5a23e2e5.png",
+  "models": {
+   "gemini-2.5-flash": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "60,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "160,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "700,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "175,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "720",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "34,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "175,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "790,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "190,",
+      "label": "",
+      "box": null
+     },
+     {
+      "value": "810",
+      "label": "",
+      "box": null
+     }
+    ]
+   },
+   "gemini-2.5-flash-lite": {
+    "canary": "no",
+    "numbers": [
+     {
+      "value": "60",
+      "label": "participants working as full-fledged employees",
+      "box": [
+       142.0,
+       767.0,
+       160.0,
+       868.0
+      ]
+     },
+     {
+      "value": "600000",
+      "label": "earned revenues of over $600,000 annually",
+      "box": [
+       184.0,
+       173.0,
+       201.0,
+       295.0
+      ]
+     },
+     {
+      "value": "50",
+      "label": "more than 50% smaller than prior to COVID",
+      "box": [
+       203.0,
+       569.0,
+       219.0,
+       677.0
+      ]
+     },
+     {
+      "value": "50",
+      "label": "marks 50 years of serving individuals",
+      "box": [
+       325.0,
+       290.0,
+       342.0,
+       365.0
+      ]
+     },
+     {
+      "value": "13",
+      "label": "celebrate on May 13",
+      "box": [
+       325.0,
+       392.0,
+       342.0,
+       462.0
+      ]
+     }
+    ]
+   }
+  }
+ }
+]
