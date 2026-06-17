@@ -5,7 +5,8 @@
 **Depends on**: 0068 (per-metric markers + resolved coords, integrated)
 **Blocks**: national scale (Phase 5), the published product surface
 **Protocol**: SPIDER
-**Review**: Gemini/Codex spec-review (COMMENT / REQUEST_CHANGES → addressed inline + §11)
+**Review**: Gemini/Codex spec-review (COMMENT / REQUEST_CHANGES → addressed inline + §11); Gemini/Codex
+red-team-spec (APPROVE / REQUEST_CHANGES → addressed §12, 0 unresolved CRITICAL)
 
 ---
 
@@ -106,20 +107,29 @@ failing check wins and is the single stored `gate_reason`.** Deterministic, sing
 ### 5.1 Re-render for idmap (reuse 0068)
 - The gate runner re-renders each doc with the **same deterministic `marker_render`** 0068 used, to
   obtain `idmap[value_ref].text` / co-location fields. No new render logic; recompute-on-demand.
-- A doc whose re-render no longer matches the stored `parse_version` → re-resolve, never gate on
-  stale coords (0068 §8 carries `parse_version`).
+- A doc whose re-render no longer matches the stored `parse_version` → **quarantine `stale_coords`,
+  single-valued; 0069 NEVER re-resolves** (re-marking is upstream — a fresh 0068 run after re-parse;
+  see §5.8). (Resolves Codex HIGH stale-coords contradiction.)
 
 ### 5.2 Port the gate (pure, deterministic, TDD)
 - Port `gate.verdict` + helpers (`value_grounded`, `subject_grounded`, `co_located`,
   `candidate_numbers`) as a supported, pure module — reproduce the research verdicts on the frozen
   fixtures (the spec's counterexample behavior is the test oracle).
+- **Float finiteness + bounds (Gemini HIGH):** `to_float` MUST reject non-finite values (`NaN`,
+  `Infinity`) and values outside the `numeric`/JSON-safe schema range → quarantine
+  `value_out_of_bounds` *before* grounding. No non-finite/overflow value reaches the DB or the view.
 
 ### 5.3 Small-int measurable + is-a-metric (the LLM-assisted layer)
 - `measurable_value_check` (DeepSeek) runs only for |value|≤20 (where non-measurements hide).
-- **Trust boundary (resolves Codex #7):** the measurable check has a **strict boolean output
-  contract** (a single yes/no token; source text wrapped as untrusted data; output never stored
-  verbatim), a **bounded timeout + retry**, and **any failure/timeout/ambiguous output →
-  quarantine `measure_unchecked`** (never publish an unverified small int). Fail-safe.
+- **Trust boundary + injection hardening (resolves Codex #7 CRITICAL, Gemini MEDIUM):** the
+  measurable check uses a **hardened prompt template** — source text wrapped in explicit delimiters
+  and labeled untrusted data, with an instruction-injection guard; a **strict output parser**
+  (single canonical yes/no token only); **max input length**; explicit **refusal handling**. Any
+  malformed / repeated / non-canonical / refused response → quarantine `measure_unchecked`.
+  **Retry budget is bounded** (≤2 retries, capped backoff, hard total-time budget); exhaustion →
+  quarantine `measure_unchecked`. Blast radius is contained to |value|≤20 small ints. Note in the
+  threat model: a successful injection on a small int could force one false publish — bounded, and
+  the human spot-review (§5.7) backstops it.
 - Is-a-metric reject rules re-homed onto `value` + `label` + marker source text; each rule measured
   for false-quarantine before activation (precision-over-recall: bias to quarantine, but don't drop
   a real "9 vans" / "served 6 counties").
@@ -149,10 +159,13 @@ before table); the dropped one is recorded `gate_reason=duplicate`. When any con
 - A view `lava_vocab.published_metrics` with a **fixed slot column set** (no `metric_text`):
   `content_sha256, source_org_ein, metric_value, label, unit, geo_impact, value_ref, value_page,
   value_bbox, value_row, value_col, gate_run_id`. Filter: `gate_decision='publish'`.
-- **Active-run only (Gemini #1):** the view surfaces decisions from the **latest gate_run_id per
-  extraction-run** (a row's most-recent gate decision), never an aggregate of all historical
-  `publish` verdicts. Define the active-run selection in the view (e.g. join to the max
-  `gate_run_id` for that source extraction run).
+- **Active-run only + run integrity (Gemini #1, Codex CRITICAL):** the view surfaces decisions from
+  the **latest gate_run_id per source extraction-run**, never an aggregate of historical `publish`
+  verdicts. `gate_run_id` is **server-assigned, monotonic, immutable**, bound to an immutable
+  extraction-run identity + creation timestamp — NOT user-settable or backdatable. Active-run =
+  greatest server-assigned `gate_run_id` for that extraction run (monotonic ⇒ no ties, no
+  backdated-run selection). A poisoned/backdated run cannot become active; the selection is
+  provenance-checked.
 - Nullability: coord columns may be NULL only when a published row is text-located (no cell);
   `marker_resolved=true` is implied by publish (unmarked rows quarantine, §4.1).
 - The org-detail product surface reads this view (fixes the current all-tiers/`metric_text` leak).
@@ -165,6 +178,10 @@ before table); the dropped one is recorded `gate_reason=duplicate`. When any con
   **protocol + the measured number**; the SLA itself is a **named plan parameter**
   (`PUBLISH_PRECISION_SLA`, per-metric AND per-org) the operator sets. The "shippable" judgment =
   the measured sample precision ≥ the SLA — a documented, repeatable check, not a code branch.
+- **Sample integrity (Codex HIGH):** the spot-review sample is **frozen at selection** (sampled row
+  ids + a content hash recorded), graded with **reviewer identity + timestamp**, and the review
+  outputs stored **immutably** (append-only) — so a sample can't be swapped, relabeled, or replayed
+  to fake SLA compliance.
 - **Quarantine triage:** bucket quarantine into recoverable-by-relabel, recoverable-by-vision,
   true-junk; report counts. Recoverable feeds the vision/0069-follow-up, not the publish set.
 
@@ -218,6 +235,23 @@ out of 0069's scope. Clean boundary: 0069 never silently re-derives coordinates.
 - **Published view cannot leak quarantine** — the contract is a hard `gate_decision='publish'`
   filter, tested (AC4).
 - **DoS** — re-render is bounded by 0068's `MAX_IDMAP_ITEMS`; the measurable check is |value|≤20 only.
+- **Governance & audit (Codex CRITICAL — single-operator-bounded):** this is a single-operator DB, so
+  full RBAC is out of scope, but gate runs, `PUBLISH_PRECISION_SLA` values (version-controlled in
+  the plan/git), spot-review results, and any "run promoted to shippable" action are recorded
+  **immutably** (append-only: `extraction_runs.stats_json` + git) with operator + timestamp. SLA
+  lowering / run promotion is an explicit, recorded operator action — never silent.
+- **ReDoS / algorithmic complexity (Gemini MEDIUM):** all per-metric regex/string matching
+  (`value_grounded`, `subject_grounded`, `labels_agree`) runs under a strict per-metric time budget
+  and bounded input length (the `idmap` is already capped by `MAX_IDMAP_ITEMS`); linear-time
+  patterns only, no catastrophic backtracking. A metric exceeding the budget → quarantine `gate_timeout`.
+- **View least-privilege + privacy (Codex HIGH, Gemini LOW):** `published_metrics` is read by the
+  product role (least privilege); raw `llm_metrics` stays app-role only. The current corpus is public
+  IRS-990-derived reports, so location/bbox columns are not sensitive and need no redaction — flagged
+  for re-evaluation if private collateral enters the corpus. The DeepSeek measurable-check transmits
+  verbatim small-int source text to an external API (acceptable for public reports; revisit / run
+  in-house before any private/PII collateral).
+- **Float bounds** — non-finite / overflow values are rejected at `to_float` (§5.2), so no malformed
+  numeric reaches the DB or the JSON view.
 
 ## 9. Failure & Error Scenarios (fail-safe)
 - **Re-render mismatch / stale `parse_version`** → re-resolve or quarantine `stale_coords`; never
@@ -245,6 +279,20 @@ out of 0069's scope. Clean boundary: 0069 never silently re-derives coordinates.
   param, no write-back → §5.7. Stale-coords boundary (quarantine, no re-resolve) → §5.8.
   Idempotency/view-isolation/determinism/stale-coords tests → §7 AC9–12.
 
+## 12. Red-team security resolutions (Gemini APPROVE / Codex REQUEST_CHANGES → all addressed; 0 unresolved CRITICAL)
+- **Float NaN/Inf/overflow** (Gemini HIGH) → §5.2 (`to_float` rejects non-finite/overflow → `value_out_of_bounds`).
+- **Measurable-check prompt injection** (Codex CRITICAL, Gemini MEDIUM) → §5.3 (hardened template/parser/max-len/refusal; malformed→quarantine; blast radius bounded + spot-review backstop).
+- **Active-run integrity / run selection** (Codex CRITICAL) → §5.6 (server-assigned monotonic immutable `gate_run_id`; provenance-checked; no backdated-run selection).
+- **Governance/audit for SLA + run promotion** (Codex CRITICAL) → §8 (immutable append-only audit; SLA/promotion are recorded operator actions; single-operator-bounded).
+- **Stale-coords contradiction** (Codex HIGH) → §5.1 aligned with §5.8 (always quarantine, never re-resolve).
+- **De-dup tie-break / spatially-distinct threshold** (Codex HIGH) → §5.4 (explicit `gate.co_located`; borderline → keep both).
+- **Spot-review sample immutability** (Codex HIGH) → §5.7 (frozen+hashed sample, reviewer id+timestamp, append-only outputs).
+- **View access/redaction** (Codex HIGH, Gemini LOW) → §8 (least-privilege view; public-report data not sensitive; revisit for private collateral).
+- **ReDoS** (Gemini MEDIUM) → §8 (per-metric time budget + linear patterns → `gate_timeout`).
+- **Retry budget** (Codex MEDIUM) → §5.3 (≤2 retries, capped backoff, total budget).
+- **Secondary diagnostics** (Codex MEDIUM) → single authoritative `gate_reason` kept; advisory secondary diagnostics may ride `gate_confidence` (§5.5).
+- **Partial marker metadata** (Codex MEDIUM) → covered by §4 (e.g. resolved `value_ref` but null `subject_ref` → `subject_not_grounded`).
+
 ## Consultation Log
 
 ### First Consultation (After Initial Draft)
@@ -262,10 +310,13 @@ measurable-check trust boundary, missing idempotency/view/determinism tests, ora
 **All addressed** (§11 map).
 
 ### Red Team Security Review (MANDATORY)
-**Date**: pending
+**Date**: 2026-06-17
 **Commands**:
 ```
 consult --model gemini --type red-team-spec spec 0069
 consult --model codex  --type red-team-spec spec 0069
 ```
-**Verdict**: pending
+Gemini **APPROVE** (0 CRITICAL, 1 HIGH: float bounds). Codex **REQUEST_CHANGES** (3 CRITICAL:
+measurable-check injection, active-run integrity, governance/audit; 4 HIGH: stale-coords, de-dup
+tie-break, sample immutability, view access). **All addressed in §12.**
+**Verdict**: APPROVE — all findings resolved; **0 unresolved CRITICAL**.
