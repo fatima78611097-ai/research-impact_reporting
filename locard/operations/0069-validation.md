@@ -10,7 +10,7 @@
 | 2 | `gate_policy.py` (decide chain, mispair detect, de-dup, stale) + `measure_check.py` (hardened LLM boundary S2) | `test_0069_measure.py`, `test_0069_dedup.py` |
 | 3 | `migrations/lava_vocab/0069_gate_decision.sql` (+rollback) — gate_* cols + `gate_runs` (server-id, append-only) | applied on scratch PG |
 | 4 | `gate_runner.py` — in-place idempotent UPDATE, advisory lock S7, parameterized, triage report | `test_0069_runner.py` |
-| 5 | `0069_published_view.sql` (+rollback) — slot view + GRANT/REVOKE S6; `views.py` repoint | `test_0069_view.py` |
+| 5 | `0069_published_view.sql` (+rollback) — slot view + read-only-role grant (S6); `views.py` repoint | `test_0069_view.py` |
 | 6 | `0069_gate_review.sql` (+rollback) + `spot_review.py` — frozen+hashed sample, append-only, SLA | `test_0069_spotreview.py` |
 | 7 | this doc + frozen oracle fixture | `test_0069_fixtures.py` |
 
@@ -18,7 +18,7 @@
 - **AC1** ✅ oracle reproduces research counterexamples (12 frozen cases).
 - **AC2/AC9/AC11** ✅ runner decides every metric; idempotent in-place UPDATE; deterministic — verified on scratch PG with a seeded 0068-shaped run. _Run on the live `0068-markers-2026-06-17` is the operator step._
 - **AC3** ✅ `marker_resolved=false` → `quarantine/unmarked`.
-- **AC4/AC10/S3/S6** ✅ view is publish-only + slot-shaped; re-gate updates the view; gate_run_id server-assigned monotonic; product role REVOKEd from raw `llm_metrics`.
+- **AC4/AC10/S3/S6** ✅ view is publish-only + slot-shaped; re-gate updates the view; gate_run_id server-assigned monotonic. S6 boundary (corrected per architect review): the dashboard reads as `research_app` (the writer), so the view grants SELECT to `research_ro` (read-only, no raw access) + `research_app`, and the boundary is enforced at the query layer (product reads only `published_metrics`). Hard privilege boundary = repoint the dashboard to `research_ro` (operator follow-up).
 - **AC5/S5** ✅ spot-review measures right-number-AND-right-label precision; shippable iff ≥ SLA; sample frozen+hashed; reviews append-only with reviewer id+timestamp.
 - **AC6** ✅ mispair quarantines, never relabels (decide returns a decision; the label is untouched).
 - **AC7** ✅ de-dup never drops a spatially-distinct value+label.

@@ -3,7 +3,7 @@
 AC4  — view returns only publish rows, slot-shaped (no metric_text).
 AC10 — re-gate updates the view to the new current decision; never a stale/quarantine row.
 S3   — gate_run_id is server-assigned monotonic immutable; a backdated run can't become active.
-S6   — product role REVOKEd from raw llm_metrics; reads ONLY published_metrics.
+S6   — the read-only role (research_ro) can read the view but NOT raw llm_metrics.
 
 Integration only (real Postgres; skipped if unavailable).
 """
@@ -42,7 +42,7 @@ def pg():
         pytest.skip("cannot create scratch db")
     eng = create_engine(f"postgresql+psycopg2://@/{dbname}?host={sock}")
     # roles are cluster-global (shared across scratch DBs) — create idempotently
-    for role in ("research_app", "dashboard_user1"):
+    for role in ("research_app", "research_ro"):
         with eng.connect().execution_options(isolation_level="AUTOCOMMIT") as c:
             try:
                 c.execute(text(f"CREATE ROLE {role}"))
@@ -56,7 +56,6 @@ def pg():
           source_org_ein text not null, metric_text text not null, metric_type text,
           metric_value real, unit text, geo_impact text, source_snippet text);
         INSERT INTO lava_vocab.extraction_runs(run_tag) VALUES ('src');
-        GRANT SELECT ON lava_vocab.llm_metrics TO dashboard_user1;
     """
     with eng.begin() as c:
         for stmt in base.split(";"):
@@ -131,12 +130,14 @@ class TestPublishedView:
 
 
 class TestBoundary:
-    def test_product_role_revoked_from_raw_can_read_view(self, pg):
-        # S6: dashboard_user1 has NO privilege on raw llm_metrics, SELECT on the view
+    def test_readonly_role_reads_view_not_raw(self, pg):
+        # S6 (corrected): the read-only product role research_ro can SELECT the view but was
+        # never granted raw llm_metrics — so a read-only product path cannot reach
+        # quarantined rows. (research_app, the writer, keeps raw access by design.)
         with pg.connect() as c:
             raw = c.execute(text(
-                "SELECT has_table_privilege('dashboard_user1','lava_vocab.llm_metrics','SELECT')")).scalar()
+                "SELECT has_table_privilege('research_ro','lava_vocab.llm_metrics','SELECT')")).scalar()
             view = c.execute(text(
-                "SELECT has_table_privilege('dashboard_user1','lava_vocab.published_metrics','SELECT')")).scalar()
+                "SELECT has_table_privilege('research_ro','lava_vocab.published_metrics','SELECT')")).scalar()
         assert raw is False
         assert view is True

@@ -1196,11 +1196,12 @@ class OrgDetailView(LoginRequiredMixin, DetailView):
                 """, [ein])
                 columns = [col[0] for col in cur.description]
                 pub = [dict(zip(columns, row)) for row in cur.fetchall()]
+                # Slot-based contract: the label IS the description; there is no composed
+                # metric_text or source_snippet. Provenance is the marker page (value_page).
                 ctx["llm_metrics"] = [
-                    {"metric_text": r["label"], "metric_type": r["label"],
-                     "metric_value": r["metric_value"], "unit": r["unit"],
-                     "geo_impact": r["geo_impact"], "value_ref": r["value_ref"],
-                     "value_page": r["value_page"]}
+                    {"metric_text": r["label"], "metric_value": r["metric_value"],
+                     "unit": r["unit"], "geo_impact": r["geo_impact"],
+                     "value_ref": r["value_ref"], "value_page": r["value_page"]}
                     for r in pub
                 ]
 

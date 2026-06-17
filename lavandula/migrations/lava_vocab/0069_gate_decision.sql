@@ -2,7 +2,7 @@
 -- Spec 0069: Precision Gates to Production
 --
 -- Adds, additively, the per-metric gate decision to lava_vocab.llm_metrics and an
--- append-only gate_runs audit registry. The published view + product GRANT/REVOKE land
+-- append-only gate_runs audit registry. The published view + read-only-role grant land
 -- in 0069_published_view.sql (Phase 5); the spot-review table in 0069_gate_review.sql
 -- (Phase 6).
 --

@@ -7,9 +7,16 @@
 -- so the view needs NO run-join and can never surface a superseded gate_run_id (plan §5,
 -- resolves Codex active-run / Gemini multi-run-state).
 --
--- LEAST PRIVILEGE (Gemini HIGH / S6): the product role reads the view and is REVOKED from
--- raw llm_metrics, so an injection/logic flaw in the product role cannot read quarantined
--- (raw) rows. Creating the view is not enough — the boundary is the GRANT/REVOKE below.
+-- ACCESS BOUNDARY (Gemini HIGH / S6 — corrected per architect review): the dashboard
+-- currently connects as research_app (rds-app-user) — the WRITER — so a REVOKE on the
+-- unused dashboard_user1 role was a no-op and we cannot revoke from the writer itself.
+-- We therefore (a) GRANT SELECT on the view to research_ro (the existing read-only role)
+-- AND to research_app so the repointed org-detail query works today, and (b) enforce the
+-- boundary at the QUERY layer: the product reads ONLY published_metrics (OrgDetailView),
+-- never raw llm_metrics.
+--   FOLLOW-UP (operator, recorded): to make the boundary a true *privilege* boundary,
+--   repoint the dashboard DB connection to research_ro (read-only) — then research_ro has
+--   SELECT on the view but no access to quarantined raw rows. Tracked for 0066/scale.
 --
 -- Coord columns are NULL only for a text-located publish row (no cell). marker_resolved
 -- is implied true by publish (unmarked rows quarantine, §4.1).
@@ -36,10 +43,10 @@ CREATE OR REPLACE VIEW lava_vocab.published_metrics AS
     WHERE gate_decision = 'publish';
 
 -- ============================================================
--- Enforce the boundary: product role reads the view, NOT raw llm_metrics.
--- (dashboard_user1 is the product/dashboard DB role.)
+-- Grants: the read-only role + the current app reader can SELECT the view. No REVOKE on
+-- raw llm_metrics (research_app is the writer and must keep access; see header).
 -- ============================================================
-REVOKE ALL ON lava_vocab.llm_metrics FROM dashboard_user1;
-GRANT SELECT ON lava_vocab.published_metrics TO dashboard_user1;
+GRANT SELECT ON lava_vocab.published_metrics TO research_ro;
+GRANT SELECT ON lava_vocab.published_metrics TO research_app;
 
 COMMIT;

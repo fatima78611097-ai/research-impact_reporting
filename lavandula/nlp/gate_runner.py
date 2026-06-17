@@ -221,8 +221,11 @@ def run_gate(
     """Gate a 0068 marker run. Returns the per-run report. ``write=False`` is a fully
     read-only dry run (no gate_runs row, no UPDATEs).
 
-    Concurrency-safe: serialized per ``source_run_id`` via an advisory lock; a concurrent
-    runner on the same source run raises :class:`GateRunBusy`.
+    Concurrency-safe: serialized per ``source_run_id`` via a **session-level** advisory
+    lock held on a dedicated connection for the whole run — NOT a write transaction. The
+    DeepSeek measurable/is-a-metric calls run with NO open transaction; decisions are then
+    written in **short per-doc bursts** (architect review: never hold a txn across the LLM
+    calls). A concurrent runner that can't get the lock raises :class:`GateRunBusy`.
     """
     with engine.connect() as conn:
         source_run_id = _source_run_id(conn, source_run_tag)
@@ -230,40 +233,71 @@ def run_gate(
         raise ValueError(f"no extraction_runs row for run_tag {source_run_tag!r}")
 
     if not write:
-        return _process(engine, source_run_id, None, measure_fn, mispair_detect, write=False)
+        # decisions only (reads + LLM), no lock, no writes
+        results = _compute(engine, source_run_id, measure_fn, mispair_detect)
+        return aggregate_report(results, None, source_run_id)
 
-    # Serialize this source run + allocate a server-assigned gate_run_id, in one txn so the
-    # lock is held while we work (xact lock releases at COMMIT). A concurrent runner that
-    # cannot get the lock fails fast rather than interleaving.
-    with engine.begin() as conn:
-        got = conn.execute(text("SELECT pg_try_advisory_xact_lock(:cls, :obj)"),
-                           {"cls": GATE_RUNNER_BASE, "obj": int(source_run_id)}).scalar()
+    # Hold a SESSION advisory lock on a dedicated autocommit connection (no lingering txn).
+    # Session locks survive txn boundaries and conflict with the xact-lock space, so they
+    # serialize the run while leaving every other connection free of locks during the LLM
+    # calls. Released in finally (and on connection close as a backstop).
+    lock_conn = engine.connect().execution_options(isolation_level="AUTOCOMMIT")
+    try:
+        got = lock_conn.execute(text("SELECT pg_try_advisory_lock(:cls, :obj)"),
+                                {"cls": GATE_RUNNER_BASE, "obj": int(source_run_id)}).scalar()
         if not got:
             raise GateRunBusy(f"another gate runner holds source_run_id={source_run_id}")
-        gate_run_id = conn.execute(text(
-            "INSERT INTO lava_vocab.gate_runs (source_run_id, gate_version) "
-            "VALUES (:src, :v) RETURNING id"),
-            {"src": int(source_run_id), "v": GATE_VERSION}).scalar()
-        report = _process(engine, source_run_id, gate_run_id, measure_fn, mispair_detect,
-                          write=True, conn=conn)
+
+        # allocate the server-assigned gate_run_id in a short txn
+        with engine.begin() as conn:
+            gate_run_id = conn.execute(text(
+                "INSERT INTO lava_vocab.gate_runs (source_run_id, gate_version) "
+                "VALUES (:src, :v) RETURNING id"),
+                {"src": int(source_run_id), "v": GATE_VERSION}).scalar()
+
+        # compute all decisions (reads + DeepSeek) with NO write txn / lock held on the
+        # working connections
+        results = _compute(engine, source_run_id, measure_fn, mispair_detect)
+
+        # write in short bursts — one short txn per doc (atomic per doc; active-run guarded)
+        for dr in results:
+            if not dr.decisions:
+                continue
+            with engine.begin() as conn:
+                for d in dr.decisions:
+                    conn.execute(_UPDATE_SQL, {"d": d.decision, "r": d.reason, "c": d.confidence,
+                                               "gid": int(gate_run_id), "mid": int(d.metric_id)})
+
+        report = aggregate_report(results, gate_run_id, source_run_id)
         # immutable audit: append the report under this gate_run_id on the SOURCE run's
         # stats_json (never clobbering prior gate runs' reports — append-only by key).
-        conn.execute(text(
-            "UPDATE lava_vocab.extraction_runs "
-            "SET stats_json = jsonb_set("
-            "  COALESCE(stats_json, '{}'::jsonb) || jsonb_build_object("
-            "    'gate_runs', COALESCE(stats_json->'gate_runs', '{}'::jsonb)), "
-            "  ARRAY['gate_runs', :gid_txt], CAST(:rep AS JSONB), true) "
-            "WHERE id = :rid"),
-            {"gid_txt": str(gate_run_id), "rep": json.dumps(report), "rid": int(source_run_id)})
-    return report
+        with engine.begin() as conn:
+            conn.execute(text(
+                "UPDATE lava_vocab.extraction_runs "
+                "SET stats_json = jsonb_set("
+                "  COALESCE(stats_json, '{}'::jsonb) || jsonb_build_object("
+                "    'gate_runs', COALESCE(stats_json->'gate_runs', '{}'::jsonb)), "
+                "  ARRAY['gate_runs', :gid_txt], CAST(:rep AS JSONB), true) "
+                "WHERE id = :rid"),
+                {"gid_txt": str(gate_run_id), "rep": json.dumps(report), "rid": int(source_run_id)})
+        return report
+    finally:
+        try:
+            lock_conn.execute(text("SELECT pg_advisory_unlock(:cls, :obj)"),
+                              {"cls": GATE_RUNNER_BASE, "obj": int(source_run_id)})
+        except Exception:  # noqa: BLE001 — connection close releases the session lock anyway
+            pass
+        lock_conn.close()
 
 
-def _process(engine, source_run_id, gate_run_id, measure_fn, mispair_detect, *,
-             write: bool, conn=None) -> dict:
-    """Iterate docs, decide, and (if write) UPDATE in place within the held transaction."""
+def _compute(engine, source_run_id, measure_fn, mispair_detect) -> list[DocResult]:
+    """Iterate docs and decide (reads + LLM signals). NO writes, NO lock, NO open write
+    txn — the DeepSeek calls happen here, outside any transaction."""
     results: list[DocResult] = []
-    with engine.connect() as read_conn:
+    # autocommit read connection: each SELECT/render stands alone, so no long read txn
+    # lingers across the LLM calls
+    read_conn = engine.connect().execution_options(isolation_level="AUTOCOMMIT")
+    try:
         shas = _doc_shas(read_conn, source_run_id)
         for sha in shas:
             rows = [dict(m._mapping) for m in read_conn.execute(
@@ -285,14 +319,9 @@ def _process(engine, source_run_id, gate_run_id, measure_fn, mispair_detect, *,
                 continue
             dr.decisions = gate_document(rows, idmap, stale, measure_fn, mispair_detect=mispair_detect)
             results.append(dr)
-
-    if write:
-        for dr in results:
-            for d in dr.decisions:
-                conn.execute(_UPDATE_SQL, {"d": d.decision, "r": d.reason, "c": d.confidence,
-                                           "gid": int(gate_run_id), "mid": int(d.metric_id)})
-
-    return aggregate_report(results, gate_run_id, source_run_id)
+    finally:
+        read_conn.close()
+    return results
 
 
 def aggregate_report(results: list[DocResult], gate_run_id, source_run_id) -> dict:
