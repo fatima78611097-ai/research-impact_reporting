@@ -41,3 +41,13 @@ candidates, per spec §3 recall note).
 - This dry run wrote nothing. The persisted run (`--write` under a run_tag) is **held
   for architect go**; the migration is applied live (15 cols, both bbox CHECKs, index,
   74,240 legacy rows sentinel-backfilled).
+
+## Follow-ups (tracked)
+- **AC6 — CanCare/BGCSM fixture regression (deferred, architect PR #53 review
+  2026-06-17).** The frozen baseline (`frozen/composed-baseline-2026-06-14/`) is the
+  **composed-sentence** path; 0068's loc1 selection differs by design, so a literal
+  "content unchanged vs frozen" diff is not well-posed here. **Re-scope:** once 0069's
+  published surface exists, add a regression comparing 0068 marker output ↔ 0069
+  published metrics for CanCare/BGCSM (value+label set stability), in
+  `test_0068_fixtures.py`. De-checked from spec §7 / plan AC matrix with architect
+  authorization.

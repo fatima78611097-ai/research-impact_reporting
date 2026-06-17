@@ -198,7 +198,14 @@ def pg_engine():
     eng = create_engine(f"postgresql+psycopg2://@/{dbname}?host={sock}")
     base = """
         CREATE SCHEMA lava_vocab;
-        CREATE TABLE lava_vocab.extraction_runs(id serial primary key, run_tag text unique);
+        CREATE SCHEMA lava_parse;
+        CREATE TABLE lava_parse.documents(
+          content_sha256 text, source_org_ein text, parse_version text);
+        CREATE TABLE lava_vocab.extraction_runs(
+          id serial primary key, run_tag text unique,
+          extractor_version text not null default 'x',
+          started_at timestamptz not null default now(),
+          finished_at timestamptz, stats_json jsonb);
         CREATE TABLE lava_vocab.llm_metrics(
           id bigserial primary key, run_id integer not null, content_sha256 text not null,
           source_org_ein text not null, metric_text text not null, metric_type text,
@@ -255,6 +262,27 @@ class TestAtomicWrite:
             got = c.execute(text("SELECT value_bbox FROM lava_vocab.llm_metrics WHERE content_sha256=:s"),
                             {"s": sha}).scalar()
         assert set(got) == {"l", "t", "r", "b", "coord_origin"}
+
+    def test_dry_run_is_fully_read_only(self, pg_engine):
+        # write=False must NOT create an extraction_runs row or write stats (architect
+        # PR #53 review item 1). Empty sha list -> no lava_parse access needed.
+        with pg_engine.connect() as c:
+            before = c.execute(text("SELECT count(*) FROM lava_vocab.extraction_runs")).scalar()
+        stats = me.run_extraction(pg_engine, "dry-tag-xyz", [], chat_fn=lambda s, u: [], write=False)
+        with pg_engine.connect() as c:
+            after = c.execute(text("SELECT count(*) FROM lava_vocab.extraction_runs")).scalar()
+            row = c.execute(text(
+                "SELECT count(*) FROM lava_vocab.extraction_runs WHERE run_tag='dry-tag-xyz'")).scalar()
+        assert after == before and row == 0       # nothing persisted
+        assert stats["docs_total"] == 0           # stats still returned to caller
+
+    def test_write_run_creates_extraction_row(self, pg_engine):
+        stats = me.run_extraction(pg_engine, "live-tag-xyz", [], chat_fn=lambda s, u: [], write=True)
+        with pg_engine.connect() as c:
+            persisted = c.execute(text(
+                "SELECT stats_json FROM lava_vocab.extraction_runs WHERE run_tag='live-tag-xyz'")).scalar()
+        assert persisted is not None              # row created + stats persisted
+        assert stats["docs_total"] == 0
 
     def test_crash_between_delete_and_insert_rolls_back(self, pg_engine):
         sha = "doc3"

@@ -433,8 +433,13 @@ def run_extraction(
     ``extraction_runs.stats_json``. Skipped/quarantined docs are counted as failed
     and do not enter production output. Caller supplies ``chat_fn`` (live DeepSeek
     via :func:`deepseek_chat`, or a stub for dry runs).
+
+    ``write=False`` is a **fully read-only dry run**: no metric rows, AND no
+    ``extraction_runs`` row or stats update — nothing is persisted at all.
     """
-    run_id = _ensure_run(engine, run_tag)
+    # Only touch extraction_runs when actually persisting (write=True). A dry run
+    # uses a sentinel run_id that the read-only per-doc path never references.
+    run_id = _ensure_run(engine, run_tag) if write else -1
     trusted = trusted_parse_versions(engine)
     results: list[DocResult] = []
     for sha in shas:
@@ -454,11 +459,12 @@ def run_extraction(
         results.append(r)
         log.info("%s -> %s/%s", sha[:12], r.status, sanitize_for_sink(r.reason, 40))
     stats = aggregate_run_stats(results)
-    with engine.begin() as conn:
-        conn.execute(text(
-            "UPDATE lava_vocab.extraction_runs SET finished_at=now(), "
-            "stats_json=CAST(:s AS JSONB) WHERE id=:id"),
-            {"s": json.dumps(stats), "id": run_id})
+    if write:
+        with engine.begin() as conn:
+            conn.execute(text(
+                "UPDATE lava_vocab.extraction_runs SET finished_at=now(), "
+                "stats_json=CAST(:s AS JSONB) WHERE id=:id"),
+                {"s": json.dumps(stats), "id": run_id})
     return stats
 
 

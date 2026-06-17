@@ -48,7 +48,7 @@ that is 0069. DDL is operator-gated (no direct RDS writes).
 | AC3 | Round-trip: stored coords == `idmap[value_ref]` (50-sample) | P2/P5 | Unit | `test_0068_resolve.py` |
 | AC4 | Eligible docs meet §5.4 threshold, verified by count | P4 | Integration | `test_0068_runner.py` |
 | AC5 | `value_ref=null` metrics stored + flagged, not dropped | P2/P4 | Unit+Integration | `test_0068_resolve.py` |
-| AC6 | CanCare/BGCSM published-metric content unchanged vs frozen | P5 | Regression | `test_0068_fixtures.py` |
+| AC6 | ~~CanCare/BGCSM published-metric content unchanged vs frozen~~ **DEFERRED** (architect PR #53 review 2026-06-17; ill-posed vs composed-sentence baseline — re-scoped to 0068↔0069 diff). Tracked in `0068-validation.md`. | — | — | follow-up |
 | AC7 | Zero invented markers (every stored ref in idmap) — code-enforced | P2 | Unit (adversarial) | `test_0068_resolve.py` |
 | S1 | Item ceiling: over-`MAX_IDMAP_ITEMS` doc skipped, no OOM | P1 | Unit (adversarial) | `test_0068_render.py` |
 | S2 | ID-collision → safe skip, not overwrite | P1 | Unit | `test_0068_render.py` |

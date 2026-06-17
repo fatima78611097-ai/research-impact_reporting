@@ -213,7 +213,13 @@ the 49-doc set and records it as `LOC1_BASELINE` (a number). Then:
 4. Eligible docs satisfy the §5.4 threshold (both section and table-cell coords populated),
    verified by count before extraction.
 5. `value_ref=null` (image-only) metrics are stored and flagged, not dropped.
-6. CanCare/BGCSM: published-metric content unchanged vs frozen baseline.
+6. ~~CanCare/BGCSM: published-metric content unchanged vs frozen baseline.~~ **DEFERRED to a
+   tracked follow-up** (architect PR #53 integration review, 2026-06-17). Rationale: 0068's
+   one-pass loc1 path produces a *different* selected-metric set by design than the frozen
+   **composed-sentence** baseline (`frozen/composed-baseline-2026-06-14/`), so a literal
+   "content unchanged vs that baseline" diff is not well-posed for this path. The fixture
+   regression is re-scoped to compare 0068↔0069 marker output once 0069's published surface
+   exists. Tracked in `locard/operations/0068-validation.md` → Follow-ups.
 7. Zero invented markers (every stored non-null ref exists in that doc's idmap) — enforced in code.
 
 ## 8. Security & Abuse Considerations
