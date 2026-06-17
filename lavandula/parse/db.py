@@ -172,6 +172,9 @@ def insert_document(conn, doc: dict) -> None:
                         s["page_start"],
                         s["page_end"],
                         s["parent_headings"],
+                        # Metric-grounding: per-item provenance (nullable; .get keeps
+                        # pre-prov callers working). NULL on legacy/non-prov parses.
+                        json.dumps(s["source_locations"]) if s.get("source_locations") else None,
                     )
                     for s in doc["sections"]
                 ]
@@ -180,12 +183,13 @@ def insert_document(conn, doc: dict) -> None:
                     """
                     INSERT INTO lava_parse.sections (
                         content_sha256, section_index, heading, heading_level,
-                        body_text, char_count, page_start, page_end, parent_headings
+                        body_text, char_count, page_start, page_end, parent_headings,
+                        source_locations
                     ) VALUES %s
                     RETURNING id, section_index
                     """,
                     section_rows,
-                    template="(%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                    template="(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb)",
                 )
                 for row in cur.fetchall():
                     section_ids[row[1]] = row[0]
@@ -202,6 +206,9 @@ def insert_document(conn, doc: dict) -> None:
                         t["col_count"],
                         json.dumps(t["data_json"]),
                         t["markdown"],
+                        # Metric-grounding: per-cell boxes + table box (nullable).
+                        json.dumps(t["cell_locations"]) if t.get("cell_locations") else None,
+                        json.dumps(t["bbox"]) if t.get("bbox") else None,
                     )
                     for t in doc["tables"]
                 ]
@@ -210,12 +217,49 @@ def insert_document(conn, doc: dict) -> None:
                     """
                     INSERT INTO lava_parse.tables (
                         content_sha256, table_index, section_id, page_number,
-                        caption, row_count, col_count, data_json, markdown
+                        caption, row_count, col_count, data_json, markdown,
+                        cell_locations, bbox
                     ) VALUES %s
                     """,
                     table_rows,
-                    template="(%s, %s, %s, %s, %s, %s, %s, %s::jsonb, %s)",
+                    template="(%s, %s, %s, %s, %s, %s, %s, %s::jsonb, %s, %s::jsonb, %s::jsonb)",
                 )
+
+            if doc.get("pages"):
+                page_rows = [
+                    (sha, p["page_no"], p.get("width"), p.get("height"), p.get("orientation"))
+                    for p in doc["pages"]
+                    if p.get("page_no") is not None
+                ]
+                if page_rows:
+                    execute_values(
+                        cur,
+                        """
+                        INSERT INTO lava_parse.pages (
+                            content_sha256, page_no, width, height, orientation
+                        ) VALUES %s
+                        """,
+                        page_rows,
+                        template="(%s, %s, %s, %s, %s)",
+                    )
+
+            if doc.get("figures"):
+                fig_rows = [
+                    (sha, f["figure_index"], f.get("page_no"), json.dumps(f.get("bbox")))
+                    for f in doc["figures"]
+                    if f.get("figure_index") is not None
+                ]
+                if fig_rows:
+                    execute_values(
+                        cur,
+                        """
+                        INSERT INTO lava_parse.figures (
+                            content_sha256, figure_index, page_no, bbox
+                        ) VALUES %s
+                        """,
+                        fig_rows,
+                        template="(%s, %s, %s, %s::jsonb)",
+                    )
 
 
 def delete_document_data(conn, sha: str) -> None:
@@ -227,6 +271,12 @@ def delete_document_data(conn, sha: str) -> None:
         with conn.cursor() as cur:
             cur.execute(
                 "DELETE FROM lava_parse.tables WHERE content_sha256 = %s", (sha,)
+            )
+            cur.execute(
+                "DELETE FROM lava_parse.pages WHERE content_sha256 = %s", (sha,)
+            )
+            cur.execute(
+                "DELETE FROM lava_parse.figures WHERE content_sha256 = %s", (sha,)
             )
             cur.execute(
                 "DELETE FROM lava_parse.sections WHERE content_sha256 = %s", (sha,)

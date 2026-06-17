@@ -1,0 +1,98 @@
+{
+  "summary": "Vision-adjudicate 13 disputed regroup pairings against the actual page",
+  "agentCount": 13,
+  "logs": [],
+  "result": [
+    {
+      "id": "752d2b78:1",
+      "kind": "regress?",
+      "true_label": "Individuals Helped",
+      "verdict": "MODEL",
+      "reason": "The stats grid uses a label-above-number layout. 3,375 (red box) sits directly below the header \"Individuals Helped\" (blue box) and directly above \"Age 59 or older\". Confirmed by the parallel column: \"Households\" sits above 1,328, \"Under 18\" above 1,554, etc. So 3,375 pairs with \"Individuals Helped\" (MODEL). \"Age 59 or older\" is the label for the number below it (222), not for 3,375 — REGROUP picked the wrong neighbor by reading the label below instead of above."
+    },
+    {
+      "id": "95f2054c:5",
+      "kind": "regress?",
+      "true_label": "ANNIVERSARY",
+      "verdict": "NEITHER",
+      "reason": "The \"30\" (red box) is the figure in an anniversary seal that reads \"30th ANNIVERSARY\": the superscript \"th\" sits to its upper-right and the word \"ANNIVERSARY\" sits directly beneath it (verified against the PDF text layer, which orders the cover as: ALL IT TAKES / 30 / th / ANNIVERSARY / ANNUAL REPORT / 2020). So the label genuinely paired with 30 is \"ANNIVERSARY\". REGROUP's \"ANNUAL REPORT\" is a separate, non-adjacent text block lower on the page (y~1410) that pairs with \"2020\", not with 30 — wrong. MODEL's \"Years of operation\" is a semantic inference from \"30th anniversary\" but is not printed verbatim and is not the actual label. Since the true printed label is \"ANNIVERSARY\" and neither candidate states it, the verdict is NEITHER."
+    },
+    {
+      "id": "b42e6f95:8",
+      "kind": "regress?",
+      "true_label": "detained individuals received Incarcerated Grief Support",
+      "verdict": "BOTH_SAME",
+      "reason": "The caption beneath 258 spans two lines: \"detained individuals received\" / \"Incarcerated Grief Support\". REGROUP took the first line verbatim (\"detained individuals received\") and MODEL paraphrased the same caption as \"Incarcerated Grief Support recipients\" (second line + \"received\"->\"recipients\"). Both point to the exact same single number-to-caption pairing; neither is a wrong subject, they just each captured a different fragment/paraphrase of one label."
+    },
+    {
+      "id": "be50ade6:2",
+      "kind": "regress?",
+      "true_label": "Achievers receiving one on one Professional Mentorship",
+      "verdict": "BOTH_SAME",
+      "reason": "The 154 card (red-boxed number) has one unified caption stacked directly beneath it: a small line \"Achievers receiving one on one\" followed by the large bold headline \"Professional Mentorship\". These are not two separate captions but one label block belonging to 154. MODEL's \"Achievers served\" is a (loose) paraphrase of the \"Achievers receiving one on one\" line, and REGROUP's \"Professional Mentorship\" is the bold headline portion of that same block. Both point at the same single caption pairing, just naming different fragments of it, so they describe the same pairing."
+    },
+    {
+      "id": "be50ade6:5",
+      "kind": "regress?",
+      "true_label": "of Caregivers say they would RECOMMEND THE FRIENDS-BOSTON PROGRAM",
+      "verdict": "MODEL",
+      "reason": "The red box is on the bottom-left \"100%\". Its caption on the page reads \"of Caregivers say they would RECOMMEND THE FRIENDS-BOSTON PROGRAM\". MODEL's \"Caregiver recommendation rate\" is an accurate paraphrase of this. REGROUP's \"of Achievers say they feel HOPEFUL ABOUT THEIR FUTURE\" is actually the caption of the center \"86%\" stat, not this 100% — geometry algorithm grabbed the wrong stat's label."
+    },
+    {
+      "id": "be50ade6:8",
+      "kind": "regress?",
+      "true_label": "ADDRESSED 45 family crisis situations through 1:1 IN DEPTH SUPPORT",
+      "verdict": "MODEL",
+      "reason": "The stat block reads top-to-bottom: \"ADDRESSED\" / \"45\" / \"family crisis situations through\" / \"1:1 IN DEPTH SUPPORT\". Grammatically and quantitatively, 45 counts the family crisis situations that were ADDRESSED. The model's subject \"Family crises addressed\" correctly captures what the number measures. REGROUP's \"1:1 IN DEPTH SUPPORT\" is the connecting phrase's object — the method/program through which the crises were addressed (the delivery channel), not what the number 45 quantifies. So the page pairs 45 with the family-crises-addressed concept (model correct), while regroup grabbed the bold footer label which is the wrong subject for this number."
+    },
+    {
+      "id": "d9fef44f:1",
+      "kind": "regress?",
+      "true_label": "INDIVIDUALS HOUSED",
+      "verdict": "MODEL",
+      "reason": "On the page, 638 (red box) sits directly under the boxed header label \"INDIVIDUALS HOUSED\" in the \"Permanent Supportive Housing Impact\" section. The line \"271 of which were children\" appears below 638 as a subordinate qualifier describing a subset of the 638 (271 of them), not the caption for what 638 counts. MODEL's \"PSH individuals housed\" matches the page's pairing (INDIVIDUALS HOUSED, with PSH = the section's Permanent Supportive Housing context). REGROUP's \"271 of which were children\" labels the 271 subset, not 638, so it is the wrong pairing."
+    },
+    {
+      "id": "ee3f949b:5",
+      "kind": "regress?",
+      "true_label": "referrals to other services for our residents",
+      "verdict": "MODEL",
+      "reason": "On the page the number 1,329 (red box) ends the line \"Resources to build for the future through 1,329\" and the sentence wraps to the next line \"referrals to other services for our residents.\" So 1,329 is paired with \"referrals to other services for our residents.\" MODEL's \"Referrals to services\" matches this pairing. REGROUP's \"Continued support and resources through follow-up\" is the NEXT, separate sentence (\"Continued support and resources through follow-up services to 52 women\"), which belongs to the number 52, not 1,329. REGROUP grabbed the wrong adjacent line."
+    },
+    {
+      "id": "5b8eae73:5",
+      "kind": "missed?",
+      "true_label": "in Event Sales",
+      "verdict": "REGROUP",
+      "reason": "On the page, 83,018 ($83,018, red-boxed) sits in the \"HOSPICE UNIQUE BOUTIQUE 2023 AT-A-GLANCE\" stat column where every number is paired with the italic label printed directly beneath it: $602,263/in Gross Sales, +15%/Change in Net Sales from 2022, $83,018/in Event Sales, 148,000/Items Donated, 5,600/Volunteer Hours. The label directly under 83,018 is \"in Event Sales\" (itself red-boxed), which matches REGROUP verbatim. MODEL's \"HUB event sales\" borrows \"HUB\" from a separate left-column body paragraph (\"The HUB hosts numerous events...\") that is not the stat-box label; \"HUB\" is not part of this number's printed label, so the model's subject is wrong. They are not BOTH_SAME because the model injected a qualifier (\"HUB\") that does not belong to the number per the layout."
+    },
+    {
+      "id": "8bf02961:6",
+      "kind": "missed?",
+      "true_label": "growth rate, with 324 staff on board by the end of FY24",
+      "verdict": "REGROUP",
+      "reason": "On the page the three stats are stacked, each number aligned with the text to its immediate right on the same line: 11% = \"growth rate, with 324 staff on board by the end of FY24\"; 5% = \"increase in staff retention for the year\"; 40% = \"of staff report lived experience during their lifetime\". The number 11 is genuinely paired with the growth-rate / 324-staff text, which matches REGROUP exactly. MODEL's \"Staff retention increase\" actually belongs to the 5% line (the one with the highlight box), not to 11, so MODEL is wrong for this number."
+    },
+    {
+      "id": "9d9ae097:1",
+      "kind": "missed?",
+      "true_label": "days of food for a total of [76,713 meals] for Irving families.",
+      "verdict": "REGROUP",
+      "reason": "On the page, the Food Pantry block reads \"...enabled Irving Cares to distribute 25,571 days of food for a total of 76,713 meals for Irving families.\" The label directly adjacent to and pairing with 25,571 (in the red box) is \"days of food for a total of ... for Irving families\" — i.e., 25,571 = days of food. REGROUP's label \"days of food for a total of for Irving families.\" reproduces exactly this adjacent caption (omitting only the intervening 76,713 number). MODEL's \"Total families assisted\" is wrong: the \"families were assisted\" wording belongs to the 3,653 stat above it, not 25,571, and \"Total families assisted\" appears nowhere verbatim. Hence REGROUP is the correct page pairing and MODEL is wrong."
+    },
+    {
+      "id": "b42e6f95:9",
+      "kind": "missed?",
+      "true_label": "individuals attended Divorce Support Groups",
+      "verdict": "REGROUP",
+      "reason": "The number 180 (red-boxed) is directly above the caption \"individuals attended Divorce Support Groups\" in its own layout block. REGROUP's label matches verbatim. The MODEL's \"Co-Parenting Seminar attendees\" belongs to a different number (653) located higher on the page, not to 180."
+    },
+    {
+      "id": "ec055971:3",
+      "kind": "missed?",
+      "true_label": "Educational Services",
+      "verdict": "NEITHER",
+      "reason": "In the PEOPLE SERVED section, each icon column has its category label above and its count below. 1,660 sits directly under the \"Educational Services\" column. The model's \"Behavioral Health & Clinical Services\" pairs with the adjacent left column (3,409), and regroup's \"Total people served: 6,670\" is the grand total printed in larger type on the line below the entire row. Neither candidate is the true label for 1,660 — it is \"Educational Services\"."
+    }
+  ]
+}

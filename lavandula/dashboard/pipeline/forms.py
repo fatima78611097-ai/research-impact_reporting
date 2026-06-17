@@ -439,6 +439,17 @@ class ParseRunForm(forms.Form):
         required=False,
         label="Retry previous errors",
     )
+    reparse = forms.BooleanField(
+        required=False,
+        label="Reparse (re-run already-parsed docs)",
+        help_text="Deletes parse rows below Min Version so they re-parse. Requires Min Version.",
+    )
+    min_version = forms.CharField(
+        required=False, max_length=64,
+        widget=forms.TextInput(attrs={"class": _SELECT, "placeholder": "e.g. docling-2.93.1"}),
+        label="Min Version (for reparse)",
+        help_text="Re-parse docs whose parse_version is below this string.",
+    )
     start_at = forms.CharField(
         required=False, max_length=16,
         widget=forms.TextInput(attrs={
@@ -472,3 +483,17 @@ class ParseRunForm(forms.Form):
         if ami and not re.match(r"^ami-[a-f0-9]{8,17}$", ami):
             raise forms.ValidationError("Invalid AMI ID format")
         return ami or None
+
+    def clean_min_version(self):
+        mv = (self.cleaned_data.get("min_version") or "").strip()
+        if mv and not re.match(r"^[A-Za-z0-9.\-_+]+$", mv):
+            raise forms.ValidationError("Min Version must be a version string (e.g. docling-2.93.1)")
+        return mv or None
+
+    def clean(self):
+        cleaned = super().clean()
+        # Reparse only does anything paired with a Min Version (the command deletes
+        # rows with parse_version < min_version, then re-queues them).
+        if cleaned.get("reparse") and not cleaned.get("min_version"):
+            self.add_error("min_version", "Min Version is required when Reparse is checked.")
+        return cleaned

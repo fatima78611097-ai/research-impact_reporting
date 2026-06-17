@@ -1,0 +1,42 @@
+[
+ {
+  "id": "cc947e2b:10",
+  "label": "UNSUPPORTED",
+  "note": "predicate substitution (presented->hosted) + entity injection (Agudath's camps); operator-original"
+ },
+ {
+  "id": "131309e3:3",
+  "label": "PARTIAL",
+  "note": "Tier B: claim true, support on page 2 (doc-level), not in citation span"
+ },
+ {
+  "id": "d2e6b6ff:3",
+  "label": "SUPPORTED",
+  "note": "correct pairing amid interleaved program stats; verifier FP teaching case"
+ },
+ {
+  "id": "65c918ec:7",
+  "label": "SUPPORTED",
+  "note": "'operates 4 locations' = fair reading of a 4-LOCATIONS stat card"
+ },
+ {
+  "id": "a00adaa5:0",
+  "label": "SUPPORTED",
+  "note": "'surpassed its goal' = achieved, not forecast"
+ },
+ {
+  "id": "e2416d20:0",
+  "label": "SUPPORTED",
+  "note": "shattered-number '1 4, 884' = 14,884 on page"
+ },
+ {
+  "id": "efd61fea:11",
+  "label": "UNSUPPORTED",
+  "note": "value 111 not on page (page says 411; parse dropped char)"
+ },
+ {
+  "id": "efd61fea:15",
+  "label": "PARTIAL",
+  "note": "value real but page caption = Commercial Construction, not capital investment"
+ }
+]

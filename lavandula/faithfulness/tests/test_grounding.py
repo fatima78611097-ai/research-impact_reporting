@@ -424,3 +424,36 @@ class TestExtractDirectQuotes:
     def test_no_quotes(self):
         quotes = _extract_direct_quotes("No quotes here at all")
         assert quotes == []
+
+
+class TestDiagnostics:
+    """Spec 0057 amendment — the WHY signals on every Verdict must separate the
+    quarantine failure modes (fragmentation vs garble/fabrication vs missing)."""
+
+    def test_clean_match_full_coverage_and_run(self):
+        v = check("served 1,514 patients", "in 2023 we served 1,514 patients here", [])
+        assert v.grounded and v.word_coverage == 1.0 and v.longest_run == 1.0
+
+    def test_fragmentation_high_coverage_low_run(self):
+        # all snippet words present in source, but not contiguous -> parser split
+        v = check("5,330 served at the y",
+                  "reach in numbers 5,330 various served at the y in programs", [])
+        assert not v.grounded
+        assert v.word_coverage == 1.0          # every word is there
+        assert v.longest_run < 1.0             # but not as one run
+
+    def test_garble_or_fabrication_low_coverage(self):
+        v = check("420 naturalizations is a 65% increase",
+                  "we processed many cases last year", [])
+        assert not v.grounded
+        assert v.word_coverage < 0.3           # words genuinely absent
+
+    def test_missing_source_zero_chars(self):
+        v = check("anything at all here", "", [])
+        assert not v.grounded and v.source_chars == 0
+
+    def test_table_artifact_has_table_coverage(self):
+        from lavandula.faithfulness.source_provider import TableRow
+        v = check("total expenses 26,122,404", "",
+                  [[TableRow(cells=["Total expenses", "$26,122,404"])]])
+        assert v.table_coverage > 0.5

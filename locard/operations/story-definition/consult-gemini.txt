@@ -1,0 +1,110 @@
+[general review]
+Model: gemini
+
+============================================================
+PROMPT:
+============================================================
+Review this DRAFT definition of an 'impact story' for a nonprofit-report extraction pipeline. Context: we extract these stories at scale from published nonprofit annual/impact reports; the published unit is a verbatim span with provenance; a separate validated pipeline handles numeric metrics. Audience for the definition: an LLM extraction prompt + human adjudicators. Focus your review on: (1) completeness/ambiguity of the required elements; (2) the reject classes — missing classes, classes that will over-reject good human stories; (3) the 5 operator decision points — recommend a ruling for each with reasoning; (4) the PII posture (capture-all + flags, pseudonymize-at-publication) — risks we missed; (5) anything that will bite at 90k-document scale. Be specific and terse; numbered findings with severity.
+
+# Impact Story — Definition (DRAFT for operator session)
+
+*Drafted 2026-06-11 from the metric-definition playbook + 30-story recon (`recon-30.json`).
+Nothing here is locked until the operator rules on it.*
+
+## 1. Definition
+
+An **impact story** is a narrated account, present in the report, of a **specific change** experienced
+by an **identifiable beneficiary** (a person, family, group, or community — named or anonymous)
+**attributable to the organization's intervention**, complete enough to stand alone given only the
+org and report year.
+
+**Required elements (all four):**
+| element | meaning | example |
+|---|---|---|
+| Beneficiary | a specific who — "Vanesa", "a first-time client", "the Bergenview residents" | not "our clients" in general |
+| Intervention | what the org did for them | "FloCrit's Housing Department arranged…" |
+| Change | a before→after or concrete result for the beneficiary | "moved from shelter to permanent housing" |
+| Standalone | understandable with only org + year | no dangling references |
+
+**The published unit is the VERBATIM SPAN(S)** from the report (with location provenance), plus
+structured fields (title, beneficiary type, program, themes). Any model-written summary is a
+**derived field, labeled as such** — never the story of record. (Lesson from metrics: the rewrite
+step is where fabrication lives.)
+
+## 2. Rejection rules (not an impact story)
+
+| reject type | why | recon example |
+|---|---|---|
+| Program description | no specific beneficiary, no change — describes a service | "Ripple Support Group provides a safe space…" |
+| Donor / volunteer story | subject is the giver, not a beneficiary (separate class if product wants it) | "Tricia Hall organized a drive…" |
+| Org-capability narrative | the org is the protagonist (fund launched, building opened) | "Crisis Fund established during pandemic" |
+| Mission / appeal language | aspirational, no account of change | "Together we can…" |
+| Bare gratitude / praise quote | emotion without an account of change | caller "in tears to express gratitude" *(borderline — operator call)* |
+| Event recap | attendance/activities, no beneficiary arc | gala/walkathon recaps |
+| Statistics narrative | numbers in prose = METRIC territory, not story | "served 3,375 individuals…" |
+| Hypothetical / composite | not a real account (unless report labels it and we flag it) | "imagine a mother who…" |
+
+## 3. Operator decision points (the session agenda)
+
+1. **Bare gratitude/testimonial quotes** — story (thin), reject, or separate `testimonial` class?
+2. **Donor/volunteer stories** — reject outright, or capture as a separate class for the product?
+3. **Minimum substance** — is a 2-sentence account enough, or require a real arc?
+4. **Composite/illustrative stories** — reject, or include with an `illustrative` flag?
+5. **Beneficiary = community/place** ("the neighborhood got its grocery store back") — in or out?
+
+## 4. PII / consent (hardens into REQ-PROD on lock)
+
+- Stories naming real private individuals get a **`named_person` flag** at extraction.
+- Public interface policy decided separately (publish-as-is / anonymize / hold) — but the FLAG is
+  captured from day one; backfilling consent risk is not acceptable.
+- Minors referenced by name → automatic stricter class.
+
+## 5. Held (collected, not gating — the tier pattern)
+
+- **Emotional-resonance / quality scoring** — subjective; log a score, never gate or publish on it
+  until calibrated.
+- Theme taxonomy — collect freeform now, lock a vocabulary later from data.
+
+## 6. Validation plan (after lock)
+
+New prompt → dev-corpus run (165 docs) → vision-audit sample of the NEW output → story fixture +
+scorecard + suite checks (verbatim-span grounding is deterministic; the audit grades selection
+quality against this definition).
+
+============================================================
+[GEMINI] Starting consultation...
+============================================================
+
+LLM model: gemini-3-pro-preview
+Gemini auth: apikey
+[ssm] Fetched gemini-api-key from SSM
+Warning: True color (24-bit) support not detected. Using a terminal with true color enabled will result in a better visual experience.
+YOLO mode is enabled. All tool calls will be automatically approved.
+YOLO mode is enabled. All tool calls will be automatically approved.
+Ripgrep is not available. Falling back to GrepTool.
+Here is my review of the `impact story` definition, focusing on your five requested areas.
+
+### 1. Completeness & Ambiguity (Required Elements)
+1. **[High] Conflation of "Standalone" with extraction mechanics:** "Understandable with only org + year" is a standard for the *final published artifact*, but applying this as an extraction rule will cause LLMs to reject great stories that start with a pronoun ("She first came to us in 2021..."). **Recommendation:** Remove "Standalone" as a required feature of the *underlying text*. Instead, handle coreference resolution in the *derived* summary field, and just capture the verbatim span as-is.
+2. **[Medium] Intervention vs. Change ambiguity:** For some direct services (e.g., food banks, disaster relief), the intervention *is* the change. **Recommendation:** Explicitly note in the prompt that "Change" can be an immediate state resolution (e.g., "received a hot meal"), not just a long-term behavioral/life arc.
+
+### 2. Rejection Rules
+3. **[High] "Statistics narrative" will over-reject good stories:** Disqualifying prose because it contains numbers is dangerous. "Vanesa used our financial coaching to save $500 and raise her credit score by 40 points" is an elite impact story that also happens to contain metrics. **Recommendation:** Change the rule to "Aggregate Statistics." Reject accounts of *populations* ("we served 3,000 people"), but keep metrics applied to *specific beneficiaries*.
+4. **[Medium] Missing Reject Class - Historical/Origin Lore:** Reports frequently recount the founder's story or a historical case study from 1995 to pad page count. **Recommendation:** Add a "Historical Lore" reject class to filter out stories outside the report's temporal scope.
+
+### 3. Operator Decision Points (Recommendations & Reasoning)
+1. **Bare gratitude/testimonial quotes:** **Recommend: Separate `testimonial` class.** *Reasoning:* They fail your "Change" requirement but are highly valuable to end-users (grant writers, donors). Don't trash good data; route it to a different bucket.
+2. **Donor/volunteer stories:** **Recommend: Separate `donor_story` class.** *Reasoning:* Similar to above. Development teams use your tool to research donor engagement. Keep the pipeline modular.
+3. **Minimum substance:** **Recommend: Enforce the 3 elements, ignore length.** *Reasoning:* At 90k scale, length rules create arbitrary edge cases. "Thanks to the legal clinic, John avoided eviction" is one sentence but structurally complete. 
+4. **Composite/illustrative stories:** **Recommend: Reject.** *Reasoning:* An LLM is terrible at reliably detecting the tiny footnote ("*Names and details changed for privacy*"). If you try to flag them, you will publish fake stories as real. Rejecting them protects your data integrity.
+5. **Beneficiary = community/place:** **Recommend: IN.** *Reasoning:* Excluding non-human beneficiaries functionally eliminates environmental, conservation, infrastructure, and policy nonprofits from your dataset. "The watershed was cleared of toxins" is a valid impact story.
+
+### 4. PII & Consent Posture
+6. **[Critical] Context Collapse and Implicit PHI/Sensitive Data:** An individual consenting to appear in a local HIV clinic's annual report did *not* consent to be indexed in a global, searchable aggregation database. The `named_person` flag is insufficient. **Recommendation:** You must add a `sensitive_context` flag (health, domestic violence, immigration status, criminal justice). These should trigger automatic pseudonymization *before* hitting your database, regardless of what the original PDF did.
+7. **[High] Minor Detection is fragile:** Relying on the LLM to accurately deduce a minor from text is risky unless explicitly stated. **Recommendation:** Treat school-based, foster care, and youth-program contexts as implicitly containing minors. 
+
+### 5. At 90k-Document Scale Risks
+8. **[Critical] Verbatim Span Fragility vs. PDF Artifacts:** If you strictly validate exact character matches for "verbatim spans," your pipeline will break constantly. PDFs have invisible line breaks, hyphenation, column-jumping, and pull-quotes embedded in the middle of paragraphs. **Recommendation:** The "verbatim span" requirement must allow for text normalization (stripping newlines, resolving hyphenation) or use a fuzzy-match percentage for provenance anchoring.
+9. **[High] Chunking Severance:** If your parser chunks by page or by token limit, impact stories spanning across a page break (often with a full-page photo in between) will be split. The LLM will evaluate half a story, see it lacks "Change," and reject it. **Recommendation:** Ensure your chunking strategy uses overlapping windows large enough to capture multi-page narratives, or perform story extraction on document-level logical sections rather than arbitrary token chunks.
+
+[gemini completed in 33.6s]

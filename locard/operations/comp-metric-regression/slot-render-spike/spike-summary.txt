@@ -1,0 +1,12 @@
+published metrics with extractable slots: 1263  (skipped 0 unmapped)
+render CLEANLY (label stands alone): 1263/1263 = 100.0%
+thin label (needs fallback):         0
+
+of 429 you hand-checked & published:
+  verdicts: {'gate-correct': 420, 'unsure': 2, 'false-publish': 5, 'false-quarantine': 2}
+  false-publish among them: 5 (slot-render does NOT fix these — value/is-a-metric job)
+    68e0e142:1     slot=“95% identity confidence rate”
+    d5cb6d0c:6     slot=“88% youth with optimism and control”
+    2cf7c1e8:3     slot=“351 forward stride clients”
+    efd61fea:15    slot=“$254,102,007 capital investment total”
+    cc947e2b:3     slot=“$30,000,000 educational services received”

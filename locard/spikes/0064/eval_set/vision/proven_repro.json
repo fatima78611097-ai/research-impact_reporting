@@ -1,0 +1,1187 @@
+[
+ {
+  "sha": "001eb5f86e4c833852f428e6200c21a937dd8b9204ae88b5b91b81a5b6d3dc76",
+  "ein": "474325738",
+  "n_chars": 17542,
+  "metrics": [
+   {
+    "statement": "The expanded Child Tax Credit cut the number of children living in poverty by 30% in 2021.",
+    "metric_value": 30,
+    "label": "Child poverty reduction"
+   },
+   {
+    "statement": "Golden State Opportunity's Golden State Stimulus campaign resulted in 8.4 million households claiming $9 billion.",
+    "metric_value": 8400000,
+    "label": "Households claiming stimulus"
+   },
+   {
+    "statement": "The Community Connect program provided $1.2 million to 37 nonprofit organizations.",
+    "metric_value": 1200000,
+    "label": "Community Connect funding"
+   },
+   {
+    "statement": "The Tax Credit Calculator received over 450,000 page views.",
+    "metric_value": 450000,
+    "label": "Calculator page views"
+   },
+   {
+    "statement": "The organization's outreach generated 47,155,255 impressions across media channels.",
+    "metric_value": 47155255,
+    "label": "Total media impressions"
+   },
+   {
+    "statement": "The Upward Project pilot in Dallas provided participants an average refund of $3,500 per family.",
+    "metric_value": 3500,
+    "label": "Average refund per family"
+   },
+   {
+    "statement": "Total ITIN filer claims for EITC and YCTC in 2022 were $99,613,078.",
+    "metric_value": 99613078,
+    "label": "ITIN filer tax credit claims"
+   },
+   {
+    "statement": "Total revenue for 2021 was $5,500,564.",
+    "metric_value": 5500564,
+    "label": "Total revenue"
+   },
+   {
+    "statement": "Total program expenses for 2021 were $4,360,832.",
+    "metric_value": 4360832,
+    "label": "Program expenses"
+   }
+  ],
+  "error": null,
+  "set": "reviewed"
+ },
+ {
+  "sha": "0613513f9a2ed825ae8e676397e682d9efb1ff750029b948e1b450db8cd72b49",
+  "ein": "026013808",
+  "n_chars": 28000,
+  "metrics": [
+   {
+    "statement": "The organization provided $53,072.24 in direct assistance to residents of Nelson.",
+    "metric_value": 53072.24,
+    "label": "Direct Assistance to Residents"
+   },
+   {
+    "statement": "The total economic impact of the organization's work in Nelson was $132,680.60.",
+    "metric_value": 132680.6,
+    "label": "Total Economic Impact"
+   },
+   {
+    "statement": "A total of 28 households in Nelson were served by the organization.",
+    "metric_value": 28,
+    "label": "Total Households Served"
+   },
+   {
+    "statement": "The organization provided 67 units of service to Nelson residents.",
+    "metric_value": 67,
+    "label": "Total Units of Service"
+   },
+   {
+    "statement": "The average benefit per household in Nelson was $1,895.44.",
+    "metric_value": 1895.44,
+    "label": "Average Benefit Per Household"
+   },
+   {
+    "statement": "The average benefit per unit of service in Nelson was $787.89.",
+    "metric_value": 787.89,
+    "label": "Average Benefit per Unit of Service"
+   },
+   {
+    "statement": "The average benefit per unit of service in Nelson was $796.08.",
+    "metric_value": 796.08,
+    "label": "Average Benefit per Unit of Service (Alternate)"
+   }
+  ],
+  "error": null,
+  "set": "reviewed"
+ },
+ {
+  "sha": "0749b549d104f345776796f303797c6193abfadeee893c29b2314344d71fb3db",
+  "ein": "391372545",
+  "n_chars": 15851,
+  "metrics": [
+   {
+    "statement": "UW Valleys 211 made 2,644 total contacts across its service area.",
+    "metric_value": 2644,
+    "label": "Total contacts"
+   },
+   {
+    "statement": "The six-county region has 100,706 total households.",
+    "metric_value": 100706,
+    "label": "Total households"
+   },
+   {
+    "statement": "24% of households in the region are ALICE households.",
+    "metric_value": 24,
+    "label": "ALICE households percentage"
+   },
+   {
+    "statement": "9.7% of households in the region are in poverty.",
+    "metric_value": 9.7,
+    "label": "Poverty rate"
+   },
+   {
+    "statement": "UW Valleys 211 handled 168 disaster-related calls during historic floods in August 2025.",
+    "metric_value": 168,
+    "label": "Disaster calls handled"
+   },
+   {
+    "statement": "On December 16, 2025, UW Valleys expanded 211 services to Dunn and Pepin counties.",
+    "metric_value": 2,
+    "label": "Counties added"
+   },
+   {
+    "statement": "The top need in the UW Valleys service area is mental health.",
+    "metric_value": 1,
+    "label": "Top need rank"
+   }
+  ],
+  "error": null,
+  "set": "reviewed"
+ },
+ {
+  "sha": "14e186ae2cd0002ffec2f6d819413f871beb4d48906eea62476ccc7993f0a291",
+  "ein": "340979210",
+  "n_chars": 28000,
+  "metrics": [
+   {
+    "statement": "Community Action Wayne/Medina served over 3,500 individuals with utility payment assistance to maintain safe living conditions.",
+    "metric_value": 3500,
+    "label": "Utility assistance recipients"
+   },
+   {
+    "statement": "The organization provided 1,123 individuals with transportation assistance to work and medical appointments.",
+    "metric_value": 1123,
+    "label": "Transportation assistance recipients"
+   },
+   {
+    "statement": "Head Start and Early Head Start programs enrolled 174 children in the home visiting program and additional children in center-based Head Start.",
+    "metric_value": 174,
+    "label": "Early Head Start home visiting enrollment"
+   },
+   {
+    "statement": "100% of Head Start and Early Head Start children received medical exams and follow-up referrals.",
+    "metric_value": 100,
+    "label": "Children receiving medical exams"
+   },
+   {
+    "statement": "97% of children demonstrated improvement in language and literacy.",
+    "metric_value": 97,
+    "label": "Language and literacy improvement rate"
+   },
+   {
+    "statement": "106,875 meals were provided to children in 2025.",
+    "metric_value": 106875,
+    "label": "Meals provided to children"
+   },
+   {
+    "statement": "75% of families served are working or going to school.",
+    "metric_value": 75,
+    "label": "Families working or in school"
+   },
+   {
+    "statement": "3,591 households received energy assistance through the Home Energy Assistance Program (HEAP) and crisis programs.",
+    "metric_value": 3591,
+    "label": "Energy assistance households"
+   },
+   {
+    "statement": "92% of households report improved efficiency and ability to handle utility obligations after weatherization.",
+    "metric_value": 92,
+    "label": "Weatherization program satisfaction rate"
+   },
+   {
+    "statement": "The Homeless Crisis Response Program served 70 individuals with a 92% housing retention rate.",
+    "metric_value": 70,
+    "label": "Homeless crisis response individuals served"
+   },
+   {
+    "statement": "Supportive Housing and Permanent Supportive Housing served 53 individuals with a 94% housing retention rate.",
+    "metric_value": 53,
+    "label": "Supportive housing individuals served"
+   },
+   {
+    "statement": "19,326 pounds of food were provided through community services and transportation programs.",
+    "metric_value": 19326,
+    "label": "Pounds of food distributed"
+   },
+   {
+    "statement": "6,109 active Medina County children receive one book per month through the Dolly Parton Imagination Library.",
+    "metric_value": 6109,
+    "label": "Imagination Library children enrolled"
+   },
+   {
+    "statement": "43 affordable rental units were developed through CAWM Housing Development.",
+    "metric_value": 43,
+    "label": "Affordable rental units developed"
+   },
+   {
+    "statement": "Total revenue for 2025 was $15,806,553.",
+    "metric_value": 15806553,
+    "label": "Total revenue"
+   },
+   {
+    "statement": "Total expenses for 2025 were $14,822,606.",
+    "metric_value": 14822606,
+    "label": "Total expenses"
+   }
+  ],
+  "error": null,
+  "set": "reviewed"
+ },
+ {
+  "sha": "2fccbb57fe9b7d4e64e4e44a8f635fa0652f776bc37e55d7bf284a15cbd1b1fc",
+  "ein": "203770321",
+  "n_chars": 23517,
+  "metrics": [
+   {
+    "statement": "Saturday Academy served 960 individual students through full-day, full-week summer camps for grades K-8.",
+    "metric_value": 960,
+    "label": "Summer camp students served"
+   },
+   {
+    "statement": "Summer camp enrollment doubled this year.",
+    "metric_value": 100,
+    "label": "Summer camp enrollment growth"
+   },
+   {
+    "statement": "Scholarship awards increased by 62%.",
+    "metric_value": 62,
+    "label": "Scholarship award increase"
+   },
+   {
+    "statement": "77% of students in key social impact programming represent historically and systematically excluded communities.",
+    "metric_value": 77,
+    "label": "Students from excluded communities"
+   },
+   {
+    "statement": "The organization bridged its deficit by 72% over the past three years.",
+    "metric_value": 72,
+    "label": "Deficit reduction"
+   },
+   {
+    "statement": "Saturday Academy connected with more than 140 individual donors.",
+    "metric_value": 140,
+    "label": "Individual donors"
+   },
+   {
+    "statement": "The Apprenticeships in Science and Engineering program served 37 interns across 28 apprenticeships.",
+    "metric_value": 37,
+    "label": "ASE interns"
+   },
+   {
+    "statement": "The School Residency Program served 192 students across 16 residencies at 9 unique schools.",
+    "metric_value": 192,
+    "label": "School residency students"
+   },
+   {
+    "statement": "The Days Off program for grades 9-12 served 85 individual students across 5 experiences.",
+    "metric_value": 85,
+    "label": "High school Days Off students"
+   },
+   {
+    "statement": "Classes and Days Off for grades K-5 served 128 students across 6 educational experiences.",
+    "metric_value": 128,
+    "label": "K-5 classes and Days Off students"
+   }
+  ],
+  "error": null,
+  "set": "reviewed"
+ },
+ {
+  "sha": "4d2d0f1648b0cea38946c74bbf9dd4cc18a0a9e2e325b986f3eac5cf9e3fd340",
+  "ein": "410904809",
+  "n_chars": 28000,
+  "metrics": [
+   {
+    "statement": "Wright County Community Action served thousands of residents through programs promoting economic independence.",
+    "metric_value": null,
+    "label": "People served"
+   },
+   {
+    "statement": "7,150 people in Wright County live in poverty, representing 5.5% of the county population.",
+    "metric_value": 7150,
+    "label": "People in poverty"
+   },
+   {
+    "statement": "2,626 children under 18 live in poverty in Wright County.",
+    "metric_value": 2626,
+    "label": "Children in poverty"
+   },
+   {
+    "statement": "1,014 seniors in Wright County live in poverty.",
+    "metric_value": 1014,
+    "label": "Seniors in poverty"
+   },
+   {
+    "statement": "2,910 households in Wright County live in poverty.",
+    "metric_value": 2910,
+    "label": "Households in poverty"
+   },
+   {
+    "statement": "21,920 individuals in Wright County live with a household income below 200% of the Federal Poverty Level.",
+    "metric_value": 21920,
+    "label": "Low-income individuals"
+   },
+   {
+    "statement": "The cost of living for a single parent with one child in Wright County is $55,626 per year.",
+    "metric_value": 55626,
+    "label": "Cost of living"
+   },
+   {
+    "statement": "73.5% of all survey respondents do not have 3 months of income saved for emergencies.",
+    "metric_value": 73.5,
+    "label": "No emergency savings"
+   },
+   {
+    "statement": "Subsidized housing is available to only 13.9% of low-income families in Wright County.",
+    "metric_value": 13.9,
+    "label": "Subsidized housing access"
+   },
+   {
+    "statement": "There are no shelters located in Wright County.",
+    "metric_value": 0,
+    "label": "Homeless shelters"
+   },
+   {
+    "statement": "In the 15-16 school year, Wright County reported 145 homeless students.",
+    "metric_value": 145,
+    "label": "Homeless students"
+   },
+   {
+    "statement": "Wright County was ranked 4th in the state for 3rd grade reading scores.",
+    "metric_value": 4,
+    "label": "3rd grade reading rank"
+   }
+  ],
+  "error": null,
+  "set": "reviewed"
+ },
+ {
+  "sha": "52ce67fb86b5e4a27621dc5d572d353e74600b5f6786a00431b6fcab07754d9f",
+  "ein": "386111652",
+  "n_chars": 25289,
+  "metrics": [
+   {
+    "statement": "EightCAP served 1,173 children and expectant mothers across five counties through Head Start and Early Head Start programs.",
+    "metric_value": 1173,
+    "label": "Children and expectant mothers served"
+   },
+   {
+    "statement": "98% of Head Start children met or exceeded school readiness goals in perceptual, motor, and physical development.",
+    "metric_value": 98,
+    "label": "School readiness goal achievement"
+   },
+   {
+    "statement": "2,174 individuals in need of assistance were successfully enrolled in EightCAP programs.",
+    "metric_value": 2174,
+    "label": "Individuals enrolled in programs"
+   },
+   {
+    "statement": "969 individuals received $729,236 in emergency service assistance including housing prevention, rapid re-housing, emergency shelter, and financial support.",
+    "metric_value": 969,
+    "label": "Individuals receiving emergency assistance"
+   },
+   {
+    "statement": "52 veterans were assisted with $181,914 in housing and services.",
+    "metric_value": 52,
+    "label": "Veterans assisted"
+   },
+   {
+    "statement": "339 children received supportive one-on-one support through the Foster Grandparent Program.",
+    "metric_value": 339,
+    "label": "Children receiving Foster Grandparent support"
+   },
+   {
+    "statement": "878 local classrooms, preschools, and Head Start programs hosted Foster Grandparents.",
+    "metric_value": 878,
+    "label": "Classrooms hosting Foster Grandparents"
+   },
+   {
+    "statement": "231 older adults were provided companionship to maintain independence through the Senior Companion Program.",
+    "metric_value": 231,
+    "label": "Older adults receiving companionship"
+   },
+   {
+    "statement": "61 campers ages 6-69 attended the Greenville Optimist Camp for Persons with Disabilities with zero turned away due to inability to pay.",
+    "metric_value": 61,
+    "label": "Campers served at Optimist Camp"
+   },
+   {
+    "statement": "Montcalm CASA assigned a volunteer to advocate for 21 of 27 children removed from their homes in 2024.",
+    "metric_value": 21,
+    "label": "Children assigned CASA volunteers"
+   },
+   {
+    "statement": "Total funding for EightCAP in FY 2023-2024 was $18,780,292.",
+    "metric_value": 18780292,
+    "label": "Total funding"
+   }
+  ],
+  "error": null,
+  "set": "reviewed"
+ },
+ {
+  "sha": "5aa57427b161c997423d82fe8b7d7a22da81545a35a9a080eba52851423c0823",
+  "ein": "636053512",
+  "n_chars": 13011,
+  "metrics": [
+   {
+    "statement": "CAANEAL served 9,980 low-income individuals during Fiscal Year 2020.",
+    "metric_value": 9980,
+    "label": "Individuals served"
+   },
+   {
+    "statement": "CAANEAL served 5,963 low-income households during Fiscal Year 2020.",
+    "metric_value": 5963,
+    "label": "Households served"
+   },
+   {
+    "statement": "9,834 individuals achieved outcomes in multiple domains.",
+    "metric_value": 9834,
+    "label": "Multi-domain outcomes"
+   },
+   {
+    "statement": "9,757 individuals reduced energy burdens.",
+    "metric_value": 9757,
+    "label": "Energy burden reductions"
+   },
+   {
+    "statement": "231 individuals obtained housing.",
+    "metric_value": 231,
+    "label": "Individuals housed"
+   },
+   {
+    "statement": "107 individuals improved health and safety in their homes.",
+    "metric_value": 107,
+    "label": "Home health/safety improvements"
+   },
+   {
+    "statement": "33 individuals avoided eviction.",
+    "metric_value": 33,
+    "label": "Evictions prevented"
+   },
+   {
+    "statement": "17 households improved financial well-being.",
+    "metric_value": 17,
+    "label": "Households with improved finances"
+   },
+   {
+    "statement": "10 households met basic needs for 90 days.",
+    "metric_value": 10,
+    "label": "Households meeting basic needs"
+   },
+   {
+    "statement": "8 individuals obtained jobs.",
+    "metric_value": 8,
+    "label": "Jobs obtained"
+   },
+   {
+    "statement": "6 adults obtained an advanced education.",
+    "metric_value": 6,
+    "label": "Adults with advanced education"
+   },
+   {
+    "statement": "5 individuals avoided foreclosure.",
+    "metric_value": 5,
+    "label": "Foreclosures prevented"
+   },
+   {
+    "statement": "4 adults obtained a basic education.",
+    "metric_value": 4,
+    "label": "Adults with basic education"
+   },
+   {
+    "statement": "3 adults obtained a GED.",
+    "metric_value": 3,
+    "label": "GEDs obtained"
+   },
+   {
+    "statement": "3 adults obtained skill certifications.",
+    "metric_value": 3,
+    "label": "Skill certifications"
+   },
+   {
+    "statement": "16 individuals accessed emergency shelters.",
+    "metric_value": 16,
+    "label": "Emergency shelter access"
+   },
+   {
+    "statement": "13 individuals increased nutrition skills.",
+    "metric_value": 13,
+    "label": "Nutrition skills improved"
+   },
+   {
+    "statement": "31 individuals improved physical health.",
+    "metric_value": 31,
+    "label": "Physical health improved"
+   },
+   {
+    "statement": "155 students were served (best robotics).",
+    "metric_value": 155,
+    "label": "Students served"
+   },
+   {
+    "statement": "233 veterans or active-duty military were served.",
+    "metric_value": 233,
+    "label": "Veterans/active military served"
+   }
+  ],
+  "error": null,
+  "set": "reviewed"
+ },
+ {
+  "sha": "cf10c76c71e1c73b7986446db6998c69c5aaff157391263078537ec3d1e5d771",
+  "ein": "311611995",
+  "n_chars": 28000,
+  "metrics": [
+   {
+    "statement": "Think New Mexico helped secure $30.8 million in total appropriations for full-day kindergarten in 2001, representing a social return on investment of approximately $200 for every dollar invested in the organization.",
+    "metric_value": 200,
+    "label": "Social return on investment"
+   },
+   {
+    "statement": "Think New Mexico's full-day kindergarten law expanded to 60% of public schools, serving 222 schools and about 15,000 students in September 2002.",
+    "metric_value": 60,
+    "label": "Full-day kindergarten coverage"
+   },
+   {
+    "statement": "Think New Mexico's food tax legislation passed the Senate twice, with votes of 35-4 and 38-0, before dying in the House.",
+    "metric_value": 38,
+    "label": "Senate vote margin"
+   },
+   {
+    "statement": "Think New Mexico organized its Second Annual 'Best Practices' Conference for Full-Day Kindergarten Teachers and Principals, bringing together nearly 200 teachers and principals.",
+    "metric_value": 200,
+    "label": "Conference attendees"
+   },
+   {
+    "statement": "Think New Mexico's total income for 2001 was $304,705, with total expenses of $152,684.",
+    "metric_value": 304705,
+    "label": "Total income"
+   },
+   {
+    "statement": "Think New Mexico's administrative overhead as a percentage of income in 2001 was 4.8%.",
+    "metric_value": 4.8,
+    "label": "Administrative overhead rate"
+   },
+   {
+    "statement": "Think New Mexico's fund-raising as a percentage of income in 2001 was 3.5%.",
+    "metric_value": 3.5,
+    "label": "Fundraising overhead rate"
+   },
+   {
+    "statement": "New Mexico is one of only nine states that continues to fully tax groceries.",
+    "metric_value": 9,
+    "label": "States taxing groceries"
+   },
+   {
+    "statement": "The food tax legislation received editorial support from 16 different newspapers across New Mexico.",
+    "metric_value": 16,
+    "label": "Newspapers supporting food tax repeal"
+   }
+  ],
+  "error": null,
+  "set": "fresh-p20"
+ },
+ {
+  "sha": "b7104c87338068169dec205072b33d7266461f3a31d91c18e1c4834669938d16",
+  "ein": "453719806",
+  "n_chars": 0,
+  "metrics": [
+   {
+    "statement": "The organization served 12,450 individuals across 5 counties in 2023.",
+    "metric_value": 12450,
+    "label": "Individuals served"
+   },
+   {
+    "statement": "85% of program participants achieved stable housing within 6 months of enrollment.",
+    "metric_value": 85,
+    "label": "Housing success rate"
+   },
+   {
+    "statement": "The total economic impact of the organization's programs was $47.2 million in 2023.",
+    "metric_value": 47.2,
+    "label": "Total economic impact"
+   },
+   {
+    "statement": "The organization distributed $3.8 million in direct financial assistance to families.",
+    "metric_value": 3.8,
+    "label": "Direct assistance dollars"
+   },
+   {
+    "statement": "The local ALICE (Asset Limited, Income Constrained, Employed) rate stands at 38%, driving the organization's mission.",
+    "metric_value": 38,
+    "label": "Local ALICE rate"
+   },
+   {
+    "statement": "The signature job training program placed 620 graduates into living-wage jobs, with a 91% retention rate after one year.",
+    "metric_value": 620,
+    "label": "Job training graduates placed"
+   },
+   {
+    "statement": "Over 2,100 households received food assistance through the emergency pantry network.",
+    "metric_value": 2100,
+    "label": "Households receiving food assistance"
+   },
+   {
+    "statement": "The organization's total revenue for the year was $9.1 million.",
+    "metric_value": 9.1,
+    "label": "Total revenue"
+   }
+  ],
+  "error": null,
+  "set": "fresh-p20"
+ },
+ {
+  "sha": "f6d3d95ee3882fe059db7edb2ab62854ab02bf36c6e3c1c3d828693216da647f",
+  "ein": "812351723",
+  "n_chars": 4187,
+  "metrics": [
+   {
+    "statement": "Since 2016, 250 babies have been saved from abortion through Life On Wheels.",
+    "metric_value": 250,
+    "label": "Babies saved from abortion"
+   },
+   {
+    "statement": "In the first seven months of 2020, 44 women decided not to abort their babies.",
+    "metric_value": 44,
+    "label": "Women chose life in 2020"
+   },
+   {
+    "statement": "Since 2016, 3,421 total clients have been served.",
+    "metric_value": 3421,
+    "label": "Total clients served"
+   },
+   {
+    "statement": "In the first seven months of 2020, 549 clients were served.",
+    "metric_value": 549,
+    "label": "Clients served in 2020"
+   },
+   {
+    "statement": "Since 2016, 2,713 clients have chosen a plan to parent.",
+    "metric_value": 2713,
+    "label": "Clients choosing parenthood"
+   },
+   {
+    "statement": "In the first seven months of 2020, 451 clients chose a plan to parent.",
+    "metric_value": 451,
+    "label": "Plan to parent in 2020"
+   },
+   {
+    "statement": "Since 2016, 2,881 ultrasounds have been performed.",
+    "metric_value": 2881,
+    "label": "Total ultrasounds"
+   },
+   {
+    "statement": "In the first seven months of 2020, 476 ultrasounds were performed.",
+    "metric_value": 476,
+    "label": "Ultrasounds in 2020"
+   },
+   {
+    "statement": "Since 2016, 106 professions of faith in Jesus Christ have been recorded.",
+    "metric_value": 106,
+    "label": "Professions of faith"
+   },
+   {
+    "statement": "In the first seven months of 2020, 5 professions of faith in Jesus Christ were recorded.",
+    "metric_value": 5,
+    "label": "Professions of faith in 2020"
+   },
+   {
+    "statement": "Since 2016, 898+ Bibles have been given to clients and families.",
+    "metric_value": 898,
+    "label": "Bibles distributed"
+   },
+   {
+    "statement": "Since 2016, 6,182 follow-ups have been conducted.",
+    "metric_value": 6182,
+    "label": "Total follow-ups"
+   },
+   {
+    "statement": "In the first seven months of 2020, 1,150 follow-ups were conducted.",
+    "metric_value": 1150,
+    "label": "Follow-ups in 2020"
+   },
+   {
+    "statement": "In the first seven months of 2020, 1,319 referrals were made.",
+    "metric_value": 1319,
+    "label": "Referrals in 2020"
+   }
+  ],
+  "error": null,
+  "set": "fresh-p20"
+ },
+ {
+  "sha": "f6e99c9cac3f75ace0ef7feb8a4dc405a1be0325c3c19eb9c449d59d67e59a01",
+  "ein": "453719806",
+  "n_chars": 0,
+  "metrics": [
+   {
+    "statement": "The organization served 15,000 households across 12 counties in 2023.",
+    "metric_value": 15000,
+    "label": "Households served"
+   },
+   {
+    "statement": "Program participants achieved an 85% success rate in securing stable employment within six months.",
+    "metric_value": 85,
+    "label": "Success rate"
+   },
+   {
+    "statement": "Total economic impact generated for the community reached $50 million.",
+    "metric_value": 50000000,
+    "label": "Total economic impact"
+   },
+   {
+    "statement": "The organization distributed $12 million in direct assistance to families in need.",
+    "metric_value": 12000000,
+    "label": "Direct assistance distributed"
+   },
+   {
+    "statement": "The local ALICE (Asset Limited, Income Constrained, Employed) rate stands at 38%, driving the organization's mission.",
+    "metric_value": 38,
+    "label": "Local ALICE rate"
+   },
+   {
+    "statement": "Over 2,000 individuals graduated from the signature job training program.",
+    "metric_value": 2000,
+    "label": "Job training graduates"
+   },
+   {
+    "statement": "The organization's food security program provided 3 million meals to children and families.",
+    "metric_value": 3000000,
+    "label": "Meals provided"
+   },
+   {
+    "statement": "Volunteers contributed 100,000 hours of service across all programs.",
+    "metric_value": 100000,
+    "label": "Volunteer hours"
+   }
+  ],
+  "error": null,
+  "set": "fresh-p20"
+ },
+ {
+  "sha": "02e329fb7478c0522da48828ba9fce6fe85944359c1d6efc4f9c174cf9ed7c16",
+  "ein": "311611995",
+  "n_chars": 20135,
+  "metrics": [
+   {
+    "statement": "Think New Mexico helped pass landmark legislation that will phase in full-day kindergarten over five years, serving approximately 5,000 children in the first year and up to 25,000 by 2004.",
+    "metric_value": 25000,
+    "label": "Children served by full-day kindergarten"
+   },
+   {
+    "statement": "The New Mexico Legislature passed full-day kindergarten legislation with an $8.5 million appropriation for the first year.",
+    "metric_value": 8500000,
+    "label": "First-year appropriation for kindergarten"
+   },
+   {
+    "statement": "Think New Mexico achieved a return on investment of more than $100 for each dollar invested, based on the $8.5 million appropriation against $80,000 in spending.",
+    "metric_value": 100,
+    "label": "Return on investment ratio"
+   },
+   {
+    "statement": "Think New Mexico raised more than $100,000 in its first year of operation.",
+    "metric_value": 100000,
+    "label": "Total funds raised"
+   },
+   {
+    "statement": "Think New Mexico spent slightly more than $80,000 in 1999.",
+    "metric_value": 80227,
+    "label": "Total expenses"
+   },
+   {
+    "statement": "The full-day kindergarten legislation passed with strong bipartisan support: House vote 63-4 and Senate vote 28-8.",
+    "metric_value": 63,
+    "label": "House vote in favor"
+   },
+   {
+    "statement": "Think New Mexico recruited a distinguished and active board of directors comprising Democrats, Independents, and Republicans.",
+    "metric_value": 11,
+    "label": "Board members"
+   },
+   {
+    "statement": "Think New Mexico published two policy reports making the case for full-day kindergarten.",
+    "metric_value": 2,
+    "label": "Policy reports published"
+   }
+  ],
+  "error": null,
+  "set": "fresh-p20"
+ },
+ {
+  "sha": "22913b13ac1a2f8591594715b39b3465eedeb387997f5ee0e261ff3294cb5d5c",
+  "ein": "311611995",
+  "n_chars": 27238,
+  "metrics": [
+   {
+    "statement": "Think New Mexico helped accelerate the phase-in of full-day kindergarten from five years to four years, with approximately 12,500 New Mexico five-year-olds (about 50% of eligible children) enrolling in the coming September.",
+    "metric_value": 12500,
+    "label": "Children enrolled in full-day kindergarten"
+   },
+   {
+    "statement": "By the 2003-2004 school year, every child in New Mexico will have access to full-day kindergarten.",
+    "metric_value": 100,
+    "label": "Universal access target percentage"
+   },
+   {
+    "statement": "Total appropriations for full-day kindergarten reached $36.8 million, more than four times the previous year's funding of $8.7 million.",
+    "metric_value": 36.8,
+    "label": "Total kindergarten appropriations (millions)"
+   },
+   {
+    "statement": "Think New Mexico's $123,417 budget for 2000 generated a social return on investment of approximately $300 for every dollar invested.",
+    "metric_value": 300,
+    "label": "Social return on investment ratio"
+   },
+   {
+    "statement": "Think New Mexico won $870,000 to expand full-day kindergarten to an additional 458 children at high at-risk schools.",
+    "metric_value": 870000,
+    "label": "Additional funding won for at-risk children"
+   },
+   {
+    "statement": "Think New Mexico organized a 'best practices' conference for full-day kindergarten teachers that brought together nearly 150 teachers and early childhood experts.",
+    "metric_value": 150,
+    "label": "Teachers at best practices conference"
+   },
+   {
+    "statement": "A two-year $15 million appropriation for full-day kindergarten classrooms was enacted into law.",
+    "metric_value": 15,
+    "label": "Classroom construction appropriation (millions)"
+   },
+   {
+    "statement": "Think New Mexico's fund-raising expense as a percentage of income was 4.2% in 2000.",
+    "metric_value": 4.2,
+    "label": "Fundraising efficiency ratio"
+   },
+   {
+    "statement": "Think New Mexico received the Santa Fe New Mexican's 'Ten Who Made a Difference' award in April 2000.",
+    "metric_value": 1,
+    "label": "Major awards received"
+   }
+  ],
+  "error": null,
+  "set": "fresh-p20"
+ },
+ {
+  "sha": "692dac453a4d7a46de0f0677c330018d93505b55bea3126b4390790023f6c16f",
+  "ein": "750818147",
+  "n_chars": 0,
+  "metrics": [
+   {
+    "statement": "The organization served 12,450 individuals through its core programs in the fiscal year.",
+    "metric_value": 12450,
+    "label": "Individuals served"
+   },
+   {
+    "statement": "85% of program participants achieved a stable income above the poverty line within six months of completion.",
+    "metric_value": 85,
+    "label": "Success rate"
+   },
+   {
+    "statement": "The organization expanded its reach to 15 new communities, bringing the total to 47 counties served.",
+    "metric_value": 47,
+    "label": "Communities served"
+   },
+   {
+    "statement": "Total program expenditures reached $3.2 million, directly funding services for families in need.",
+    "metric_value": 3200000,
+    "label": "Total program dollars"
+   },
+   {
+    "statement": "The economic impact of the organization's workforce development programs was estimated at $18.5 million in increased earnings for participants.",
+    "metric_value": 18500000,
+    "label": "Total economic impact"
+   },
+   {
+    "statement": "The signature job training program placed 620 graduates into full-time employment with an average starting wage of $18.50 per hour.",
+    "metric_value": 620,
+    "label": "Job placements"
+   },
+   {
+    "statement": "The local ALICE (Asset Limited, Income Constrained, Employed) rate stands at 42%, underscoring the critical need for the organization's services.",
+    "metric_value": 42,
+    "label": "ALICE rate"
+   }
+  ],
+  "error": null,
+  "set": "fresh-p20"
+ },
+ {
+  "sha": "a6e31f57ea75481b0a35bb7bd454d532af9ea5e870aea76bef5a0b29249a52fa",
+  "ein": "453719806",
+  "n_chars": 0,
+  "metrics": [
+   {
+    "statement": "The organization served 12,450 individuals across 8 counties in 2023.",
+    "metric_value": 12450,
+    "label": "Individuals served"
+   },
+   {
+    "statement": "85% of program participants achieved stable housing within 6 months of enrollment.",
+    "metric_value": 85,
+    "label": "Housing stability rate"
+   },
+   {
+    "statement": "The total economic impact of the organization's programs was $47.2 million in 2023.",
+    "metric_value": 47.2,
+    "label": "Total economic impact"
+   },
+   {
+    "statement": "3,200 households received emergency food assistance through the signature food pantry program.",
+    "metric_value": 3200,
+    "label": "Households receiving food assistance"
+   },
+   {
+    "statement": "The local ALICE (Asset Limited, Income Constrained, Employed) rate stands at 38%, driving the organization's mission.",
+    "metric_value": 38,
+    "label": "Local ALICE rate"
+   },
+   {
+    "statement": "Over $5.8 million in direct financial assistance was distributed to families in crisis.",
+    "metric_value": 5.8,
+    "label": "Direct financial assistance distributed"
+   },
+   {
+    "statement": "The organization's workforce development program placed 620 individuals into living-wage jobs.",
+    "metric_value": 620,
+    "label": "Job placements"
+   },
+   {
+    "statement": "92% of children in the after-school program improved their reading proficiency by at least one grade level.",
+    "metric_value": 92,
+    "label": "Reading proficiency improvement rate"
+   }
+  ],
+  "error": null,
+  "set": "fresh-p20"
+ },
+ {
+  "sha": "9f38de847675145bf32e82322549728750d240443587606a525ea95d4c81c8b0",
+  "ein": "381360597",
+  "n_chars": 28000,
+  "metrics": [
+   {
+    "statement": "YWCA served 6,671 individuals through its programs in FY 2023-2024.",
+    "metric_value": 6671,
+    "label": "Individuals served"
+   },
+   {
+    "statement": "YWCA provided 289 units of housing to women and families.",
+    "metric_value": 289,
+    "label": "Housing units provided"
+   },
+   {
+    "statement": "YWCA served 183 children through early childhood education programs.",
+    "metric_value": 183,
+    "label": "Children in early education"
+   },
+   {
+    "statement": "YWCA provided 166 women with job training and career services.",
+    "metric_value": 166,
+    "label": "Women in job training"
+   },
+   {
+    "statement": "YWCA served 158 individuals through racial justice programs.",
+    "metric_value": 158,
+    "label": "Racial justice program participants"
+   },
+   {
+    "statement": "YWCA provided 146 women with domestic violence services.",
+    "metric_value": 146,
+    "label": "Domestic violence clients"
+   },
+   {
+    "statement": "YWCA served 131 youth through after-school and summer programs.",
+    "metric_value": 131,
+    "label": "Youth in after-school programs"
+   },
+   {
+    "statement": "YWCA achieved a 100% success rate for its housing stability program.",
+    "metric_value": 100,
+    "label": "Housing stability success rate"
+   }
+  ],
+  "error": null,
+  "set": "fresh-p20"
+ },
+ {
+  "sha": "84f677e400c1bf9c6b8f0d86116dd513c06e430d7d5e0ce19161abfd895ed219",
+  "ein": "272107481",
+  "n_chars": 1493,
+  "metrics": [
+   {
+    "statement": "BOGG has served the Dayton community for over sixteen years.",
+    "metric_value": 16,
+    "label": "Years of service"
+   },
+   {
+    "statement": "Total revenue for the year was $4,976,206.",
+    "metric_value": 4976206,
+    "label": "Total revenue"
+   },
+   {
+    "statement": "Total expenses for the year were $4,908,176.",
+    "metric_value": 4908176,
+    "label": "Total expenses"
+   },
+   {
+    "statement": "Goods in Kind revenue was $4,600,000.",
+    "metric_value": 4600000,
+    "label": "Goods in Kind revenue"
+   },
+   {
+    "statement": "Donations revenue was $226,000.",
+    "metric_value": 226000,
+    "label": "Donations revenue"
+   },
+   {
+    "statement": "Grants and Sponsorships revenue was $150,000.",
+    "metric_value": 150000,
+    "label": "Grants and Sponsorships revenue"
+   },
+   {
+    "statement": "Food Events expenses were $4,196,854.",
+    "metric_value": 4196854,
+    "label": "Food Events expenses"
+   },
+   {
+    "statement": "Staffing expenses were $211,000.",
+    "metric_value": 211000,
+    "label": "Staffing expenses"
+   },
+   {
+    "statement": "Operating Cost expenses were $494,618.",
+    "metric_value": 494618,
+    "label": "Operating Cost expenses"
+   },
+   {
+    "statement": "Marketing expenses were $1,000.",
+    "metric_value": 1000,
+    "label": "Marketing expenses"
+   }
+  ],
+  "error": null,
+  "set": "fresh-p20"
+ },
+ {
+  "sha": "2e4481501b01be7741926fc0635ad8badc69904ee715ff1b7bd8d704a62895b7",
+  "ein": "840404266",
+  "n_chars": 28000,
+  "metrics": [
+   {
+    "statement": "The YMCA of the Pikes Peak Region served more than 100,000 people at outdoor pools and recreation centers during summer 2012.",
+    "metric_value": 100000,
+    "label": "People served at pools and rec centers"
+   },
+   {
+    "statement": "The YMCA awarded $1,652,000 in financial assistance to provide access to programs and services.",
+    "metric_value": 1652000,
+    "label": "Financial assistance awarded"
+   },
+   {
+    "statement": "The YMCA helped 1,200 children and their families learn, grow, and thrive through the MEND program.",
+    "metric_value": 1200,
+    "label": "Children and families in MEND"
+   },
+   {
+    "statement": "The YMCA hired and trained over 200 new staff to deliver quality programs to neighborhoods.",
+    "metric_value": 200,
+    "label": "New staff hired and trained"
+   },
+   {
+    "statement": "The YMCA helped 75 families get home for the holidays through Operation Ride Home.",
+    "metric_value": 75,
+    "label": "Families helped by Operation Ride Home"
+   },
+   {
+    "statement": "The YMCA had 1,200 older adults participate in fall prevention classes.",
+    "metric_value": 1200,
+    "label": "Older adults in fall prevention"
+   },
+   {
+    "statement": "The YMCA sent 100 campers to Camp Shady Brook free of charge through Camp Corral.",
+    "metric_value": 100,
+    "label": "Campers at Camp Corral"
+   },
+   {
+    "statement": "The YMCA recorded 50,000 hours of volunteer time in 2012.",
+    "metric_value": 50000,
+    "label": "Volunteer hours recorded"
+   },
+   {
+    "statement": "The YMCA served 100 high school students in the Higher Education Service Project College Tour.",
+    "metric_value": 100,
+    "label": "Students in College Tour"
+   },
+   {
+    "statement": "The YMCA's total revenue was $17,652,000.",
+    "metric_value": 17652000,
+    "label": "Total revenue"
+   }
+  ],
+  "error": null,
+  "set": "fresh-p20"
+ },
+ {
+  "sha": "650271cd216b52d80398c411542ed54e9967b52e1ceb5c2463b19ffd517b6ea8",
+  "ein": "237076806",
+  "n_chars": 28000,
+  "metrics": [
+   {
+    "statement": "Baxter Community Center served 4,500 individuals through its programs in 2018.",
+    "metric_value": 4500,
+    "label": "Individuals served"
+   },
+   {
+    "statement": "The organization distributed 1.2 million pounds of food to families in need.",
+    "metric_value": 1200000,
+    "label": "Food distributed (pounds)"
+   },
+   {
+    "statement": "Baxter provided 15,000 hours of after-school programming for youth.",
+    "metric_value": 15000,
+    "label": "After-school program hours"
+   },
+   {
+    "statement": "The health clinic served 2,800 patients, including 1,200 uninsured individuals.",
+    "metric_value": 2800,
+    "label": "Health clinic patients"
+   },
+   {
+    "statement": "Volunteers contributed 25,000 hours of service to the community.",
+    "metric_value": 25000,
+    "label": "Volunteer hours"
+   },
+   {
+    "statement": "Baxter's financial assistance program helped 650 households avoid eviction or utility shutoff.",
+    "metric_value": 650,
+    "label": "Households assisted"
+   },
+   {
+    "statement": "The organization served 1,800 children through its early childhood education programs.",
+    "metric_value": 1800,
+    "label": "Children in early education"
+   },
+   {
+    "statement": "Baxter distributed $350,000 in emergency financial assistance to families.",
+    "metric_value": 350000,
+    "label": "Emergency assistance dollars"
+   },
+   {
+    "statement": "The senior nutrition program delivered 45,000 meals to homebound older adults.",
+    "metric_value": 45000,
+    "label": "Senior meals delivered"
+   },
+   {
+    "statement": "Baxter's workforce development program placed 200 individuals in jobs.",
+    "metric_value": 200,
+    "label": "Job placements"
+   }
+  ],
+  "error": null,
+  "set": "fresh-p20"
+ }
+]

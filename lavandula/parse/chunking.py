@@ -291,6 +291,9 @@ def extract_sections(doc: Any) -> list[dict]:
                 "page_start": _get_page_start(chunk),
                 "page_end": _get_page_end(chunk),
                 "parent_headings": _scrub(_get_parent_headings(chunk)),
+                # Metric-grounding: per-item provenance (page/bbox/charspan) so a
+                # specific value/subject can later be located back to its box.
+                "source_locations": _chunk_item_locations(chunk),
             }
         )
     return sections
@@ -324,6 +327,10 @@ def extract_tables(doc: Any, sections: list[dict]) -> list[dict]:
                 "col_count": col_count,
                 "data_json": _scrub(data_rows),
                 "markdown": _scrub(_table_to_markdown(table)),
+                # Metric-grounding: per-cell boxes (column/neighbor checks) + the
+                # table's own box (region grouping).
+                "cell_locations": _table_cell_locations(table),
+                "bbox": _table_bbox(table),
             }
         )
     return tables
@@ -349,6 +356,14 @@ def get_document_metadata(doc: Any) -> dict:
     return {
         "page_count": page_count,
         "figure_count": figure_count,
+        # Per-page dimensions/orientation -> first-class storage in lava_parse.pages,
+        # so a bbox can be mapped to a pixel box for source-excerpt overlays and
+        # landscape/spread pages placed correctly. Fails soft to [] when absent.
+        "page_dimensions": _page_dimensions(doc),
+        # Figure/picture regions -> lava_parse.figures. THE parse-fidelity router: a
+        # value bbox inside a figure came from an infographic (text silently drops digits
+        # there) and must go to vision-verify. Determined at parse, available at intake.
+        "picture_locations": _picture_locations(doc),
         "metadata": _scrub(raw_metadata),
     }
 
@@ -482,3 +497,175 @@ def _table_to_markdown(table: Any) -> str | None:
         return table.export_to_markdown()
     except Exception:
         return None
+
+
+# --- Metric-grounding: provenance (location) capture. Additive — no change to the
+#     existing text/table content; all helpers fail soft to None/[] when prov is absent. ---
+
+
+def _bbox_dict(bbox: Any) -> dict | None:
+    """Docling BoundingBox -> {l,t,r,b,coord_origin} (floats), or None."""
+    if bbox is None:
+        return None
+    out: dict = {}
+    for k in ("l", "t", "r", "b"):
+        v = getattr(bbox, k, None)
+        if v is not None:
+            try:
+                out[k] = float(v)
+            except (TypeError, ValueError):
+                pass
+    origin = getattr(bbox, "coord_origin", None)
+    if origin is not None:
+        out["coord_origin"] = str(getattr(origin, "value", origin))
+    return out or None
+
+
+def _prov_locations(item: Any) -> list[dict]:
+    """Per-provenance {page_no, bbox, charspan} for one Docling item."""
+    prov = getattr(item, "prov", None)
+    if not prov:
+        return []
+    out = []
+    for p in prov if isinstance(prov, list) else [prov]:
+        page_no = getattr(p, "page_no", None) or getattr(p, "page", None)
+        charspan = getattr(p, "charspan", None)
+        out.append(
+            {
+                "page_no": int(page_no) if page_no is not None else None,
+                "bbox": _bbox_dict(getattr(p, "bbox", None)),
+                "charspan": list(charspan) if charspan is not None else None,
+            }
+        )
+    return out
+
+
+def _chunk_item_locations(chunk: Any) -> list[dict]:
+    """Per-item provenance for a chunk's doc_items: [{label, text, locations:[...]}].
+
+    Lets a later grounding step map a value/subject substring back to the Docling
+    item (and its box) it came from. Items without provenance are skipped.
+    """
+    meta = getattr(chunk, "meta", None)
+    doc_items = getattr(meta, "doc_items", None) if meta is not None else None
+    if not doc_items:
+        return []
+    out = []
+    for item in doc_items:
+        locs = _prov_locations(item)
+        if not locs:
+            continue
+        out.append(
+            {
+                "label": str(getattr(item, "label", "") or "") or None,
+                "text": _scrub(getattr(item, "text", "") or "") or None,
+                "locations": locs,
+            }
+        )
+    return out
+
+
+def _table_cell_locations(table: Any) -> list[dict]:
+    """Per-cell {row, col, row_span, col_span, text, bbox} from Docling TableData."""
+    data = getattr(table, "data", None)
+    cells = getattr(data, "table_cells", None) if data is not None else None
+    if not cells:
+        return []
+    out = []
+    for c in cells:
+        sr = getattr(c, "start_row_offset_idx", None)
+        sc = getattr(c, "start_col_offset_idx", None)
+        er = getattr(c, "end_row_offset_idx", None)
+        ec = getattr(c, "end_col_offset_idx", None)
+        out.append(
+            {
+                "row": int(sr) if sr is not None else None,
+                "col": int(sc) if sc is not None else None,
+                "row_span": (int(er) - int(sr)) if er is not None and sr is not None else None,
+                "col_span": (int(ec) - int(sc)) if ec is not None and sc is not None else None,
+                "text": _scrub(getattr(c, "text", "") or "") or None,
+                "bbox": _bbox_dict(getattr(c, "bbox", None)),
+            }
+        )
+    return out
+
+
+def _table_bbox(table: Any) -> dict | None:
+    """Table-level box {l,t,r,b,coord_origin,page_no} from the table's own prov."""
+    prov = getattr(table, "prov", None)
+    if not prov:
+        return None
+    for p in prov if isinstance(prov, list) else [prov]:
+        bb = _bbox_dict(getattr(p, "bbox", None))
+        if bb:
+            page_no = getattr(p, "page_no", None) or getattr(p, "page", None)
+            if page_no is not None:
+                bb["page_no"] = int(page_no)
+            return bb
+    return None
+
+
+def _page_dimensions(doc: Any) -> list[dict]:
+    """Per-page {page_no, width, height, orientation} in the page coordinate space.
+
+    A bbox alone can't be mapped to a pixel rectangle for a source-excerpt overlay
+    without knowing the page's size, and landscape pages / two-page spreads are placed
+    wrong without orientation. Additive — fails soft to [] when page sizes are absent.
+    """
+    pages = getattr(doc, "pages", None)
+    if not pages:
+        return []
+    items = pages.items() if hasattr(pages, "items") else enumerate(pages)
+    out = []
+    for page_no, page in items:
+        size = getattr(page, "size", None)
+        w = getattr(size, "width", None) if size is not None else None
+        h = getattr(size, "height", None) if size is not None else None
+        try:
+            w = float(w) if w is not None else None
+            h = float(h) if h is not None else None
+        except (TypeError, ValueError):
+            w = h = None
+        orientation = ("landscape" if w > h else "portrait") if (w and h) else None
+        out.append(
+            {
+                "page_no": int(page_no) if page_no is not None else None,
+                "width": w,
+                "height": h,
+                "orientation": orientation,
+            }
+        )
+    return out
+
+
+def _picture_locations(doc: Any) -> list[dict]:
+    """Per-figure {page_no, bbox} for every picture/figure region on the document.
+
+    THE load-bearing signal for parse fidelity: a value whose bbox sits inside one of
+    these regions came from an infographic, where text extraction silently drops/mangles
+    digits (e.g. a stylized "56" read as "6"). Text gates cannot see that error; it is
+    detectable ONLY by comparing the page image to the value. So these regions are the
+    router for the vision-verify stage — and a doc with figures present is flagged at
+    intake. Additive — fails soft to [] when there are no pictures.
+    """
+    pictures = getattr(doc, "pictures", None)
+    if not pictures:
+        return []
+    out = []
+    for fi, pic in enumerate(pictures):
+        prov = getattr(pic, "prov", None)
+        if not prov:
+            continue
+        for p in prov if isinstance(prov, list) else [prov]:
+            bb = _bbox_dict(getattr(p, "bbox", None))
+            if bb:
+                page_no = getattr(p, "page_no", None) or getattr(p, "page", None)
+                out.append(
+                    {
+                        "figure_index": fi,
+                        "page_no": int(page_no) if page_no is not None else None,
+                        "bbox": bb,
+                    }
+                )
+                break
+    return out

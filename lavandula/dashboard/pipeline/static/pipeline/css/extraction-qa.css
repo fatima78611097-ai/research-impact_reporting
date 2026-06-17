@@ -165,6 +165,25 @@
   gap: 0.25rem;
   margin-top: 0.25rem;
 }
+/* Verbatim source quote — the field the faithfulness gate actually verifies.
+   Visually distinct (quoted, italic, left-bordered) from the composed label above. */
+.qa-snippet {
+  font-size: 0.75rem;
+  color: #374151;
+  font-style: italic;
+  line-height: 1.4;
+  margin-top: 0.3rem;
+  padding-left: 0.5rem;
+  border-left: 2px solid #d1d5db;
+}
+.qa-snippet-label {
+  font-style: normal;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  font-size: 0.625rem;
+  letter-spacing: 0.03em;
+}
 .qa-summary {
   color: #6b7280;
   font-style: italic;

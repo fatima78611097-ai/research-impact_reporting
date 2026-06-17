@@ -1,0 +1,113 @@
+[
+ {
+  "id": "1a70e980:0",
+  "img": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/1a70e980_1.png",
+  "infographic": true,
+  "true_values": [
+   4693,
+   213,
+   110,
+   63
+  ],
+  "verified": true,
+  "note": "stylized infographic page; light-on-color big numbers"
+ },
+ {
+  "id": "2ec17b37:0",
+  "img": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/2ec17b37_0.png",
+  "infographic": true,
+  "true_values": [
+   5000
+  ],
+  "verified": false,
+  "note": "figs/pg=19.0 (true_values=PARSED, verify before trusting extraction score)"
+ },
+ {
+  "id": "9d9ae097:0",
+  "img": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/9d9ae097_0.png",
+  "infographic": true,
+  "true_values": [
+   820857
+  ],
+  "verified": false,
+  "note": "figs/pg=15.5 (true_values=PARSED, verify before trusting extraction score)"
+ },
+ {
+  "id": "c6d70581:0",
+  "img": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/c6d70581_0.png",
+  "infographic": true,
+  "true_values": [
+   16825965
+  ],
+  "verified": false,
+  "note": "figs/pg=15.0 (true_values=PARSED, verify before trusting extraction score)"
+ },
+ {
+  "id": "ec055971:0",
+  "img": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/ec055971_0.png",
+  "infographic": true,
+  "true_values": [
+   6670
+  ],
+  "verified": false,
+  "note": "figs/pg=14.0 (true_values=PARSED, verify before trusting extraction score)"
+ },
+ {
+  "id": "28bb72ee:0",
+  "img": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/28bb72ee_0.png",
+  "infographic": true,
+  "true_values": [
+   45
+  ],
+  "verified": false,
+  "note": "figs/pg=13.0 (true_values=PARSED, verify before trusting extraction score)"
+ },
+ {
+  "id": "b42e6f95:0",
+  "img": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/b42e6f95_0.png",
+  "infographic": true,
+  "true_values": [
+   7806
+  ],
+  "verified": false,
+  "note": "figs/pg=12.0 (true_values=PARSED, verify before trusting extraction score)"
+ },
+ {
+  "id": "011c1177:0",
+  "img": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/011c1177_0.png",
+  "infographic": true,
+  "true_values": [],
+  "verified": false,
+  "note": "figs/pg=12.0 (true_values=PARSED, verify before trusting extraction score)"
+ },
+ {
+  "id": "a79f5931:0",
+  "img": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/a79f5931_0.png",
+  "infographic": true,
+  "true_values": [
+   915907
+  ],
+  "verified": false,
+  "note": "figs/pg=11.0 (true_values=PARSED, verify before trusting extraction score)"
+ },
+ {
+  "id": "93774f84:0",
+  "img": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/93774f84_0.png",
+  "infographic": true,
+  "true_values": [
+   34
+  ],
+  "verified": false,
+  "note": "figs/pg=10.0 (true_values=PARSED, verify before trusting extraction score)"
+ },
+ {
+  "id": "149d2e8e:0",
+  "img": "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/reviewbox/149d2e8e_0.png",
+  "infographic": true,
+  "true_values": [
+   1446
+  ],
+  "verified": false,
+  "note": "figs/pg=10.0 (true_values=PARSED, verify before trusting extraction score)"
+ }
+]

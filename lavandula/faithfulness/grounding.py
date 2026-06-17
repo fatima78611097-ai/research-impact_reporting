@@ -33,6 +33,15 @@ class Verdict:
     offsets: list[tuple[int, int]] = field(default_factory=list)
     value_found: bool = False
     denominator_found: bool = False
+    # --- diagnostics (Spec 0057 amendment) -------------------------------
+    # Computed for EVERY fact (pass and fail) so a quarantine records WHY,
+    # not just "no". These let the quarantine bucket self-categorize via a
+    # plain GROUP BY — fragmentation vs reorder vs garble/fabrication vs
+    # table-artifact vs missing-source — with no re-fetching or sampling.
+    word_coverage: float = 0.0       # frac of snippet words present anywhere in source sections
+    longest_run: float = 0.0         # longest CONTIGUOUS run of snippet words found, as a frac
+    table_coverage: float = 0.0      # frac of snippet words present across table cells
+    source_chars: int = 0            # length of normalized source text (0 = missing source)
 
 
 def normalize(text: str) -> str:
@@ -95,6 +104,50 @@ def _check_r2(
             if snippet_tokens.issubset(row_tokens):
                 return [(0, len(row_text))]
     return []
+
+
+def _diagnostics(snippet_norm: str, source_norm: str, tables: list[list[TableRow]]) -> dict:
+    """Compute WHY-it-(didn't-)match signals for every fact (pass + fail).
+
+    Pure, cheap, recorded on the Verdict so a quarantine self-categorizes:
+      word_coverage  — frac of snippet words present ANYWHERE in source sections
+      longest_run    — longest CONTIGUOUS run of snippet words found in source,
+                       as a frac of snippet length (the fragmentation signal:
+                       high coverage + low run = source has the words but Docling
+                       split them; low coverage = words genuinely absent = garble/
+                       fabrication; run==1.0 would have matched R1)
+      table_coverage — frac of snippet words present across ALL table cell text
+      source_chars   — length of normalized source (0 = missing source)
+    """
+    words = snippet_norm.split()
+    n = len(words)
+    if n == 0:
+        return {"word_coverage": 0.0, "longest_run": 0.0, "table_coverage": 0.0,
+                "source_chars": len(source_norm)}
+
+    src_words = set(source_norm.split())
+    word_coverage = sum(1 for w in words if w in src_words) / n
+
+    # longest contiguous run of snippet words appearing as a phrase in source
+    best = 0
+    i = 0
+    while i < n:
+        j = i
+        while j < n and (" ".join(words[i:j + 1]) in source_norm):
+            j += 1
+        best = max(best, j - i)
+        i = i + 1 if j == i else j
+    longest_run = best / n
+
+    table_text = ""
+    for table in tables:
+        for row in table:
+            table_text += " " + normalize(" ".join(row.cells))
+    tbl_words = set(table_text.split())
+    table_coverage = sum(1 for w in words if w in tbl_words) / n if tbl_words else 0.0
+
+    return {"word_coverage": round(word_coverage, 3), "longest_run": round(longest_run, 3),
+            "table_coverage": round(table_coverage, 3), "source_chars": len(source_norm)}
 
 
 def value_present(
@@ -169,30 +222,25 @@ def check(
         return Verdict(grounded=False, rule="none")
 
     source_norm = normalize(source_text) if source_text else ""
+    diag = _diagnostics(snippet_norm, source_norm, tables)
 
     offsets = _check_r1(snippet_norm, source_norm)
     if offsets:
         v_found, d_found = value_present(value, denominator, snippet)
         return Verdict(
-            grounded=True,
-            rule="R1",
-            offsets=offsets,
-            value_found=v_found,
-            denominator_found=d_found,
+            grounded=True, rule="R1", offsets=offsets,
+            value_found=v_found, denominator_found=d_found, **diag,
         )
 
     offsets = _check_r2(snippet_norm, tables)
     if offsets:
         v_found, d_found = value_present(value, denominator, snippet)
         return Verdict(
-            grounded=True,
-            rule="R2",
-            offsets=offsets,
-            value_found=v_found,
-            denominator_found=d_found,
+            grounded=True, rule="R2", offsets=offsets,
+            value_found=v_found, denominator_found=d_found, **diag,
         )
 
-    return Verdict(grounded=False, rule="none")
+    return Verdict(grounded=False, rule="none", **diag)
 
 
 def check_story(

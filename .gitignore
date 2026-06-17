@@ -43,3 +43,25 @@ lavandula/dashboard/staticfiles/
 /screenshots/
 /*_website.json
 /output.json
+
+# --- metric research: keep source/docs, exclude regenerable heavy artifacts ---
+*_venv/
+*.tgz
+locard/spikes/0064/eval_set/score_img/
+locard/spikes/0064/eval_set/audit_img/
+locard/spikes/0064/eval_set/vc_img/
+locard/spikes/0064/eval_set/human_review/
+locard/operations/p20-regroup-test/wrong_pages/
+locard/operations/p20-regroup-test/qwen_eval/qwen_eval.tgz
+experiments/0002_coord_grounding_demo/data/output/pages/
+
+# regenerable research render artifacts (PDFs in S3 by hash; PNGs re-render via pdftoppm)
+locard/spikes/0064/**/*.png
+locard/spikes/0064/**/*.pdf
+locard/operations/p20-regroup-test/**/*.png
+locard/operations/p20-regroup-test/**/*.pdf
+
+# more regenerable research artifacts (renders / scratch snapshots / review viewers)
+locard/operations/story-definition/audit_pages/
+locard/spikes/0064/eval_set/vision/*.html
+locard/spikes/0064/eval_set/vision/review-data.before-*.json

@@ -1,0 +1,1046 @@
+{
+ "e6696bd9": {
+  "full": "e6696bd9360752b922919bd2d99929689b9908d3dd7b63bd7a5a927e66f54fa2",
+  "n": 10,
+  "publish": 10,
+  "quarantine": 0,
+  "secs": 8.6,
+  "records": [
+   {
+    "statement": "CRT served more than 86,000 individuals and over 35,000 families.",
+    "value": 86000,
+    "subject": "Individuals served",
+    "value_ref": "t76",
+    "subject_ref": "t76",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "CRT helped 680 individuals secure permanent housing in the past year.",
+    "value": 680,
+    "subject": "Individuals in permanent housing",
+    "value_ref": "t114",
+    "subject_ref": "t114",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "CRT's Energy Assistance Program serves more than 23,000 families each year, nearly 25% of the total served in Connecticut.",
+    "value": 23000,
+    "subject": "Families receiving energy assistance",
+    "value_ref": "t11",
+    "subject_ref": "t10",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "CRT weatherized a total of 176 homes in Connecticut at a cost of $1,594,769.",
+    "value": 176,
+    "subject": "Homes weatherized",
+    "value_ref": "t62",
+    "subject_ref": "t62",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "CRT's Medication Assisted Treatment (MAT) program has 74 patients; abstinence from all substances increased by 75% from treatment entry.",
+    "value": 74,
+    "subject": "MAT program patients",
+    "value_ref": "t47",
+    "subject_ref": "t47",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "Volunteers contributed over 125,000 hours, valued at more than $3.8 million.",
+    "value": 125000,
+    "subject": "Volunteer hours contributed",
+    "value_ref": "t162",
+    "subject_ref": "t162",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "CRT's core service area covers 40 cities and towns, connecting to people in 129 towns throughout Connecticut.",
+    "value": 40,
+    "subject": "Core service area towns",
+    "value_ref": "t18",
+    "subject_ref": "t18",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "CRT has served the community for more than 55 years.",
+    "value": 55,
+    "subject": "Years of service",
+    "value_ref": "t19",
+    "subject_ref": "t19",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "Total operating support and revenue was $52,695,347.",
+    "value": 52695347,
+    "subject": "Total operating revenue",
+    "value_ref": "c42",
+    "subject_ref": "c41",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "Total operating expenses were $52,591,378.",
+    "value": 52591378,
+    "subject": "Total operating expenses",
+    "value_ref": "c65",
+    "subject_ref": "c64",
+    "decision": "publish",
+    "reason": "ok"
+   }
+  ]
+ },
+ "f92248ef": {
+  "full": "f92248ef9fa5d0676a6b957f14aecc1cbda62df28f2df7620c45a22a9b9c7f1f",
+  "n": 9,
+  "publish": 9,
+  "quarantine": 0,
+  "secs": 9.1,
+  "records": [
+   {
+    "statement": "Allen Neighborhood Center served 331 neighbors through health coverage, food assistance, and basic needs enrollment in 2021.",
+    "value": 331,
+    "subject": "Neighbors enrolled in services",
+    "value_ref": "t51",
+    "subject_ref": "t50",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "The Allen Farmers Market drew 18,000 patrons in 2021.",
+    "value": 18000,
+    "subject": "Farmers Market patrons",
+    "value_ref": "t66",
+    "subject_ref": "t6",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "Breadbasket Food Pantry distributed 63,791 pounds of produce and bread products in 2021.",
+    "value": 63791,
+    "subject": "Pounds of food distributed",
+    "value_ref": "t74",
+    "subject_ref": "t3",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "206 volunteers contributed 5,886 hours of service in 2021.",
+    "value": 5886,
+    "subject": "Volunteer hours",
+    "value_ref": "t104",
+    "subject_ref": "t2",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "The Food Hub has generated $830,553 in gross sales since 2015, with 85% going to local farmers and producers.",
+    "value": 830553,
+    "subject": "Food Hub gross sales since 2015",
+    "value_ref": "t87",
+    "subject_ref": "t9",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "69 food entrepreneurs have started their businesses in the ANC Kitchens over the past 6 years.",
+    "value": 69,
+    "subject": "Food entrepreneurs started",
+    "value_ref": "t7",
+    "subject_ref": "t7",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "128 Market Walk participants walked 2,644 miles during summer 2021.",
+    "value": 2644,
+    "subject": "Miles walked by Market Walk participants",
+    "value_ref": "t58",
+    "subject_ref": "t59",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "Hunter Park GardenHouse held 9 workshops attended by 117 neighbors in 2021.",
+    "value": 117,
+    "subject": "GardenHouse workshop attendees",
+    "value_ref": "t93",
+    "subject_ref": "t5",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "The Rathbun Accelerator launched in 2021 with 4 food entrepreneurs sharing restaurant space.",
+    "value": 4,
+    "subject": "Rathbun Accelerator entrepreneurs",
+    "value_ref": "t8",
+    "subject_ref": "t8",
+    "decision": "publish",
+    "reason": "ok"
+   }
+  ]
+ },
+ "865fb62f": {
+  "full": "865fb62f4d7bd07e03908836ca6c27fee97580f657d8cdcfe63e61c97d1d019c",
+  "n": 12,
+  "publish": 12,
+  "quarantine": 0,
+  "secs": 10.8,
+  "records": [
+   {
+    "statement": "The Wellspring served 2,853 total clients in 2021.",
+    "value": 2853,
+    "subject": "Total clients served",
+    "value_ref": "t66",
+    "subject_ref": "t66",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "The Wellspring provided $1,043,459.13 in financial assistance to clients in 2021.",
+    "value": 1043459.13,
+    "subject": "Financial assistance provided",
+    "value_ref": "t73",
+    "subject_ref": "t73",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "The Wellspring served 1,583 victims of crime in 2021.",
+    "value": 1583,
+    "subject": "Victims of crime served",
+    "value_ref": "t67",
+    "subject_ref": "t67",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "The Wellspring's Homeless Services Program served 939 clients, including 139 Veterans and 371 children.",
+    "value": 939,
+    "subject": "Homeless services clients",
+    "value_ref": "t73",
+    "subject_ref": "t73",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "The Wellspring's Domestic Violence Program sheltered 107 women, 2 men, 1 male transgender, and 63 children for 2,157 shelter nights.",
+    "value": 2157,
+    "subject": "Domestic violence shelter nights",
+    "value_ref": "t64",
+    "subject_ref": "t64",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "The Wellspring's Rural Victim Services Program served 300 clients and provided 21,140 rural victim bed nights.",
+    "value": 21140,
+    "subject": "Rural victim bed nights",
+    "value_ref": "t65",
+    "subject_ref": "t65",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "The Wellspring's Counseling & Family Development Center provided 2,648 counseling sessions and 345 play therapy sessions.",
+    "value": 2648,
+    "subject": "Counseling sessions",
+    "value_ref": "t56",
+    "subject_ref": "t56",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "The Wellspring's Domestic Violence Coordinated Entry System connected 52 families with Emergency Housing Vouchers in the last six months of 2021.",
+    "value": 52,
+    "subject": "Families connected to housing vouchers",
+    "value_ref": "t88",
+    "subject_ref": "t88",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "The Wellspring provided 2,972 unduplicated crisis calls, including 1,296 family violence calls, 119 sexual assault calls, and 1,011 calls related to homelessness.",
+    "value": 2972,
+    "subject": "Crisis calls answered",
+    "value_ref": "t70",
+    "subject_ref": "t70",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "The Wellspring's total revenue for 2021 was $8,200,000, a record in the agency's history.",
+    "value": 8200000,
+    "subject": "Total revenue",
+    "value_ref": "t98",
+    "subject_ref": "t98",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "The Wellspring served clients across 12 parishes in Northeast Louisiana.",
+    "value": 12,
+    "subject": "Parishes served",
+    "value_ref": "t93",
+    "subject_ref": "t93",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "The Wellspring provided 7,057 volunteer hours in 2021.",
+    "value": 7057,
+    "subject": "Volunteer hours",
+    "value_ref": "t72",
+    "subject_ref": "t72",
+    "decision": "publish",
+    "reason": "ok"
+   }
+  ]
+ },
+ "88bfa5f4": {
+  "full": "88bfa5f45ad9d7e437c24fd0571c99b319c34435e1db84bb27f4299ccba9b16e",
+  "n": 10,
+  "publish": 10,
+  "quarantine": 0,
+  "secs": 9.7,
+  "records": [
+   {
+    "statement": "IAVA reached more than 88 million people in 2017 through media and public engagement.",
+    "value": 88000000,
+    "subject": "People reached",
+    "value_ref": "t5",
+    "subject_ref": "t5",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "IAVA passed and defended policies impacting all 3 million post-9/11 veterans.",
+    "value": 3000000,
+    "subject": "Post-9/11 veterans impacted",
+    "value_ref": "t5",
+    "subject_ref": "t5",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "IAVA connected veterans to peer support through more than 302 VetTogether community-building events.",
+    "value": 302,
+    "subject": "VetTogether events",
+    "value_ref": "t5",
+    "subject_ref": "t5",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "IAVA provided high-touch transition assistance to over 900 veterans.",
+    "value": 900,
+    "subject": "Veterans receiving transition assistance",
+    "value_ref": "t5",
+    "subject_ref": "t5",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "IAVA's She Who Borne the Battle campaign reached more than 10 million people.",
+    "value": 10000000,
+    "subject": "Campaign reach",
+    "value_ref": "t45",
+    "subject_ref": "t45",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "IAVA fought for 42 bills supporting veterans and won passage of 14.",
+    "value": 14,
+    "subject": "Bills passed",
+    "value_ref": "t68",
+    "subject_ref": "t68",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "IAVA members wrote more than 3,000 letters to Congress in support of the Deborah Sampson Act.",
+    "value": 3000,
+    "subject": "Letters to Congress",
+    "value_ref": "t76",
+    "subject_ref": "t76",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "IAVA raised over $5.3 million in 2017.",
+    "value": 5300000,
+    "subject": "Funds raised",
+    "value_ref": "t92",
+    "subject_ref": "t92",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "Media features",
+    "value": 449,
+    "subject": null,
+    "value_ref": "t43",
+    "subject_ref": "t43",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "More than 4,300 IAVA veteran members completed the 8th Annual Member Survey.",
+    "value": 4300,
+    "subject": "Survey respondents",
+    "value_ref": "t87",
+    "subject_ref": "t87",
+    "decision": "publish",
+    "reason": "ok"
+   }
+  ]
+ },
+ "e31d17df": {
+  "full": "e31d17df049e527bd9ce43c3671ea389ab9b21567af86b8c2e5f54ba027b544e",
+  "n": 10,
+  "publish": 9,
+  "quarantine": 1,
+  "secs": 8.7,
+  "records": [
+   {
+    "statement": "Graceworks Lutheran Services provided more than $4.9 million in uncompensated charity care in 2023.",
+    "value": 4915000,
+    "subject": "Uncompensated charity care",
+    "value_ref": "t146",
+    "subject_ref": "t146",
+    "decision": "quarantine",
+    "reason": "value_not_at_marker"
+   },
+   {
+    "statement": "Bethany Village is home to more than 700 seniors on a 100-acre campus.",
+    "value": 700,
+    "subject": "Seniors served at Bethany Village",
+    "value_ref": "t24",
+    "subject_ref": "t24",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "Graceworks Enhanced Living provides home environments for more than 200 adults with intellectual and developmental disabilities.",
+    "value": 200,
+    "subject": "Adults served in Enhanced Living",
+    "value_ref": "t26",
+    "subject_ref": "t26",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "Graceworks Housing Services provides affordable apartments for more than 750 older adults and people with disabilities.",
+    "value": 750,
+    "subject": "Housing Services residents",
+    "value_ref": "t27",
+    "subject_ref": "t27",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "Bethany Village Home Health Care served more than 1,000 new clients in 2023.",
+    "value": 1000,
+    "subject": "New home health clients",
+    "value_ref": "t29",
+    "subject_ref": "t29",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "Graceworks Housing Services achieved a 98% occupancy rate in 2023.",
+    "value": 98,
+    "subject": "Housing occupancy rate",
+    "value_ref": "t123",
+    "subject_ref": "t123",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "Graceworks staff devoted 240 volunteer hours to community projects in 2023.",
+    "value": 240,
+    "subject": "Employee volunteer hours",
+    "value_ref": "t64",
+    "subject_ref": "t64",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "The Graceworks Women's Council handmade 850 Christmas gifts for residents in 2023.",
+    "value": 850,
+    "subject": "Handmade gifts by Women's Council",
+    "value_ref": "t32",
+    "subject_ref": "t32",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "205 employees were recognized with Stoneburner Service Awards for 10+ years of service.",
+    "value": 205,
+    "subject": "Long-service employees recognized",
+    "value_ref": "t128",
+    "subject_ref": "t128",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "Graceworks Lutheran Services has served communities for over 95 years.",
+    "value": 95,
+    "subject": "Years of service",
+    "value_ref": "t146",
+    "subject_ref": "t146",
+    "decision": "publish",
+    "reason": "ok"
+   }
+  ]
+ },
+ "c1a9f80b": {
+  "full": "c1a9f80bd92d43d8db9f64d5bd9003f3516cbccbd2e809267d92a374d3969358",
+  "n": 10,
+  "publish": 9,
+  "quarantine": 1,
+  "secs": 8.4,
+  "records": [
+   {
+    "statement": "Since 2012, Western Pennsylvania Diaper Bank has distributed 4,590,000 diapers.",
+    "value": 4590000,
+    "subject": "Total diapers distributed since founding",
+    "value_ref": "t1",
+    "subject_ref": "t1",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "In 2021, the organization saved families over $654,000.",
+    "value": 654000,
+    "subject": "Dollars saved for families in 2021",
+    "value_ref": "t8",
+    "subject_ref": "t8",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "The Diaper Bank supports over 12,000 families annually across three counties.",
+    "value": 12000,
+    "subject": "Families served annually",
+    "value_ref": "t10",
+    "subject_ref": "t10",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "1 in 3 families experience diaper need, and 2 in 5 menstruators experience period poverty.",
+    "value": 33,
+    "subject": "Families facing diaper need (percent)",
+    "value_ref": "t12",
+    "subject_ref": "t12",
+    "decision": "quarantine",
+    "reason": "value_not_at_marker"
+   },
+   {
+    "statement": "In 2021, the organization distributed 1.9 million diapers.",
+    "value": 1900000,
+    "subject": "Diapers distributed in 2021",
+    "value_ref": "t15",
+    "subject_ref": "t15",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "In 2021, the organization distributed 174,330 period products.",
+    "value": 174330,
+    "subject": "Period products distributed in 2021",
+    "value_ref": "t16",
+    "subject_ref": "t16",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "In 2021, the organization distributed 38,000 incontinence supplies.",
+    "value": 38000,
+    "subject": "Incontinence supplies distributed in 2021",
+    "value_ref": "t17",
+    "subject_ref": "t17",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "The Diaper Bank serves three counties: Allegheny, Fayette, and Westmoreland.",
+    "value": 3,
+    "subject": "Counties served",
+    "value_ref": "t24",
+    "subject_ref": "t24",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "264 volunteers logged 1,604 hours of time in 2021.",
+    "value": 1604,
+    "subject": "Volunteer hours in 2021",
+    "value_ref": "t25",
+    "subject_ref": "t25",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "302 individual donors gave $83,950 in support.",
+    "value": 83950,
+    "subject": "Individual donations in 2021",
+    "value_ref": "t179",
+    "subject_ref": "t179",
+    "decision": "publish",
+    "reason": "ok"
+   }
+  ]
+ },
+ "ee33d0e3": {
+  "full": "ee33d0e30b95b3f576e5e58386d283a0a694b736518166974b20a62f77a5901a",
+  "n": 8,
+  "publish": 7,
+  "quarantine": 1,
+  "secs": 7.9,
+  "records": [
+   {
+    "statement": "The Emergency Rental Assistance Program served 885 Marin households, preventing eviction, displacement, and homelessness across the county.",
+    "value": 885,
+    "subject": "Households served",
+    "value_ref": "t1",
+    "subject_ref": "t1",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "Over 85% of ERAP funds were distributed to those with the lowest income levels, including 70% with incomes at or below 30% of area median income.",
+    "value": 85,
+    "subject": "Funds to lowest income",
+    "value_ref": "t4",
+    "subject_ref": "t4",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "Female-headed households were 67% of those receiving ERAP assistance.",
+    "value": 67,
+    "subject": "Female-headed households",
+    "value_ref": "t5",
+    "subject_ref": "t5",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "ERAP assistance went to households that identified as 43% Hispanic/Latino, 11% Black, and 24% White.",
+    "value": 43,
+    "subject": "Hispanic/Latino households",
+    "value_ref": "t7",
+    "subject_ref": "t7",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "The total 885 households receiving ERAP funds represented 2,149 individuals.",
+    "value": 2149,
+    "subject": "Individuals served",
+    "value_ref": "t3",
+    "subject_ref": "t3",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "Between November 2022 and January 2024, $6,242,591 in ERAP funding was disbursed to Marin County residents.",
+    "value": 6242591,
+    "subject": "Total funding disbursed",
+    "value_ref": "t2",
+    "subject_ref": "t2",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "79% of ERAP assistance went toward arrears payments for rent and/or utilities.",
+    "value": 79,
+    "subject": "Assistance for arrears",
+    "value_ref": "t9",
+    "subject_ref": "t9",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "ERAP successfully prevented homelessness by supporting eligible tenants to remain housed in the face of economic challenges.",
+    "value": 1,
+    "subject": "Homelessness prevented",
+    "value_ref": "t26",
+    "subject_ref": "t26",
+    "decision": "quarantine",
+    "reason": "value_not_at_marker"
+   }
+  ]
+ },
+ "efd61fea": {
+  "full": "efd61fea90a6316e5dc7f635f88eb46d2a48b0f43966937df79b38eaf4826470",
+  "n": 15,
+  "publish": 8,
+  "quarantine": 7,
+  "secs": 16.4,
+  "records": [
+   {
+    "statement": "Forbes named Dubuque the Best Small City to Raise a Family in 2010.",
+    "value": 1,
+    "subject": "Best small city ranking",
+    "value_ref": "t46",
+    "subject_ref": "t46",
+    "decision": "quarantine",
+    "reason": "value_not_at_marker"
+   },
+   {
+    "statement": "Dubuque was ranked #1 in the U.S. for projected job growth by Forbes in 2010.",
+    "value": 1,
+    "subject": "Projected job growth rank",
+    "value_ref": "t47",
+    "subject_ref": "t47",
+    "decision": "quarantine",
+    "reason": "not_a_metric"
+   },
+   {
+    "statement": "Dubuque was ranked #3 in the U.S. for actual job growth by MSN/CareerBuilder.com in 2010.",
+    "value": 3,
+    "subject": "Actual job growth rank",
+    "value_ref": "t48",
+    "subject_ref": "t48",
+    "decision": "quarantine",
+    "reason": "not_a_metric"
+   },
+   {
+    "statement": "Dubuque was ranked in the U.S. Top 20 for job growth by Moody's/economy.com in 2011.",
+    "value": 20,
+    "subject": "Job growth top 20 rank",
+    "value_ref": "t49",
+    "subject_ref": "t49",
+    "decision": "quarantine",
+    "reason": "not_a_metric"
+   },
+   {
+    "statement": "Dubuque was ranked #1 among Iowa metros for job growth in 2010.",
+    "value": 1,
+    "subject": "Iowa metro job growth rank",
+    "value_ref": "t50",
+    "subject_ref": "t50",
+    "decision": "quarantine",
+    "reason": "not_a_metric"
+   },
+   {
+    "statement": "Greater Dubuque Development conducted 256 Info Action visits with business leaders.",
+    "value": 256,
+    "subject": "Info Action visits",
+    "value_ref": "t69",
+    "subject_ref": "t69",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "Greater Dubuque Development provided assistance on 474 occasions to 218 local companies.",
+    "value": 474,
+    "subject": "Assistance occasions",
+    "value_ref": "t71",
+    "subject_ref": "t71",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "Eight local company expansions supported by Greater Dubuque Development created 332 net new jobs.",
+    "value": 332,
+    "subject": "New jobs from expansions",
+    "value_ref": "t72",
+    "subject_ref": "t72",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "Company expansions resulted in $27,750,000 in capital investment.",
+    "value": 27750000,
+    "subject": "Capital investment from expansions",
+    "value_ref": "t72",
+    "subject_ref": "t72",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "Over 75 area businesses participated in Dubuque Innovation Consortium programs.",
+    "value": 75,
+    "subject": "Consortium business participants",
+    "value_ref": "t73",
+    "subject_ref": "t73",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "AccessDubuqueJobs.com averaged 116,436 visitors per month, a 5% increase over the prior year.",
+    "value": 116436,
+    "subject": "Monthly site visitors",
+    "value_ref": "t95",
+    "subject_ref": "t95",
+    "decision": "quarantine",
+    "reason": "value_not_at_marker"
+   },
+   {
+    "statement": "110 area businesses financially supported AccessDubuqueJobs.com as employer investors.",
+    "value": 110,
+    "subject": "Employer investors",
+    "value_ref": "t96",
+    "subject_ref": "t96",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "Newcomer Services assisted 111 individuals and families and conducted 121 personal community tours.",
+    "value": 111,
+    "subject": "Newcomer individuals assisted",
+    "value_ref": "t98",
+    "subject_ref": "t98",
+    "decision": "quarantine",
+    "reason": "value_not_at_marker"
+   },
+   {
+    "statement": "1,800 net new jobs were created in 2010, with sixteen consecutive months of job growth since January 2010.",
+    "value": 1800,
+    "subject": "Net new jobs in 2010",
+    "value_ref": "t221",
+    "subject_ref": "t221",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "The average wage reached $17.57 per hour, exceeding the $16.00+ goal.",
+    "value": 17.57,
+    "subject": "Average hourly wage",
+    "value_ref": "t222",
+    "subject_ref": "t222",
+    "decision": "publish",
+    "reason": "ok"
+   }
+  ]
+ },
+ "fb8f56bd": {
+  "full": "fb8f56bdd13ace65881dc8b457225edef35d362eb3cc6a04ea5580270118f68b",
+  "n": 10,
+  "publish": 10,
+  "quarantine": 0,
+  "secs": 8.4,
+  "records": [
+   {
+    "statement": "New Futures served 273 Scholars in 2024, its largest cohort ever.",
+    "value": 273,
+    "subject": "Scholars served",
+    "value_ref": "t79",
+    "subject_ref": "t79",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "The organization celebrated a record 55 graduates in 2024.",
+    "value": 55,
+    "subject": "Graduates",
+    "value_ref": "t84",
+    "subject_ref": "t84",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "New Futures achieved a 90% success rate for graduation and persistence.",
+    "value": 90,
+    "subject": "Success rate",
+    "value_ref": "t85",
+    "subject_ref": "t85",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "The organization awarded $483,000 in scholarships in 2024.",
+    "value": 483000,
+    "subject": "Scholarships awarded",
+    "value_ref": "t81",
+    "subject_ref": "t81",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "New Futures has served 813 Scholars since its founding in 1999.",
+    "value": 813,
+    "subject": "All-time Scholars served",
+    "value_ref": "t83",
+    "subject_ref": "t83",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "The organization has 420 alumni all-time.",
+    "value": 420,
+    "subject": "All-time alumni",
+    "value_ref": "t82",
+    "subject_ref": "t82",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "New Futures received a $2 million grant from MacKenzie Scott's Yield Giving Open Call.",
+    "value": 2000000,
+    "subject": "MacKenzie Scott grant",
+    "value_ref": "t117",
+    "subject_ref": "t117",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "The graduation rate for Black Scholars rose from 47.73% to 79.41% between the 2015-2016 and 2019-2020 cohorts.",
+    "value": 79.41,
+    "subject": "Black Scholar graduation rate",
+    "value_ref": "t175",
+    "subject_ref": "t175",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "In 2024, 85% of Scholars reported having a peer in New Futures they could turn to for support.",
+    "value": 85,
+    "subject": "Scholars with peer support",
+    "value_ref": "t178",
+    "subject_ref": "t178",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "90% of Scholars reported their advisor is one of the first people they turn to when facing a challenge.",
+    "value": 90,
+    "subject": "Scholars trusting advisor",
+    "value_ref": "t178",
+    "subject_ref": "t178",
+    "decision": "publish",
+    "reason": "ok"
+   }
+  ]
+ },
+ "f090f7af": {
+  "full": "f090f7af115d5ba02b469934e485c14a76c1aadb182dc4558a60b12ff1cac3b9",
+  "n": 12,
+  "publish": 10,
+  "quarantine": 2,
+  "secs": 11.4,
+  "records": [
+   {
+    "statement": "The YMCA of Greater Houston served more than 320,000 people in 2022.",
+    "value": 320000,
+    "subject": "Total people served",
+    "value_ref": "t8",
+    "subject_ref": "t8",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "The YMCA of Greater Houston is the 4th largest YMCA in the country, serving an 11-county, 10,000 square mile area.",
+    "value": 4,
+    "subject": "National size rank",
+    "value_ref": "t56",
+    "subject_ref": "t56",
+    "decision": "quarantine",
+    "reason": "value_not_at_marker"
+   },
+   {
+    "statement": "The YMCA awarded $20 million in financial assistance to 60,000 people.",
+    "value": 20000000,
+    "subject": "Financial assistance awarded",
+    "value_ref": "t88",
+    "subject_ref": "t88",
+    "decision": "quarantine",
+    "reason": "value_not_at_marker"
+   },
+   {
+    "statement": "YMCA International Services provided detailed legal consultations to over 13,000 community members.",
+    "value": 13000,
+    "subject": "Legal consultations provided",
+    "value_ref": "t76",
+    "subject_ref": "t76",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "The YMCA served 884 unaccompanied children through its Post Release Service Program.",
+    "value": 884,
+    "subject": "Unaccompanied children served",
+    "value_ref": "t77",
+    "subject_ref": "t77",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "The Trafficked Persons Assistance Program helped 245 survivors of sex and labor trafficking.",
+    "value": 245,
+    "subject": "Trafficking survivors helped",
+    "value_ref": "t78",
+    "subject_ref": "t78",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "Over 60,000 teen members found a place to belong at the YMCA.",
+    "value": 60000,
+    "subject": "Teen members",
+    "value_ref": "t104",
+    "subject_ref": "t104",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "The YMCA distributed 2,587,770 pounds of food to families in the Houston area.",
+    "value": 2587770,
+    "subject": "Pounds of food distributed",
+    "value_ref": "t101",
+    "subject_ref": "t101",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "3,233 participants completed the YMCA Safety Around Water program.",
+    "value": 3233,
+    "subject": "Safety Around Water graduates",
+    "value_ref": "t91",
+    "subject_ref": "t92",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "12,000+ youth were impacted through Youth Sports programs.",
+    "value": 12000,
+    "subject": "Youth Sports participants",
+    "value_ref": "t108",
+    "subject_ref": "t109",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "5,182 children were served through Early Care programs.",
+    "value": 5182,
+    "subject": "Early Care children served",
+    "value_ref": "t117",
+    "subject_ref": "t116",
+    "decision": "publish",
+    "reason": "ok"
+   },
+   {
+    "statement": "2,267 volunteers donated 394,910 hours of service.",
+    "value": 394910,
+    "subject": "Volunteer hours donated",
+    "value_ref": "t63",
+    "subject_ref": "t63",
+    "decision": "publish",
+    "reason": "ok"
+   }
+  ]
+ }
+}

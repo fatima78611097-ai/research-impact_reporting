@@ -670,7 +670,7 @@ projects:
   - id: "0044"
     title: "Org Search, Document Listing & PDF Viewer"
     summary: "Add name/keyword search to the org list page, list all corpus documents on the org detail page with human-readable names and classification labels, and build a standalone PDF viewer page with in-browser rendering, download, print, and metadata sidebar."
-    status: specified
+    status: abandoned
     priority: high
     files:
       spec: locard/specs/0044-org-search-doc-viewer.md
@@ -678,7 +678,7 @@ projects:
       review: null
     dependencies: ["0019"]
     tags: [dashboard, ui, corpus, document-viewer, search]
-    notes: "Prerequisite for Layer 2 vocabulary extraction — need to browse and understand the corpus before building extraction pipelines."
+    notes: "ABANDONED 2026-06-16 (operator): off the critical path; superseded by the metric-product execution plan (locard/metric-product-execution-plan.md). — Prerequisite for Layer 2 vocabulary extraction — need to browse and understand the corpus before building extraction pipelines."
 
   - id: "0045"
     title: "Vocabulary Extraction & Archetype Discovery — Pilot"
@@ -722,7 +722,7 @@ projects:
   - id: "0048"
     title: "Recovery Readiness: Repository Stabilization & Data-Quality Bar"
     summary: "First micro-plan gate from the corpus-integrity macro-plan. Reconcile the divergent git state (local master 4 ahead / origin/master 2 ahead), make an explicit human decision on the 4 direct-to-master hot-patch commits, discard the unreviewed Content-Type/structure-validation bypass while keeping the legitimate CSRF hardening, remove or ignore generated artifacts, AND author a falsifiable Data-Quality & Attribution-Confidence Standard that all downstream recovery/ingestion must satisfy before any production write."
-    status: planned
+    status: abandoned
     priority: high
     files:
       spec: locard/specs/0048-recovery-readiness-baseline.md
@@ -730,12 +730,12 @@ projects:
       review: null
     dependencies: ["0047"]
     tags: [maintain, git-hygiene, data-quality, attribution, recovery-readiness, blocker]
-    notes: "Critical-path blocker for the macro-plan (locard/operations/macro-plan-corpus-integrity-rag-readiness.md). No production recovery may run until this is integrated. Supersedes the earlier untracked draft locard/plans/0048-repository-cleanup-for-approval.md (cleanup-only; mislocated the 4 commits). Human approved spec/plan + builder spawned 2026-05-18 (through expert + red-team consult, 0 CRITICAL); status held at 'planned' per AI lifecycle ceiling — human marks specified/integrated. Inventory: locard/maintain/0048-inventory.md. Default disposition Option B (non-destructive; backup/master-pre-0048 preserved, no reset)."
+    notes: "ABANDONED 2026-06-16 (operator): recovery-readiness/git-stabilization gate no longer the path; superseded by the metric-product execution plan. — Critical-path blocker for the macro-plan (locard/operations/macro-plan-corpus-integrity-rag-readiness.md). No production recovery may run until this is integrated. Supersedes the earlier untracked draft locard/plans/0048-repository-cleanup-for-approval.md (cleanup-only; mislocated the 4 commits). Human approved spec/plan + builder spawned 2026-05-18 (through expert + red-team consult, 0 CRITICAL); status held at 'planned' per AI lifecycle ceiling — human marks specified/integrated. Inventory: locard/maintain/0048-inventory.md. Default disposition Option B (non-destructive; backup/master-pre-0048 preserved, no reset)."
 
   - id: "0049"
     title: "Statistical NLP Extraction & Sub-Archetype Discovery"
     summary: "NLP pipeline operating on Docling-parsed sections: spaCy NER, TF-IDF keyness, C-value multi-word term extraction, and sentence embeddings per section. Market basket analysis (FP-Growth + lift scoring) on term co-occurrence discovers sub-archetypes within NTEE verticals. Replaces abandoned LLM extraction approach (0045)."
-    status: implementing
+    status: integrated
     priority: high
     files:
       spec: locard/specs/0049-nlp-extraction-archetypes.md
@@ -743,7 +743,7 @@ projects:
       review: null
     dependencies: ["0046"]
     tags: [layer-2, nlp, extraction, archetype, mba, spacy, tfidf]
-    notes: "Replaces abandoned 0045 (LLM extraction). Statistical methods extract what's IN documents; LLMs project priors. Pipeline: spaCy NER → TF-IDF/C-value → embeddings → FP-Growth MBA → sub-archetype clustering."
+    notes: "COMPLETE 2026-06-16 (operator). Replaces abandoned 0045 (LLM extraction). Statistical methods extract what's IN documents; LLMs project priors. Pipeline: spaCy NER → TF-IDF/C-value → embeddings → FP-Growth MBA → sub-archetype clustering."
 ```
 
 ## Next Available Number
@@ -767,7 +767,7 @@ projects:
   - id: "0051"
     title: "LLM Impact Extraction (Metrics + Stories)"
     summary: "Replace Spec 0050 regex pipeline with full-document LLM extraction via DeepSeek. Single API call per document extracts structured impact metrics AND narrative stories. Validated at 100% competitor match rate across 3 test reports. ~$12-15 for full P20 corpus."
-    status: conceived
+    status: abandoned
     priority: high
     files:
       spec: locard/specs/0051-llm-impact-extraction.md
@@ -775,14 +775,14 @@ projects:
       review: null
     dependencies: []
     tags: [layer-2, extraction, llm, deepseek, metrics, stories, interviewer]
-    notes: "Validated via experiment 2026-05-26: DeepSeek combined extraction matched 100% of competitor metrics across CanCare, Think New Mexico, Boys & Girls Club. Also extracts stories. Supersedes Spec 0050 regex approach which produced 750 junk observations per doc."
+    notes: "ABANDONED 2026-06-16 (operator): the short LLM extractor it specced is superseded by the refactored short-slot + grounding pipeline (new project numbers under the metric-product execution plan); the running 0051 code stays until replaced. — Validated via experiment 2026-05-26: DeepSeek combined extraction matched 100% of competitor metrics across CanCare, Think New Mexico, Boys & Girls Club. Also extracts stories. Supersedes Spec 0050 regex approach which produced 750 junk observations per doc."
 ```
 
 ```yaml
   - id: "0052"
     title: "Extraction QA Viewer (PDF + Metrics/Stories)"
     summary: "Side-by-side viewer showing source PDF and LLM-extracted metrics/stories with interactive hover-to-highlight and click-to-lock linking between extracted items and their source snippets in the document. Primary QA tool for validating extraction quality at scale."
-    status: implementing
+    status: integrated
     priority: high
     files:
       spec: locard/specs/0052-extraction-qa-viewer.md
@@ -790,14 +790,14 @@ projects:
       review: null
     dependencies: ["0044", "0051"]
     tags: [dashboard, ui, extraction, qa, pdf-viewer, layer-2]
-    notes: "Spec approved 2026-05-26. Builds on 0044's PDF viewer infrastructure. Interactive affordance: hover metric → PDF scrolls + highlights source_snippet. Click locks highlight for reading context."
+    notes: "COMPLETE 2026-06-16 (operator). Spec approved 2026-05-26. Builds on 0044's PDF viewer infrastructure. Interactive affordance: hover metric → PDF scrolls + highlights source_snippet. Click locks highlight for reading context."
 ```
 
 ```yaml
   - id: "0053"
     title: "Metric Type Taxonomy (Controlled Vocabulary)"
     summary: "Derive a curated metric_type taxonomy from observed extraction data, cluster synonyms into canonical types, publish as YAML definition, and constrain the LLM extraction prompt to use the pick list (with escape hatch for new types). Same pattern as Spec 0020/0025 collateral taxonomy."
-    status: conceived
+    status: abandoned
     priority: medium
     files:
       spec: null
@@ -805,14 +805,14 @@ projects:
       review: null
     dependencies: ["0051"]
     tags: [layer-2, taxonomy, extraction, llm, data-quality]
-    notes: "Requires enough extraction data to observe natural clusters (P20 run will produce ~5K+ metric_type values). Pattern: observe → cluster → curate YAML → constrain prompt with pick list + 'suggest new' escape hatch."
+    notes: "ABANDONED 2026-06-16 (operator): metric_type taxonomy not pursued now; precision-first slot extraction supersedes. — Requires enough extraction data to observe natural clusters (P20 run will produce ~5K+ metric_type values). Pattern: observe → cluster → curate YAML → constrain prompt with pick list + 'suggest new' escape hatch."
 ```
 
 ```yaml
   - id: "0054"
     title: "Parse Dashboard (Docling GPU Orchestration)"
     summary: "Integrate Docling GPU parse orchestration into the pipeline dashboard. Launch/monitor/stop parse runs via the web UI with pre-flight dry-run, live progress, instance health, cost tracking, and run history. Replaces ad-hoc CLI operation."
-    status: committed
+    status: integrated
     priority: high
     files:
       spec: locard/specs/0054-parse-dashboard.md
@@ -820,7 +820,7 @@ projects:
       review: null
     dependencies: ["0030"]
     tags: [dashboard, pipeline, parse, gpu, orchestration]
-    notes: "Motivated by operational incident 2026-05-27: ad-hoc CLI parse runs led to bad status queries and unnecessary kill/restart cycles. Parse is the only pipeline stage not managed through the dashboard. PR #47 merged 2026-05-27."
+    notes: "COMPLETE 2026-06-16 (operator). Motivated by operational incident 2026-05-27: ad-hoc CLI parse runs led to bad status queries and unnecessary kill/restart cycles. Parse is the only pipeline stage not managed through the dashboard. PR #47 merged 2026-05-27."
 ```
 
   - id: "0055"
@@ -865,7 +865,7 @@ projects:
   - id: "0058"
     title: "Parse Performance & Robustness (Hang Defense + TableFormer FAST + Conditional OCR)"
     summary: "Make the Docling parse pipeline hang-proof (per-doc timeout so no single image-heavy/scanned doc wedges a worker) AND faster (TableFormer FAST + capped images_scale + conditional OCR), each gated by a cell-CONTENT A/B backed by the 0057 grounding gate. Robustness half is the scale-gate blocker for the next national run."
-    status: implementing
+    status: committed
     priority: high
     files:
       spec: locard/specs/0058-parse-performance-robustness.md
@@ -873,7 +873,7 @@ projects:
       review: null
     dependencies: ["0055", "0056"]
     tags: [pipeline, parse, gpu, performance, robustness, quality]
-    notes: "Added 2026-05-29. Grounded in measured profiling (g6/L4, docling 2.93.0, 6 docs 1-44pg). FINDINGS: per-doc parse avg 15.5s (p50 11.4, p90 27.9, MAX 646s); GPU util only ~12%; ~all time is inside Docling convert() (our chunking/extract/DB inserts and per-doc DocumentConverter() build are ~0s — build-once is a NON-win, models cache globally). Cost is split between OCR and TableFormer, varying by doc. QUALITY-GATED A/B RESULTS: (1) TableFormer FAST = 1.5x on table-heavy docs, 2.6x combined on 44pg, with NO loss in cell/char COUNTS (slightly higher) and keeps OCR on -> KEEP CANDIDATE, but MUST validate cell-CONTENT correctness (not just counts) on a larger table-heavy sample before ship. (2) Blanket OCR-off = CUT: quality-neutral on the digital-native majority but DESTROYED 88% of table cells + 6% of text on a scanned 13pg doc -> must instead be CONDITIONAL OCR (skip only when an embedded text layer is present; candidate signals: corpus.first_page_text / pdf_* columns or pdfminer text-layer detection), preserving OCR for scanned docs. (3) FP16/BF16 + intra-worker concurrency = SECONDARY (cut the work first; feeding the 88%-idle GPU is a later multiplier). (4) Long tail: add a per-doc timeout / page cap (646s monster docs dominate total compute). ACCEPTANCE CRITERIA must include a quality A/B methodology with cell-CONTENT diffs, not just counts (competitor-scrutiny / quality-first). Intersects 0057 (faithfulness verification) — OCR'd text is where char-for-char grounding is hardest. REFRAMED 2026-05-31 after run-32 smoke-test hang (poison doc e038a9e75317ff86) + 4-thread research workflow: scope now leads with HANG DEFENSE (the blocker). Docling 2.93 has a native PdfPipelineOptions.document_timeout — Phase-0 SPIKE must confirm it interrupts a hard C/CUDA hang before committing to the heavier persistent-child subprocess design (0056 heartbeat is the backstop either way). Poison cohort is REAL & measured: 12,570 corpus docs (3.77%) match mb_per_page>1.0 AND first_page_text<200; of 16,238 parsed, 55 took >120s, 1 hit 646s. Conditional-OCR detector should reuse 0060 pdftotext signal. NUL-byte _scrub fix (committed in chunking.py) ships in this worker tarball."
+    notes: "Added 2026-05-29. Grounded in measured profiling (g6/L4, docling 2.93.0, 6 docs 1-44pg). FINDINGS: per-doc parse avg 15.5s (p50 11.4, p90 27.9, MAX 646s); GPU util only ~12%; ~all time is inside Docling convert() (our chunking/extract/DB inserts and per-doc DocumentConverter() build are ~0s — build-once is a NON-win, models cache globally). Cost is split between OCR and TableFormer, varying by doc. QUALITY-GATED A/B RESULTS: (1) TableFormer FAST = 1.5x on table-heavy docs, 2.6x combined on 44pg, with NO loss in cell/char COUNTS (slightly higher) and keeps OCR on -> KEEP CANDIDATE, but MUST validate cell-CONTENT correctness (not just counts) on a larger table-heavy sample before ship. (2) Blanket OCR-off = CUT: quality-neutral on the digital-native majority but DESTROYED 88% of table cells + 6% of text on a scanned 13pg doc -> must instead be CONDITIONAL OCR (skip only when an embedded text layer is present; candidate signals: corpus.first_page_text / pdf_* columns or pdfminer text-layer detection), preserving OCR for scanned docs. (3) FP16/BF16 + intra-worker concurrency = SECONDARY (cut the work first; feeding the 88%-idle GPU is a later multiplier). (4) Long tail: add a per-doc timeout / page cap (646s monster docs dominate total compute). ACCEPTANCE CRITERIA must include a quality A/B methodology with cell-CONTENT diffs, not just counts (competitor-scrutiny / quality-first). Intersects 0057 (faithfulness verification) — OCR'd text is where char-for-char grounding is hardest. REFRAMED 2026-05-31 after run-32 smoke-test hang (poison doc e038a9e75317ff86) + 4-thread research workflow: scope now leads with HANG DEFENSE (the blocker). Docling 2.93 has a native PdfPipelineOptions.document_timeout — Phase-0 SPIKE must confirm it interrupts a hard C/CUDA hang before committing to the heavier persistent-child subprocess design (0056 heartbeat is the backstop either way). Poison cohort is REAL & measured: 12,570 corpus docs (3.77%) match mb_per_page>1.0 AND first_page_text<200; of 16,238 parsed, 55 took >120s, 1 hit 646s. Conditional-OCR detector should reuse 0060 pdftotext signal. NUL-byte _scrub fix (committed in chunking.py) ships in this worker tarball. BUILT + MERGED (PR #52, 2026-05-31): subprocess path only per spike verdict — the poison doc SEGFAULTS docling pdf_parsers.so (exit 139), uncatchable in-process, so §3.3 PersistentParseRunner (spawn child, JSON-IPC, payload validation, parent-owned TMPDIR, windowed+consecutive breaker) maps segfault→parse_crash / hang→parse_timeout / OOM→parse_oom. DEPLOYED + SMOKE-PASSED 2026-05-31 after the smoke test caught 3 deploy bugs (see memory reference_parse_worker_deploy + feedback_smoke_test_before_national_parse): (1) tarball bloat 301MB→49KB (build script now explicit-includes parse/common/faithfulness), (2) missing docling_writer SELECT grant on pdftotext/parse_blocklist → rollback dropped app.worker_id → RLS blocked claims (worker now commits the SET), (3) PARSE_CHILD_RLIMIT_AS_BYTES 14GB starved CUDA init (std::bad_alloc) → set None (RLIMIT_AS caps virtual addr space CUDA needs; isolation test 14GB FAIL/28GB OK/None OK). Migrations applied (0058_parse_outcome: docling_convert_ms+parse_outcome cols; 0058_parse_blocklist). Poison doc e038a9e75317ff86 quarantined + confirmed excluded from queue. TUNING KNOBS (TABLEFORMER_FAST, IMAGES_SCALE_CAP) stay OFF until the §4 cell-content A/B passes (0058-ab-sample.json needs real shas; ab_quality.py harness ready). P-COMPLETION: run 35 (P-complete-v13) parsing cleanly on the fixed pipeline — completes the ~216 real remaining P docs (run 31 left 217 incomplete @97%); ~65 of the queued are pre-existing missing-from-S3 PDFs (corpus-integrity follow-up) + 1 slow NUL doc parse_timeout."
 
   - id: "0059"
     title: "Housecleaning: Deprecate Superseded Metric-Pipeline Tables & Code"
@@ -925,11 +925,112 @@ projects:
     dependencies: []
     tags: [crawl, search-engine, infrastructure, integrity, html, news, national-scale]
     notes: "Reserved 2026-05-30. Absorbs 0061 (link verification) as a re-verify mode of the same URL frontier. Scope: (1) URL frontier + seen-set (Bloom/cuckoo filter) + per-host rate limiting + robots.txt; (2) PDF + HTML fetch with inline pdftotext (0060 pattern); (3) content change detection via tiered integrity ladder (HEAD → Range+partial-hash → full stream-hash); (4) news/press/blog HTML intelligence — extract org mentions, sentiment, events from HTML pages; (5) site-level intelligence — technology stack detection, CMS identification, update cadence estimation for crawl scheduling. Architecture reference: search engine conversation (crawl→process→index→serve). Open question: is the HTML/news intelligence a separate runtime process or a mode of the same crawler? Likely same frontier, different processing pipeline per content-type."
+
+  - id: "0063"
+    title: "Multi-Source (Union) Faithfulness Grounding + pdftotext Re-Extraction"
+    summary: "Raise 0057 Tier-A coverage by grounding each LLM snippet against MORE than one source rendering. A fact is verified if its source_snippet matches Docling OR pdftotext (0060) under the normalization rules — never just one. Plus the deeper recall fix: re-EXTRACT metrics/stories from 0060 pdftotext-repaired text for fragmented/garbled docs (where Docling split or mojibake'd the hero stats), so the snippets exist to be grounded at all."
+    status: conceived
+    priority: high
+    files:
+      spec: null
+      plan: null
+      review: null
+    dependencies: ["0057", "0060"]
+    tags: [faithfulness, grounding, extraction, quality, layer-2]
+    notes: "Added 2026-05-31. ORIGIN: the p20-v1 (run 10) pdftotext re-verify on 2026-05-31 made faithfulness WORSE, not better — metrics 82.0%->50.4%, stories 71.4%->33.4%. ROOT CAUSE: the LLM extracted run-10 snippets from DOCLING text (llm_extract get_document_text precedence = Docling-first), so the snippets are Docling-SHAPED (its whitespace/reading-order). pdftotext is a DIFFERENT serialization (stream order); grounding Docling-shaped snippets against pdftotext-only mismatches more bulk prose than it rescues -> net worse. LESSON: you cannot swap the grounding source out from under facts extracted against a different source; PdftextSourceProvider REPLACES Docling (single source) which is wrong for already-extracted facts. p20-v1 was RESTORED to Docling tiers (82%/71%) after the failed experiment. FIX A (cheap, can only help, validate empirically — do NOT promise a number after the last over-confident plan): UNION grounding — verified if snippet ∈ Docling OR ∈ pdftotext under §4.2 normalization. Keeps all 82% Docling matches + adds pdftotext-only rescues (fragmented hero stats that render contiguously in pdftotext). Implement as a multi-source SourceTextProvider the gate checks in order, recording WHICH source matched (grounding_source already exists). FIX B (deeper, the real recall fix): re-EXTRACT from 0060 pdftotext-repaired text for docs Docling fragmented/garbled — the LLM never SAW the un-fragmented hero stats (0060 spike: Make-A-Wish mojibake 'o;u ƐƏķƕƏƏ'='over 10,700'), so no snippet exists to ground. This is 0060's 'active repair' intent realized at the extraction layer. CAVEAT: pdftotext reading order for designed layouts may also not match the LLM's semantic reassembly, so union helps but full hero-stat capture needs re-extraction. Sequence: ship UNION first (low risk), measure the lift on p20-v1, then decide on re-extraction scope."
+
+  - id: "0064"
+    title: "Docling Parse Optimization (Research + Recommend)"
+    summary: "Research-only spec: map Docling 2.93's full config surface + harvest GitHub/community workarounds beyond formal docs, test candidate configs against our known-bad designed-page docs, and recommend a config that recovers lost designed-page content WITHOUT regressing the 82% that already parses well. We currently run Docling on bare defaults and have never tried a non-default backend or accurate/OCR modes. Ends at a decision-ready recommendation; no corpus re-parse (separate downstream project)."
+    status: researched
+    priority: high
+    files:
+      spec: locard/specs/0064-docling-parse-optimization.md
+      plan: null
+      review: locard/spikes/0064/research-findings.md
+    dependencies: []
+    tags: [pipeline, parse, docling, research, quality, fidelity]
+    notes: "Reserved 2026-06-01. RESEARCH COMPLETE 2026-06-01 (11-agent sweep: config surface from installed docling-slim 2.93.0 source + GitHub/community tribal knowledge + no-regression harness, critic-reviewed) → locard/spikes/0064/research-findings.md. NEXT = human go/no-go on Thread C (GPU matrix-test); nothing proven until that diff exists. KEY FINDINGS: (1) baseline corrected — production is NOT bare defaults: worker runs PdfPipelineOptions(do_ocr=True, images_scale=2.0) + default backend DoclingParseDocumentBackend + ACCURATE table mode; force_full_page_ocr NOT set. (2) Backend framing was STALE: no 'V4 vs V2' choice — public PdfBackend enum exposes only docling_parse + pypdfium2; pypdfium2 is the ONLY real alternate (and risks sub-word fragmentation regressing the 82%). (3) Reading order is HARDCODED (standard_pdf_pipeline.py L506, empty ReadingOrderOptions, not threaded through PdfPipelineOptions) → failure mode #2 (lost grouping, doc 001eb5f8 p13 'EMAIL CAMPAIGN') likely has NO Docling config fix; only levers are larger layout model (Egret L/XL) or the separate VLM pipeline (GraniteDocling + do_chart_extraction), else a different tool (0060). (4) Mode #1 (garble, doc 7ce2c7fd 27,577→725,747) is the tractable target: candidates ranked #1 pypdfium2 backend swap (cheap), #2 SELECTIVE force_full_page_ocr on rate_text_quality-flagged pages (never global — corrupts clean text), #3 pdfminer pre-route detector. #2334 still OPEN, no shipped fix. Harness (D): new ab_0064.py, gate-as-oracle, SYMMETRIC grounding (both arms re-extract+re-ground from own parse — the trap that sank pdftotext), PASS = zero verified→quarantine + word_coverage≥0.999 clean + no longest_run fragmentation regression; ~68-doc stratified sample (locard/operations/0064-ab-sample.json TBD). Thread C must also capture evidence-7ce2c7fd-infographic-parse.txt (mode-1 before-state, missing) + resolve full 64-char SHAs. Source tree under spikes/0064/docling-src (gitignored)."
+```
+
+```yaml
+  - id: "0065"
+    title: "Vision Track Integration — VL2 Designed-Page Metric Extraction"
+    summary: "Route the ~15% designed/infographic pages (where flat-text mislabels number↔label pairs) to a DeepSeek-VL2-Small int4 vision extractor on a g6/L4 GPU, emit comprehension-first metrics grounded to a rendered page-image citation with a DISCLOSED provenance tier, and fold the result into the existing llm_metrics + faithfulness (0057) architecture as a THIRD extraction source alongside Docling text and pdftotext (0060/0063). Vision is the recovery path for the designed pages where text-layer repair cannot fix the number↔label mispairing."
+    status: abandoned
+    priority: high
+    files:
+      spec: locard/specs/0065-vision-track-integration.md
+      plan: null
+      review: null
+    dependencies: ["0051", "0057", "0060"]
+    tags: [layer-2, vision, extraction, vl2, gpu, designed-pages, faithfulness, deepseek]
+    notes: "ABANDONED 2026-06-16 (operator): VL2 self-hosted vision approach superseded by the Flash-Lite vision decision; infographic/vision recovery will be re-specced under the new plan. — Reserved 2026-06-03. Vision component VALIDATED in spike 0064 (locard/spikes/0064/launch_vl2.py + vl2_pkg/): DeepSeek-VL2-Small int4 on g6.2xlarge (L4 24GB) scored 7/8 on the ground-truth number↔label disambiguation cases flat text got wrong — IDENTICAL to bf16/L40S, so 4-bit costs zero quality; 246s cold load via S3 weight cache; ~5.7s/page warm (~626 pages/hr). Three packaging fixes baked into the recipe (see memory project_vision_track_vl2.md): modern transformers stack (.to 4-bit), incremental_prefilling chunk_size=512 (rotary IndexError), llm_int8_skip_modules=[kv_b_proj] (MLA raw-weight baddbmm Byte). KEY ARCHITECTURE: vision is a THIRD source — the designed-page failure modes are exactly 0060's garble/low-coverage tail (Make-A-Wish mojibake hero stats) + 0064 mode-1/mode-2 (garble, lost grouping) where text extraction mislabels or drops the highest-value designed numbers. GROUNDING NUANCE: a vision-read metric has NO verbatim text snippet (text failed by definition) → its provenance is the rendered PAGE-IMAGE citation + value/label, a distinct DISCLOSED tier in 0057's graded-provenance ladder (not Tier-A verbatim, not Tier-C quarantine); optionally cross-confirm the VALUE against pdftotext (0060) even when the label pairing was wrong. Reuses the parse_documents.py g6 deploy + S3 weight cache. OPEN SCOPE QUESTIONS for the spec: page-vs-doc routing granularity; the routing signal (compose from 0060 word_coverage tail + 0058 poison-cohort mb_per_page>1.0/first_page_text<200 + the spike cluster-row signal); per-page vision PROMPT (comprehension-first, adapted from the spike V4 to read an image); schema (vision metrics into llm_metrics with method/grounding_source='vision' + page-image ref + tier); proof-image capture overlap with 0052 viewer."
+```
+
+```yaml
+  - id: "0066"
+    title: "Metric/Story Schema Cleanup (retire lava_vocab)"
+    summary: "Retire the dead Layer-2 lava_vocab schema (archetypes, tfidf/cvalue/association vocabulary, the abandoned statistical metric_observations) and move the live metric/story/run tables (llm_metrics, llm_stories, extraction_runs) to a clean schema of their own. Plumbing for the metric-product refactor."
+    status: conceived
+    priority: high
+    files:
+      spec: null
+      plan: null
+      review: null
+    dependencies: []
+    tags: [schema, cleanup, metrics, stories, refactor]
+    notes: "Reserved 2026-06-16. Phase 0a of the metric-product execution plan (locard/metric-product-execution-plan.md). lava_vocab is mostly abandoned Layer-2 work; only llm_metrics/llm_stories/extraction_runs are live and need a clean home."
+```
+
+```yaml
+  - id: "0067"
+    title: "Document Qualification Gate (productionize low-value/junk filter)"
+    summary: "Productionize the deterministic document-qualification gate: restrict the metric pipeline's input to annual/impact/hybrid reports WITH real mission/impact prose, excluding text-only financial/accountant-compilation reports mislabeled as reports."
+    status: conceived
+    priority: high
+    files:
+      spec: null
+      plan: null
+      review: null
+    dependencies: ["0066"]
+    tags: [qualification, curation, metrics, filter, deterministic]
+    notes: "Reserved 2026-06-16. Phase 0b of the metric-product execution plan. Logic already built+validated on the dev set in locard/operations/comp-metric-regression/lowvalue_gate.py (REQ-PROD-018; Flavor A plain-text/typed, Flavor C narrative-event, Flavor D demographic-sheet) — this project moves it from a research report-only script to a real pipeline stage. Deterministic/structural (figure count + text density + metric measurability), NOT a Flash-Lite prompt."
+```
+
+```yaml
+  - id: "0068"
+    title: "Coordinate Handoff (re-parse + per-metric source markers)"
+    summary: "The linchpin: re-parse target documents so per-element coordinates are populated in lava_parse (the parser already produces them; only ~1% of rows have them today), and change the metric extractor to record a page+box source marker per metric (not just a verbatim quote), so the number-aware grounding gate can verify each value at its location on the page."
+    status: committed
+    priority: high
+    files:
+      spec: locard/specs/0068-coordinate-handoff.md
+      plan: locard/plans/0068-coordinate-handoff.md
+      review: null
+    dependencies: ["0066"]
+    tags: [parse, coordinates, extraction, grounding, linchpin]
+    notes: "Reserved 2026-06-16. Phase 1 of the metric-product execution plan — the make-or-break coordinate handoff parse->extractor->gate. Coordinates live in lava_parse.sections.source_locations / tables.cell_locations|bbox (real Docling boxes where present, ~1% populated). Re-parse must target 'coordinates empty' (all docs stamped docling-2.93.0 regardless of whether they have coords)."
+```
+
+```yaml
+  - id: "0069"
+    title: "Precision Gates to Production (grounding + is-a-metric + mispair + de-dup)"
+    summary: "Wire the validated-but-stranded research gates onto the production short-slot extractor: number-aware grounding (value verbatim at its marker), is-a-metric reject rules, mispaired-label fix (coordinate re-pairing), and de-dup (collapse a metric appearing in both prose and infographic). Publish only what passes; quarantine the rest."
+    status: conceived
+    priority: high
+    files:
+      spec: null
+      plan: null
+      review: null
+    dependencies: ["0068"]
+    tags: [grounding, is-a-metric, mispair, dedup, precision, metrics]
+    notes: "Reserved 2026-06-16. Phase 2 of the metric-product execution plan — where 'fewer, highly accurate' metrics go live. Gates exist in research (comp-metric-regression: gate.py number-aware grounding, item1_nonmetric_rules, regroup/mispair) but run only because research feeds them coordinates; this wires them to production once 0068 supplies per-metric markers. Builds on/absorbs 0057 (faithfulness) and 0063 (union grounding)."
 ```
 
 ## Next Available Number
 
-**0063** - Reserve this number for your next project
+**0070** - Reserve this number for your next project
 
 ---
 

@@ -1,0 +1,14 @@
+You are given (A) a list of metrics ALREADY EXTRACTED from a nonprofit organization's annual or impact report, and (B) the report's text in which every text line and every table cell ends with a source marker in angle brackets — like ⟨t42⟩ for a text line or ⟨c17⟩ for a table cell.
+
+Your ONLY job is to locate each given metric in (B). Do NOT add, drop, merge, or re-judge metrics — work with exactly the metrics provided, in order.
+
+For EACH metric return:
+- "m": the metric's number, exactly as given.
+- "value_ref": the ⟨⟩ marker on the line or cell where this metric's VALUE appears.
+- "subject_ref": the ⟨⟩ marker on the line or cell that names this metric's SUBJECT/label.
+
+Rules:
+- Use ONLY markers that actually appear in (B).
+- If the value and subject share one line/cell, value_ref and subject_ref may be the same marker.
+- If you genuinely cannot locate one, use null. NEVER invent or guess a marker.
+Return ONLY a JSON array, one object per metric, in the given order.

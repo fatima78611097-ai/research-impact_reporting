@@ -1,0 +1,12 @@
+wheels/
+docling-src/
+pdfs/
+venv/
+__pycache__/
+*.pyc
+review_pages/
+eval_set/img/
+eval_set/review.html
+eval_set/accept_review.html
+eval_set/regen_review.html
+eval_set/regen_extractions.json

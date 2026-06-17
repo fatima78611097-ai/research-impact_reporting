@@ -1,0 +1,424 @@
+[
+ {
+  "id": "81265722:0",
+  "value_locs": [
+   "t7",
+   "t20",
+   "t219"
+  ],
+  "statement": "The Thriving Youth Strategy served more than 1,300 youth across 79 schools in Baltimore.",
+  "org": "Family League Of Baltimore City Inc",
+  "reason": "value_not_at_marker",
+  "join": "CONFIRMED",
+  "join_reason": "The metric combines the program name 'Thriving Youth Strategy' from t219 with the count of 'more than 1,300 youth served across 79 schools' from t20, and the program is implemented by the four grantee organizations listed in t7, all within the same report context."
+ },
+ {
+  "id": "81265722:1",
+  "value_locs": [
+   "t110",
+   "c60"
+  ],
+  "statement": "The majority of youth served were African American males ages 15-17.",
+  "org": "Family League Of Baltimore City Inc",
+  "reason": "subject_not_grounded",
+  "join": "WRONG_JOIN",
+  "join_reason": "The age range 15-17 is from the Thriving Youth Strategy (t110), but the demographic 'African American males' is from a different context (c60), and the report does not specify that the majority of youth served were African American males ages 15-17 as a single claim."
+ },
+ {
+  "id": "81265722:4",
+  "value_locs": [
+   "t151",
+   "t201",
+   "c40",
+   "c53"
+  ],
+  "statement": "Youth who had access to paid work, stipends, and career development opportunities were more likely to reconnect with school or work and reduce reliance on street-based activities.",
+  "org": "Family League Of Baltimore City Inc",
+  "reason": "value_not_at_marker",
+  "join": "WRONG_JOIN",
+  "join_reason": "The metric combines a causal claim about paid work/stipends/career development with re-engagement outcomes, but the components come from different programs (MOAAME and Baltimore Brothers) and different contexts (re-engagement rates vs. maintained/gained connection), with no evidence that the same youth had access to all three opportunities."
+ },
+ {
+  "id": "81265722:5",
+  "value_locs": [
+   "t183",
+   "t191",
+   "t202",
+   "c119"
+  ],
+  "statement": "High levels of satisfaction among youth and parents were reported, with mentorship cited as the most influential factor in engagement and positive development.",
+  "org": "Family League Of Baltimore City Inc",
+  "reason": "value_not_at_marker",
+  "join": "WRONG_JOIN",
+  "join_reason": "The metric combines satisfaction and mentorship from an unspecified source, while the components only discuss plan completion and diversion rates, not satisfaction or mentorship influence."
+ },
+ {
+  "id": "5b98b66f:4",
+  "value_locs": [
+   "t14"
+  ],
+  "statement": "Capstone prepared 967 children for school through Head Start.",
+  "org": "Capstone Community Action Inc",
+  "reason": "mispairing_geometry",
+  "join": "CONFIRMED",
+  "join_reason": "The metric directly quotes the number 967 from the document and Head Start is a single program, so the components belong together as one claim."
+ },
+ {
+  "id": "5b98b66f:5",
+  "value_locs": [
+   "t9"
+  ],
+  "statement": "Capstone supported 353 entrepreneurs to start or expand a business.",
+  "org": "Capstone Community Action Inc",
+  "reason": "mispairing_geometry",
+  "join": "CONFIRMED",
+  "join_reason": "The metric directly quotes the number 353 from the document, and the context of supporting entrepreneurs to start or expand a business is consistent with the single program mentioned."
+ },
+ {
+  "id": "5b98b66f:6",
+  "value_locs": [
+   "t25"
+  ],
+  "statement": "Capstone assisted 369 people with counseling to access stable and safe housing.",
+  "org": "Capstone Community Action Inc",
+  "reason": "mispairing_geometry",
+  "join": "CONFIRMED",
+  "join_reason": "The metric directly quotes the number 369 from the document, and the context of counseling for stable and safe housing is consistent with the single program described."
+ },
+ {
+  "id": "5b98b66f:9",
+  "value_locs": [
+   "t10"
+  ],
+  "statement": "Capstone served 2,971 participants in financial literacy, credit and planning programs.",
+  "org": "Capstone Community Action Inc",
+  "reason": "mispairing_geometry",
+  "join": "CONFIRMED",
+  "join_reason": "The metric's participant count and program types are directly stated together in the same sentence at the specified location."
+ },
+ {
+  "id": "f92248ef:7",
+  "value_locs": [
+   "t5",
+   "t93"
+  ],
+  "statement": "The Hunter Park GardenHouse held 9 workshops attended by 117 neighbors.",
+  "org": "Allen Neighborhood Center",
+  "reason": "subject_not_grounded",
+  "join": "CONFIRMED",
+  "join_reason": "Both components refer to the same program (Hunter Park GardenHouse) and the same timeframe, with the first component directly stating the metric and the second providing additional context about collaborations."
+ },
+ {
+  "id": "2cf7c1e8:4",
+  "value_locs": [
+   "t16"
+  ],
+  "statement": "283 clients were served via Forward Stride partnerships.",
+  "org": "Forward Stride",
+  "reason": "mispairing_geometry",
+  "join": "CONFIRMED",
+  "join_reason": "The metric directly quotes the number 283 from the document and the context of partnerships is implied by the organization's operations."
+ },
+ {
+  "id": "d58e3d5b:12",
+  "value_locs": [
+   "t1",
+   "t5",
+   "t29",
+   "t77"
+  ],
+  "statement": "Hearts With A Mission purchased a neighbor's home in July 2021 to use as counseling offices.",
+  "org": "Hearts With A Mission",
+  "reason": "value_not_at_marker",
+  "join": "CONFIRMED",
+  "join_reason": "The purchase of a neighbor's home in July 2021 is explicitly stated in the metric and aligns with the 2020-2021 timeframe and the organization's activities described in the document."
+ },
+ {
+  "id": "efd61fea:11",
+  "value_locs": [
+   "t96"
+  ],
+  "statement": "Newcomer Services assisted 111 individuals and families and conducted 121 personal community tours.",
+  "org": "River Valley Initiative Foundation",
+  "reason": "value_not_at_marker",
+  "join": "WRONG_JOIN",
+  "join_reason": "The metric combines '111 individuals and families' from Newcomer Services with '121 personal community tours' which is not mentioned in the provided component; the component instead discusses 110 employer investors, so the numbers and contexts do not match."
+ },
+ {
+  "id": "b42e6f95:3",
+  "value_locs": [
+   "t9"
+  ],
+  "statement": "1,575 individuals attended Divorce Support Groups.",
+  "org": "Calm Waters Center For Children And Families Inc",
+  "reason": "mispairing_geometry",
+  "join": "CONFIRMED",
+  "join_reason": "The metric directly quotes the number 1,575 from the document, and the context of 'Divorce Support Groups' is the only program mentioned in the provided component location."
+ },
+ {
+  "id": "b42e6f95:4",
+  "value_locs": [
+   "t5"
+  ],
+  "statement": "1,282 individuals attended Grief Support Groups.",
+  "org": "Calm Waters Center For Children And Families Inc",
+  "reason": "mispairing_geometry",
+  "join": "CONFIRMED",
+  "join_reason": "The metric directly quotes the number 1,282 from the document, and the context of Grief Support Groups is implied by the organization's focus on grief support."
+ },
+ {
+  "id": "b42e6f95:5",
+  "value_locs": [
+   "t3"
+  ],
+  "statement": "703 clients and families benefitted from Private Counseling.",
+  "org": "Calm Waters Center For Children And Families Inc",
+  "reason": "mispairing_geometry",
+  "join": "CONFIRMED",
+  "join_reason": "The metric's component '703' is directly from the document, and 'clients and families benefitted from Private Counseling' is implied by the context of the report, but the exact phrase is not fully present; however, based on the single component location, it appears to be a single claim."
+ },
+ {
+  "id": "b42e6f95:6",
+  "value_locs": [
+   "t14"
+  ],
+  "statement": "653 individuals received Grief Training.",
+  "org": "Calm Waters Center For Children And Families Inc",
+  "reason": "mispairing_geometry",
+  "join": "CONFIRMED",
+  "join_reason": "The metric directly quotes the number 653 from the document, and 'Grief Training' is the program context, so the components belong together as one claim."
+ },
+ {
+  "id": "b42e6f95:9",
+  "value_locs": [
+   "t15"
+  ],
+  "statement": "180 parents attended the Co-Parenting Seminar.",
+  "org": "Calm Waters Center For Children And Families Inc",
+  "reason": "mispairing_geometry",
+  "join": "CONFIRMED",
+  "join_reason": "The metric directly quotes the number 180 from the document, and the context of parents attending the Co-Parenting Seminar is implied by the single component location."
+ },
+ {
+  "id": "8c29956a:7",
+  "value_locs": [
+   "t136"
+  ],
+  "statement": "AFEDJ raised $904,961 in 2019 from individual donors, churches, and foundations.",
+  "org": "American Friends Of The Episcopal Diocese Of Jerusalem",
+  "reason": "subject_not_grounded",
+  "join": "CONFIRMED",
+  "join_reason": "The metric's amount and year match the single source component, and no other program or context is combined."
+ },
+ {
+  "id": "fd032b14:1",
+  "value_locs": [
+   "t36"
+  ],
+  "statement": "Clover's Early Learning Services served more than 2,000 infants, toddlers, preschoolers, and their families.",
+  "org": "Clover Nola Inc",
+  "reason": "value_not_at_marker",
+  "join": "CONFIRMED",
+  "join_reason": "The metric's claim about serving more than 2,000 infants, toddlers, preschoolers, and their families is directly supported by the component text from page 6, which describes the same program and population."
+ },
+ {
+  "id": "fd032b14:3",
+  "value_locs": [
+   "t42"
+  ],
+  "statement": "Clover Cares Adult Day Care served more than 100 participants, including over two dozen veterans.",
+  "org": "Clover Nola Inc",
+  "reason": "value_not_at_marker",
+  "join": "CONFIRMED",
+  "join_reason": "Both components refer to the same Clover Cares Adult Day Care program and its participant count, as supported by the document context."
+ },
+ {
+  "id": "ebaed191:8",
+  "value_locs": [
+   "t20",
+   "t187"
+  ],
+  "statement": "Bethesda annually partners with Meals on Wheels to provide tens of thousands of meals to area seniors.",
+  "org": "Bethesda Health Group Inc",
+  "reason": "value_not_at_marker",
+  "join": "WRONG_JOIN",
+  "join_reason": "The first component describes a historical anecdote about a Marine boot camp booklet, unrelated to Bethesda's Meals on Wheels partnership."
+ },
+ {
+  "id": "5370f17e:4",
+  "value_locs": [
+   "t11",
+   "t23",
+   "c42",
+   "c66"
+  ],
+  "statement": "Parent satisfaction across programs was 9.2 out of 10.",
+  "org": "Drew Child Development Corporation Inc",
+  "reason": "mispairing_geometry",
+  "join": "WRONG_JOIN",
+  "join_reason": "The metric combines a 9.2 rating from one program with a 9.4 and 9.3 from other programs, but the report does not state an overall parent satisfaction of 9.2 across all programs."
+ },
+ {
+  "id": "71709748:0",
+  "value_locs": [
+   "t172"
+  ],
+  "statement": "New Hope Community and Select Human Services provided support to 643 individuals with developmental disabilities in 2020.",
+  "org": "New Hope Community Inc",
+  "reason": "value_not_at_marker",
+  "join": "WRONG_JOIN",
+  "join_reason": "The metric combines New Hope Community and Select Human Services as joint providers, but the source only attributes the 643 individuals to Select Human Services alone."
+ },
+ {
+  "id": "65c918ec:9",
+  "value_locs": [
+   "t52",
+   "t82"
+  ],
+  "statement": "87% of expenses are tied directly to delivering programs.",
+  "org": "Fun Time Early Childhood Academy Inc",
+  "reason": "subject_not_grounded",
+  "join": "WRONG_JOIN",
+  "join_reason": "The 87% figure from page 9 refers to children meeting social-emotional milestones, not to the percentage of expenses tied to programs."
+ },
+ {
+  "id": "c0325150:7",
+  "value_locs": [
+   "t42"
+  ],
+  "statement": "3,030 child care providers across Nevada accessed training.",
+  "org": "Childrens Cabinet Inc A Child And Family Resource",
+  "reason": "mispairing_geometry",
+  "join": "CONFIRMED",
+  "join_reason": "The metric directly quotes the component '3,030' and 'child care providers across Nevada accessed training' from the same sentence in the document."
+ },
+ {
+  "id": "38c9a81d:9",
+  "value_locs": [
+   "c17",
+   "c30",
+   "c54"
+  ],
+  "statement": "Roughly 1 in 3 people in the US are economically insecure, with women and gender-expansive employees disproportionately affected.",
+  "org": "Womens Way",
+  "reason": "value_not_at_marker",
+  "join": "CONFIRMED",
+  "join_reason": "All components refer to the same statistic about economic insecurity in the US, with consistent percentages (32% and 33%) and context of women and gender-expansive employees being disproportionately affected."
+ },
+ {
+  "id": "65dd3092:7",
+  "value_locs": [
+   "t131"
+  ],
+  "statement": "Service recipients spent 128 hours exploring the transition platform.",
+  "org": "Commit Foundation",
+  "reason": "mispairing_geometry",
+  "join": "WRONG_JOIN",
+  "join_reason": "The metric combines 'Service recipients' from one context with '128 hours exploring the transition platform' from another, as the report does not link these two facts to the same program or entity."
+ },
+ {
+  "id": "ec055971:2",
+  "value_locs": [
+   "t2"
+  ],
+  "statement": "Employment & Community Support Services served 3,409 people.",
+  "org": "Ada S Mckinley Community Services Inc",
+  "reason": "mispairing_geometry",
+  "join": "CONFIRMED",
+  "join_reason": "The metric directly quotes the number 3,409 from the document, and the program name 'Employment & Community Support Services' is the correct context for that figure."
+ },
+ {
+  "id": "ec055971:3",
+  "value_locs": [
+   "t6"
+  ],
+  "statement": "Behavioral Health & Clinical Services served 1,660 people.",
+  "org": "Ada S Mckinley Community Services Inc",
+  "reason": "mispairing_geometry",
+  "join": "CONFIRMED",
+  "join_reason": "The metric directly quotes the number 1,660 from the document, and the context 'Behavioral Health & Clinical Services' is the program name associated with that figure in the same report."
+ },
+ {
+  "id": "ec055971:4",
+  "value_locs": [
+   "t7"
+  ],
+  "statement": "Educational Services served 826 people.",
+  "org": "Ada S Mckinley Community Services Inc",
+  "reason": "mispairing_geometry",
+  "join": "CONFIRMED",
+  "join_reason": "The metric directly quotes the number 826 from the document, and the context 'Educational Services' is implied by the report's focus on that program."
+ },
+ {
+  "id": "370cd021:1",
+  "value_locs": [
+   "t106",
+   "t148",
+   "t168",
+   "t170"
+  ],
+  "statement": "SILCGA has expanded to provide statewide coverage for Information & Referral services, ensuring independent living services are available across all of Georgia.",
+  "org": "Statewide Independent Living Council Of Georgia Inc",
+  "reason": "value_not_at_marker",
+  "join": "WRONG_JOIN",
+  "join_reason": "The metric combines 'statewide coverage for Information & Referral services' with a budget expansion for the Home Accessibility Program, which are unrelated programs and contexts."
+ },
+ {
+  "id": "370cd021:2",
+  "value_locs": [
+   "t119",
+   "t168"
+  ],
+  "statement": "The Home Access Program funding increase from $100,000 to $600,000 was approved by the Governor after advocacy at the state Capitol.",
+  "org": "Statewide Independent Living Council Of Georgia Inc",
+  "reason": "value_not_at_marker",
+  "join": "WRONG_JOIN",
+  "join_reason": "The Home Access Program funding increase is not mentioned in the provided components; the components discuss unrelated historical and funding details."
+ },
+ {
+  "id": "c1a9f80b:6",
+  "value_locs": [
+   "t16",
+   "t36",
+   "t42"
+  ],
+  "statement": "The Diaper Bank serves 1 in 3 families experiencing diaper need and 2 in 5 menstruators experiencing period poverty.",
+  "org": "Western Pennsylvania Diaper Bank",
+  "reason": "value_not_at_marker",
+  "join": "WRONG_JOIN",
+  "join_reason": "The metric combines a statistic about families experiencing diaper need and menstruators experiencing period poverty, but the component locations refer to period products and volunteer hours, which are unrelated to the claimed ratios."
+ },
+ {
+  "id": "128de607:3",
+  "value_locs": [
+   "t71"
+  ],
+  "statement": "204 men, women, and children had a safe home with needed services through housing programs.",
+  "org": "District Council Of Madison Inc Society Of St Vincent De Paul",
+  "reason": "subject_not_grounded",
+  "join": "CONFIRMED",
+  "join_reason": "The metric's count of 204 men, women, and children is directly from the document, and the phrase 'had a safe home with needed services through housing programs' summarizes the housing program context described in the same report."
+ },
+ {
+  "id": "2ec17b37:0",
+  "value_locs": [
+   "t38"
+  ],
+  "statement": "In 2025, people turned to AVA for help.",
+  "org": "Atlanta Victim Assistance Inc",
+  "reason": "value_not_at_marker",
+  "join": "WRONG_JOIN",
+  "join_reason": "The metric's timeframe '2025' is not present in the component, which describes a past event without specifying that year."
+ },
+ {
+  "id": "8b5543a9:5",
+  "value_locs": [
+   "t16"
+  ],
+  "statement": "The organization has been connecting people, creating opportunities, and nurturing growth since 1957, marking over 65 years of service.",
+  "org": "Exceptional Persons Inc",
+  "reason": "value_not_at_marker",
+  "join": "CONFIRMED",
+  "join_reason": "The metric's reference to 'over 65 years of service' aligns with the component's mention of 'past 65 years,' both describing the organization's history and legacy."
+ }
+]

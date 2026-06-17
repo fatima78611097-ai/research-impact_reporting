@@ -1,7 +1,7 @@
 {
   "shell": {
-    "architect": "claude --model claude-opus-4-6",
-    "builder": "claude --model claude-opus-4-6"
+    "architect": "claude --model claude-opus-4-8",
+    "builder": "claude --model claude-opus-4-8"
   },
   "agentFarm": {
     "requireAuth": false,
@@ -15,5 +15,15 @@
   },
   "permissions": {
     "bypass": true
+  },
+  "consult": {
+    "gemini": {
+      "auth": "apikey",
+      "model": "gemini-3-pro-preview"
+    },
+    "claude": {
+      "auth": "subscription",
+      "model": "claude-opus-4-8"
+    }
   }
 }
