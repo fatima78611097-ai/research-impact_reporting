@@ -99,7 +99,8 @@ def subject_quality(label):                            # line 46
 
 ## Mispairing — status (NOT applied to this data)
 
-- **Programmatic geometry check: run ONCE as a diagnostic only — it did NOT apply a fix and did NOT persist anything.** It classified the 271 published metrics (190 inline = no pairing risk, 79 split co-located = coherent, 2 split far-apart = suspect, both `128de607`). It was an ad-hoc inline script, **not part of `slot_render.py`**, so: no fix was applied, the flags were **not written into the data**, and the 2 suspects were **not quarantined** — they are still `publish`. It was check-and-flag, nothing more.
+- **Programmatic geometry check: run ONCE as a diagnostic only — it did NOT apply a fix and did NOT persist anything.** It classified the 271 published metrics (190 inline = no pairing risk, 79 split co-located = coherent, 2 split far-apart = suspect, both `128de607`). No fix was applied, the flags were **not written into the data**, and the 2 suspects were **not quarantined** — they are still `publish`. Check-and-flag, nothing more.
+  - **Code (exact, now captured):** `lavandula/nlp/mispairing_check.py` → `geometry_pairing_check(records)`. Thresholds: `dy < 60` pts = same row; `(dx < 160 and dy < 160)` = same card; midpoints from stored `v_bbox`/`s_bbox`. Verified to reproduce `190 / 79 / 2`. It is **not** part of `slot_render.py` / the publish gate.
 - **Vision mispairing run: NOT COMPLETED.** A vision judge (Flash-Lite, label-vs-page) was proposed to confirm pairing on this set but was **never run**. There is no vision verdict on any metric in this data.
 - **The only mispairing-adjacent REPAIR that is applied** is the cross-cell render fix (Step 4, `slot_render.py:76`) — narrow: re-renders a number from its own prose cell when the label was grafted from a different cell. It does **not** address within-grid cross-pairs.
 
