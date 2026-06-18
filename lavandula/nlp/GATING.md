@@ -97,7 +97,12 @@ def subject_quality(label):                            # line 46
 
 ---
 
-## NOT gated (verified gaps)
-- **Mispairing** — not in this code. Geometry check (separate, **not wired in**): 269/271 pairs co-located, 2 suspect (`128de607`).
+## Mispairing — status (NOT applied to this data)
+
+- **Programmatic geometry check: run ONCE as a diagnostic only — it did NOT apply a fix and did NOT persist anything.** It classified the 271 published metrics (190 inline = no pairing risk, 79 split co-located = coherent, 2 split far-apart = suspect, both `128de607`). It was an ad-hoc inline script, **not part of `slot_render.py`**, so: no fix was applied, the flags were **not written into the data**, and the 2 suspects were **not quarantined** — they are still `publish`. It was check-and-flag, nothing more.
+- **Vision mispairing run: NOT COMPLETED.** A vision judge (Flash-Lite, label-vs-page) was proposed to confirm pairing on this set but was **never run**. There is no vision verdict on any metric in this data.
+- **The only mispairing-adjacent REPAIR that is applied** is the cross-cell render fix (Step 4, `slot_render.py:76`) — narrow: re-renders a number from its own prose cell when the label was grafted from a different cell. It does **not** address within-grid cross-pairs.
+
+## Other NOT-gated gaps
 - **Bare-1s / weak buried-prose** — no rule; currently publish.
 - **Garbled-parse docs** (`029625c6`, `38c9a81d`, `e2416d20`, `128de607`) — Step 4 renders their garble verbatim; not gated out.
