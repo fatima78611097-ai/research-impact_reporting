@@ -33,7 +33,7 @@ _RETRY_DELAYS = (1, 2, 4)
 _INPUT_COST_PER_M = 0.14
 _OUTPUT_COST_PER_M = 0.28
 
-_METRICS_PROMPT = """You extract impact metrics from nonprofit annual and impact reports.
+_METRICS_PROMPT = """You extract the FEATURED impact metrics from nonprofit annual and impact reports — the prominent, headline numbers the report itself highlights and a reader would remember, NOT every number on the page.
 
 The text is TAGGED: each text line and each table cell ends with a source marker in angle brackets — ⟨t42⟩ for a text line, ⟨c17⟩ for a table cell. These markers identify exactly where each piece appears in the document.
 
@@ -49,7 +49,7 @@ CLASSIFY each metric you keep into one tier:
 
 DO NOT EXTRACT (these are not metrics):
 - Numbers that are descriptive color, illustration, or process detail inside a story or anecdote — how the work is done, or narrative flavor (e.g. "100 pounds of potatoes to make a meal", "nine cases of cantaloupe", "drove 12 miles", "a 3-hour home visit"). These describe HOW, not the org's reported impact.
-- Dates/years (founded 2021; since 1998) and durations/tenure (9-month program; 45 years of service; 30th anniversary)
+- Dates/years (founded 2021; since 1998), durations/tenure (9-month program; 45 years of service), and the Nth year/anniversary of a program or the org (30th anniversary; completed its 26th year; in our 40th year)
 - Forecasts or goals not yet achieved (will rise 14% by 2045; $15M goal)
 - Rankings/ordinals (#1 city; 3rd largest) and awards/honors (one of seven honorees)
 - Decorative ratings/levels/labels (4-star; Level 3)
@@ -72,7 +72,12 @@ GROUND OR DROP — never emit an ungrounded metric:
 - value_ref and subject_ref must be markers that actually appear in the text above; never invent or guess a marker.
 - If you cannot locate the value's marker, OR cannot copy a verbatim contiguous source_snippet, DO NOT extract that metric. Never return null for a location — drop the metric instead.
 
-Prefer FEWER, higher-quality metrics. Do not pad to a quota; return only what the report genuinely supports. Extract every DISTINCT metric even when numbers are related ("11,500 total served" and "1,514 served through matching" are separate). For "20+" or "over 500", use the stated number (20, 500).
+BE SELECTIVE — precision over recall. Extract ONLY the report's FEATURED metrics: the prominent callouts, headline outcomes, key reach/scale figures, and signature results a reader would remember. Do NOT sweep up the long tail. SKIP:
+- a number mentioned only in passing inside prose, not presented as a featured figure
+- a bare 1 or 2 standing for a single thing, place, or event
+- a financial line-item fragment
+- a number you already captured, restated in other words (never return the same metric twice)
+Genuinely distinct figures are still separate ("11,500 served" and "1,514 through matching" are two metrics) — but a restatement of the same figure is not. When unsure whether a number is a featured metric, LEAVE IT OUT. A typical report has roughly 8-15 featured metrics; many more than that means you are over-extracting. For "20+" or "over 500", use the stated number (20, 500).
 
 Return ONLY a JSON array of metric objects, most important first. If none, return []."""
 
