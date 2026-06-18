@@ -2,7 +2,7 @@
 
 **Branch:** `repo-housekeeping`. **Method:** derived from ground truth (systemd, `STAGE_REGISTRY`, RDS `information_schema`, import-graph reachability), not memory. Every line is marked **[V]** verified-from-source or **[P]** pending. Canonical-vs-dead uses the two-source rule + `import_graph.py` reachability; "dead" is never asserted without verifying dynamic/string imports.
 
-> Status: backbone + core-library + data + processes are **verified**. Control-panel routes, per-subsystem file detail, the scratch-dir census, and the infra layer are **pending** (next probes).
+> Status: **verified [V]** — pipeline backbone, module map, data layer, processes, control panel (67 routes), dead-code analysis, scratch census, and platform/infra. **Remaining pending:** per-subsystem file-level detail, full categorization of the ~50 comp-metric scratch scripts, and the classifier v1-vs-v3 deprecation check.
 
 ---
 
