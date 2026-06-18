@@ -76,6 +76,18 @@ Orchestration cluster (in `dashboard/pipeline/`): `orchestrator, stages, schedul
 
 ---
 
+## 5b. Control panel — the 67-route Dashboard surface **[V]** (`pipeline/urls.py` + `views.py`)
+
+- **Per-stage run UIs** (each = a panel + a `/queue` action to enqueue a job): `seeder · resolver · crawler · classifier · classifier-v3 (status/queue/state-grid/log) · phone-enrich · parse (progress/stop/quarantine) · 990-index · 990-parse · llm-extract (queue/status/stop) · faithfulness (verify/status/pdftotext-backfill)`
+- **Job management** (`/jobs`): list · detail · cancel · retry · progress · log
+- **Workers** (`/workers`): list · edit
+- **Data views**: `/orgs` (+detail, +qa) · `/reports` (+detail, download, pdf, qa) · `/provenance` · `/stats`
+- **Orchestration control** (`/control` — 12 routes): queue pause/resume · bulk cancel/retry · clear-queue · health (fix-stale, release-locks) · **multi-host command/status**
+
+Notes: **`llm-extract` and `faithfulness` HAVE dashboard UIs** (queue/status/stop) — so metric extraction is operator-runnable from the panel, just not in `STAGE_REGISTRY`. **Two classifier UIs** exist (`classifier` + `classifier-v3`) — v3 is the current reclassify path; whether v1 is still used or legacy is a deprecation question to verify.
+
+---
+
 ## 6. Dead code & version-confusion — VERIFIED via `import_graph.py` **[V]**
 
 **The core library is clean.** Of 347 lavandula modules, only **3 genuinely orphaned** (0 importers, not entry/framework):
@@ -117,4 +129,4 @@ Orchestration cluster (in `dashboard/pipeline/`): `orchestrator, stages, schedul
 - **The 3 "dead" `reports/` files are orphaned *features*, not junk** (read 2026-06-18): `schema.py` = vestigial Spec-0017 shim → **drop**; `report.py` = coverage-report generator (unwired) → keep/decide; `catalogue.py` = corpus deletion/retention logic (unwired) → **lean keep** (real capability).
 
 ## 9. Pending probes (next)
-- 67-route control-panel map · per-subsystem file detail · full scratch-script categorization (the ~50 comp-metric one-off scripts) · infra layer (SSM params, deploy scripts, systemd units, `gunicorn.conf.py`)
+- ~~67-route control-panel map~~ ✅ (§5b) · per-subsystem file detail · full scratch-script categorization (the ~50 comp-metric one-off scripts) · infra layer (SSM params, deploy scripts, systemd units, `gunicorn.conf.py`) · classifier v1-vs-v3 deprecation check
