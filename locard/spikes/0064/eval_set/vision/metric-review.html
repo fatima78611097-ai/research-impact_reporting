@@ -1,0 +1,170 @@
+<!doctype html><html><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1">
+<title>Metric review</title>
+<style>
+*{box-sizing:border-box}
+body{font:14px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;margin:0;color:#1a1a1a;background:#f4f5f7}
+#bar{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid #d8d8d8;padding:8px 14px;font-size:13px}
+#bar .row{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+#tally{font-weight:600}#tally b{font-variant-numeric:tabular-nums}
+select,input,textarea,button{font:inherit}
+.wrap{max-width:1020px;margin:0 auto;padding:14px}
+.card{background:#fff;border:1px solid #dcdcdc;border-radius:9px;padding:12px 14px;margin:12px 0}
+.card.done{border-left:5px solid #0a8a0a}
+.hd{display:flex;gap:8px;align-items:center;font-size:12px;color:#555;flex-wrap:wrap}
+.mid{font:11px ui-monospace,Menlo,monospace;color:#999}
+.badge{color:#fff;padding:1px 7px;border-radius:9px;font-size:10px;font-weight:700}
+.metric{font-size:15px;margin:6px 0}.kv{font-size:12px;color:#555}
+.vd{color:#e02020;font-weight:700}.sb{color:#1565ff;font-weight:700}.pp{color:#8e24aa;font-weight:700}
+.g{font:12px ui-monospace,Menlo,monospace;color:#666;background:#fafafa;border:1px solid #eee;padding:5px 7px;margin:4px 0;white-space:pre-wrap}
+.found{font:12px ui-monospace,monospace;color:#1a5e1a;background:#f1f8f1;border:1px solid #d8ecd8;padding:4px 7px;margin:3px 0}
+details summary{cursor:pointer;font-size:12px;color:#888;margin:4px 0}
+details img{max-width:100%;border:1px solid #ccc;margin-top:6px}
+.src a{color:#06c;font-weight:600;text-decoration:none;font-size:13px}
+.rec{margin-top:10px;padding:10px;background:#f7f8fa;border:1px solid #e3e6ea;border-radius:7px}
+.rec label{font-size:12px;color:#444;margin-right:4px}
+.rec .line{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin:5px 0}
+.rec textarea{width:100%;min-height:38px;padding:5px;border:1px solid #ccc;border-radius:5px}
+.rec input[type=text]{padding:4px 6px;border:1px solid #ccc;border-radius:5px}
+.chip{background:#e8f0fe;border:1px solid #b9d3fb;border-radius:9px;padding:1px 7px;font-size:12px;cursor:pointer}
+.claude{margin-top:6px;font-size:12px;background:#f3eefa;border:1px solid #e0d4f0;border-radius:6px;padding:6px 8px}
+.claude.hide{display:none}
+.vb{padding:2px 9px;border:1px solid #bbb;border-radius:6px;background:#fff;cursor:pointer;font-size:12px}
+.vb.on{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+#pager{display:flex;gap:8px;align-items:center;justify-content:center;margin:16px 0}
+button.nav{padding:4px 12px;border:1px solid #bbb;border-radius:6px;background:#fff;cursor:pointer}
+</style></head><body>
+<div id=bar><div class=row>
+  <span id=tally>loading…</span>
+  <span style="flex:1"></span>
+  <label>Queue <select id=fq><option value=all>all</option><option value=publish>published</option><option value=quarantine>quarantined</option></select></label>
+  <label>Reason <select id=fr><option value=all>all</option></select></label>
+  <label>Show <select id=fs><option value=all>all</option><option value=todo>unreviewed</option><option value=done>done</option></select></label>
+  <label>Claude <select id=fc><option value=all>all</option><option value=false-quarantine>flagged: false-quar</option><option value=unsure>unsure</option></select></label>
+  <input id=fsearch placeholder="id / sha8 / org" size=14>
+  <label><input type=checkbox id=reveal> reveal Claude pass</label>
+  <a href="api/csv" target=_blank><button class=nav>⬇ CSV</button></a>
+</div></div>
+<div class=wrap><div id=list></div>
+<div id=pager></div></div>
+<script>
+const VERDICTS=["","gate-correct","correct-unverifiable","false-quarantine","false-publish","unsure"];
+const STAGES=["","parse","selection","grounding","gate"];
+const MODES=["","derived-value","wrong-marker","adjacent-marker","slot-swap","prefix-swap","bbox-imprecise","mispaired","unit-scale","abstract-value","paraphrase-drift","garble","not-a-metric","no-numeric","value-repeats","hallucinated-value","other"];
+const BADGE={publish:["PUBLISH","#0a8a0a"],quarantine:["QUARANTINE","#c0392b"]};
+let DATA=[],STATE={},PAGE=0,PER=25;
+const $=s=>document.querySelector(s);
+const esc=s=>(s==null?"":(""+s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+async function boot(){
+  DATA=await (await fetch("review-data.json?t="+Date.now())).json();
+  try{STATE=await (await fetch("api/state?t="+Date.now())).json()}catch(e){STATE={}}
+  const reasons=[...new Set(DATA.map(r=>r.gate_reason).filter(Boolean))].sort();
+  $("#fr").innerHTML='<option value=all>all</option>'+reasons.map(x=>`<option value="${x}">${x}</option>`).join("");
+  ["fq","fs","fc","fr"].forEach(id=>$("#"+id).onchange=()=>{PAGE=0;render()});
+  $("#fsearch").oninput=()=>{PAGE=0;render()};
+  $("#reveal").onchange=()=>document.querySelectorAll(".claude").forEach(c=>c.classList.toggle("hide",!$("#reveal").checked));
+  render();
+}
+function filtered(){
+  const q=$("#fq").value,s=$("#fs").value,c=$("#fc").value,t=$("#fsearch").value.toLowerCase(),rr=$("#fr").value;
+  return DATA.filter(r=>{
+    if(q!=="all"&&r.gate_decision!==q)return false;
+    if(rr!=="all"&&r.gate_reason!==rr)return false;
+    const st=STATE[r.id], done=st&&st.status==="complete";
+    if(s==="todo"&&done)return false; if(s==="done"&&!done)return false;
+    if(c!=="all"&&(r.claude||{}).verdict!==c)return false;
+    if(t&&!(r.id.includes(t)||r.sha8.includes(t)||(r.org||"").toLowerCase().includes(t)))return false;
+    return true;
+  });
+}
+function tally(){
+  let done=0,pubC=0,pubWrong=0,pubNM=0,quarHold=0,quarFalse=0,quarUnver=0;
+  for(const r of DATA){const st=STATE[r.id]; if(!st||st.status!=="complete")continue; done++;
+    const v=st.operator_verdict, m=st.operator_mode;
+    if(r.gate_decision==="publish"){ if(v==="false-publish"){ if(m==="not-a-metric")pubNM++; else pubWrong++; } else if(v==="gate-correct")pubC++; }
+    else { if(v==="false-quarantine")quarFalse++; else if(v==="correct-unverifiable")quarUnver++; else if(v==="gate-correct")quarHold++; }
+  }
+  const pubRev=pubC+pubWrong+pubNM;
+  const er=pubRev?(100*pubWrong/pubRev).toFixed(1):"–";
+  $("#tally").innerHTML=`<b>${done}</b>/${DATA.length} done · `+
+    `published: <b>${pubC}</b>✓ / <b>${pubWrong}</b> wrong-data → err <b>${er}%</b> / <b>${pubNM}</b> not-a-metric (filtered) · `+
+    `quarantine: <b>${quarHold}</b> held / <b>${quarFalse}</b> false-quar / <b>${quarUnver}</b> correct-unverif`;
+}
+function opt(arr,val){return arr.map(o=>`<option ${o===val?"selected":""} value="${o}">${o||"—"}</option>`).join("")}
+function save(id){
+  const el=document.querySelector(`[data-card="${id}"]`);
+  const g=s=>el.querySelector(s);
+  const patch={id,
+    operator_verdict:g(".v").value, operator_stage:g(".st").value, operator_mode:g(".mo").value,
+    operator_notes:g(".no").value, actual_location:g(".loc").value,
+    status:g(".done").checked?"complete":"in-progress"};
+  STATE[id]=patch;
+  el.classList.toggle("done",patch.status==="complete");
+  tally();
+  fetch("api/save",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(patch)})
+    .then(r=>{if(!r.ok)throw new Error("HTTP "+r.status)})
+    .catch(e=>{document.title="⚠ SAVE FAILED";alert("Save FAILED ("+e.message+") — your mark was NOT stored. Screenshot/retry.");});
+}
+function card(r){
+  const st=STATE[r.id]||{}, [bl,bc]=BADGE[r.gate_decision], cl=r.claude||{};
+  const found=(r.found||[]).map(f=>`<div class=found>↳ value actually @ page ${f.page}: ${esc(f.text)}</div>`).join("");
+  const chips=[...new Set((r.found||[]).map(f=>f.page).filter(Boolean))].map(p=>`<span class=chip data-p="p${p}">p${p}</span>`).join(" ");
+  const grounded= r.same_marker
+    ? `<div class=g><span class=pp>■ value+subject</span> @ page ${r.v_page??"?"} → ${esc(r.v_text)}</div>`
+    : `<div class=g><span class=vd>■ value</span> @ page ${r.v_page??"?"} → ${esc(r.v_text)}\n<span class=sb>■ subject</span> @ page ${r.s_page??"?"} → ${esc(r.s_text)}</div>`;
+  const d=document.createElement("div");
+  d.className="card"+(st.status==="complete"?" done":""); d.setAttribute("data-card",r.id);
+  d.innerHTML=`
+   <div class=hd><span class=badge style="background:${bc}">${bl}${r.gate_reason?" · "+r.gate_reason:""}</span>
+     ${r.decided_by?`<span class=badge style="background:#455a75" title="${esc(r.decided_detail||"")}">🛠 ${esc(r.decided_by)}</span>`:""}
+     <b>${esc(r.org)}</b> <span class=mid>${r.id} · ${r.set}</span></div>
+   ${r.decided_detail?`<div class=kv style="color:#455a75">${esc(r.decided_detail)}</div>`:""}
+   <div class=metric>"${esc(r.statement)}"<br><span class=kv>value=<b>${esc(r.value)}</b> · subject=<b>${esc(r.subject)}</b></span></div>
+   ${r.regroup_label?`<div class=found style="background:#fff7e6;border-color:#e8d9a8;color:#7a5c00">⚐ geometry says the true caption is: <b>${esc(r.regroup_label)}</b></div>`:""}
+   ${r.amp_flag?`<div class=found style="background:#fdeef4;border-color:#e8b8cc;color:#7a2a4a">⚠ CLAIM-VERIFICATION: ${esc(r.amp_reason)}</div>`:""}
+   ${r.amp_rewrite?`<div class=found style="background:#eef7ee;border-color:#bcd9bc;color:#1a5e1a">✎ supported rewrite: ${esc(r.amp_rewrite)}</div>`:""}
+   ${grounded}${found}
+   <details><summary>show source page</summary><img loading=lazy src="${r.img}"></details>
+   <div class=src><a href="${r.pdf}#page=${r.page||1}" target=_blank>📄 open report → page ${r.page??"?"}</a></div>
+   <div class=rec>
+     <div class=line><label>Your verdict</label>${VERDICTS.slice(1).map(v=>`<span class="vb" data-v="${v}">${v}</span>`).join("")}
+       <select class="v" style="display:none">${opt(VERDICTS,st.operator_verdict||"")}</select></div>
+     <div class=line><label>Cause stage</label><select class=st>${opt(STAGES,st.operator_stage||"")}</select>
+       <label>Failure mode</label><select class=mo>${opt(MODES,st.operator_mode||"")}</select></div>
+     <div class=line><label>Actual location</label>${chips} <input type=text class=loc placeholder="e.g. p11+12" value="${esc(st.actual_location||"")}" size=16></div>
+     <div class=line><textarea class=no placeholder="freeform notes — edge cases, anything to report">${esc(st.operator_notes||"")}</textarea></div>
+     <div class=line><label><input type=checkbox class=done ${st.status==="complete"?"checked":""}> mark complete</label></div>
+     <div class="claude ${$("#reveal").checked?"":"hide"}"><b>Claude pass (cross-check):</b> ${esc(cl.verdict)} ${cl.stage?"· "+esc(cl.stage):""} ${cl.mode?"· "+esc(cl.mode):""} — ${esc(cl.note)}</div>
+   </div>`;
+  const sel=d.querySelector(".v");
+  d.querySelectorAll(".vb").forEach(b=>{ if(b.dataset.v===sel.value)b.classList.add("on");
+    b.onclick=()=>{ sel.value=b.dataset.v; d.querySelectorAll(".vb").forEach(x=>x.classList.toggle("on",x===b)); save(r.id); }; });
+  d.querySelectorAll(".chip").forEach(ch=>ch.onclick=()=>{const i=d.querySelector(".loc"); i.value=(i.value?i.value+"+":"")+ch.dataset.p; save(r.id);});
+  d.querySelectorAll(".st,.mo,.done").forEach(x=>x.addEventListener("change",()=>save(r.id)));
+  let t; d.querySelector(".no").addEventListener("input",()=>{clearTimeout(t);t=setTimeout(()=>save(r.id),600)});
+  d.querySelector(".loc").addEventListener("input",()=>{clearTimeout(t);t=setTimeout(()=>save(r.id),600)});
+  return d;
+}
+function render(){
+  tally();
+  const f=filtered(), pages=Math.max(1,Math.ceil(f.length/PER)); PAGE=Math.max(0,Math.min(PAGE,pages-1));
+  const L=$("#list"); L.innerHTML="";
+  f.slice(PAGE*PER,PAGE*PER+PER).forEach(r=>L.appendChild(card(r)));
+  $("#pager").innerHTML=`<button class=nav id=first ${PAGE<=0?"disabled":""}>«</button>
+    <button class=nav id=back5 ${PAGE<=0?"disabled":""}>‹‹5</button>
+    <button class=nav id=prev ${PAGE<=0?"disabled":""}>‹</button>
+    <span>page <input id=pageinput value="${PAGE+1}" size=3 style="width:48px;text-align:center"> / ${pages} · ${f.length} metrics</span>
+    <button class=nav id=next ${PAGE>=pages-1?"disabled":""}>›</button>
+    <button class=nav id=fwd5 ${PAGE>=pages-1?"disabled":""}>5››</button>
+    <button class=nav id=last ${PAGE>=pages-1?"disabled":""}>»</button>`;
+  const go=p=>{PAGE=Math.max(0,Math.min(p,pages-1));render();window.scrollTo(0,0)};
+  $("#first")&&($("#first").onclick=()=>go(0));
+  $("#prev")&&($("#prev").onclick=()=>go(PAGE-1));
+  $("#back5")&&($("#back5").onclick=()=>go(PAGE-5));
+  $("#next")&&($("#next").onclick=()=>go(PAGE+1));
+  $("#fwd5")&&($("#fwd5").onclick=()=>go(PAGE+5));
+  $("#last")&&($("#last").onclick=()=>go(pages-1));
+  $("#pageinput")&&($("#pageinput").onchange=e=>go((parseInt(e.target.value)||1)-1));
+}
+boot();
+</script></body></html>
