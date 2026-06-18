@@ -107,3 +107,17 @@ def subject_quality(label):                            # line 46
 ## Other NOT-gated gaps
 - **Bare-1s / weak buried-prose** — no rule; currently publish.
 - **Garbled-parse docs** (`029625c6`, `38c9a81d`, `e2416d20`, `128de607`) — Step 4 renders their garble verbatim; not gated out.
+
+---
+
+## Reproducing `new-review-data.json` (honest state)
+
+Three steps:
+1. **Extract** — `_METRICS_PROMPT` over the 25 NTEE-P docs. *(script `prompt_headtohead.py` — currently in `/tmp`, **NOT committed**.)*
+2. **Build records + boxed images** — resolve markers, render pages with value/subject boxes. *(script `build_new_review.py` — currently in `/tmp`, **NOT committed**.)*
+3. **Apply the gate** — `dedup()` then `render_and_grade()` per metric, writing `statement` + `gate_decision`.
+
+**Import note:** since `slot_render.py` now lives in `lavandula/nlp/`, step 3 imports it as
+`from lavandula.nlp.slot_render import render_and_grade, dedup` — **not** a local `import slot_render`.
+
+**Caveat:** steps 1–2 are ad-hoc `/tmp` scripts and are **not committed**, so this is **not** a one-command reproducible regeneration. Only the gate (step 3, `slot_render.py`) and the diagnostic (`mispairing_check.py`) are committed code.
