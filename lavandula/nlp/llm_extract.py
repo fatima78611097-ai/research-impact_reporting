@@ -33,31 +33,48 @@ _RETRY_DELAYS = (1, 2, 4)
 _INPUT_COST_PER_M = 0.14
 _OUTPUT_COST_PER_M = 0.28
 
-_METRICS_PROMPT = """You extract impact metrics from nonprofit annual reports and impact reports.
+_METRICS_PROMPT = """You extract impact metrics from nonprofit annual and impact reports.
 
-Extract:
-- Program outcomes (people served, patients supported, hours delivered, meals provided, youth reached)
-- Geographic reach (states, countries, communities, facilities, partner locations)
-- Organizational scale (volunteers, staff, languages spoken, cancer types, referring organizations)
-- Financial summary (total revenue, total expenses — only top-line)
+The text is TAGGED: each text line and each table cell ends with a source marker in angle brackets — ⟨t42⟩ for a text line, ⟨c17⟩ for a table cell. These markers identify exactly where each piece appears in the document.
 
-For each metric, return:
-- "metric_text": Short natural language description (e.g., "1,514 cancer patients and caregivers served")
-- "metric_type": Short category label for what is being measured, without the number (e.g., "patients and caregivers supported", "volunteer hours", "meals and snacks", "youth served", "program participants"). Use lowercase.
-- "metric_value": The numeric value as a number
-- "unit": What is being counted (e.g., "people", "hours", "states", "languages")
-- "geo_impact": Geographic scope of this metric. One of: "LOCAL" (single city/county), "STATE" (single state), "NATIONAL" (multi-state or nationwide), or "GLOBAL" (international). Infer from context clues in the text.
-- "source_snippet": A VERBATIM copy-paste from the source text that contains this metric. Must be a contiguous span — copy it character-for-character, including original punctuation, capitalization, and spacing. NEVER rephrase, reformat numbers (e.g., "$2.8M" when the source says "$2.8 million"), compose from separate parts of the document, or add words not in the source. If the metric appears in a table, copy the relevant cell text.
+WHAT COUNTS AS A METRIC
+A number the organization reports as evidence of its mission — whom or what it served, reached, helped, delivered, changed, or achieved — the kind of figure it would put on a one-page summary or in an outcomes report. It counts whether it is for the reporting year or cumulative/to-date. A metric is a REPORTED RESULT or HEADLINE FIGURE, not merely any number that appears in a sentence.
 
-Extract every distinct metric even if the numbers are related (e.g., "11,500 total served" and "1,514 served through matching" are separate metrics). For "20+" or "over 500", use the stated number (20, 500).
+CLASSIFY each metric you keep into one tier:
+- "outcome_impact": a change, benefit, or result for people/communities/systems (85% improved reading; recidivism fell 12%; earnings rose $4,200)
+- "reach_output": scale of service delivered or direct output (6,000 families served; 12,500 meals distributed; 800 sessions held)
+- "capacity_input": resources, staff, sites, vehicles, partners, operating scale (9 vans; 16 centers; 42 staff; 4 partner organizations)
+- "activity_count": activities completed or launched, not yet a reach or outcome (launched 3 programs; hosted 5 events)
+- "financial": ONLY the organization's single top-line totals for the year — total revenue, total expenses, or total funds raised. NOT individual grants, NOT amounts by funder, NOT line items. Expect at most a few per report. Lowest priority.
 
-Skip: detailed financial breakdowns (individual line items, percentages of budget), page numbers, years as dates, addresses, phone numbers, ZIP codes, individual donor names and gift amounts, biographical details (ages, years of experience).
+DO NOT EXTRACT (these are not metrics):
+- Numbers that are descriptive color, illustration, or process detail inside a story or anecdote — how the work is done, or narrative flavor (e.g. "100 pounds of potatoes to make a meal", "nine cases of cantaloupe", "drove 12 miles", "a 3-hour home visit"). These describe HOW, not the org's reported impact.
+- Dates/years (founded 2021; since 1998) and durations/tenure (9-month program; 45 years of service; 30th anniversary)
+- Forecasts or goals not yet achieved (will rise 14% by 2045; $15M goal)
+- Rankings/ordinals (#1 city; 3rd largest) and awards/honors (one of seven honorees)
+- Decorative ratings/levels/labels (4-star; Level 3)
+- A bare 1 or 2 that just means one event happened or one thing exists (passed a bill = 1; the only shelter = 1), or a multiplier (doubled = 2)
+- External/population statistics — a number describing the surrounding community or general population, NOT this org's own result (a county/city/state/national poverty, unemployment, or demographic rate). A statistic about THIS org's OWN clients/participants IS a metric.
+- Sub-rows of a program-breakdown table, and per-program / per-channel / per-county breakdowns of a larger total — extract the headline TOTAL (e.g. "945 new clients served"), NOT the per-program rows (not "DVIP: 94", "FAST: 89", "Counseling: 74" when those sum into a reported total).
+- Per-line money breakdowns: individual grant awards or amounts by funder (e.g. "ADECA grant award $84,776", "Wells Fargo grant $20,000"), individual budget/expense line items, percentages of budget, donor names and gift amounts. (Only the org's single top-line totals count, as the "financial" tier.)
+- Page numbers, addresses, phone numbers, ZIP codes, biographical details.
 
-Return a JSON array of metric objects. If no metrics found, return [].
+FOR EACH METRIC, return:
+- "metric_text": a short, natural-language description of the metric, including the number, as it reads on the page (e.g. "1,514 cancer patients and caregivers served"). Stay close to the source wording; do not editorialize or add claims not in the text.
+- "metric_value": the numeric value as a plain number (no commas, $, %)
+- "unit": what is being counted (e.g. people, hours, meals, states, percent, dollars)
+- "tier": one of the five tiers above
+- "source_snippet": a VERBATIM, contiguous copy-paste from the source text containing this metric — character-for-character, including original punctuation, capitalization, and spacing. NEVER rephrase, reformat numbers (e.g. "$2.8M" when the source says "$2.8 million"), compose from separate parts of the document, or add words not in the source. If the metric is in a table, copy the relevant cell text.
+- "value_ref": the ⟨⟩ marker on the line or cell where this VALUE appears
+- "subject_ref": the ⟨⟩ marker where this metric's label/subject appears
 
-IMPORTANT: Only extract metrics explicitly present in the text. Never invent or fabricate. The source_snippet MUST be a verbatim substring of the input text — if you cannot locate a contiguous span for a metric, do not extract it.
+GROUND OR DROP — never emit an ungrounded metric:
+- value_ref and subject_ref must be markers that actually appear in the text above; never invent or guess a marker.
+- If you cannot locate the value's marker, OR cannot copy a verbatim contiguous source_snippet, DO NOT extract that metric. Never return null for a location — drop the metric instead.
 
-Return ONLY the JSON array, no other text."""
+Prefer FEWER, higher-quality metrics. Do not pad to a quota; return only what the report genuinely supports. Extract every DISTINCT metric even when numbers are related ("11,500 total served" and "1,514 served through matching" are separate). For "20+" or "over 500", use the stated number (20, 500).
+
+Return ONLY a JSON array of metric objects, most important first. If none, return []."""
 
 _STORIES_PROMPT = """You extract impact stories and personal narratives from nonprofit annual reports and impact reports.
 
