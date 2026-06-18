@@ -91,7 +91,13 @@ Orchestration cluster (in `dashboard/pipeline/`): `orchestrator, stages, schedul
 | crawler sync vs async | `crawler.py` *imports* `async_crawler` — intertwined, both live |
 | duplicate `pipeline_classify` | `tools/` = stage entry, top-level = live lib (in-degree 3) |
 
-**The real mess (P — pending census):** scratch/research dirs — `locard/operations/comp-metric-regression/` (~32 scripts), `p20-regroup-test/`, `spikes/0064/`, `experiments/` — plus `.builders/` worktree duplicates and **4 nested venvs** (`reports/venv`, `nonprofits/venv`, root, `.builders/.../venv`).
+**The real mess — censused [V]:**
+- **`spikes/0064/` = 5.0 GB**, almost entirely **duplicated, regenerable PDFs + page images** under `eval_set/vision/*_img/` (the *same* source PDFs copied into ~6 separate review-image dirs; gitignored, so disk-only). → delete (regenerable from S3).
+- **`operations/` = 450 MB / 932 JSON run-artifacts:** `p20-regroup-test/` (341 MB, **857 JSON**), `story-definition/` (76 MB), `comp-metric-regression/` (32 MB, 45 JSON). Mostly throwaway run outputs.
+- **`comp-metric-regression/` = ~55 one-off research scripts.** Keepers: `review_server.py` (⚠️ **LIVE — it's `metric-review.service`, misplaced in a research dir; should be relocated to real code**), `regroup.py` (validated geometry method), `frozen/composed-baseline-2026-06-14/` (deliberate baseline), `fixtures/`. The other ~50 (`build_*`, `review_*`, one-off checks) → archive.
+- Plus `.builders/` worktree duplicates and **4 nested venvs** (`reports/venv`, `nonprofits/venv`, root, `.builders/.../venv`).
+
+**Headline:** the disk + file sprawl is ~5.4 GB and ~2,800 scratch files, but it's **regenerable artifacts + one-off scripts**, not load-bearing code. One genuine structural fix surfaced: a **live service (`review_server.py`) lives in a scratch dir**.
 
 ---
 
