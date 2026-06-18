@@ -82,7 +82,7 @@ Orchestration cluster (in `dashboard/pipeline/`): `orchestrator, stages, schedul
 - `lavandula/reports/report.py`
 - `lavandula/reports/catalogue.py`
 - `lavandula/reports/schema.py`
-(plus `dashboard/pipeline/tests.py`, an empty Django stub.)
+(plus `dashboard/pipeline/tests.py`, an empty Django stub.) — **but "orphaned" ≠ junk:** these are *unwired features* (coverage report, corpus retention, a shim), see §8.
 
 **The "version minefield" was largely a misread** — verified as entry+library structure, not duplicates:
 | looked like | actually is |
@@ -110,9 +110,11 @@ Orchestration cluster (in `dashboard/pipeline/`): `orchestrator, stages, schedul
 
 ---
 
-## 8. Open questions for the operator (batched — answer at leisure)
+## 8. Decisions (operator-confirmed 2026-06-18)
 
-1. **Metric extraction is hand-run, not orchestrated** — intended end-state, or a gap to wire into `STAGE_REGISTRY`?
-2. **Confirmed-dead** `reports/report.py`, `catalogue.py`, `schema.py` — any reason to keep before they're archived?
-3. **Cleanup targets** (to action in the cleanup phase): local-PG scratch DBs, stale `vl2_eval_server`, `.builders/` worktrees, nested venvs — all OK to remove?
-4. Reminder still open: **archive vs delete** for deprecated files.
+- **Metric extraction → wire into orchestrator + dashboard next iteration** (a planned TODO, not a permanent gap). After metrics, a **seed→crawl refactor** toward a search-engine model + website HTML index + update engine. **[planned]**
+- **Cleanup policy — two-stage:** regenerable junk (5 GB duplicated images, local-PG scratch DBs, stale `vl2_eval_server`, nested venvs, `.builders/`) → **delete directly** (regenerates). Deprecated *code/scripts* → **Stage 1** git snapshot tag `pre-housekeeping-<date>` (recoverable forever), **Stage 2** delete from tree; drop the tag after the metric+crawl refactors land (or 90 days). **[approved]**
+- **The 3 "dead" `reports/` files are orphaned *features*, not junk** (read 2026-06-18): `schema.py` = vestigial Spec-0017 shim → **drop**; `report.py` = coverage-report generator (unwired) → keep/decide; `catalogue.py` = corpus deletion/retention logic (unwired) → **lean keep** (real capability).
+
+## 9. Pending probes (next)
+- 67-route control-panel map · per-subsystem file detail · full scratch-script categorization (the ~50 comp-metric one-off scripts) · infra layer (SSM params, deploy scripts, systemd units, `gunicorn.conf.py`)
