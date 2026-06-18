@@ -110,14 +110,15 @@ def subject_quality(label):                            # line 46
 
 ---
 
-## Reproducing `new-review-data.json` (honest state)
+## Reproducing `new-review-data.json`
 
-Three steps:
-1. **Extract** — `_METRICS_PROMPT` over the 25 NTEE-P docs. *(script `prompt_headtohead.py` — currently in `/tmp`, **NOT committed**.)*
-2. **Build records + boxed images** — resolve markers, render pages with value/subject boxes. *(script `build_new_review.py` — currently in `/tmp`, **NOT committed**.)*
-3. **Apply the gate** — `dedup()` then `render_and_grade()` per metric, writing `statement` + `gate_decision`.
+Two committed scripts in `locard/spikes/0064/eval_set/vision/`:
+```
+python3 regen_1_extract.py        # STEP 1: _METRICS_PROMPT over 25 NTEE-P docs -> prompt_test.json
+python3 regen_2_build_review.py   # STEP 2: dedup -> resolve markers -> boxed images -> gate -> new-review-data.json
+```
+- **`regen_1_extract.py`** — extraction only.
+- **`regen_2_build_review.py`** — builds records + boxed page images **and folds the gate in** (`dedup()` then `render_and_grade()` per metric), so its output is the final gated data — no separate apply step.
 
-**Import note:** since `slot_render.py` now lives in `lavandula/nlp/`, step 3 imports it as
-`from lavandula.nlp.slot_render import render_and_grade, dedup` — **not** a local `import slot_render`.
-
-**Caveat:** steps 1–2 are ad-hoc `/tmp` scripts and are **not committed**, so this is **not** a one-command reproducible regeneration. Only the gate (step 3, `slot_render.py`) and the diagnostic (`mispairing_check.py`) are committed code.
+Both import the gate as `from lavandula.nlp.slot_render import render_and_grade, dedup`.
+The ~445 MB of images under `new_review_img/` are produced by STEP 2 and are **NOT committed** (regenerable).
