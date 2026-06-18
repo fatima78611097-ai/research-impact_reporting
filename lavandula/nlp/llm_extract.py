@@ -33,6 +33,8 @@ _RETRY_DELAYS = (1, 2, 4)
 _INPUT_COST_PER_M = 0.14
 _OUTPUT_COST_PER_M = 0.28
 
+# Post-extraction publish gating for THIS prompt's output lives in slot_render.py
+# (dedup + render_and_grade) and is documented in GATING.md — keep all three in sync.
 _METRICS_PROMPT = """You extract the FEATURED impact metrics from nonprofit annual and impact reports — the prominent, headline numbers the report itself highlights and a reader would remember, NOT every number on the page.
 
 The text is TAGGED: each text line and each table cell ends with a source marker in angle brackets — ⟨t42⟩ for a text line, ⟨c17⟩ for a table cell. These markers identify exactly where each piece appears in the document.
