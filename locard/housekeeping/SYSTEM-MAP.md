@@ -122,6 +122,16 @@ Notes: **`llm-extract` and `faithfulness` HAVE dashboard UIs** (queue/status/sto
 
 ---
 
+## 7b. Platform / infrastructure **[V]**
+
+- **Host & web:** EC2 `cloud2` (172.31.35.76), Ubuntu. nginx (443, `cloud2.lavandulagroup.com`) → gunicorn (`127.0.0.1:8000`, 2 workers, timeout 120) → Django (`dashboard.wsgi`).
+- **systemd services:** `lavandula-dashboard` (gunicorn) · `lavandula-orchestrator` (`run_orchestrator`) · `metric-review` (`review_server.py` — ⚠️ runs from the scratch dir) · plus nginx, tailscale, local-pg (scratch).
+- **Database:** RDS `lava_prod1` (us-east-1). Django authenticates with **IAM tokens** (`dashboard.pg_iam_backend`, `sslmode=require`); scripts use the `research_app` user. Reached over the **private VPC IP**.
+- **Secrets (SSM, via `get_secret`):** `rds-endpoint/port/database/schema`, `django-secret-key`, `lavandula/deepseek/api_key`, `brave-api-key`, `serpex-api-key`.
+- **External APIs:** DeepSeek (metric extraction), **Brave + Serpex** (URL resolve / search), Gemini (vision — research scripts).
+- **Deploy:** ⚠️ **no automated deploy/IaC script** — manual, runbook-only (`locard/operations/0058-deploy-runbook.md`). A genuine handoff gap.
+- **Networking:** Tailscale for cross-host reach.
+
 ## 8. Decisions (operator-confirmed 2026-06-18)
 
 - **Metric extraction → wire into orchestrator + dashboard next iteration** (a planned TODO, not a permanent gap). After metrics, a **seed→crawl refactor** toward a search-engine model + website HTML index + update engine. **[planned]**
@@ -129,4 +139,4 @@ Notes: **`llm-extract` and `faithfulness` HAVE dashboard UIs** (queue/status/sto
 - **The 3 "dead" `reports/` files are orphaned *features*, not junk** (read 2026-06-18): `schema.py` = vestigial Spec-0017 shim → **drop**; `report.py` = coverage-report generator (unwired) → keep/decide; `catalogue.py` = corpus deletion/retention logic (unwired) → **lean keep** (real capability).
 
 ## 9. Pending probes (next)
-- ~~67-route control-panel map~~ ✅ (§5b) · per-subsystem file detail · full scratch-script categorization (the ~50 comp-metric one-off scripts) · infra layer (SSM params, deploy scripts, systemd units, `gunicorn.conf.py`) · classifier v1-vs-v3 deprecation check
+- ~~67-route control-panel map~~ ✅ (§5b) · per-subsystem file detail · full scratch-script categorization (the ~50 comp-metric one-off scripts) · ~~infra layer~~ ✅ (§7b) · classifier v1-vs-v3 deprecation check
