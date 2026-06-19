@@ -19,10 +19,11 @@ import threading
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-BASE = "/home/ubuntu/research/locard/operations/comp-metric-regression"
+BASE = "/home/ubuntu/research/locard/operations/metric-review"
 DATA = "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/review-data.json"
 STORY_DATA = "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/story-review-data.json"
 SLOT_DATA = "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/slot-review-data.json"
+NEW_DATA = "/home/ubuntu/research/locard/spikes/0064/eval_set/vision/new-review-data.json"
 DB = BASE + "/review.db"
 PORT = 8770
 FIELDS = ["operator_verdict", "operator_stage", "operator_mode", "operator_notes", "actual_location", "status"]
@@ -39,6 +40,10 @@ def db():
         n INTEGER PRIMARY KEY AUTOINCREMENT, id TEXT, payload TEXT, ts TEXT)""")
     # SEPARATE grade store for the slot pipeline — never touches `reviews`
     c.execute("""CREATE TABLE IF NOT EXISTS slot_reviews(
+        id TEXT PRIMARY KEY, operator_verdict TEXT, operator_stage TEXT, operator_mode TEXT,
+        operator_notes TEXT, actual_location TEXT, status TEXT, updated_at TEXT)""")
+    # SEPARATE grade store for the NEW-prompt review set — never touches `reviews`
+    c.execute("""CREATE TABLE IF NOT EXISTS new_reviews(
         id TEXT PRIMARY KEY, operator_verdict TEXT, operator_stage TEXT, operator_mode TEXT,
         operator_notes TEXT, actual_location TEXT, status TEXT, updated_at TEXT)""")
     return c
@@ -59,6 +64,10 @@ try:
     SLOT_IDS = {r["id"] for r in json.load(open(SLOT_DATA))}
 except FileNotFoundError:
     SLOT_IDS = set()
+try:
+    NEW_IDS = {r["id"] for r in json.load(open(NEW_DATA))}
+except FileNotFoundError:
+    NEW_IDS = set()
 
 
 class H(BaseHTTPRequestHandler):
@@ -89,6 +98,11 @@ class H(BaseHTTPRequestHandler):
                 rows = c.execute("SELECT id," + ",".join(FIELDS) + ",updated_at FROM reviews").fetchall()
             cols = ["id"] + FIELDS + ["updated_at"]
             return self._send(200, json.dumps({r[0]: dict(zip(cols[1:], r[1:])) for r in rows}))
+        if p == "/new-state":
+            with _lock, db() as c:
+                rows = c.execute("SELECT id," + ",".join(FIELDS) + ",updated_at FROM new_reviews").fetchall()
+            cols = ["id"] + FIELDS + ["updated_at"]
+            return self._send(200, json.dumps({r[0]: dict(zip(cols[1:], r[1:])) for r in rows}))
         if p == "/csv":
             return self._csv()
         return self._send(404, json.dumps({"error": "not found"}))
@@ -110,6 +124,24 @@ class H(BaseHTTPRequestHandler):
                 c.execute("INSERT INTO slot_reviews(id," + ",".join(SLOT_FIELDS) + ",updated_at) VALUES("
                           + ",".join(["?"] * (len(SLOT_FIELDS) + 2)) + ") ON CONFLICT(id) DO UPDATE SET "
                           + ",".join(f"{f}=excluded.{f}" for f in SLOT_FIELDS) + ",updated_at=excluded.updated_at",
+                          [rid] + vals + [ts])
+                c.commit()
+            return self._send(200, json.dumps({"ok": True, "id": rid, "updated_at": ts}))
+        if p == "/new-save":
+            try:
+                n = int(self.headers.get("Content-Length", 0))
+                payload = json.loads(self.rfile.read(n) or b"{}")
+            except Exception as e:
+                return self._send(400, json.dumps({"error": str(e)}))
+            rid = payload.get("id")
+            if not rid or rid not in NEW_IDS:
+                return self._send(400, json.dumps({"error": "bad new id"}))
+            ts = datetime.utcnow().isoformat(timespec="seconds") + "Z"
+            vals = [payload.get(f, "") or "" for f in FIELDS]
+            with _lock, db() as c:
+                c.execute("INSERT INTO new_reviews(id," + ",".join(FIELDS) + ",updated_at) VALUES("
+                          + ",".join(["?"] * (len(FIELDS) + 2)) + ") ON CONFLICT(id) DO UPDATE SET "
+                          + ",".join(f"{f}=excluded.{f}" for f in FIELDS) + ",updated_at=excluded.updated_at",
                           [rid] + vals + [ts])
                 c.commit()
             return self._send(200, json.dumps({"ok": True, "id": rid, "updated_at": ts}))

@@ -63,5 +63,4 @@ locard/operations/p20-regroup-test/**/*.pdf
 
 # more regenerable research artifacts (renders / scratch snapshots / review viewers)
 locard/operations/story-definition/audit_pages/
-locard/spikes/0064/eval_set/vision/*.html
 locard/spikes/0064/eval_set/vision/review-data.before-*.json

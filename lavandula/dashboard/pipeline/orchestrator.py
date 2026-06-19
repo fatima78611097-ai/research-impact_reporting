@@ -77,14 +77,6 @@ COMMAND_MAP: dict[str, dict[str, Any]] = {
             "re_classify_definition": {"type": "text", "pattern": r"^[a-z][a-z0-9_]*:v\d+$", "flag": "--re-classify-definition"},
         },
     },
-    # Deprecated: enrich_990 now delegates to load_990_index + process_990_auto.
-    # Kept for historical job display only. No dashboard UI creates 990-enrich jobs.
-    "990-enrich": {
-        "cmd": ["python3", "-m", "lavandula.nonprofits.tools.enrich_990"],
-        "params": {
-            "ein": {"type": "text", "pattern": r"^\d{9}$", "flag": "--ein"},
-        },
-    },
     "990-index": {
         "cmd": ["python3", "lavandula/dashboard/manage.py", "load_990_index"],
         "params": {
