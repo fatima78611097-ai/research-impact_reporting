@@ -37,7 +37,7 @@ A cron job runs `load_990_index → process_990_auto` on a schedule (Feb/Mar, da
 
 ---
 
-## 3. Module map — `lavandula/` **[V for roles; P for full file detail]**
+## 3. Module map — `lavandula/` **[V]**  (file-by-file detail: [FILE-INVENTORY.md](FILE-INVENTORY.md))
 
 | module | .py | role |
 |---|---|---|
@@ -102,6 +102,17 @@ Notes: **`llm-extract` and `faithfulness` HAVE dashboard UIs** (queue/status/sto
 | 5 resolver files | `pipeline_resolve` (stage entry) + `pipeline_resolver` (live lib, in-degree 7) + helpers; `batch_resolve`/`cli_resolve` are standalone CLI scripts |
 | crawler sync vs async | `crawler.py` *imports* `async_crawler` — intertwined, both live |
 | duplicate `pipeline_classify` | `tools/` = stage entry, top-level = live lib (in-degree 3) |
+
+**…but there IS real deprecated code — verified via import-graph + the files' own docstrings** (file-by-file detail in [`FILE-INVENTORY.md`](FILE-INVENTORY.md)):
+
+| file(s) | what it is | verdict |
+|---|---|---|
+| `nonprofits/{agent_runner, batch_manifest}` + `tools/batch_resolve` (+ its test) | **Spec-0008 agent-based resolver** — a self-contained cluster; `batch_resolve` is invoked by *nobody* | **superseded by Spec 0018** → archive |
+| `nonprofits/tools/cli_resolve` | Spec-0018-amendment CLI resolver; nobody imports or invokes it | superseded → archive |
+| `nonprofits/tools/enrich_990` (+ its test) | **self-labeled "DEPRECATED"** in its docstring | → archive |
+| `reports/{catalogue, report, schema}` | orphaned *features* (retention / coverage / shim) — see §8 | `schema`→drop; others decide |
+
+**Resolver picture, fully resolved:** `pipeline_resolve` (current stage entry, Spec 0018/0031) + `pipeline_resolver` (current lib, in-degree 7) are canonical; `batch_resolve` + `cli_resolve` are superseded; `resolve_websites` is an eval-only helper. *That* is the "which file is real" answer the whole effort is about.
 
 **The real mess — censused [V]:**
 - **`spikes/0064/` = 5.0 GB**, almost entirely **duplicated, regenerable PDFs + page images** under `eval_set/vision/*_img/` (the *same* source PDFs copied into ~6 separate review-image dirs; gitignored, so disk-only). → delete (regenerable from S3).
