@@ -67,12 +67,15 @@ def resolve_rel(modname, level, sub):
 
 indeg = {m: 0 for m in mods}
 importers = {m: set() for m in mods}
+docstrings = {}
 for p in all_files:
     m = mod_of(p)
     try:
         tree = ast.parse(open(p, encoding="utf-8").read())
     except Exception:
         continue
+    if m in mods:
+        docstrings[m] = (ast.get_docstring(tree) or "").replace("\n", " ").strip()[:88]
     targets = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.ImportFrom):
@@ -120,6 +123,16 @@ print(f"lavandula modules assessed: {len(mods)}  |  import sources scanned: {len
 print(f"DEAD CANDIDATES (0 in-degree, not entry/stage/django/__init__/__main__): {len(dead)}\n")
 for m, p in dead:
     print(f"  {os.path.relpath(p, ROOT)}")
+
+if len(sys.argv) > 1 and sys.argv[1] == "--inventory":
+    pref = sys.argv[2] if len(sys.argv) > 2 else ""
+    deadset = {p for _, p in dead}
+    for m, p in sorted(mods.items()):
+        rel = os.path.relpath(p, ROOT)
+        if pref in rel and "/tests/" not in rel and not rel.endswith("__init__.py"):
+            flag = "ORPHAN" if p in deadset else (f"in:{indeg[m]}" if indeg[m] else "ENTRY")
+            print(f"  {rel:60} [{flag:>7}] {docstrings.get(m, '')}")
+    sys.exit(0)
 
 if len(sys.argv) > 1:
     print("\n=== watchlist: who imports these ===")
