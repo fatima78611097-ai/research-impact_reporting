@@ -2,14 +2,14 @@
 
 **Scope:** `new-metric-review.html` → `new-review-data.json`.
 **Verified state:** 297 metrics — **271 publish / 26 quarantine** (25 NTEE-P docs).
-**All gating code lives in `lavandula/nlp/slot_render.py`** (sibling of the prompt, `llm_extract.py`). Line numbers below are exact.
+**All gating code lives in `lavandula/nlp/slot_render.py`** (sibling of the prompt, `llm_extract.py`). Functions are cited by name, not line number (line numbers drift); verified against `slot_render.py @ 0eaa66ab`.
 **Inputs:** selective prompt output (`llm_extract.py @ b586e941`) + resolved markers (`s_text`, value/subject pages & bboxes from `build_new_review.py`).
 
 The decision on every record is set by two calls: `dedup()` over each document's metrics, then `render_and_grade(m, s_text)` per metric. Order of gates is exactly the order inside `render_and_grade`.
 
 ---
 
-## Step 1 — `dedup(metrics)` · `slot_render.py:86`
+## Step 1 — `dedup(metrics)` · `slot_render.py`
 Runs first, per document. **Removed 14** before the viewer.
 ```python
 def dedup(metrics):
@@ -27,13 +27,13 @@ def dedup(metrics):
 
 ---
 
-## Step 2 — `metric_quality(metric_text)` · `slot_render.py:19` (called at `render_and_grade:67`)
+## Step 2 — `metric_quality(metric_text)` · `slot_render.py` (called first inside `render_and_grade`)
 First gate inside `render_and_grade`; quarantines regardless of inline/split.
 ```python
-_TENURE   = re.compile(r"\b\d+\s*(st|nd|rd|th)\s+(year|anniversary)\b", re.I)            # line 16
-_FIN_FRAG = re.compile(r"\bgrowth on\b|\bawarded\s+\d+\s+grants?\b|%\s*of\s+(revenue|budget|overall|the\s+award)", re.I)  # line 17
+_TENURE   = re.compile(r"\b\d+\s*(st|nd|rd|th)\s+(year|anniversary)\b", re.I)
+_FIN_FRAG = re.compile(r"\bgrowth on\b|\bawarded\s+\d+\s+grants?\b|%\s*of\s+(revenue|budget|overall|the\s+award)", re.I)
 
-def metric_quality(metric_text):                       # line 19
+def metric_quality(metric_text):
     t = metric_text or ""
     if _TENURE.search(t):   return ("junk", "tenure / anniversary, not a metric")
     if _FIN_FRAG.search(t): return ("junk", "financial-statement fragment")
@@ -43,7 +43,7 @@ def metric_quality(metric_text):                       # line 19
 
 ---
 
-## Step 3 — inline pass-through · `render_and_grade:68,74`
+## Step 3 — inline pass-through · in `render_and_grade`
 ```python
 inline = m.get("value_ref") == m.get("subject_ref")
 ...
@@ -54,7 +54,7 @@ if inline:
 
 ---
 
-## Step 4 — cross-cell render fix · `render_and_grade:76`
+## Step 4 — cross-cell render fix · in `render_and_grade`
 ```python
 digits = str(m.get("metric_value")).split(".")[0].replace(",", "").lstrip("-")
 if len(snip.split()) > 6 and digits and digits in snip.replace(",", ""):
@@ -64,16 +64,16 @@ if len(snip.split()) > 6 and digits and digits in snip.replace(",", ""):
 
 ---
 
-## Step 5 — `subject_quality(label)` · `slot_render.py:46` (called at `render_and_grade:82`)
+## Step 5 — `subject_quality(label)` · `slot_render.py` (called last inside `render_and_grade`)
 Applies **only to split callouts** that reached this point.
 ```python
-_GRATITUDE  = re.compile(r"\b(thank you|thanks|grateful|gratitude|generous|sincere(?:ly)?|proud(?:ly)? to|honou?red|pleased to|delighted|we appreciate|appreciation|salute|shout[- ]?out|kudos)\b", re.I)  # line 8
-_BARE_META  = re.compile(r"^(total|number|amount|count|sum|balance|net|gross|subtotal|figures?)\s*:?\s*$", re.I)   # line 12
-_FY_HEADER  = re.compile(r"\b(number|figures?|count|amount)\b.*\b(beginning|end)\s+of\b", re.I)                    # line 13
-_PREAUDIT   = re.compile(r"\bpre-?audit\b", re.I)                                                                 # line 14
-_ONLY_PUNCT = re.compile(r"^[\W\d]+$")                                                                            # line 27
+_GRATITUDE  = re.compile(r"\b(thank you|thanks|grateful|gratitude|generous|sincere(?:ly)?|proud(?:ly)? to|honou?red|pleased to|delighted|we appreciate|appreciation|salute|shout[- ]?out|kudos)\b", re.I)
+_BARE_META  = re.compile(r"^(total|number|amount|count|sum|balance|net|gross|subtotal|figures?)\s*:?\s*$", re.I)
+_FY_HEADER  = re.compile(r"\b(number|figures?|count|amount)\b.*\b(beginning|end)\s+of\b", re.I)
+_PREAUDIT   = re.compile(r"\bpre-?audit\b", re.I)
+_ONLY_PUNCT = re.compile(r"^[\W\d]+$")
 
-def subject_quality(label):                            # line 46
+def subject_quality(label):
     s = (label or "").strip()
     if not s or _ONLY_PUNCT.match(s):                       return ("junk", "empty / no words")
     if _GRATITUDE.search(s):                               return ("junk", "gratitude / marketing blurb, not a label")
@@ -89,8 +89,8 @@ def subject_quality(label):                            # line 46
 ---
 
 ## Support code (not gates)
-- `fmt_value(v, unit)` · `slot_render.py:33` — formats `$ / % / commas` for the display only.
-- `_clean(s)` · `slot_render.py:30` — strips stray `⟨…⟩` markers from a snippet.
+- `fmt_value(v, unit)` · `slot_render.py` — formats `$ / % / commas` for the display only.
+- `_clean(s)` · `slot_render.py` — strips stray `⟨…⟩` markers from a snippet.
 
 ## Quarantine tally (matches the data: 26)
 `13` too long · `8` contentless header · `2` financial fragment · `1` tenure · `1` reads-as-sentence · `1` gratitude.
@@ -102,7 +102,7 @@ def subject_quality(label):                            # line 46
 - **Programmatic geometry check: run ONCE as a diagnostic only — it did NOT apply a fix and did NOT persist anything.** It classified the 271 published metrics (190 inline = no pairing risk, 79 split co-located = coherent, 2 split far-apart = suspect, both `128de607`). No fix was applied, the flags were **not written into the data**, and the 2 suspects were **not quarantined** — they are still `publish`. Check-and-flag, nothing more.
   - **Code (exact, now captured):** `lavandula/nlp/mispairing_check.py` → `geometry_pairing_check(records)`. Thresholds: `dy < 60` pts = same row; `(dx < 160 and dy < 160)` = same card; midpoints from stored `v_bbox`/`s_bbox`. Verified to reproduce `190 / 79 / 2`. It is **not** part of `slot_render.py` / the publish gate.
 - **Vision mispairing run: NOT COMPLETED.** A vision judge (Flash-Lite, label-vs-page) was proposed to confirm pairing on this set but was **never run**. There is no vision verdict on any metric in this data.
-- **The only mispairing-adjacent REPAIR that is applied** is the cross-cell render fix (Step 4, `slot_render.py:76`) — narrow: re-renders a number from its own prose cell when the label was grafted from a different cell. It does **not** address within-grid cross-pairs.
+- **The only mispairing-adjacent REPAIR that is applied** is the cross-cell render fix (Step 4, in `render_and_grade`) — narrow: re-renders a number from its own prose cell when the label was grafted from a different cell. It does **not** address within-grid cross-pairs.
 
 ## Other NOT-gated gaps
 - **Bare-1s / weak buried-prose** — no rule; currently publish.
