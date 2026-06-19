@@ -2,7 +2,19 @@
 
 **Branch:** `repo-housekeeping`. **Method:** derived from ground truth (systemd, `STAGE_REGISTRY`, RDS `information_schema`, import-graph reachability), not memory. Every line is marked **[V]** verified-from-source or **[P]** pending. Canonical-vs-dead uses the two-source rule + `import_graph.py` reachability; "dead" is never asserted without verifying dynamic/string imports.
 
-> Status: **discovery COMPLETE** — pipeline backbone, module map, file-level inventory ([FILE-INVENTORY.md](FILE-INVENTORY.md)), data layer, processes, control panel, dead-code + verified deprecation list, scratch census + script categorization, platform/infra. Classifier v1/v3 resolved (both live). **Next phase = cleanup ACTIONS** (your two-stage policy), pending your go.
+> Status: **discovery COMPLETE** — pipeline backbone, module map, file-level inventory ([FILE-INVENTORY.md](FILE-INVENTORY.md)), data layer, processes, control panel, dead-code + verified deprecation list, scratch census + script categorization, platform/infra. Classifier v1/v3 resolved (both live). **Next phase = cleanup ACTIONS** (the two-stage policy in §8), pending operator go.
+
+---
+
+## 👉 START HERE — handoff for whoever picks this up
+
+**To take over this effort, read, in order:** this file → [`FILE-INVENTORY.md`](FILE-INVENTORY.md) (the 131-file "what does what") → run `python3 locard/housekeeping/import_graph.py` (live/dead reachability) to re-verify nothing changed. Everything is on branch `repo-housekeeping`.
+
+**The discovery is done.** What remains is in §9 (the ACTION phase): cleanup under the two-stage policy (§8), relocate `review_server.py` out of the scratch dir, decide the two orphaned features, wire metric extraction into the orchestrator.
+
+**The one thing this map cannot self-verify** (and you can't either, from `cloud2`): the live **g6 parse-worker host inventory** — those instances are ephemeral/remote (§7b). That needs AWS access or the operator. Everything else here was verified from source on this box.
+
+**Discipline that produced this** (keep it): map from ground truth not memory; two-source rule for canonical-vs-dead; verify dynamic/string imports before calling anything "dead"; never assert a live-host fact you can't probe.
 
 ---
 
@@ -135,7 +147,12 @@ Notes: **`llm-extract` and `faithfulness` HAVE dashboard UIs** (queue/status/sto
 
 ## 7b. Platform / infrastructure **[V]**
 
-- **Host & web:** EC2 `cloud2` (172.31.35.76), Ubuntu. nginx (443, `cloud2.lavandulagroup.com`) → gunicorn (`127.0.0.1:8000`, 2 workers, timeout 120) → Django (`dashboard.wsgi`).
+- **⚠️ Host topology is MULTI-HOST** (corrected): a **control host** + **ephemeral g6 GPU parse workers**.
+  - **Control host = `cloud2` (ip-172-31-35-76)** — dashboard, orchestrator, RDS access. The only always-on host.
+  - **Parse/Docling workers = g6 GPU instances, spun up per parse run** (Spec 0058), register in `lava_dashboard.workers` (`has_gpu`) + report progress in `lava_parse.worker_heartbeats` (`instance_id`/`run_id`/`docs_completed`), then terminate. None active between runs (currently: cloud2 online + `ip-172-31-37-199` offline).
+  - **Parse-worker code:** `lavandula/parse/{worker,parse_runner,parse_insert_batch}.py` (Spec 0058). **Deploy:** `locard/operations/0058-deploy-runbook.md`.
+  - **[P] Can't be verified from cloud2:** the live g6 instance inventory (count, IDs, state) is ephemeral/remote — needs AWS access or the operator. **This is the one layer the map can't fully self-verify.**
+- **Host & web:** EC2 `cloud2`, Ubuntu. nginx (443, `cloud2.lavandulagroup.com`) → gunicorn (`127.0.0.1:8000`, 2 workers, timeout 120) → Django (`dashboard.wsgi`).
 - **systemd services:** `lavandula-dashboard` (gunicorn) · `lavandula-orchestrator` (`run_orchestrator`) · `metric-review` (`review_server.py` — ⚠️ runs from the scratch dir) · plus nginx, tailscale, local-pg (scratch).
 - **Database:** RDS `lava_prod1` (us-east-1). Django authenticates with **IAM tokens** (`dashboard.pg_iam_backend`, `sslmode=require`); scripts use the `research_app` user. Reached over the **private VPC IP**.
 - **Secrets (SSM, via `get_secret`):** `rds-endpoint/port/database/schema`, `django-secret-key`, `lavandula/deepseek/api_key`, `brave-api-key`, `serpex-api-key`.
