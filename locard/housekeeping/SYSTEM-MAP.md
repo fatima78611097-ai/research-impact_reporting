@@ -1,6 +1,6 @@
 # Lavandula — System Map (housekeeping — discovery complete)
 
-**Branch:** `repo-housekeeping`. **Method:** derived from ground truth (systemd, `STAGE_REGISTRY`, RDS `information_schema`, import-graph reachability), not memory. Every line is marked **[V]** verified-from-source or **[P]** pending. Canonical-vs-dead uses the two-source rule + `import_graph.py` reachability; "dead" is never asserted without verifying dynamic/string imports.
+**Branch:** merged to `master` via PR #56 (2026-06-19); the `repo-housekeeping` branch has been deleted. **Method:** derived from ground truth (systemd, `STAGE_REGISTRY`, RDS `information_schema`, import-graph reachability), not memory. Every line is marked **[V]** verified-from-source or **[P]** pending. Canonical-vs-dead uses the two-source rule + `import_graph.py` reachability; "dead" is never asserted without verifying dynamic/string imports.
 
 > Status: **discovery COMPLETE** — pipeline backbone, module map, file-level inventory ([FILE-INVENTORY.md](FILE-INVENTORY.md)), data layer, processes, control panel, dead-code + verified deprecation list, scratch census + script categorization, platform/infra. Classifier v1/v3 resolved (both live). **Next phase = cleanup ACTIONS** (the two-stage policy in §8), pending operator go.
 
@@ -8,7 +8,7 @@
 
 ## 👉 START HERE — handoff for whoever picks this up
 
-**To take over this effort, read, in order:** this file → [`FILE-INVENTORY.md`](FILE-INVENTORY.md) (the 131-file "what does what") → run `python3 locard/housekeeping/import_graph.py` (live/dead reachability) to re-verify nothing changed. Everything is on branch `repo-housekeeping`.
+**To take over this effort, read, in order:** this file → [`FILE-INVENTORY.md`](FILE-INVENTORY.md) (the 131-file "what does what") → run `python3 locard/housekeeping/import_graph.py` (live/dead reachability) to re-verify nothing changed. This work is all merged to `master` (PR #56); the `repo-housekeeping` branch was deleted post-merge.
 
 **The discovery is done.** What remains is in §9 (the ACTION phase): cleanup under the two-stage policy (§8), relocate `review_server.py` out of the scratch dir, decide the two orphaned features, wire metric extraction into the orchestrator.
 
@@ -129,6 +129,11 @@ Notes: **`llm-extract` and `faithfulness` HAVE dashboard UIs** (queue/status/sto
 | `reports/{catalogue, report, schema}` | orphaned *features* (retention / coverage / shim) — see §8 | `schema`→drop; others decide |
 
 > **🧹 Cleanup executed 2026-06-19** (snapshot: tag `pre-housekeeping-2026-06-19`, fully recoverable). **Removed** (verified no references): `agent_runner`, `batch_manifest`, `tools/batch_resolve` (+test), `tools/cli_resolve`, `reports/schema`. **Recovered ~4 GB** by deleting stale `*_img/` dirs (kept `new_review_img` = live viewer). **Killed** stale `vl2_eval_server`. **Caught & reverted:** removing `enrich_990` left a dangling subprocess reference in `orchestrator.py` (import-analysis blind spot; post-check grep caught it) — restored. **Done since:** local Postgres removed; `review_server.py` relocated; `.builders/0069` worktree + nested venvs (reports/, nonprofits/) removed (~414 MB). `enrich_990` **command removed** (inert `990-enrich` phase enum kept — a migration would be needed to excise it, for no functional gain). **Cleanup essentially complete.**
+
+> **🌳 Final branch state (2026-06-19)** — after merging PR #56 and pruning all merged branches.
+> - **Local:** `master` · `sharpen-extract-prompt` (the metric-extraction prompt/gate work; its commits are also in `master`) · `backup/master-pre-0048` (a May-16 safety snapshot).
+> - **Remote (`origin`):** `master` · `sharpen-extract-prompt`.
+> - **Pruned:** ~30 local + 44 remote merged builder/PR branches (one per shipped spec) — all recoverable from their merged PRs. `repo-housekeeping` itself was merged then deleted; the deprecated-code rollback point remains the tag `pre-housekeeping-2026-06-19`.
 
 **Resolver picture, fully resolved:** `pipeline_resolve` (current stage entry, Spec 0018/0031) + `pipeline_resolver` (current lib, in-degree 7) are canonical; `batch_resolve` + `cli_resolve` are superseded; `resolve_websites` is an eval-only helper. *That* is the "which file is real" answer the whole effort is about.
 
