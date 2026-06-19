@@ -2,7 +2,7 @@
 
 **Branch:** `repo-housekeeping`. **Method:** derived from ground truth (systemd, `STAGE_REGISTRY`, RDS `information_schema`, import-graph reachability), not memory. Every line is marked **[V]** verified-from-source or **[P]** pending. Canonical-vs-dead uses the two-source rule + `import_graph.py` reachability; "dead" is never asserted without verifying dynamic/string imports.
 
-> Status: **verified [V]** — pipeline backbone, module map, data layer, processes, control panel (67 routes), dead-code analysis, scratch census, and platform/infra. **Remaining pending:** per-subsystem file-level detail, full categorization of the ~50 comp-metric scratch scripts, and the classifier v1-vs-v3 deprecation check.
+> Status: **discovery COMPLETE** — pipeline backbone, module map, file-level inventory ([FILE-INVENTORY.md](FILE-INVENTORY.md)), data layer, processes, control panel, dead-code + verified deprecation list, scratch census + script categorization, platform/infra. Classifier v1/v3 resolved (both live). **Next phase = cleanup ACTIONS** (your two-stage policy), pending your go.
 
 ---
 
@@ -84,7 +84,7 @@ Orchestration cluster (in `dashboard/pipeline/`): `orchestrator, stages, schedul
 - **Data views**: `/orgs` (+detail, +qa) · `/reports` (+detail, download, pdf, qa) · `/provenance` · `/stats`
 - **Orchestration control** (`/control` — 12 routes): queue pause/resume · bulk cancel/retry · clear-queue · health (fix-stale, release-locks) · **multi-host command/status**
 
-Notes: **`llm-extract` and `faithfulness` HAVE dashboard UIs** (queue/status/stop) — so metric extraction is operator-runnable from the panel, just not in `STAGE_REGISTRY`. **Two classifier UIs** exist (`classifier` + `classifier-v3`) — v3 is the current reclassify path; whether v1 is still used or legacy is a deprecation question to verify.
+Notes: **`llm-extract` and `faithfulness` HAVE dashboard UIs** (queue/status/stop) — so metric extraction is operator-runnable from the panel, just not in `STAGE_REGISTRY`. **Two classifier UIs** (`classifier` + `classifier-v3`) are **both live — NOT a v1/v3 deprecation** (verified): `classifier` drives the `classify` stage (#4, initial Gemma classify); `classifier-v3` drives `reclassify` (#9, the V3 definition-driven re-pass).
 
 ---
 
@@ -149,5 +149,9 @@ Notes: **`llm-extract` and `faithfulness` HAVE dashboard UIs** (queue/status/sto
 - **Cleanup policy — two-stage:** regenerable junk (5 GB duplicated images, local-PG scratch DBs, stale `vl2_eval_server`, nested venvs, `.builders/`) → **delete directly** (regenerates). Deprecated *code/scripts* → **Stage 1** git snapshot tag `pre-housekeeping-<date>` (recoverable forever), **Stage 2** delete from tree; drop the tag after the metric+crawl refactors land (or 90 days). **[approved]**
 - **The 3 "dead" `reports/` files are orphaned *features*, not junk** (read 2026-06-18): `schema.py` = vestigial Spec-0017 shim → **drop**; `report.py` = coverage-report generator (unwired) → keep/decide; `catalogue.py` = corpus deletion/retention logic (unwired) → **lean keep** (real capability).
 
-## 9. Pending probes (next)
-- ~~67-route control-panel map~~ ✅ (§5b) · per-subsystem file detail · full scratch-script categorization (the ~50 comp-metric one-off scripts) · ~~infra layer~~ ✅ (§7b) · classifier v1-vs-v3 deprecation check
+## 9. Discovery complete — outstanding items are ACTIONS (need your go)
+
+- **Cleanup** (two-stage policy): snapshot-tag → archive the verified deprecated code (Spec-0008 resolver cluster, `cli_resolve`, `enrich_990`, `reports/schema`); direct-delete the ~5 GB regenerable junk + scratch DBs + stale `vl2_eval_server`.
+- **Relocate** `review_server.py` out of the scratch dir (it's a live service).
+- **Decide** on the orphaned features (`reports/report.py` coverage gen, `catalogue.py` retention) — wire or drop.
+- **Wire** metric extraction into the orchestrator/dashboard (next iteration, per §8).
