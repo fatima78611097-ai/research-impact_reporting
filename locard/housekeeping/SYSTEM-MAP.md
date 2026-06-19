@@ -78,7 +78,7 @@ Orchestration cluster (in `dashboard/pipeline/`): `orchestrator, stages, schedul
 | `lava_pipeline` | 1 | `org_provenance` |
 | `public` | 1 | — |
 
-**Local Postgres** (127.0.0.1:5432) holds only `scratch_0069v_*` — throwaway scratch DBs from the 0069 builder, **NOT production**. Cleanup candidate. **[V]**
+**Local Postgres — REMOVED 2026-06-19.** Held only `scratch_0069v_*` test DBs (created by the 0068/0069 Category-A tests; production was always on RDS). Server purged, service disabled. Consequence: the 0068/0069 real-Postgres test path now `skip`s (the tests skip gracefully, they don't fail). **[V]**
 
 **Raw PDFs** live in **S3** — `s3://lavandula-nonprofit-collaterals/pdfs/{sha256}.pdf` (content-addressed, ~580 GiB), NOT on local disk. The parse worker downloads each transiently to `/tmp`. **[V]**
 
@@ -86,7 +86,7 @@ Orchestration cluster (in `dashboard/pipeline/`): `orchestrator, stages, schedul
 
 ## 5. Live processes / services **[V]**
 
-- `lavandula-dashboard` (gunicorn ×2) · `lavandula-orchestrator` (`run_orchestrator`) · `metric-review` (`review_server.py`) · nginx · local postgres (scratch) · tailscale
+- `lavandula-dashboard` (gunicorn ×2) · `lavandula-orchestrator` (`run_orchestrator`) · `metric-review` (`review_server.py`) · nginx · tailscale  *(local postgres REMOVED 2026-06-19)*
 - **Stale / cleanup:** `vl2_eval_server.py` running 15 days (leftover research server)
 - **Out of scope** (confirmed): `etsy-*` services (separate product), agent-farm `node` servers (dev tooling), `aws_dev` (a host name; zero repo references)
 
