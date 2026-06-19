@@ -1,7 +1,7 @@
 # Gating on the metrics in the viewer — exact code, per step
 
 **Scope:** `new-metric-review.html` → `new-review-data.json`.
-**Verified state:** 297 metrics — **271 publish / 26 quarantine** (25 NTEE-P docs).
+**Verified state:** 297 metrics — **258 publish / 39 quarantine** (25 NTEE-P docs). *(271/26 after the text gates; the vision pairing pass then quarantined 13 more — see "Mispairing" below.)*
 **All gating code lives in `lavandula/nlp/slot_render.py`** (sibling of the prompt, `llm_extract.py`). Functions are cited by name, not line number (line numbers drift); verified against `slot_render.py @ 0eaa66ab`.
 **Inputs:** selective prompt output (`llm_extract.py @ b586e941`) + resolved markers (`s_text`, value/subject pages & bboxes from `build_new_review.py`).
 
@@ -92,17 +92,18 @@ def subject_quality(label):
 - `fmt_value(v, unit)` · `slot_render.py` — formats `$ / % / commas` for the display only.
 - `_clean(s)` · `slot_render.py` — strips stray `⟨…⟩` markers from a snippet.
 
-## Quarantine tally (matches the data: 26)
-`13` too long · `8` contentless header · `2` financial fragment · `1` tenure · `1` reads-as-sentence · `1` gratitude.
+## Quarantine tally (matches the data: 39)
+**Text gates (26):** `13` too long · `8` contentless header · `2` financial fragment · `1` tenure · `1` reads-as-sentence · `1` gratitude.
+**Vision pairing (13):** majority-vote mispairs, `decided_by="vision"` (see Mispairing section).
 
 ---
 
-## Mispairing — status (NOT applied to this data)
+## Mispairing — status (vision pass APPLIED to this data)
 
-- **Programmatic geometry check: run ONCE as a diagnostic only — it did NOT apply a fix and did NOT persist anything.** It classified the 271 published metrics (190 inline = no pairing risk, 79 split co-located = coherent, 2 split far-apart = suspect, both `128de607`). No fix was applied, the flags were **not written into the data**, and the 2 suspects were **not quarantined** — they are still `publish`. Check-and-flag, nothing more.
-  - **Code (exact, now captured):** `lavandula/nlp/mispairing_check.py` → `geometry_pairing_check(records)`. Thresholds: `dy < 60` pts = same row; `(dx < 160 and dy < 160)` = same card; midpoints from stored `v_bbox`/`s_bbox`. Verified to reproduce `190 / 79 / 2`. It is **not** part of `slot_render.py` / the publish gate.
-- **Vision mispairing run: NOT COMPLETED.** A vision judge (Flash-Lite, label-vs-page) was proposed to confirm pairing on this set but was **never run**. There is no vision verdict on any metric in this data.
-- **The only mispairing-adjacent REPAIR that is applied** is the cross-cell render fix (Step 4, in `render_and_grade`) — narrow: re-renders a number from its own prose cell when the label was grafted from a different cell. It does **not** address within-grid cross-pairs.
+- **Vision pairing pass: COMPLETED & APPLIED 2026-06-19.** `regen_3_vision_pairing.py` (STEP 3, in `locard/spikes/0064/eval_set/vision/`) judged all **81 published split metrics** (value & label from different markers) with **gemini-2.5-flash, 2-of-3 majority vote**, looking at the boxed source page (red value box / blue subject box). On a majority *disagree* the metric is **quarantined** (`gate_decision="quarantine"`, `decided_by="vision"`, with the model's suggested correct label). Result: **13 quarantined**, 0 undetermined → totals went `271/26` → `258/39`. Every one of the 81 carries a `vision_pairing` verdict (`match`, `yes`/`parsed` vote count, `suggested_label`); the viewer (`new-metric-review.html`) renders it as a `👁 ✓/✗` badge. The 190 inline metrics (same marker = same cell) have no pairing to get wrong and are **not** judged. Backup of the pre-vision data: `new-review-data.before-vision-*.json`; per-metric log: `vision_pairing_results.json`.
+  - Concentrated in the known garbled-parse docs (`029625c6`, `128de607`, `38c9a81d`) where Step 4 was rendering grafted-neighbor labels verbatim — vision is the gate that catches those.
+- **Programmatic geometry check (superseded as the pairing gate, kept as a diagnostic).** `lavandula/nlp/mispairing_check.py` → `geometry_pairing_check(records)` classified the 271 (190 inline / 79 split co-located / 2 far-apart suspects) but **applied nothing** (no fix, no flags persisted) — it was detection-only. Vision now does the actual quarantining; geometry remains a cheap standalone cross-check. Thresholds: `dy < 60` = same row; `(dx < 160 and dy < 160)` = same card. **Not** part of `slot_render.py`.
+- **The only mispairing-adjacent REPAIR (vs. quarantine)** is the cross-cell render fix (Step 4, in `render_and_grade`) — narrow: re-renders a number from its own prose cell when the label was grafted from a different cell. Vision *quarantines* a bad pairing; it does not re-pair. Re-pairing (keeping the metric with the corrected label) is still future work.
 
 ## Other NOT-gated gaps
 - **Bare-1s / weak buried-prose** — no rule; currently publish.
@@ -114,8 +115,9 @@ def subject_quality(label):
 
 Two committed scripts in `locard/spikes/0064/eval_set/vision/`:
 ```
-python3 regen_1_extract.py        # STEP 1: _METRICS_PROMPT over 25 NTEE-P docs -> prompt_test.json
-python3 regen_2_build_review.py   # STEP 2: dedup -> resolve markers -> boxed images -> gate -> new-review-data.json
+python3 regen_1_extract.py         # STEP 1: _METRICS_PROMPT over 25 NTEE-P docs -> prompt_test.json
+python3 regen_2_build_review.py    # STEP 2: dedup -> resolve markers -> boxed images -> gate -> new-review-data.json
+python3 regen_3_vision_pairing.py  # STEP 3: vision pairing pass (gemini-2.5-flash, 2-of-3) -> quarantine mispairs in place
 ```
 - **`regen_1_extract.py`** — extraction only.
 - **`regen_2_build_review.py`** — builds records + boxed page images **and folds the gate in** (`dedup()` then `render_and_grade()` per metric), so its output is the final gated data — no separate apply step.

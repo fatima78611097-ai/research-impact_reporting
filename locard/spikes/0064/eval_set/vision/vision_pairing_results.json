@@ -1,0 +1,2027 @@
+[
+ {
+  "id": "np:4b310b24:2",
+  "match": true,
+  "yes": 2,
+  "no": 1,
+  "parsed": 3,
+  "suggested_label": "Individuals provided with educational information",
+  "votes": [
+   {
+    "match": false,
+    "correct_label": "Individuals provided with educational information",
+    "reason": "Blue box is project name, not metric label."
+   },
+   {
+    "match": true,
+    "correct_label": "Spring Webinar Series",
+    "reason": "Number is an outcome of the labeled project."
+   },
+   {
+    "match": true,
+    "correct_label": "Spring Webinar Series",
+    "reason": "Number is an outcome of the labeled project."
+   }
+  ]
+ },
+ {
+  "id": "np:4b310b24:3",
+  "match": false,
+  "yes": 0,
+  "no": 3,
+  "parsed": 3,
+  "suggested_label": "individuals",
+  "votes": [
+   {
+    "match": false,
+    "correct_label": "individuals",
+    "reason": "Blue label is project name, not what number measures."
+   },
+   {
+    "match": false,
+    "correct_label": "Individuals provided considerations",
+    "reason": "Label is project name, not what number measures."
+   },
+   {
+    "match": false,
+    "correct_label": "individuals",
+    "reason": "Label is project name, not what number measures."
+   }
+  ]
+ },
+ {
+  "id": "np:e3665a33:12",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "Annual budget",
+    "reason": "The label directly describes the number in the layout."
+   },
+   {
+    "match": true,
+    "correct_label": "Annual budget",
+    "reason": "Label directly next to number, clearly describes it."
+   },
+   {
+    "match": true,
+    "correct_label": "Annual budget",
+    "reason": "Label directly next to number, clearly describing it."
+   }
+  ]
+ },
+ {
+  "id": "np:e3665a33:13",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "Members served by the YMCA of Greensboro",
+    "reason": "Label directly describes the number, clear visual pairing."
+   },
+   {
+    "match": true,
+    "correct_label": "Members served by the YMCA of Greensboro",
+    "reason": "Label directly describes the number, no other options."
+   },
+   {
+    "match": true,
+    "correct_label": "Members served by the YMCA of Greensboro",
+    "reason": "Label directly describes the number in the layout."
+   }
+  ]
+ },
+ {
+  "id": "np:e3665a33:14",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "YMCA branches providing unique programs and a sense of community",
+    "reason": "Label directly follows and describes the number."
+   },
+   {
+    "match": true,
+    "correct_label": "YMCA branches providing unique programs and a sense of community",
+    "reason": "The label directly follows and describes the number."
+   },
+   {
+    "match": true,
+    "correct_label": "YMCA branches providing unique programs and a sense of community",
+    "reason": "The label directly follows and describes the number."
+   }
+  ]
+ },
+ {
+  "id": "np:e3665a33:15",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "Overnight camp providing children the opportunity to make memories of a lifetime",
+    "reason": "Label correctly describes the item counted."
+   },
+   {
+    "match": true,
+    "correct_label": "Overnight camp providing children the opportunity to make memories of a lifetime",
+    "reason": "Label directly describes the number's meaning."
+   },
+   {
+    "match": true,
+    "correct_label": "Overnight camp providing children the opportunity to make memories of a lifetime",
+    "reason": "The label directly describes the item counted by the number."
+   }
+  ]
+ },
+ {
+  "id": "np:128de607:4",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "uninsured patients received life-saving medication, including insulin",
+    "reason": "Label directly describes the number and its icon."
+   },
+   {
+    "match": true,
+    "correct_label": "uninsured patients received life-saving medication, including insulin",
+    "reason": "Label directly describes the number's meaning."
+   },
+   {
+    "match": true,
+    "correct_label": "uninsured patients received life-saving medication, including insulin",
+    "reason": "Label directly describes the adjacent number and icon."
+   }
+  ]
+ },
+ {
+  "id": "np:128de607:5",
+  "match": false,
+  "yes": 1,
+  "no": 2,
+  "parsed": 3,
+  "suggested_label": "Number of Families",
+  "votes": [
+   {
+    "match": false,
+    "correct_label": "Number of Families",
+    "reason": "Label describes timeframe, not what number measures."
+   },
+   {
+    "match": true,
+    "correct_label": "One Day",
+    "reason": "The label correctly describes the timeframe for the number."
+   },
+   {
+    "match": false,
+    "correct_label": "Number of Families One Day",
+    "reason": "Label is a time period, not the measured entity."
+   }
+  ]
+ },
+ {
+  "id": "np:128de607:6",
+  "match": false,
+  "yes": 1,
+  "no": 2,
+  "parsed": 3,
+  "suggested_label": "Number of Families One Week",
+  "votes": [
+   {
+    "match": false,
+    "correct_label": "Number of Families One Week",
+    "reason": "Label is incomplete; it's the timeframe, not the metric."
+   },
+   {
+    "match": true,
+    "correct_label": "One Week",
+    "reason": "Label directly below number, clearly describes time period."
+   },
+   {
+    "match": false,
+    "correct_label": "Number of Families One Week",
+    "reason": "Label describes time period, not what is measured."
+   }
+  ]
+ },
+ {
+  "id": "np:128de607:7",
+  "match": false,
+  "yes": 0,
+  "no": 3,
+  "parsed": 3,
+  "suggested_label": "men, women and children had a safe home with needed services",
+  "votes": [
+   {
+    "match": false,
+    "correct_label": "men, women and children had a safe home with needed services",
+    "reason": "Label belongs to a different number (125)."
+   },
+   {
+    "match": false,
+    "correct_label": "men, women and children had a safe home with needed services",
+    "reason": "Label belongs to a different number."
+   },
+   {
+    "match": false,
+    "correct_label": "men, women and children had a safe home with needed services",
+    "reason": "Label describes adjacent apple icon, not 100."
+   }
+  ]
+ },
+ {
+  "id": "np:128de607:8",
+  "match": false,
+  "yes": 0,
+  "no": 3,
+  "parsed": 3,
+  "suggested_label": "diapers per family per visit",
+  "votes": [
+   {
+    "match": false,
+    "correct_label": "diapers per family per visit",
+    "reason": "The label belongs to a different number."
+   },
+   {
+    "match": false,
+    "correct_label": "Avg. per pantry day",
+    "reason": "2019 is the year, not what the number measures."
+   },
+   {
+    "match": false,
+    "correct_label": "diapers per family per visit",
+    "reason": "The label '2019' refers to '75*', not '60'."
+   }
+  ]
+ },
+ {
+  "id": "np:128de607:15",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "Net Income",
+    "reason": "The number is in the 'Net Income' row."
+   },
+   {
+    "match": true,
+    "correct_label": "Avg. per pantry day",
+    "reason": "The label directly describes the number's meaning."
+   },
+   {
+    "match": true,
+    "correct_label": "Avg. per pantry day",
+    "reason": "The label directly describes the number in its context."
+   }
+  ]
+ },
+ {
+  "id": "np:128de607:16",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "Avg. per pantry day",
+    "reason": "Label clearly describes the number's meaning."
+   },
+   {
+    "match": true,
+    "correct_label": "Avg. per pantry day",
+    "reason": "Label clearly describes the number in its context."
+   },
+   {
+    "match": true,
+    "correct_label": "Personnel",
+    "reason": "Number is in 'Total' column for 'Personnel' row."
+   }
+  ]
+ },
+ {
+  "id": "np:e2416d20:9",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "Total Operating Revenue",
+    "reason": "Label is directly left of the number."
+   },
+   {
+    "match": true,
+    "correct_label": "Total Operating Revenue",
+    "reason": "Label is directly left of the number."
+   },
+   {
+    "match": true,
+    "correct_label": "Total Operating Revenue",
+    "reason": "Label directly describes the number in its row."
+   }
+  ]
+ },
+ {
+  "id": "np:e2416d20:10",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "Total Operating Expense",
+    "reason": "Label directly corresponds to the number in the table."
+   },
+   {
+    "match": true,
+    "correct_label": "Total Operating Expense",
+    "reason": "Label directly describes the number in its row."
+   },
+   {
+    "match": true,
+    "correct_label": "Total Operating Expense",
+    "reason": "Label directly corresponds to number in same row."
+   }
+  ]
+ },
+ {
+  "id": "np:d2e6b6ff:17",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "Total Revenue",
+    "reason": "Label directly describes the total sum below revenue sources."
+   },
+   {
+    "match": true,
+    "correct_label": "Total Revenue",
+    "reason": "Label clearly indicates the sum of all revenues."
+   },
+   {
+    "match": true,
+    "correct_label": "Total Revenue",
+    "reason": "Label accurately describes the total revenue for 2024-25."
+   }
+  ]
+ },
+ {
+  "id": "np:d2e6b6ff:18",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "Total Expenses",
+    "reason": "Label directly describes the total expenses for 2024-25."
+   },
+   {
+    "match": true,
+    "correct_label": "Total Expenses",
+    "reason": "The label correctly identifies the sum of expenses."
+   },
+   {
+    "match": true,
+    "correct_label": "Total Expenses",
+    "reason": "Label directly describes the total expenses for 2024-25."
+   }
+  ]
+ },
+ {
+  "id": "np:e136ede4:6",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "Homeowners receiving ADTF assistance",
+    "reason": "Label directly below number, clear visual pairing."
+   },
+   {
+    "match": true,
+    "correct_label": "Homeowners receiving ADTF assistance",
+    "reason": "Label directly below number, clear visual pairing."
+   },
+   {
+    "match": true,
+    "correct_label": "Homeowners receiving ADTF assistance",
+    "reason": "Label directly below number, clearly describes it."
+   }
+  ]
+ },
+ {
+  "id": "np:e136ede4:7",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "Paid in assistance to support residents within the ADTF program",
+    "reason": "Label directly describes the number's meaning."
+   },
+   {
+    "match": true,
+    "correct_label": "Paid in assistance to support residents within the ADTF program",
+    "reason": "Label directly describes the number below it."
+   },
+   {
+    "match": true,
+    "correct_label": "Paid in assistance to support residents within the ADTF program",
+    "reason": "Label directly below the number, clearly describing it."
+   }
+  ]
+ },
+ {
+  "id": "np:e136ede4:8",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "Volunteers engaged",
+    "reason": "The label is directly below the number."
+   },
+   {
+    "match": true,
+    "correct_label": "Volunteers engaged",
+    "reason": "Label is directly below the number."
+   },
+   {
+    "match": true,
+    "correct_label": "Volunteers engaged",
+    "reason": "Label directly below number, clear visual association."
+   }
+  ]
+ },
+ {
+  "id": "np:e136ede4:9",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "Volunteer hours",
+    "reason": "Number directly above its clear, descriptive label."
+   },
+   {
+    "match": true,
+    "correct_label": "Volunteer hours",
+    "reason": "Number directly above its clear, natural label."
+   },
+   {
+    "match": true,
+    "correct_label": "Volunteer hours",
+    "reason": "Number is directly above its descriptive label."
+   }
+  ]
+ },
+ {
+  "id": "np:e136ede4:11",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "Households served",
+    "reason": "Label directly describes the number in its context."
+   },
+   {
+    "match": true,
+    "correct_label": "Households served",
+    "reason": "Label directly describes the number in its context."
+   },
+   {
+    "match": true,
+    "correct_label": "Households served",
+    "reason": "Label directly describes the number within its section."
+   }
+  ]
+ },
+ {
+  "id": "np:e136ede4:12",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "individuals",
+    "reason": "The label directly describes the number in its context."
+   },
+   {
+    "match": true,
+    "correct_label": "individuals",
+    "reason": "Label directly describes the number within its event."
+   },
+   {
+    "match": true,
+    "correct_label": "individuals",
+    "reason": "The label directly describes the number in its context."
+   }
+  ]
+ },
+ {
+  "id": "np:e136ede4:13",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "Volunteer projects + opportunities",
+    "reason": "Label directly below number, clearly describes it."
+   },
+   {
+    "match": true,
+    "correct_label": "Volunteer projects + opportunities",
+    "reason": "Label directly below number, describes list below."
+   },
+   {
+    "match": true,
+    "correct_label": "Volunteer projects + opportunities",
+    "reason": "Label directly describes the number and listed items."
+   }
+  ]
+ },
+ {
+  "id": "np:e136ede4:14",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "Single Family Units",
+    "reason": "Label directly below number, clear association."
+   },
+   {
+    "match": true,
+    "correct_label": "Single Family Units",
+    "reason": "Label directly below and aligned with number."
+   },
+   {
+    "match": true,
+    "correct_label": "Single Family Units",
+    "reason": "Label is directly below the number, clear pairing."
+   }
+  ]
+ },
+ {
+  "id": "np:e136ede4:15",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "Multifamily Units, of which 185 are 60% AMI and less",
+    "reason": "Label directly describes the number below an icon."
+   },
+   {
+    "match": true,
+    "correct_label": "Multifamily Units, of which 185 are 60% AMI and less",
+    "reason": "label directly describes the number's meaning"
+   },
+   {
+    "match": true,
+    "correct_label": "Multifamily Units, of which 185 are 60% AMI and less",
+    "reason": "Label directly describes the number and its details."
+   }
+  ]
+ },
+ {
+  "id": "np:24e18655:10",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "TOTAL SUPPORT AND REVENUE",
+    "reason": "Label is directly beside the number."
+   },
+   {
+    "match": true,
+    "correct_label": "TOTAL SUPPORT AND REVENUE",
+    "reason": "Label is a direct subtotal for the number."
+   },
+   {
+    "match": true,
+    "correct_label": "TOTAL SUPPORT AND REVENUE",
+    "reason": "Label directly corresponds to the number in the table."
+   }
+  ]
+ },
+ {
+  "id": "np:24e18655:11",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "TOTAL EXPENSES",
+    "reason": "Label directly above number, matches sum of items."
+   },
+   {
+    "match": true,
+    "correct_label": "TOTAL EXPENSES",
+    "reason": "Label directly precedes the number as its sum."
+   },
+   {
+    "match": true,
+    "correct_label": "TOTAL EXPENSES",
+    "reason": "Label directly describes the number's category."
+   }
+  ]
+ },
+ {
+  "id": "np:040633b7:10",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "Financial Revenue",
+    "reason": "Number is in the 'Financial Revenue' row."
+   },
+   {
+    "match": true,
+    "correct_label": "Financial Revenue",
+    "reason": "The label correctly identifies the row for the number."
+   },
+   {
+    "match": true,
+    "correct_label": "Financial Revenue",
+    "reason": "Label correctly identifies the row metric."
+   }
+  ]
+ },
+ {
+  "id": "np:040633b7:11",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "Financial Expense",
+    "reason": "Label correctly identifies the 2022 financial expense."
+   },
+   {
+    "match": true,
+    "correct_label": "Financial Expense",
+    "reason": "Number is in same row as label."
+   },
+   {
+    "match": true,
+    "correct_label": "Financial Expense",
+    "reason": "Label correctly identifies the row for 2022."
+   }
+  ]
+ },
+ {
+  "id": "np:95f2054c:4",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "total revenue and support",
+    "reason": "Number is directly adjacent to its label."
+   },
+   {
+    "match": true,
+    "correct_label": "total revenue and support",
+    "reason": "Label directly precedes and describes the number."
+   },
+   {
+    "match": true,
+    "correct_label": "total revenue and support",
+    "reason": "Label is directly adjacent to the number."
+   }
+  ]
+ },
+ {
+  "id": "np:95f2054c:5",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "total expenses",
+    "reason": "The label directly precedes the number on the same line."
+   },
+   {
+    "match": true,
+    "correct_label": "total expenses",
+    "reason": "The label directly precedes and sums the expenses listed."
+   },
+   {
+    "match": true,
+    "correct_label": "total expenses",
+    "reason": "The label directly precedes the number, confirming its meaning."
+   }
+  ]
+ },
+ {
+  "id": "np:95f2054c:6",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "Net assets, end of year",
+    "reason": "Label directly corresponds to the number in the financial statement."
+   },
+   {
+    "match": true,
+    "correct_label": "Net assets, end of year",
+    "reason": "Label is directly paired with the number."
+   },
+   {
+    "match": true,
+    "correct_label": "Net assets, end of year",
+    "reason": "Label is directly to the left of the number."
+   }
+  ]
+ },
+ {
+  "id": "np:f1189246:0",
+  "match": true,
+  "yes": 2,
+  "no": 1,
+  "parsed": 3,
+  "suggested_label": "Total Income",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "Income",
+    "reason": "Number is the total for the 'Income' category."
+   },
+   {
+    "match": true,
+    "correct_label": "Total: $395,605",
+    "reason": "The label correctly identifies the number as a total."
+   },
+   {
+    "match": false,
+    "correct_label": "Total Income",
+    "reason": "The blue box includes the number itself, not just its label."
+   }
+  ]
+ },
+ {
+  "id": "np:f1189246:1",
+  "match": false,
+  "yes": 1,
+  "no": 2,
+  "parsed": 3,
+  "suggested_label": "Total",
+  "votes": [
+   {
+    "match": false,
+    "correct_label": "Total",
+    "reason": "label includes the number itself"
+   },
+   {
+    "match": false,
+    "correct_label": "Total",
+    "reason": "Label includes the value, should be 'Total'."
+   },
+   {
+    "match": true,
+    "correct_label": "Total: $385,039",
+    "reason": "The blue box contains the number's explicit label."
+   }
+  ]
+ },
+ {
+  "id": "np:88bfa5f4:5",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "people engaged with IAVA's first ever Virtual Veterans Day March",
+    "reason": "Label directly adjacent to number, clearly describes it."
+   },
+   {
+    "match": true,
+    "correct_label": "people engaged with IAVA's first ever Virtual Veterans Day March",
+    "reason": "Label directly adjacent to number, clearly describing it."
+   },
+   {
+    "match": true,
+    "correct_label": "people engaged with IAVA's first ever Virtual Veterans Day March",
+    "reason": "Label directly corresponds to the number in list."
+   }
+  ]
+ },
+ {
+  "id": "np:88bfa5f4:6",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "people participated in IAVA's online #GoSilent campaign for Memorial Day",
+    "reason": "Label is directly next to its corresponding number."
+   },
+   {
+    "match": true,
+    "correct_label": "people participated in IAVA's online #GoSilent campaign for Memorial Day",
+    "reason": "Label is directly adjacent to the number."
+   },
+   {
+    "match": true,
+    "correct_label": "people participated in IAVA's online #GoSilent campaign for Memorial Day",
+    "reason": "Label directly describes the adjacent number."
+   }
+  ]
+ },
+ {
+  "id": "np:88bfa5f4:7",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "veterans built community and connection using IAVA's Virtual Veterans Hall",
+    "reason": "Label directly describes the number's meaning."
+   },
+   {
+    "match": true,
+    "correct_label": "veterans built community and connection using IAVA's Virtual Veterans Hall",
+    "reason": "Label is directly adjacent and aligned with number."
+   },
+   {
+    "match": true,
+    "correct_label": "veterans built community and connection using IAVA's Virtual Veterans Hall",
+    "reason": "Label directly describes the adjacent number."
+   }
+  ]
+ },
+ {
+  "id": "np:88bfa5f4:8",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "VetTogethers seamlessly organized using IAVA's online tool",
+    "reason": "Label directly describes the number in the list."
+   },
+   {
+    "match": true,
+    "correct_label": "VetTogethers seamlessly organized using IAVA's online tool",
+    "reason": "Label directly describes the number in a clear list."
+   },
+   {
+    "match": true,
+    "correct_label": "VetTogethers seamlessly organized using IAVA's online tool",
+    "reason": "Label directly describes the number in the same row."
+   }
+  ]
+ },
+ {
+  "id": "np:d04d1475:4",
+  "match": false,
+  "yes": 0,
+  "no": 3,
+  "parsed": 3,
+  "suggested_label": "year since prevented",
+  "votes": [
+   {
+    "match": false,
+    "correct_label": "year since prevented",
+    "reason": "Label describes percentage, not the year."
+   },
+   {
+    "match": false,
+    "correct_label": "since",
+    "reason": "The blue box labels the percentage, not the year."
+   },
+   {
+    "match": false,
+    "correct_label": "year since",
+    "reason": "Label describes percentage, not the year value."
+   }
+  ]
+ },
+ {
+  "id": "np:38c9a81d:16",
+  "match": false,
+  "yes": 0,
+  "no": 3,
+  "parsed": 3,
+  "suggested_label": "Median FCS Percent Change",
+  "votes": [
+   {
+    "match": false,
+    "correct_label": "Median FCS Percent Change",
+    "reason": "Label misses column header 'Percent Change'."
+   },
+   {
+    "match": false,
+    "correct_label": "Median FCS Percent Change",
+    "reason": "Label is incomplete, missing the column header 'Percent Change'."
+   },
+   {
+    "match": false,
+    "correct_label": "Median FCS Percent Change",
+    "reason": "Missing column header 'Percent Change' for the metric."
+   }
+  ]
+ },
+ {
+  "id": "np:38c9a81d:17",
+  "match": false,
+  "yes": 0,
+  "no": 3,
+  "parsed": 3,
+  "suggested_label": "Median FSS Percent Change",
+  "votes": [
+   {
+    "match": false,
+    "correct_label": "Median FSS Percent Change",
+    "reason": "The number is a percent change, not the metric itself."
+   },
+   {
+    "match": false,
+    "correct_label": "Median FSS Percent Change",
+    "reason": "Missing column header 'Percent Change' from label."
+   },
+   {
+    "match": false,
+    "correct_label": "Median FSS Percent Change",
+    "reason": "Number is 'Percent Change', not just the metric."
+   }
+  ]
+ },
+ {
+  "id": "np:38c9a81d:18",
+  "match": false,
+  "yes": 1,
+  "no": 2,
+  "parsed": 3,
+  "suggested_label": "Total Debt Paid",
+  "votes": [
+   {
+    "match": false,
+    "correct_label": "Total Debt Paid",
+    "reason": "Label is incomplete; missing 'Total' from column header."
+   },
+   {
+    "match": false,
+    "correct_label": "Total Debt Paid",
+    "reason": "label is missing column header"
+   },
+   {
+    "match": true,
+    "correct_label": "Debt Paid",
+    "reason": "Label correctly identifies the row metric."
+   }
+  ]
+ },
+ {
+  "id": "np:38c9a81d:19",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "Savings",
+    "reason": "The label correctly identifies the row's metric type."
+   },
+   {
+    "match": true,
+    "correct_label": "Savings",
+    "reason": "Blue box is the direct row label for the number."
+   },
+   {
+    "match": true,
+    "correct_label": "Savings",
+    "reason": "The label correctly identifies the row metric."
+   }
+  ]
+ },
+ {
+  "id": "np:38c9a81d:22",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "Added to savings",
+    "reason": "Row header correctly describes the metric."
+   },
+   {
+    "match": true,
+    "correct_label": "Added to savings",
+    "reason": "Number is in the 'Added to savings' row."
+   },
+   {
+    "match": true,
+    "correct_label": "Added to savings",
+    "reason": "Label correctly describes the row metric."
+   }
+  ]
+ },
+ {
+  "id": "np:81480a77:13",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "TOTAL REVENUES",
+    "reason": "Label is on same row as number."
+   },
+   {
+    "match": true,
+    "correct_label": "TOTAL REVENUES",
+    "reason": "Number is directly beside its correct label."
+   },
+   {
+    "match": true,
+    "correct_label": "TOTAL REVENUES",
+    "reason": "Label is directly adjacent to the number."
+   }
+  ]
+ },
+ {
+  "id": "np:81480a77:14",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "TOTAL EXPENSES",
+    "reason": "Label is directly to the left of the number."
+   },
+   {
+    "match": true,
+    "correct_label": "TOTAL EXPENSES",
+    "reason": "Label is in the same row as the number."
+   },
+   {
+    "match": true,
+    "correct_label": "TOTAL EXPENSES",
+    "reason": "Label is directly to the left of the number."
+   }
+  ]
+ },
+ {
+  "id": "np:18bb8c0f:0",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "Service Hours with Consumers",
+    "reason": "The label is directly adjacent to the number."
+   },
+   {
+    "match": true,
+    "correct_label": "Service Hours with Consumers",
+    "reason": "Label is directly adjacent to the number."
+   },
+   {
+    "match": true,
+    "correct_label": "Service Hours with Consumers",
+    "reason": "Label is directly paired with the number in a list."
+   }
+  ]
+ },
+ {
+  "id": "np:18bb8c0f:1",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "Information and Referral Calls",
+    "reason": "Number is directly aligned with the label."
+   },
+   {
+    "match": true,
+    "correct_label": "Information and Referral Calls",
+    "reason": "Label is directly paired with the number."
+   },
+   {
+    "match": true,
+    "correct_label": "Information and Referral Calls",
+    "reason": "Label is directly to the left of the number."
+   }
+  ]
+ },
+ {
+  "id": "np:18bb8c0f:2",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "Seniors Attending Low-Vision Peer Support Groups",
+    "reason": "Label is directly adjacent to the number."
+   },
+   {
+    "match": true,
+    "correct_label": "Seniors Attending Low-Vision Peer Support Groups",
+    "reason": "Label directly describes the adjacent number."
+   },
+   {
+    "match": true,
+    "correct_label": "Seniors Attending Low-Vision Peer Support Groups",
+    "reason": "Label is directly adjacent to the number."
+   }
+  ]
+ },
+ {
+  "id": "np:18bb8c0f:3",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "Intake Consumers Receiving Services",
+    "reason": "Label is directly adjacent to the number."
+   },
+   {
+    "match": true,
+    "correct_label": "Intake Consumers Receiving Services",
+    "reason": "Label is directly adjacent to the number."
+   },
+   {
+    "match": true,
+    "correct_label": "Intake Consumers Receiving Services",
+    "reason": "Label is directly paired with the number in a list."
+   }
+  ]
+ },
+ {
+  "id": "np:18bb8c0f:4",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "Number of Goals Identified and Started",
+    "reason": "Label is directly beside its corresponding number."
+   },
+   {
+    "match": true,
+    "correct_label": "Number of Goals Identified and Started",
+    "reason": "Label is directly paired with the number."
+   },
+   {
+    "match": true,
+    "correct_label": "Number of Goals Identified and Started",
+    "reason": "Label is directly left of the number."
+   }
+  ]
+ },
+ {
+  "id": "np:18bb8c0f:5",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "Number of Goals Accomplished",
+    "reason": "Label directly describes the adjacent number."
+   },
+   {
+    "match": true,
+    "correct_label": "Number of Goals Accomplished",
+    "reason": "Label is directly beside the number."
+   },
+   {
+    "match": true,
+    "correct_label": "Number of Goals Accomplished",
+    "reason": "Label is directly left of the number."
+   }
+  ]
+ },
+ {
+  "id": "np:18bb8c0f:6",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "Number of Cities Served",
+    "reason": "Label directly describes the number in a list."
+   },
+   {
+    "match": true,
+    "correct_label": "Number of Cities Served",
+    "reason": "Label directly describes the number in a clear list."
+   },
+   {
+    "match": true,
+    "correct_label": "Number of Cities Served",
+    "reason": "Label directly precedes the number in a clear list."
+   }
+  ]
+ },
+ {
+  "id": "np:18bb8c0f:7",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "Number of Counties Served",
+    "reason": "Label directly describes the adjacent number."
+   },
+   {
+    "match": true,
+    "correct_label": "Number of Counties Served",
+    "reason": "Label directly precedes number in a list."
+   },
+   {
+    "match": true,
+    "correct_label": "Number of Counties Served",
+    "reason": "Number is directly adjacent to its label."
+   }
+  ]
+ },
+ {
+  "id": "np:18bb8c0f:8",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "Number of Job Placements",
+    "reason": "Label is directly adjacent to its corresponding number."
+   },
+   {
+    "match": true,
+    "correct_label": "Number of Job Placements",
+    "reason": "Label directly precedes the number in a clear list."
+   },
+   {
+    "match": true,
+    "correct_label": "Number of Job Placements",
+    "reason": "Label correctly describes number in list format."
+   }
+  ]
+ },
+ {
+  "id": "np:18bb8c0f:9",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "People Transitioned From Nursing Home",
+    "reason": "Label directly precedes number in a clear list."
+   },
+   {
+    "match": true,
+    "correct_label": "People Transitioned From Nursing Home",
+    "reason": "Label is directly adjacent to its corresponding number."
+   },
+   {
+    "match": true,
+    "correct_label": "People Transitioned From Nursing Home",
+    "reason": "Label directly corresponds to the number in the list."
+   }
+  ]
+ },
+ {
+  "id": "np:029625c6:1",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "lives impacted",
+    "reason": "Number is directly followed by its label."
+   },
+   {
+    "match": true,
+    "correct_label": "lives impacted",
+    "reason": "The label directly follows the number on the same line."
+   },
+   {
+    "match": true,
+    "correct_label": "lives impacted",
+    "reason": "Label directly follows number, clearly describes it."
+   }
+  ]
+ },
+ {
+  "id": "np:029625c6:2",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "services provided",
+    "reason": "Number is directly followed by its descriptive label."
+   },
+   {
+    "match": true,
+    "correct_label": "services provided",
+    "reason": "Number is directly followed by its descriptive label."
+   },
+   {
+    "match": true,
+    "correct_label": "services provided",
+    "reason": "Label directly follows number in a list format."
+   }
+  ]
+ },
+ {
+  "id": "np:029625c6:3",
+  "match": false,
+  "yes": 0,
+  "no": 3,
+  "parsed": 3,
+  "suggested_label": "households served with food and toiletries",
+  "votes": [
+   {
+    "match": false,
+    "correct_label": "households served with food and toiletries",
+    "reason": "The blue box describes food drives, not the specific number."
+   },
+   {
+    "match": false,
+    "correct_label": "households served with food and toiletries",
+    "reason": "The blue text is a general description, not the number's label."
+   },
+   {
+    "match": false,
+    "correct_label": "households",
+    "reason": "Blue box is descriptive paragraph, not number's label."
+   }
+  ]
+ },
+ {
+  "id": "np:029625c6:4",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "households received water bill assistance",
+    "reason": "Label is directly below the number in the same visual element."
+   },
+   {
+    "match": true,
+    "correct_label": "households received water bill assistance",
+    "reason": "Label is directly below the number in the same visual element."
+   },
+   {
+    "match": true,
+    "correct_label": "households received water bill assistance",
+    "reason": "Label is directly below the number in the same visual element."
+   }
+  ]
+ },
+ {
+  "id": "np:029625c6:5",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "individuals served with food and toiletries",
+    "reason": "Label is directly below the number in the same visual element."
+   },
+   {
+    "match": true,
+    "correct_label": "individuals served with food and toiletries",
+    "reason": "Label is directly below the number in the same visual group."
+   },
+   {
+    "match": true,
+    "correct_label": "individuals served with food and toiletries",
+    "reason": "Label is directly below the number in the same visual element."
+   }
+  ]
+ },
+ {
+  "id": "np:029625c6:6",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "individuals avoided eviction",
+    "reason": "Label is directly below the number it describes."
+   },
+   {
+    "match": true,
+    "correct_label": "individuals avoided eviction",
+    "reason": "Label is directly below the number in the same visual element."
+   },
+   {
+    "match": true,
+    "correct_label": "individuals avoided eviction",
+    "reason": "Label is directly below the number in the same circle."
+   }
+  ]
+ },
+ {
+  "id": "np:029625c6:7",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "individuals participated in case management",
+    "reason": "Label is directly below number in same visual element."
+   },
+   {
+    "match": true,
+    "correct_label": "individuals participated in case management",
+    "reason": "Label is directly below the number within the same visual element."
+   },
+   {
+    "match": true,
+    "correct_label": "individuals participated in case management",
+    "reason": "Label is directly below the number within same graphic."
+   }
+  ]
+ },
+ {
+  "id": "np:029625c6:10",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "individuals awarded college scholarships",
+    "reason": "Label directly below number, clear visual pairing."
+   },
+   {
+    "match": true,
+    "correct_label": "individuals awarded college scholarships",
+    "reason": "Number is directly above its corresponding label."
+   },
+   {
+    "match": true,
+    "correct_label": "individuals awarded college scholarships",
+    "reason": "Number is directly above its descriptive label."
+   }
+  ]
+ },
+ {
+  "id": "np:029625c6:11",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "children enrolled in summer camps",
+    "reason": "Label is directly below and aligned with number."
+   },
+   {
+    "match": true,
+    "correct_label": "children enrolled in summer camps",
+    "reason": "Label directly below number, clear visual pairing."
+   },
+   {
+    "match": true,
+    "correct_label": "children enrolled in summer camps",
+    "reason": "Number is directly above its correct label."
+   }
+  ]
+ },
+ {
+  "id": "np:029625c6:12",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "high school students attended PAVE The Way",
+    "reason": "Label is directly below the number."
+   },
+   {
+    "match": true,
+    "correct_label": "high school students attended PAVE The Way",
+    "reason": "Label is directly below the number."
+   },
+   {
+    "match": true,
+    "correct_label": "high school students attended PAVE The Way",
+    "reason": "Label directly below number, consistent with other metrics."
+   }
+  ]
+ },
+ {
+  "id": "np:029625c6:13",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "individuals received emergency services (food, clothing, etc.)",
+    "reason": "Label is directly below the number, clear pairing."
+   },
+   {
+    "match": true,
+    "correct_label": "individuals received emergency services (food, clothing, etc.)",
+    "reason": "Number is directly above its descriptive label."
+   },
+   {
+    "match": true,
+    "correct_label": "individuals received emergency services (food, clothing, etc.)",
+    "reason": "Label is directly below its corresponding number."
+   }
+  ]
+ },
+ {
+  "id": "np:029625c6:14",
+  "match": false,
+  "yes": 0,
+  "no": 3,
+  "parsed": 3,
+  "suggested_label": "students helped go back to school",
+  "votes": [
+   {
+    "match": false,
+    "correct_label": "students helped go back to school",
+    "reason": "119 refers to students, not families."
+   },
+   {
+    "match": false,
+    "correct_label": "students helped go back to school",
+    "reason": "119 refers to students, not families."
+   },
+   {
+    "match": false,
+    "correct_label": "students",
+    "reason": "Number refers to students, not families."
+   }
+  ]
+ },
+ {
+  "id": "np:029625c6:15",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "of clients were below the Federal Poverty Guidelines",
+    "reason": "Label directly below number, clear association."
+   },
+   {
+    "match": true,
+    "correct_label": "of clients were below the Federal Poverty Guidelines",
+    "reason": "Label directly below number, clearly describes it."
+   },
+   {
+    "match": true,
+    "correct_label": "of clients were below the Federal Poverty Guidelines",
+    "reason": "Label directly describes the number below it."
+   }
+  ]
+ },
+ {
+  "id": "np:ee3f949b:1",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "support groups",
+    "reason": "Label directly follows number, clearly describing it."
+   },
+   {
+    "match": true,
+    "correct_label": "support groups",
+    "reason": "Label directly follows number, clearly describing it."
+   },
+   {
+    "match": true,
+    "correct_label": "support groups",
+    "reason": "Label directly describes the number in its context."
+   }
+  ]
+ },
+ {
+  "id": "np:ee3f949b:2",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "parenting support groups for women",
+    "reason": "Number directly precedes its descriptive label."
+   },
+   {
+    "match": true,
+    "correct_label": "parenting support groups for women",
+    "reason": "Number is directly followed by its descriptive label."
+   },
+   {
+    "match": true,
+    "correct_label": "parenting support groups for women",
+    "reason": "The label directly follows the number, describing it."
+   }
+  ]
+ },
+ {
+  "id": "np:ee3f949b:3",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "support groups for children.",
+    "reason": "Number directly precedes and describes the blue-boxed label."
+   },
+   {
+    "match": true,
+    "correct_label": "support groups for children.",
+    "reason": "Number directly precedes its descriptive label."
+   },
+   {
+    "match": true,
+    "correct_label": "support groups for children",
+    "reason": "Label directly follows and describes the number."
+   }
+  ]
+ },
+ {
+  "id": "np:ee3f949b:6",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "referrals to other services for our residents",
+    "reason": "Number directly precedes its descriptive label."
+   },
+   {
+    "match": true,
+    "correct_label": "referrals to other services for our residents",
+    "reason": "Label directly follows and describes the number."
+   },
+   {
+    "match": true,
+    "correct_label": "referrals to other services for our residents",
+    "reason": "Label directly follows number, clearly describing it."
+   }
+  ]
+ },
+ {
+  "id": "np:ee3f949b:7",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "women",
+    "reason": "The label directly follows and clarifies the number."
+   },
+   {
+    "match": true,
+    "correct_label": "women",
+    "reason": "The label directly follows and describes the number."
+   },
+   {
+    "match": true,
+    "correct_label": "women",
+    "reason": "The label directly describes the number's unit."
+   }
+  ]
+ },
+ {
+  "id": "np:ee3f949b:11",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "Total Year End Net Assets",
+    "reason": "Label directly precedes the number as a key-value pair."
+   },
+   {
+    "match": true,
+    "correct_label": "Total Year End Net Assets",
+    "reason": "Label directly describes the adjacent number."
+   },
+   {
+    "match": true,
+    "correct_label": "Total Year End Net Assets",
+    "reason": "Label is directly adjacent to the number."
+   }
+  ]
+ },
+ {
+  "id": "np:9255ab7e:2",
+  "match": false,
+  "yes": 1,
+  "no": 2,
+  "parsed": 3,
+  "suggested_label": "Number of Households (Black or African American)",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "c. Black or African American",
+    "reason": "Label is the correct row header for the number."
+   },
+   {
+    "match": false,
+    "correct_label": "Number of Households (Black or African American)",
+    "reason": "Missing column header 'Number of Households' from label."
+   },
+   {
+    "match": false,
+    "correct_label": "Number of Households: Black or African American",
+    "reason": "Missing column header 'Number of Households'."
+   }
+  ]
+ },
+ {
+  "id": "np:9255ab7e:3",
+  "match": true,
+  "yes": 2,
+  "no": 1,
+  "parsed": 3,
+  "suggested_label": "e. Other",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "d. Homeless",
+    "reason": "Label directly corresponds to the number in the table."
+   },
+   {
+    "match": true,
+    "correct_label": "d. Homeless",
+    "reason": "Label directly corresponds to the number in the same row."
+   },
+   {
+    "match": false,
+    "correct_label": "e. Other",
+    "reason": "label belongs to the row above"
+   }
+  ]
+ },
+ {
+  "id": "np:9255ab7e:4",
+  "match": true,
+  "yes": 2,
+  "no": 1,
+  "parsed": 3,
+  "suggested_label": "Number of Households",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "a. Up to 50%",
+    "reason": "Label directly describes the number in its row."
+   },
+   {
+    "match": true,
+    "correct_label": "a. Up to 50%",
+    "reason": "Label correctly identifies the income level for the number."
+   },
+   {
+    "match": false,
+    "correct_label": "Number of Households",
+    "reason": "The blue label describes a category, not what the number measures."
+   }
+  ]
+ },
+ {
+  "id": "np:9255ab7e:5",
+  "match": true,
+  "yes": 2,
+  "no": 1,
+  "parsed": 3,
+  "suggested_label": "Number of Households (a. Single Person)",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "a. Single Person",
+    "reason": "Label is in the same row, left column."
+   },
+   {
+    "match": false,
+    "correct_label": "Number of Households (a. Single Person)",
+    "reason": "Blue label is a category, not the full measure."
+   },
+   {
+    "match": true,
+    "correct_label": "a. Single Person",
+    "reason": "The label correctly identifies the household type for the number."
+   }
+  ]
+ },
+ {
+  "id": "np:9255ab7e:6",
+  "match": true,
+  "yes": 3,
+  "no": 0,
+  "parsed": 3,
+  "suggested_label": "",
+  "votes": [
+   {
+    "match": true,
+    "correct_label": "c. Single Parent Female",
+    "reason": "The label correctly describes the household type for the number."
+   },
+   {
+    "match": true,
+    "correct_label": "c. Single Parent Female",
+    "reason": "Label correctly identifies the household type for the number."
+   },
+   {
+    "match": true,
+    "correct_label": "c. Single Parent Female",
+    "reason": "Label accurately describes the household type for the number."
+   }
+  ]
+ }
+]

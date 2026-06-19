@@ -117,6 +117,7 @@ function card(r){
   d.innerHTML=`
    <div class=hd><span class=badge style="background:${bc}">${bl}${r.gate_reason?" · "+r.gate_reason:""}</span>
      ${r.decided_by?`<span class=badge style="background:#455a75" title="${esc(r.decided_detail||"")}">🛠 ${esc(r.decided_by)}</span>`:""}
+     ${r.vision_pairing?`<span class=badge style="background:${r.vision_pairing.match?"#1a7a3a":"#a02020"}" title="${esc(r.vision_pairing.match?"vision: pairing confirmed":"vision: mispaired → "+(r.vision_pairing.suggested_label||"?"))}">👁 ${r.vision_pairing.match?"✓":"✗"} ${r.vision_pairing.yes}/${r.vision_pairing.parsed}</span>`:""}
      <b>${esc(r.org)}</b> <span class=mid>${r.id} · ${r.set}</span></div>
    ${r.decided_detail?`<div class=kv style="color:#455a75">${esc(r.decided_detail)}</div>`:""}
    <div class=metric>"${esc(r.statement)}"<br><span class=kv>value=<b>${esc(r.value)}</b> · subject=<b>${esc(r.subject)}</b></span></div>
