@@ -125,8 +125,10 @@ Notes: **`llm-extract` and `faithfulness` HAVE dashboard UIs** (queue/status/sto
 |---|---|---|
 | `nonprofits/{agent_runner, batch_manifest}` + `tools/batch_resolve` (+ its test) | **Spec-0008 agent-based resolver** — a self-contained cluster; `batch_resolve` is invoked by *nobody* | **superseded by Spec 0018** → archive |
 | `nonprofits/tools/cli_resolve` | Spec-0018-amendment CLI resolver; nobody imports or invokes it | superseded → archive |
-| `nonprofits/tools/enrich_990` (+ its test) | **self-labeled "DEPRECATED"** in its docstring | → archive |
+| `nonprofits/tools/enrich_990` (+ test) | self-labeled DEPRECATED, but **still string-referenced** by orchestrator's `990-enrich` registry entry (subprocess `cmd`) | **KEPT** — paired deprecation; remove with that registry entry later (verify historical-job display) |
 | `reports/{catalogue, report, schema}` | orphaned *features* (retention / coverage / shim) — see §8 | `schema`→drop; others decide |
+
+> **🧹 Cleanup executed 2026-06-19** (snapshot: tag `pre-housekeeping-2026-06-19`, fully recoverable). **Removed** (verified no references): `agent_runner`, `batch_manifest`, `tools/batch_resolve` (+test), `tools/cli_resolve`, `reports/schema`. **Recovered ~4 GB** by deleting stale `*_img/` dirs (kept `new_review_img` = live viewer). **Killed** stale `vl2_eval_server`. **Caught & reverted:** removing `enrich_990` left a dangling subprocess reference in `orchestrator.py` (import-analysis blind spot; post-check grep caught it) — restored. **Deferred:** local-PG scratch DBs (needs sudo), `.builders/` worktrees + nested venvs (risk), `review_server.py` relocation (live service), the `enrich_990`/`990-enrich` paired deprecation.
 
 **Resolver picture, fully resolved:** `pipeline_resolve` (current stage entry, Spec 0018/0031) + `pipeline_resolver` (current lib, in-degree 7) are canonical; `batch_resolve` + `cli_resolve` are superseded; `resolve_websites` is an eval-only helper. *That* is the "which file is real" answer the whole effort is about.
 
