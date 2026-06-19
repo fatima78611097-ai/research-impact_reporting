@@ -1,4 +1,4 @@
-# Lavandula — System Map (housekeeping, IN PROGRESS)
+# Lavandula — System Map (housekeeping — discovery complete)
 
 **Branch:** `repo-housekeeping`. **Method:** derived from ground truth (systemd, `STAGE_REGISTRY`, RDS `information_schema`, import-graph reachability), not memory. Every line is marked **[V]** verified-from-source or **[P]** pending. Canonical-vs-dead uses the two-source rule + `import_graph.py` reachability; "dead" is never asserted without verifying dynamic/string imports.
 
@@ -13,6 +13,8 @@
 **The discovery is done.** What remains is in §9 (the ACTION phase): cleanup under the two-stage policy (§8), relocate `review_server.py` out of the scratch dir, decide the two orphaned features, wire metric extraction into the orchestrator.
 
 **The one thing this map cannot self-verify** (and you can't either, from `cloud2`): the live **g6 parse-worker host inventory** — those instances are ephemeral/remote (§7b). That needs AWS access or the operator. Everything else here was verified from source on this box.
+
+**Regenerating the review-viewer data** (the smoke-test's Q7): `new-review-data.json` is documented in `lavandula/nlp/GATING.md` (+ `regen_1_extract.py` / `regen_2_build_review.py` in `spikes/0064/eval_set/vision/`). The other three viewers' data (`review-/story-/slot-review-data.json`) are built by `comp-metric-regression/build_*.py` — **runbook not yet written (open gap)**.
 
 **Discipline that produced this** (keep it): map from ground truth not memory; two-source rule for canonical-vs-dead; verify dynamic/string imports before calling anything "dead"; never assert a live-host fact you can't probe.
 
@@ -78,6 +80,8 @@ Orchestration cluster (in `dashboard/pipeline/`): `orchestrator, stages, schedul
 
 **Local Postgres** (127.0.0.1:5432) holds only `scratch_0069v_*` — throwaway scratch DBs from the 0069 builder, **NOT production**. Cleanup candidate. **[V]**
 
+**Raw PDFs** live in **S3** — `s3://lavandula-nonprofit-collaterals/pdfs/{sha256}.pdf` (content-addressed, ~580 GiB), NOT on local disk. The parse worker downloads each transiently to `/tmp`. **[V]**
+
 ---
 
 ## 5. Live processes / services **[V]**
@@ -127,21 +131,12 @@ Notes: **`llm-extract` and `faithfulness` HAVE dashboard UIs** (queue/status/sto
 **Resolver picture, fully resolved:** `pipeline_resolve` (current stage entry, Spec 0018/0031) + `pipeline_resolver` (current lib, in-degree 7) are canonical; `batch_resolve` + `cli_resolve` are superseded; `resolve_websites` is an eval-only helper. *That* is the "which file is real" answer the whole effort is about.
 
 **The real mess — censused [V]:**
-- **`spikes/0064/` = 5.0 GB**, almost entirely **duplicated, regenerable PDFs + page images** under `eval_set/vision/*_img/` (the *same* source PDFs copied into ~6 separate review-image dirs; gitignored, so disk-only). → delete (regenerable from S3).
+- **`spikes/0064/` = 5.0 GB — ⚠️ DELETE ONLY THE `*_img/` SUBDIRS, NOT THE WHOLE TREE.** The 5 GB is duplicated, regenerable PDFs + page images under `eval_set/vision/*_img/` (same source PDFs copied into ~6 review-image dirs; gitignored). Safe to delete — regenerates from S3. **🔴 DO NOT delete `eval_set/vision/*-review-data.json`** (`review-data.json`, `story-review-data.json`, `slot-review-data.json`, `new-review-data.json`, ~5 MB) — those are the **live `metric-review` service's data source** (`review_server.py` serves them), NOT regenerable junk. `rm -rf spikes/0064` would take down the running service.
 - **`operations/` = 450 MB / 932 JSON run-artifacts:** `p20-regroup-test/` (341 MB, **857 JSON**), `story-definition/` (76 MB), `comp-metric-regression/` (32 MB, 45 JSON). Mostly throwaway run outputs.
 - **`comp-metric-regression/` = ~55 one-off research scripts.** Keepers: `review_server.py` (⚠️ **LIVE — it's `metric-review.service`, misplaced in a research dir; should be relocated to real code**), `regroup.py` (validated geometry method), `frozen/composed-baseline-2026-06-14/` (deliberate baseline), `fixtures/`. The other ~50 (`build_*`, `review_*`, one-off checks) → archive.
 - Plus `.builders/` worktree duplicates and **4 nested venvs** (`reports/venv`, `nonprofits/venv`, root, `.builders/.../venv`).
 
 **Headline:** the disk + file sprawl is ~5.4 GB and ~2,800 scratch files, but it's **regenerable artifacts + one-off scripts**, not load-bearing code. One genuine structural fix surfaced: a **live service (`review_server.py`) lives in a scratch dir**.
-
----
-
-## 7. PENDING — next probes
-
-- [ ] 67-route control panel → views → features map (`pipeline/urls.py` + `views.py`)
-- [ ] Per-subsystem file-level detail (which files implement each stage)
-- [ ] **Scratch-dir census** — `locard/operations`, `spikes`, `experiments` (the bulk of the cleanup)
-- [ ] Infra layer — SSM parameter list, deploy scripts, systemd units, `gunicorn.conf.py`, IAM/RDS connectivity
 
 ---
 
