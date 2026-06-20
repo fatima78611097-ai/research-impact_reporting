@@ -1,0 +1,19 @@
+{
+  "_doc": "The dev/research sample pool — the standing set every dev run is reviewed against. Decision LOCKED 2026-06-20 (metric-engine-plan.md §6): the 25 NTEE-P base docs + ~8 coverage docs (~5 infographic-heavy, ~3 financial-heavy). sha8 keys; resolve to full content_sha256 at load time.",
+  "base_25_ntee_p": [
+    "4b310b24", "287485c1", "e3665a33", "128de607", "e2416d20",
+    "d2e6b6ff", "2995644a", "a1072081", "e136ede4", "24e18655",
+    "040633b7", "2ea6005f", "dca5a824", "8b5543a9", "95f2054c",
+    "f1189246", "88bfa5f4", "d04d1475", "38c9a81d", "81480a77",
+    "18bb8c0f", "e31d17df", "029625c6", "ee3f949b", "9255ab7e"
+  ],
+  "coverage_add_8": {
+    "_status": "selection deferred to Phase 1 (when the dev harness consumes the pool). Criteria below.",
+    "infographic_heavy_5": [],
+    "financial_heavy_3": []
+  },
+  "coverage_criteria": {
+    "infographic_heavy": "docs with high figure/picture density (stress the mispairing + garble checks). Pick from corpus by figure-per-page count, excluding the base 25.",
+    "financial_heavy": "docs dominated by financial tables (stress the financial-reject + measurable checks: publish top-line totals, reject per-line grant amounts). Useful as a fixture even though financial-statement-only reports are excluded from the product corpus."
+  }
+}
