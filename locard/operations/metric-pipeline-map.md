@@ -159,10 +159,13 @@ in different functions:
 `slot_render.py` (Jun 18) is the **newer** one — a fresh research re-implementation written the day
 *after* the production harness, alongside it rather than from it.
 
-**Mispairing exists in THREE separate places, none sharing code:**
-1. `lavandula/nlp/gate_policy.py` → `column_mispair()` (table column-header logic, in the harness)
-2. `lavandula/nlp/mispairing_check.py` → `geometry_pairing_check()` (standalone diagnostic, never applied)
-3. `locard/spikes/0064/eval_set/vision/regen_3_vision_pairing.py` (Gemini vision, old set only)
+**Mispairing is handled by THREE different *approaches* (not three copies of one thing):**
+1. `lavandula/nlp/gate_policy.py` → `column_mispair()` (table column-header logic) — **the only one that is a live gate**
+2. `lavandula/nlp/mispairing_check.py` → `geometry_pairing_check()` (bbox-geometry **diagnostic**, never wired in, applies nothing)
+3. `locard/spikes/0064/eval_set/vision/regen_3_vision_pairing.py` (Gemini vision **spike**, old set only)
+
+(Earlier I called this "duplication in three places" — that was overstated: they're three distinct
+methods, only #1 is a gate. The genuine duplication is the gate pair above.)
 
 **Why this matters:** every new check has to be written twice (or thrice), and the two gates keep
 diverging. **Consolidate to one gate before adding more checks** — otherwise the organizing problem

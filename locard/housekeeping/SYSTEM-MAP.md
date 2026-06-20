@@ -111,11 +111,12 @@ Notes: **`llm-extract` and `faithfulness` HAVE dashboard UIs** (queue/status/sto
 > are both reachable but **do the same job in different code.** A concrete case found while building
 > the metric pipeline: `lavandula/nlp/` contains **two parallel gate implementations that share zero
 > code** — `slot_render.py` (research gate, Jun 18) and `gate_policy.py`/`gate_runner.py` (Spec 0069
-> production harness, Jun 17) — plus **mispairing logic in three separate places** (`gate_policy.column_mispair`,
-> `mispairing_check.py`, `regen_3_vision_pairing.py`). All are import-reachable, so all passed the
-> dead-code sweep and §6 below reads "clean." It is *not* a duplication audit. Full detail:
-> [`../operations/metric-pipeline-map.md`](../operations/metric-pipeline-map.md) §8. Open task: a
-> *duplication* pass (same-purpose, different-code) is a separate sweep we have not run.
+> production harness, Jun 17). (Mispairing also has three *different approaches* — `gate_policy.column_mispair`
+> live, `mispairing_check.py` diagnostic, `regen_3_vision_pairing.py` spike — but only the first is a gate;
+> that's three methods, not three copies.) All are import-reachable, so all passed the dead-code sweep and
+> §6 below reads "clean." It is *not* a duplication audit. **That duplication pass has since been run** —
+> see [`../operations/duplication-audit.md`](../operations/duplication-audit.md): 3 genuine duplications
+> found (gate, discover/async, classify), the rest cleared.
 
 **The core library is clean.** Of 347 lavandula modules, only **3 genuinely orphaned** (0 importers, not entry/framework):
 - `lavandula/reports/report.py`
