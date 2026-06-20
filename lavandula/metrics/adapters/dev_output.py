@@ -93,6 +93,13 @@ def write_review(metrics, conn, outdir, data_name="metrics-review-data.json"):
         page_cache[k] = im
         return im
 
+    # ensure every doc's full PDF is available, even docs with no resolved page (pdftotext-parsed
+    # docs have no bbox/page -> no boxed image -> the full-report link is their only grounding).
+    for sha8 in {m.sha8 for m in metrics}:
+        full = conn.execute(text("SELECT content_sha256 FROM lava_parse.sections WHERE content_sha256 LIKE :p LIMIT 1"),
+                            {"p": sha8 + "%"}).scalar() or sha8
+        getpdf(sha8, full)
+
     records = []
     for m in metrics:
         full = conn.execute(text("SELECT content_sha256 FROM lava_parse.sections WHERE content_sha256 LIKE :p LIMIT 1"),
