@@ -59,7 +59,7 @@ A cron job runs `load_990_index → process_990_auto` on a schedule (Feb/Mar, da
 | `nonprofits/` | 52 | **seed · resolve · classify · 990 · enrich** (in `tools/`); resolver+classify libs at top level |
 | `reports/` | 112 | **crawl / discover / fetch** (sync + async, intertwined) + report acquisition. ⚠️ 3 dead files (below) |
 | `parse/` | 20 | **parse** (Docling) |
-| `nlp/` | 36 | **metric extraction** (hand-run): the sharpened prompt (`llm_extract.py`), gate (`slot_render.py`), markers, `gate*.py` |
+| `nlp/` | 36 | **metric extraction** (hand-run): the sharpened prompt (`llm_extract.py`), markers, and **TWO parallel gates** — `slot_render.py` (research) + Spec-0069 `gate*.py` (production) — ⚠ duplication, see §6 blind-spot note |
 | `faithfulness/` | 15 | grounding / faithfulness checks |
 | `dashboard/` | 98 | Django app — `pipeline` = orchestration + control panel; `dashboard/` = settings/wsgi/pg_iam_backend |
 
@@ -105,6 +105,17 @@ Notes: **`llm-extract` and `faithfulness` HAVE dashboard UIs** (queue/status/sto
 ---
 
 ## 6. Dead code & version-confusion — VERIFIED via `import_graph.py` **[V]**
+
+> ⚠️ **KNOWN BLIND SPOT (added 2026-06-20): this method cannot see LIVE DUPLICATION.**
+> `import_graph.py` flags files that *nothing imports* (dead code). It is blind to two files that
+> are both reachable but **do the same job in different code.** A concrete case found while building
+> the metric pipeline: `lavandula/nlp/` contains **two parallel gate implementations that share zero
+> code** — `slot_render.py` (research gate, Jun 18) and `gate_policy.py`/`gate_runner.py` (Spec 0069
+> production harness, Jun 17) — plus **mispairing logic in three separate places** (`gate_policy.column_mispair`,
+> `mispairing_check.py`, `regen_3_vision_pairing.py`). All are import-reachable, so all passed the
+> dead-code sweep and §6 below reads "clean." It is *not* a duplication audit. Full detail:
+> [`../operations/metric-pipeline-map.md`](../operations/metric-pipeline-map.md) §8. Open task: a
+> *duplication* pass (same-purpose, different-code) is a separate sweep we have not run.
 
 **The core library is clean.** Of 347 lavandula modules, only **3 genuinely orphaned** (0 importers, not entry/framework):
 - `lavandula/reports/report.py`
