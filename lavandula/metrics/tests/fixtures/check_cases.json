@@ -1,0 +1,29 @@
+{
+  "_doc": "Known-bad / known-good per check. A check must catch every bad and flag no good. Cases drawn from the 2026-06-19/20 review of the sample. Grows by one entry whenever a new failure mode is found.",
+  "quality_text": [
+    {"statement": "celebrating our 30th anniversary of service", "value": 30, "expect": "quarantine", "_why": "tenure"},
+    {"statement": "150% of revenue went to programs", "value": 150, "expect": "quarantine", "_why": "financial fragment"},
+    {"statement": "204 vouchers for free clothing, beds and furniture", "value": 204, "expect": "ok"},
+    {"statement": "$13,022,953 total income", "value": 13022953, "expect": "ok"}
+  ],
+  "quality_subject": [
+    {"statement": "Thank you to the 450 members in our parish conferences", "value": 450, "expect": "quarantine", "_why": "gratitude"},
+    {"statement": "Total", "value": 100, "expect": "quarantine", "_why": "contentless header"},
+    {"statement": "$$$", "value": 5, "expect": "quarantine", "_why": "empty / only punctuation"},
+    {"statement": "685 families served", "value": 685, "expect": "ok"},
+    {"statement": "$2,400,818 total assistance", "value": 2400818, "expect": "ok"}
+  ],
+  "incompleteness": [
+    {"statement": "838 individuals", "value": 838, "expect": "flag", "_why": "bare generic people-noun"},
+    {"statement": "103 total clients", "value": 103, "expect": "flag"},
+    {"statement": "$13,022,953 total income", "value": 13022953, "expect": "ok", "_why": "financial total, not generic"},
+    {"statement": "34 adoptions", "value": 34, "expect": "ok", "_why": "specific noun"},
+    {"statement": "204 vouchers for free clothing, beds and furniture", "value": 204, "expect": "ok", "_why": "has context"},
+    {"statement": "685 families served", "value": 685, "expect": "ok", "_why": "has action verb"}
+  ],
+  "dedup": [
+    {"statement": "450 members in our parish conferences", "value": 450, "expect": "keep"},
+    {"statement": "450 members across all conferences", "value": 450, "expect": "duplicate", "_why": "same value + 2 word overlap"},
+    {"statement": "18 parish-based conferences", "value": 18, "expect": "keep"}
+  ]
+}
