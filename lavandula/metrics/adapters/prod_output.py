@@ -86,3 +86,54 @@ def commit(conn, metrics, run_id: int, *, write: bool = True) -> int:
     for r in rows:
         conn.execute(_UPSERT, r)
     return len(rows)
+
+
+# ── re-gate path (the gate-metrics stage): re-decide stored metrics without re-extracting ──
+
+def load_for_regate(conn, run_id: int):
+    """Read stored metrics for a run back into Metric objects (enough for the gate to re-decide:
+    statement, value, tier, and the provenance the mispairing check needs)."""
+    from lavandula.metrics.core.types import Metric, Provenance
+    import json as _json
+
+    def _bb(v):
+        return _json.loads(v) if isinstance(v, str) else v
+
+    rows = conn.execute(text("""
+        SELECT content_sha256, idx, statement, value, value_text, unit, logic_tier, subject,
+               value_ref, subject_ref, value_page, subject_page, value_bbox, subject_bbox,
+               same_marker, source_snippet, report_year, url
+        FROM lava_impact.metrics WHERE run_id = :r ORDER BY content_sha256, idx"""),
+        {"r": run_id}).mappings().all()
+    out = []
+    for x in rows:
+        m = Metric(content_sha256=x["content_sha256"], idx=x["idx"], report_year=x["report_year"],
+                   url=x["url"], statement=x["statement"] or "", value=x["value"],
+                   value_text=x["value_text"], unit=x["unit"], tier=x["logic_tier"], subject=x["subject"])
+        m.prov = Provenance(value_page=x["value_page"], subject_page=x["subject_page"],
+                            value_ref=x["value_ref"], subject_ref=x["subject_ref"],
+                            value_bbox=_bb(x["value_bbox"]), subject_bbox=_bb(x["subject_bbox"]),
+                            same_marker=bool(x["same_marker"]), source_snippet=x["source_snippet"])
+        out.append(m)
+    return out
+
+
+_REGATE = text("""
+    UPDATE lava_impact.metrics
+    SET gate_decision=:gate_decision, gate_reason=:gate_reason, gate_flags=:gate_flags,
+        gate_run_id=:gate_run_id, gated_at=now()
+    WHERE run_id=:run_id AND content_sha256=:content_sha256 AND idx=:idx
+""")
+
+
+def update_decisions(conn, metrics, run_id: int, gate_run_id: int) -> int:
+    """UPDATE only the gate columns for already-stored metrics (re-gate in place). Idempotent."""
+    conn.execute(text("SELECT pg_advisory_xact_lock(:k, :r)"), {"k": _LOCK_KEY, "r": run_id})
+    n = 0
+    for m in metrics:
+        conn.execute(_REGATE, {
+            "run_id": run_id, "content_sha256": m.content_sha256, "idx": m.idx,
+            "gate_decision": m.decision, "gate_reason": m.reason,
+            "gate_flags": json.dumps(m.flags) if m.flags else None, "gate_run_id": gate_run_id})
+        n += 1
+    return n

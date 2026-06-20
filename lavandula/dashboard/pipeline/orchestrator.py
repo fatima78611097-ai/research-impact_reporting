@@ -178,6 +178,22 @@ COMMAND_MAP: dict[str, dict[str, Any]] = {
             "workers": {"type": "int", "min": 1, "max": 4, "flag": "--workers"},
         },
     },
+    "extract-metrics": {
+        "cmd": ["python3", "-m", "lavandula.metrics.harness.run_prod"],
+        "params": {
+            "limit": {"type": "int", "min": 0, "max": 999999, "flag": "--limit"},
+            "dry_run": {"type": "bool", "flag": "--dry-run"},
+            "note": {"type": "text", "flag": "--note"},
+        },
+    },
+    "gate-metrics": {
+        "cmd": ["python3", "-m", "lavandula.metrics.harness.run_gate"],
+        "params": {
+            "run_id": {"type": "int", "min": 1, "max": 999999999, "flag": "--run-id"},
+            "dry_run": {"type": "bool", "flag": "--dry-run"},
+            "note": {"type": "text", "flag": "--note"},
+        },
+    },
 }
 
 
