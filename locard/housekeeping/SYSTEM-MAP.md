@@ -116,7 +116,10 @@ Notes: **`llm-extract` and `faithfulness` HAVE dashboard UIs** (queue/status/sto
 > that's three methods, not three copies.) All are import-reachable, so all passed the dead-code sweep and
 > §6 below reads "clean." It is *not* a duplication audit. **That duplication pass has since been run** —
 > see [`../operations/duplication-audit.md`](../operations/duplication-audit.md): 3 genuine duplications
-> found (gate, discover/async, classify), the rest cleared.
+> found (gate, discover/async, classify), the rest cleared. A **repeatable scanner now exists** —
+> `duplication_scan.py` (run alongside `import_graph.py`). **Gate duplication RESOLVED 2026-06-20**: the
+> two gates were consolidated into the `lavandula/metrics/` engine and the v1 cluster archived (tag
+> `pre-v1-gate-archive-2026-06-20`); the scanner no longer reports it.
 
 **The core library is clean.** Of 347 lavandula modules, only **3 genuinely orphaned** (0 importers, not entry/framework):
 - `lavandula/reports/report.py`

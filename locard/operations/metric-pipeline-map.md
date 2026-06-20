@@ -142,10 +142,16 @@ scattered scripts.
 
 ---
 
-## 8. ⚠ Two parallel gates + triple mispairing (the fragmentation to fix first)
+## 8. ✅ RESOLVED — the two parallel gates were consolidated (2026-06-20)
 
-The gate logic is **not one codebase.** There are **two separate, drifted implementations** in
-`lavandula/nlp/` that share **zero code** (verified: neither imports the other), doing the same jobs
+> **This whole section is now history.** The fork below was fixed: a single gate core lives in
+> `lavandula/metrics/core/` (the metric engine, this doc's subject). The v1 gate cluster
+> (`slot_render` + the Spec 0069 `gate*.py` + `mispairing_check`) was **archived** — tag
+> `pre-v1-gate-archive-2026-06-20`, recoverable forever. The duplication scanner
+> (`locard/housekeeping/duplication_scan.py`) no longer reports it. Kept below for the record.
+
+The gate logic **was** **not one codebase.** There were **two separate, drifted implementations** in
+`lavandula/nlp/` that shared **zero code** (verified: neither imported the other), doing the same jobs
 in different functions:
 
 | job | research gate — `slot_render.py` (Jun 18, what we ran) | production harness — `gate_policy.py` / `gate_runner.py` (Jun 17, Spec 0069) |

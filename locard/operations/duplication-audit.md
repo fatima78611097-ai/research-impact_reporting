@@ -21,7 +21,7 @@ duplication and were not audited.
 
 | # | The two implementations | Evidence | Fix | Priority |
 |---|---|---|---|---|
-| **1** | `nlp/slot_render.py` vs `nlp/gate.py` + `nlp/gate_policy.py` (the metric gate) | Zero shared imports; both implement dedup + quality-reject + financial-reject in different code (`dedup()`/`dedup_indices()`, `metric_quality()`+`subject_quality()`/`decide()`+`_qual_cat()`, `_FIN_FRAG`/`_FIN_LINEITEM`) | Pick the Spec 0069 stack as canonical; retire `slot_render`'s **gating** (keep only its render helpers `fmt_value`/`render_and_grade` if the display path is still used) | **HIGH** — blocks the metric work; two gates actively diverging |
+| **1** ✅ RESOLVED 2026-06-20 | ~~`nlp/slot_render.py` vs `nlp/gate.py` + `nlp/gate_policy.py`~~ | both gate impls were forked | **DONE** — replaced by a single gate core in `lavandula/metrics/core/` (the metric engine). The entire v1 gate cluster was archived (tag `pre-v1-gate-archive-2026-06-20`); the duplication scanner no longer reports it. | ~~HIGH~~ closed |
 | **2** | `reports/discover.py` vs `reports/async_discover.py` | `async_discover` does not import `discover`; docstring says *"Reimplements"*; helpers `_subpage_priority` + `_is_html_subpage_candidate` are copy-pasted. **But:** on diff they differ only by a missing docstring — **logic is identical, no behavioral drift today** | DRY: extract the shared helpers into `discover.py`, have `async_discover` import them (the pattern `async_fetch_pdf` already uses) | **LOW** — harmless now; latent future-drift risk only |
 | **3** | `reports/classify.py` vs `nonprofits/pipeline_classify.py` | Same table (`lava_corpus.corpus`), same columns, same label set, same job — differ only by LLM engine (Anthropic Haiku tool-use vs Gemma HTTP) and execution shape (inline vs queued stage) | Unify on one classifier core (prompt + labels + parse + write), inject the backend behind one interface (the seam `classifier_clients.py` already provides) | **MEDIUM** — currently a *deliberate* A/B (the `reclassify`/`compare-classify`/`promote-classify` stages exist to compare them); consolidate once a definition wins |
 
@@ -54,9 +54,10 @@ copy-paste (item #2).
 - `nonprofits/tools/resolve_websites.py` has a private `_brave_search()` HTTP helper that ignores both `brave_search.py` and `web_search.py` — a small third search path (the file itself is eval-only).
 - `reports/pdf_extract.py` is **misnamed** — it does byte-scanning/sanitization, not text extraction. Reads as a text extractor next to `reports/extraction.py`, which is the real page-text one. Rename candidate.
 
-## Method gap (so this doc doesn't repeat the housekeeping's mistake)
+## Repeatable scan (built 2026-06-20)
 
-This was a **targeted** pass over likely clusters in `lavandula/`, not an exhaustive every-pair
-comparison. A fully systematic duplication detector was not built. Treat this as "the clusters we
-checked," not "duplication-free everywhere." See the blind-spot note in
-[`../housekeeping/SYSTEM-MAP.md`](../housekeeping/SYSTEM-MAP.md) §6.
+`locard/housekeeping/duplication_scan.py` is now the standing tool — the companion to
+`import_graph.py` (which only finds dead code). It emits the two mechanical signals (shared
+function names, filename families) as CANDIDATES for human review. Run it after large changes.
+It no longer reports the gate pair (#1, archived). Note: it's a search-narrower, not a verdict —
+dispatcher+backend / wrapper / entry+library splits still show up and must be read.
