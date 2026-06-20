@@ -176,6 +176,32 @@ def column_mispair(metric_value, value_ref, idmap, source_text="", label="") -> 
 PUBLISH = "publish"
 QUARANTINE = "quarantine"
 
+# ============================================================
+# financial-statement line item (production policy) — operational financial detail
+# (totals, balance-sheet/P&L lines) that the impact-metric product excludes (per
+# nonprofit_metric_extraction_guidance.md: financial line items are operational, not impact).
+# ============================================================
+_FIN_LINEITEM = re.compile(
+    r"\btotal (revenue|revenues|income|expenses|support|assets|liabilities|net assets"
+    r"|current assets|current liabilities|operating expenses)\b"
+    r"|\bgross receipts\b|\bnet assets\b|\b(endowment (fund )?|fund )balance\b"
+    r"|\boperating expenses\b|\bcost of (goods|services|revenue)\b"
+    r"|\b(investment|interest) income\b|\b(federal|state|government) (support|funding|appropriation)\b"
+    r"|\bmanagement and general\b|\bfundrais\w+ expenses?\b"
+    r"|\bprogram (services )?expenses?\b|\bchange in net assets\b"
+    r"|\baccounts (payable|receivable)\b|\bcash (and|&) (cash )?equivalents\b"
+    r"|\bdeferred revenue\b|\bdepreciation\b|\bprepaid expenses\b", re.I)
+
+
+def financial_lineitem(label, source_text="") -> bool:
+    """True iff the metric is an audited-financials / balance-sheet / P&L line item (total
+    revenue/income/expenses/assets/net assets, fund balance, federal support, etc.) —
+    operational financial detail the impact-metric product excludes. Keyed on the metric
+    LABEL only: the source sentence can mention financial context incidentally for a real
+    impact metric ('government funding helped serve 500'), so matching source would over-reject.
+    Does NOT match beneficiary distributions ('grants to families', 'relief provided')."""
+    return bool(_FIN_LINEITEM.search(label or ""))
+
 
 def decide(
     metric: dict,
@@ -187,6 +213,7 @@ def decide(
     stale: bool = False,
     measured: bool | None = None,
     nonmetric_reject: bool = False,
+    financial_reject: bool = False,
     mispair_detect: bool = True,
     budget_s: float | None = gate.DEFAULT_TIME_BUDGET_S,
     clock: Callable[[], float] = time.monotonic,
@@ -221,6 +248,16 @@ def decide(
     # production-only policy. Large values (is_small_int False) are unaffected.
     if measured is None and gate.is_small_int(metric.get("metric_value")):
         return QUARANTINE, "measure_unchecked"
+
+    # 4c. financial-statement line item — fast deterministic reject (free) for the obvious
+    # audited-statement vocabulary (total revenue/expenses/assets/net assets, ...).
+    if financial_lineitem(metric.get("label"), metric.get("source_text", "")):
+        return QUARANTINE, "financial_lineitem"
+
+    # 4d. financial tier (LLM-classified) — the org's own money figure (budget, revenue,
+    # fundraising proceeds, ratios) that regex misses; out of scope for the impact product.
+    if financial_reject:
+        return QUARANTINE, "tier_financial"
 
     # 5. is-a-metric reject rules (production policy, value+label+source).
     if nonmetric_reject:

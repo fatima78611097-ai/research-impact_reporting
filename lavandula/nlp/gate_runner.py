@@ -105,6 +105,17 @@ def _nonmetric_reject(value, label: str, source_text: str, measure_fn: mc.ChatFn
     return mc.check_is_metric(source_text, value, measure_fn) is False
 
 
+def _financial_reject(value, label: str, source_text: str, measure_fn: mc.ChatFn | None) -> bool:
+    """Financial-tier reject: True iff a money-suspect metric is confirmed by the judge to be
+    the org's own FINANCIAL figure (revenue/expenses/budget/assets/fundraising), which the
+    impact product excludes. Conservative — unchecked/unavailable judge does NOT reject."""
+    if measure_fn is None:
+        return False
+    if not mc.financial_suspect(value, label, source_text):
+        return False
+    return mc.check_financial(label, source_text, value, measure_fn) is True
+
+
 def _confidence(metric: dict, value_ref, subject_ref, idmap: dict) -> float:
     """Coarse ADVISORY score (grounding margin + co-location strength). Does NOT affect
     the decision (spec §5.5) — only prioritizes the spot-review sample."""
@@ -136,10 +147,12 @@ def gate_document(rows: list[dict], idmap: dict, stale: bool,
         metric = {"metric_value": value, "label": label, "source_text": source_text}
         measured = _measured_signal(value, source_text, measure_fn)
         nonmetric = _nonmetric_reject(value, label, source_text, measure_fn)
+        financial = _financial_reject(value, label, source_text, measure_fn)
         dec, reason = gate_policy.decide(
             metric, value_ref, subject_ref, idmap,
             marker_resolved=bool(r.get("marker_resolved")), stale=stale,
-            measured=measured, nonmetric_reject=nonmetric, mispair_detect=mispair_detect)
+            measured=measured, nonmetric_reject=nonmetric, financial_reject=financial,
+            mispair_detect=mispair_detect)
         conf = _confidence(metric, value_ref, subject_ref, idmap) if dec == gate_policy.PUBLISH else None
         decisions.append(MetricDecision(r["id"], dec, reason, conf))
 
