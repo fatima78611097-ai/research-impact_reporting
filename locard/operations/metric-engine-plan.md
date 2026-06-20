@@ -163,12 +163,29 @@ not "be careful":
 
 ---
 
-## 6. Open decisions needing your call
+## 6. Decisions (LOCKED 2026-06-20)
 
-- **Dev sample pool:** keep the 25 NTEE-P docs as the fixture, or broaden now? (Recommend: keep as the
-  standing set, add ~5 infographic-heavy + ~3 financial-only for coverage.)
-- **v1 disposition:** archive-by-tag-then-delete (recommended — it's unwired, mostly test runs), or keep
-  parts of the 0069 runner plumbing as the basis for `prod_output`? (Recommend: keep the *plumbing*, drop
-  the construction-specific *logic*.)
-- **Sequencing:** build all of Phase 2's checks before Phase 3 (prod), or get prod wiring working on the
-  current checks first? (Recommend: finish Phase 2 — the checks are the product; prod wiring is plumbing.)
+- **Dev sample pool:** the **25 NTEE-P docs + ~8 for coverage** (~5 infographic-heavy, ~3 financial-only).
+  This is the standing fixture every dev run is reviewed against.
+- **v1 disposition: archive + start over.** Snapshot-tag the Spec 0069 gate and remove it from the tree;
+  rebuild `prod_output` fresh against the new `Metric` contract. Keep 0069 **tagged as a reference**
+  (read, do **not** import) for the concurrency/idempotency patterns — advisory lock, active-run guard,
+  atomic upsert, per-run report — because that's the easy-to-get-wrong part. The plumbing is welded to the
+  construction data model (consumes a 0068 marker run, re-renders via markers), so it can't be cleanly
+  lifted; we re-implement the *patterns* against the new contract. **Port its two real checks** —
+  `gate.py` (grounding) and `measure_check.py` (measurable / is-a-metric) — into `core/checks/`.
+- **Sequencing: finish Phase 2 checks before Phase 3 (prod wiring).** The checks are the product; prod is
+  plumbing — don't orchestrate a gate still being tuned.
+
+## 6b. Deferred decisions (come due at Phase 2 — NOT blocking Phase 0)
+
+- **Two co-occurring numbers — one metric or "multiple"?** e.g. *"Thirteen households received a total of
+  $577,000."* Sets the `is_a_metric` / multiple-metric check threshold.
+- **Is a percent-change a valid metric?** e.g. *"34% increase from the previous year."* Same check.
+- ~~**Extraction model**~~ **RESOLVED — `deepseek-chat`** (operator-confirmed 2026-06-20; matches the
+  pinned `_MODEL` in code). The "v4-flash" note was wrong.
+
+*Vision models are NOT a decision for this plan* — the gate is text-only detection. They belong to the
+out-of-scope **recovery** track: the local options are VL2 and Qwen (Qwen the better of the two), and both
+are currently displaced by Gemini Flash-Lite. Which vision model to use is a recovery-track call, made when
+that track starts — and note the operator's standing reservation that Flash-Lite is weak as a judge.
