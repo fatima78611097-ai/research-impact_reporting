@@ -11,6 +11,9 @@ import sys
 
 from ..core.types import Metric
 from ..core.checks.quality import quality_text, quality_subject
+from ..core.checks.vague_quantity import vague_quantity
+from ..core.checks.measurable import measurable
+from ..core.checks.is_a_metric import is_a_metric
 from ..core.checks.incompleteness import incompleteness
 from ..core.checks.dedup import duplicate_indices
 
@@ -24,7 +27,8 @@ def _mk(c, idx=0):
 def run() -> int:
     fails = 0
     for name, fn in (("quality_text", quality_text), ("quality_subject", quality_subject),
-                     ("incompleteness", incompleteness)):
+                     ("vague_quantity", vague_quantity), ("measurable", measurable),
+                     ("is_a_metric", is_a_metric), ("incompleteness", incompleteness)):
         cases = CASES.get(name, [])
         ok = 0
         for c in cases:

@@ -15,16 +15,24 @@ from collections.abc import Callable
 
 from .types import Metric, CheckResult, PUBLISH, QUARANTINE
 from .checks.quality import quality_text, quality_subject
+from .checks.vague_quantity import vague_quantity
+from .checks.measurable import measurable
+from .checks.is_a_metric import is_a_metric
 from .checks.incompleteness import incompleteness
+from .checks.mispairing import mispairing
 from .checks.dedup import duplicate_indices
 
 Check = Callable[[Metric], CheckResult]
 
 # Per-metric checks, in order: quarantine checks first, flag checks last.
 REGISTRY: list[Check] = [
-    quality_text,        # tenure / financial-statement fragment   -> quarantine
-    quality_subject,     # gratitude / contentless header / empty   -> quarantine
-    incompleteness,      # bare generic people-count, no action     -> flag
+    quality_text,        # tenure / financial-statement fragment      -> quarantine
+    quality_subject,     # gratitude / contentless header / empty      -> quarantine
+    vague_quantity,      # "thousands of" rendered as a precise number -> quarantine
+    measurable,          # value 1/2 not a printed count (event)       -> quarantine
+    is_a_metric,         # ranking / forecast / duration / award / date-> quarantine
+    incompleteness,      # bare generic people-count, no action        -> flag
+    mispairing,          # value & label far apart on the page         -> flag
 ]
 
 
