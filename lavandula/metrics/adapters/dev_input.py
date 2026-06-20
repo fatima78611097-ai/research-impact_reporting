@@ -17,8 +17,8 @@ FIXTURE = os.path.join(os.path.dirname(__file__), "..", "tests", "fixtures", "sa
 def _pool_sha8s() -> list[str]:
     pool = json.load(open(os.path.abspath(FIXTURE)))
     sha8s = list(pool.get("base_25_ntee_p", []))
-    cov = pool.get("coverage_add_8", {})
-    sha8s += cov.get("infographic_heavy_5", []) + cov.get("financial_heavy_3", [])
+    sha8s += list(pool.get("coverage_financial_3", []))
+    sha8s += list(pool.get("coverage_infographic", {}).get("docs", []))
     return sha8s
 
 
