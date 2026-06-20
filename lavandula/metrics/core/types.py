@@ -24,7 +24,8 @@ QUARANTINE = "quarantine"
 @dataclass
 class Provenance:
     """Where the value and the label physically live in the source document."""
-    page: int | None = None
+    value_page: int | None = None         # the value and label can sit on DIFFERENT pages on a
+    subject_page: int | None = None       #   designed layout — keep both (the viewer boxes need it)
     value_ref: str | None = None          # ⟨marker⟩ on the value's line/cell
     subject_ref: str | None = None        # ⟨marker⟩ on the label's line/cell
     value_bbox: dict | None = None        # {l,t,r,b,coord_origin} — drives the red box + geometry checks
@@ -33,6 +34,11 @@ class Provenance:
     subject_text: str | None = None       # resolved text at subject_ref
     source_snippet: str | None = None     # verbatim span the model cited
     same_marker: bool = False             # value & label share one marker (inline; no pairing risk)
+
+    @property
+    def page(self) -> int | None:
+        """Primary display page — the value's, falling back to the label's."""
+        return self.value_page or self.subject_page
 
 
 @dataclass

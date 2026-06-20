@@ -1,0 +1,103 @@
+<!doctype html><html><head><meta charset=utf-8><title>Model-text review (ungated)</title>
+<style>
+:root{color-scheme:dark}
+body{background:#0e1116;color:#e6e6e6;font:14px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;margin:0}
+#bar{position:sticky;top:0;background:#141a22;border-bottom:1px solid #2a3340;padding:10px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;z-index:5}
+#bar b{color:#fff}
+select,input{background:#0e1116;color:#e6e6e6;border:1px solid #2a3340;border-radius:6px;padding:4px 6px}
+.wrap{max-width:1000px;margin:0 auto;padding:16px}
+.card{background:#141a22;border:1px solid #2a3340;border-radius:10px;padding:12px 14px;margin:10px 0}
+.card.keep{border-color:#1a7a3a}.card.junk{border-color:#a02020;opacity:.6}.card.unsure{border-color:#b8860b}.card.debate{border-color:#2f6fd0}
+.badge{display:inline-block;font-size:11px;font-weight:600;color:#fff;border-radius:5px;padding:1px 7px;vertical-align:middle}
+.stmt{font-size:16px;margin:6px 0;color:#fff}
+.kv{color:#9fb0c0;font-size:13px}
+.snip{background:#0e1116;border:1px solid #243040;border-left:3px solid #3a6;border-radius:5px;padding:6px 9px;margin:6px 0;color:#bfe3cf;font-size:13px;white-space:pre-wrap}
+.mid{color:#6b7c8c;font-size:12px}
+details img{max-width:100%;border:1px solid #2a3340;border-radius:6px;margin-top:6px}
+.mark button{background:#0e1116;color:#cfd8e0;border:1px solid #2a3340;border-radius:6px;padding:3px 10px;margin-right:6px;cursor:pointer}
+.mark button.on-keep{background:#1a7a3a;border-color:#1a7a3a;color:#fff}
+.mark button.on-junk{background:#a02020;border-color:#a02020;color:#fff}
+.mark button.on-unsure{background:#b8860b;border-color:#b8860b;color:#fff}
+.mark button.on-debate{background:#2f6fd0;border-color:#2f6fd0;color:#fff}
+</style></head><body>
+<div id=bar>
+  <span id=tally>loading…</span><span style="flex:1"></span>
+  <label>Tier <select id=ftier><option value=all>all</option></select></label>
+  <label>Gate <select id=fgate><option value=all>all</option><option value=publish>published</option><option value=quarantine>quarantined</option></select></label>
+  <label>Complete <select id=finc><option value=all>all</option><option value=yes>⚠ incomplete</option><option value=no>complete</option></select></label>
+  <label>Mark <select id=fmark><option value=all>all</option><option value=none>unmarked</option><option value=keep>keep</option><option value=junk>junk</option><option value=unsure>unsure</option><option value=debate>debate</option></select></label>
+  <input id=fsearch placeholder="text / org / sha8" size=18>
+</div>
+<div class=wrap><div id=list></div></div>
+<script>
+const TIERS={outcome_impact:["OUTCOME","#1a7a3a"],reach_output:["REACH","#1565ff"],capacity_input:["CAPACITY","#8a5cc0"],activity_count:["ACTIVITY","#b8860b"],financial:["FINANCIAL","#555"]};
+const $=s=>document.querySelector(s);
+const esc=s=>(s==null?"":(""+s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let DATA=[],MARK=JSON.parse(localStorage.getItem("mt_marks")||"{}");
+const saveMarks=()=>localStorage.setItem("mt_marks",JSON.stringify(MARK));
+
+async function boot(){
+  DATA=await (await fetch("metrics-review-data.json?t="+Date.now())).json();
+  const tiers=[...new Set(DATA.map(r=>r.tier).filter(Boolean))].sort();
+  tiers.forEach(t=>{const o=document.createElement("option");o.value=t;o.textContent=(TIERS[t]?TIERS[t][0]:t)+" ("+DATA.filter(r=>r.tier===t).length+")";$("#ftier").appendChild(o);});
+  ["ftier","fgate","finc","fmark"].forEach(id=>$("#"+id).onchange=render);
+  $("#fsearch").oninput=render;
+  render();
+}
+function match(r){
+  const t=$("#ftier").value,g=$("#fgate").value,inc=$("#finc").value,mk=$("#fmark").value,q=$("#fsearch").value.toLowerCase();
+  if(t!=="all"&&r.tier!==t)return false;
+  if(g!=="all"&&r.gate_decision!==g)return false;
+  if(inc==="yes"&&!r.incomplete)return false;
+  if(inc==="no"&&r.incomplete)return false;
+  const m=MARK[r.id]||"none";
+  if(mk!=="all"&&m!==mk)return false;
+  if(q&&!((r.statement||"")+" "+(r.org||"")+" "+(r.sha8||"")).toLowerCase().includes(q))return false;
+  return true;
+}
+function filtered(){return DATA.filter(match);}
+function card(r){
+  const [tl,tc]=TIERS[r.tier]||[r.tier||"?","#555"];
+  const mk=MARK[r.id]||"";
+  const d=document.createElement("div");
+  d.className="card"+(mk?" "+mk:"");
+  d.innerHTML=`
+   <div><span class=badge style="background:${tc}">${tl}</span>
+     ${r.gate_decision?`<span class=badge style="background:${r.gate_decision==='publish'?'#0a8a0a':'#c0392b'}" title="${esc(r.gate_reason||'')}">${r.gate_decision==='publish'?'PUBLISH':'QUARANTINE'}${r.gate_reason?' · '+esc(r.gate_reason):''}</span>`:""}
+     ${r.incomplete?`<span class=badge style="background:#c2410c" title="${esc(r.incomplete_reason||'')}">⚠ incomplete</span>`:""}
+     <b>${esc(r.org)}</b> <span class=mid>${r.id}</span></div>
+   <div class=stmt>"${esc(r.statement)}"</div>
+   <div class=kv>value=<b>${esc(r.value)}</b>${r.unit?" "+esc(r.unit):""}${r.subject?` · marker-subject: ${esc(r.subject)}`:""}</div>
+   ${r.source_snippet?`<div class=snip>source: ${esc(r.source_snippet)}</div>`:""}
+   <details><summary>source page ${r.page??"?"}</summary><img loading=lazy src="${r.img}"></details>
+   <div class=mark style="margin-top:8px">
+     <button data-m=keep class="${mk==="keep"?"on-keep":""}">✓ keep</button>
+     <button data-m=junk class="${mk==="junk"?"on-junk":""}">✗ junk</button>
+     <button data-m=unsure class="${mk==="unsure"?"on-unsure":""}">? unsure</button>
+     <button data-m=debate class="${mk==="debate"?"on-debate":""}">⚖ debate</button>
+   </div>`;
+  d.querySelectorAll(".mark button").forEach(b=>b.onclick=()=>{
+    MARK[r.id]=(MARK[r.id]===b.dataset.m)?undefined:b.dataset.m;
+    if(!MARK[r.id])delete MARK[r.id];
+    saveMarks();
+    const m=MARK[r.id]||"";
+    d.className="card"+(m?" "+m:"");                                   // update THIS card only
+    d.querySelectorAll(".mark button").forEach(x=>x.className=(m&&m===x.dataset.m)?("on-"+x.dataset.m):"");
+    if(!match(r))d.remove();                                           // drop only if it no longer matches a filter
+    updateTally();                                                     // no full re-render → no scroll jump
+  });
+  return d;
+}
+function updateTally(){
+  const counts={keep:0,junk:0,unsure:0,debate:0};
+  DATA.forEach(r=>{const m=MARK[r.id];if(m)counts[m]++;});
+  $("#tally").innerHTML=`<b>${DATA.length}</b> model metrics · showing <b>${filtered().length}</b> · `+
+    `marked: <b style="color:#3ad17a">${counts.keep}</b> keep / <b style="color:#e06666">${counts.junk}</b> junk / <b style="color:#d9a92a">${counts.unsure}</b> unsure / <b style="color:#6f9fe6">${counts.debate}</b> debate`;
+}
+function render(){
+  const L=$("#list");L.innerHTML="";
+  filtered().forEach(r=>L.appendChild(card(r)));
+  updateTally();
+}
+boot();
+</script></body></html>
