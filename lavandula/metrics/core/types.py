@@ -58,6 +58,7 @@ class Metric:
     unit: str | None = None
     tier: str | None = None               # one of TIERS
     subject: str | None = None            # the raw "what" (resolved label text)
+    program: str | None = None            # named program/service this metric belongs to (null if the report doesn't state one)
 
     # —— provenance ——
     prov: Provenance = field(default_factory=Provenance)

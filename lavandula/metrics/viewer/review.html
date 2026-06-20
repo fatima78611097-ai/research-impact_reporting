@@ -12,6 +12,7 @@ select,input{background:#0e1116;color:#e6e6e6;border:1px solid #2a3340;border-ra
 .stmt{font-size:16px;margin:6px 0;color:#fff}
 .kv{color:#9fb0c0;font-size:13px}
 .snip{background:#0e1116;border:1px solid #243040;border-left:3px solid #3a6;border-radius:5px;padding:6px 9px;margin:6px 0;color:#bfe3cf;font-size:13px;white-space:pre-wrap}
+.prog{margin:4px 0;font-size:13px;color:#c9a84a}
 .src{margin-top:6px;font-size:13px}
 .src a{color:#6f9fe6;text-decoration:none}
 .src a:hover{text-decoration:underline}
@@ -70,6 +71,7 @@ function card(r){
      ${r.incomplete?`<span class=badge style="background:#c2410c" title="${esc(r.incomplete_reason||'')}">⚠ incomplete</span>`:""}
      <b>${esc(r.org)}</b> <span class=mid>${r.id}</span></div>
    <div class=stmt>"${esc(r.statement)}"</div>
+   ${r.program?`<div class=prog>🎯 program: <b>${esc(r.program)}</b></div>`:""}
    <div class=kv>value=<b>${esc(r.value)}</b>${r.unit?" "+esc(r.unit):""}${r.subject?` · marker-subject: ${esc(r.subject)}`:""}</div>
    ${r.source_snippet?`<div class=snip>source: ${esc(r.source_snippet)}</div>`:""}
    <details><summary>source page ${r.page??"?"}</summary><img loading=lazy src="${r.img}"></details>

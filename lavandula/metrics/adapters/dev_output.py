@@ -44,6 +44,7 @@ def _record(m, img):
     rec = {
         "id": f"mt:{m.sha8}:{m.idx}", "set": "model-text", "sha8": m.sha8, "org": m.org,
         "statement": m.statement, "value": m.value, "unit": m.unit, "tier": m.tier,
+        "program": m.program,
         "source_snippet": m.prov.source_snippet, "subject": m.subject,
         "same_marker": m.prov.same_marker,
         "v_page": m.prov.value_page, "v_text": m.prov.value_text,

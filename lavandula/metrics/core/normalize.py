@@ -42,6 +42,7 @@ def normalize(raw_metrics: list[dict], idmap: dict, *, content_sha256: str,
             value_text=(str(m.get("metric_value")) if m.get("metric_value") is not None else None),
             unit=m.get("unit"), tier=m.get("tier"),
             subject=sc.get("text") or "",
+            program=(m.get("program") or None),
             prov=prov,
         ))
     return out
