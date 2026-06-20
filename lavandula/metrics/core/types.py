@@ -34,6 +34,7 @@ class Provenance:
     subject_text: str | None = None       # resolved text at subject_ref
     source_snippet: str | None = None     # verbatim span the model cited
     same_marker: bool = False             # value & label share one marker (inline; no pairing risk)
+    section_heading: str | None = None    # heading of the section the metric sits in (grounds `program`)
 
     @property
     def page(self) -> int | None:

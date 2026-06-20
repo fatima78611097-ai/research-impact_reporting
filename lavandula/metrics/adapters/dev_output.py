@@ -44,16 +44,17 @@ def _record(m, img):
     rec = {
         "id": f"mt:{m.sha8}:{m.idx}", "set": "model-text", "sha8": m.sha8, "org": m.org,
         "statement": m.statement, "value": m.value, "unit": m.unit, "tier": m.tier,
-        "program": m.program,
+        "program": m.program, "section_heading": m.prov.section_heading,
         "source_snippet": m.prov.source_snippet, "subject": m.subject,
         "same_marker": m.prov.same_marker,
         "v_page": m.prov.value_page, "v_text": m.prov.value_text,
         "s_page": m.prov.subject_page, "s_text": m.prov.subject_text,
         "v_bbox": m.prov.value_bbox, "s_bbox": m.prov.subject_bbox, "page": m.prov.page,
         "gate_decision": m.decision, "gate_reason": m.reason,
+        "flags": m.flags, "flag_detail": m.flag_detail,
         "img": img, "pdf": f"{IMGSUB}/{m.sha8}.pdf",
     }
-    if "incomplete" in m.flags:
+    if "incomplete" in m.flags:                      # kept for the existing Complete filter
         rec["incomplete"] = True
         rec["incomplete_reason"] = m.flag_detail.get("incomplete", "")
     return rec

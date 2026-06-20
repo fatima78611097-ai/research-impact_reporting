@@ -20,6 +20,7 @@ from .checks.measurable import measurable
 from .checks.is_a_metric import is_a_metric
 from .checks.incompleteness import incompleteness
 from .checks.mispairing import mispairing
+from .checks.program_grounding import program_grounding
 from .checks.dedup import duplicate_indices
 
 Check = Callable[[Metric], CheckResult]
@@ -33,6 +34,7 @@ REGISTRY: list[Check] = [
     is_a_metric,         # ranking / forecast / duration / award / date-> quarantine
     incompleteness,      # bare generic people-count, no action        -> flag
     mispairing,          # value & label far apart on the page         -> flag
+    program_grounding,   # program disagrees with the section heading  -> flag
 ]
 
 
