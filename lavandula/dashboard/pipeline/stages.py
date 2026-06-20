@@ -315,6 +315,36 @@ STAGE_REGISTRY: dict[str, StageDefinition] = {
         retry_policy=RetryPolicy(max_attempts=1),
         resource_class="light",
     ),
+    "extract-metrics": StageDefinition(
+        name="extract-metrics",
+        display_name="Metric Extraction",
+        command=["python3", "-m", "lavandula.metrics.harness.run_prod"],
+        parameters={
+            "limit": ParamSpec(type="integer", cli_flag="--limit", min_value=0, max_value=999999),
+            "dry_run": ParamSpec(type="boolean", cli_flag="--dry-run"),
+            "note": ParamSpec(type="string", cli_flag="--note"),
+        },
+        predecessors=["parse"],
+        conflict_group="metrics",
+        provenance_column=None,
+        retry_policy=RetryPolicy(max_attempts=1),
+        resource_class="light",
+    ),
+    "gate-metrics": StageDefinition(
+        name="gate-metrics",
+        display_name="Metric Gate (re-gate)",
+        command=["python3", "-m", "lavandula.metrics.harness.run_gate"],
+        parameters={
+            "run_id": ParamSpec(required=True, type="integer", cli_flag="--run-id", min_value=1, max_value=999999999),
+            "dry_run": ParamSpec(type="boolean", cli_flag="--dry-run"),
+            "note": ParamSpec(type="string", cli_flag="--note"),
+        },
+        predecessors=["extract-metrics"],
+        conflict_group="metrics",
+        provenance_column=None,
+        retry_policy=RetryPolicy(max_attempts=1),
+        resource_class="light",
+    ),
 }
 
 
