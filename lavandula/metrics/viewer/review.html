@@ -15,6 +15,10 @@ select,input{background:#0e1116;color:#e6e6e6;border:1px solid #2a3340;border-ra
 .prog{margin:4px 0;font-size:13px;color:#c9a84a}
 .ungr{color:#e06666;font-weight:600}
 .src{margin-top:6px;font-size:13px}
+#pager{display:flex;gap:6px;align-items:center;justify-content:center;margin:16px 0;flex-wrap:wrap}
+#pager button{background:#141a22;color:#cfd8e0;border:1px solid #2a3340;border-radius:6px;padding:4px 10px;cursor:pointer}
+#pager button:disabled{opacity:.4;cursor:default}
+#pager .pinfo{color:#9fb0c0;font-size:13px;margin:0 8px}
 .src a{color:#6f9fe6;text-decoration:none}
 .src a:hover{text-decoration:underline}
 .mid{color:#6b7c8c;font-size:12px}
@@ -33,20 +37,22 @@ details img{max-width:100%;border:1px solid #2a3340;border-radius:6px;margin-top
   <label>Mark <select id=fmark><option value=all>all</option><option value=none>unmarked</option><option value=keep>keep</option><option value=junk>junk</option><option value=unsure>unsure</option><option value=debate>debate</option></select></label>
   <input id=fsearch placeholder="text / org / sha8" size=18>
 </div>
-<div class=wrap><div id=list></div></div>
+<div class=wrap><div id=list></div><div id=pager></div></div>
 <script>
 const TIERS={outcome_impact:["OUTCOME","#1a7a3a"],reach_output:["REACH","#1565ff"],capacity_input:["CAPACITY","#8a5cc0"],activity_count:["ACTIVITY","#b8860b"],financial:["FINANCIAL","#555"]};
 const $=s=>document.querySelector(s);
 const esc=s=>(s==null?"":(""+s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-let DATA=[],MARK=JSON.parse(localStorage.getItem("mt_marks")||"{}");
+let DATA=[],MARK=JSON.parse(localStorage.getItem("mt_marks")||"{}"),PAGE=0;
+const PER=25;
 const saveMarks=()=>localStorage.setItem("mt_marks",JSON.stringify(MARK));
 
 async function boot(){
   DATA=await (await fetch("metrics-review-data.json?t="+Date.now())).json();
   const tiers=[...new Set(DATA.map(r=>r.tier).filter(Boolean))].sort();
   tiers.forEach(t=>{const o=document.createElement("option");o.value=t;o.textContent=(TIERS[t]?TIERS[t][0]:t)+" ("+DATA.filter(r=>r.tier===t).length+")";$("#ftier").appendChild(o);});
-  ["ftier","fgate","finc","fmark"].forEach(id=>$("#"+id).onchange=render);
-  $("#fsearch").oninput=render;
+  const reset=()=>{PAGE=0;render();};
+  ["ftier","fgate","finc","fmark"].forEach(id=>$("#"+id).onchange=reset);
+  $("#fsearch").oninput=reset;
   render();
 }
 function match(r){
@@ -102,9 +108,24 @@ function updateTally(){
     `marked: <b style="color:#3ad17a">${counts.keep}</b> keep / <b style="color:#e06666">${counts.junk}</b> junk / <b style="color:#d9a92a">${counts.unsure}</b> unsure / <b style="color:#6f9fe6">${counts.debate}</b> debate`;
 }
 function render(){
+  const f=filtered(), pages=Math.max(1,Math.ceil(f.length/PER));
+  PAGE=Math.max(0,Math.min(PAGE,pages-1));
   const L=$("#list");L.innerHTML="";
-  filtered().forEach(r=>L.appendChild(card(r)));
+  f.slice(PAGE*PER,(PAGE+1)*PER).forEach(r=>L.appendChild(card(r)));
+  renderPager(f.length,pages);
   updateTally();
+}
+function renderPager(total,pages){
+  const P=$("#pager");
+  if(total<=PER){P.innerHTML="";return;}
+  const go=p=>{PAGE=Math.max(0,Math.min(p,pages-1));render();window.scrollTo(0,0);};
+  P.innerHTML=`<button id=first>« first</button><button id=prev>‹ prev</button>`+
+    `<span class=pinfo>page <b>${PAGE+1}</b> / ${pages} · ${total} metrics</span>`+
+    `<button id=next>next ›</button><button id=last>last »</button>`;
+  $("#first").disabled=$("#prev").disabled=PAGE<=0;
+  $("#next").disabled=$("#last").disabled=PAGE>=pages-1;
+  $("#first").onclick=()=>go(0);$("#prev").onclick=()=>go(PAGE-1);
+  $("#next").onclick=()=>go(PAGE+1);$("#last").onclick=()=>go(pages-1);
 }
 boot();
 </script></body></html>
