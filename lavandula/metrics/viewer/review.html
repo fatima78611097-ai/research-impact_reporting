@@ -34,7 +34,7 @@ details img{max-width:100%;border:1px solid #2a3340;border-radius:6px;margin-top
   <span id=tally>loading…</span><span style="flex:1"></span>
   <label>Tier <select id=ftier><option value=all>all</option></select></label>
   <label>Gate <select id=fgate><option value=all>all</option><option value=publish>published</option><option value=quarantine>quarantined</option></select></label>
-  <label>Complete <select id=finc><option value=all>all</option><option value=yes>⚠ incomplete</option><option value=no>complete</option></select></label>
+  <label>Flag <select id=finc><option value=all>all</option><option value=any>⚑ any flag</option><option value=gratitude_source>🙏 thank-you source</option><option value=program_ungrounded>⚠ program ungrounded</option><option value=mispair_suspect>↔ mispair suspect</option><option value=incomplete>⚠ incomplete</option><option value=none>no flags</option></select></label>
   <label>Mark <select id=fmark><option value=all>all</option><option value=none>unmarked</option><option value=keep>keep</option><option value=junk>junk</option><option value=unsure>unsure</option><option value=debate>debate</option></select></label>
   <input id=fsearch placeholder="text / org / sha8" size=18>
 </div>
@@ -60,8 +60,12 @@ function match(r){
   const t=$("#ftier").value,g=$("#fgate").value,inc=$("#finc").value,mk=$("#fmark").value,q=$("#fsearch").value.toLowerCase();
   if(t!=="all"&&r.tier!==t)return false;
   if(g!=="all"&&r.gate_decision!==g)return false;
-  if(inc==="yes"&&!r.incomplete)return false;
-  if(inc==="no"&&r.incomplete)return false;
+  if(inc!=="all"){
+    const fl=r.flags||[];
+    if(inc==="any"&&fl.length===0)return false;
+    else if(inc==="none"&&fl.length>0)return false;
+    else if(inc!=="any"&&inc!=="none"&&!fl.includes(inc))return false;
+  }
   const m=MARK[r.id]||"none";
   if(mk!=="all"&&m!==mk)return false;
   if(q&&!((r.statement||"")+" "+(r.org||"")+" "+(r.sha8||"")).toLowerCase().includes(q))return false;
