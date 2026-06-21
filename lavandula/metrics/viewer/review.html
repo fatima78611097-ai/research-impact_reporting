@@ -19,6 +19,7 @@ select,input{background:#0e1116;color:#e6e6e6;border:1px solid #2a3340;border-ra
 #pager button{background:#141a22;color:#cfd8e0;border:1px solid #2a3340;border-radius:6px;padding:4px 10px;cursor:pointer}
 #pager button:disabled{opacity:.4;cursor:default}
 #pager .pinfo{color:#9fb0c0;font-size:13px;margin:0 8px}
+#pager input{background:#0e1116;color:#e6e6e6;border:1px solid #2a3340;border-radius:6px;padding:3px 6px}
 .src a{color:#6f9fe6;text-decoration:none}
 .src a:hover{text-decoration:underline}
 .mid{color:#6b7c8c;font-size:12px}
@@ -121,11 +122,15 @@ function renderPager(total,pages){
   const go=p=>{PAGE=Math.max(0,Math.min(p,pages-1));render();window.scrollTo(0,0);};
   P.innerHTML=`<button id=first>« first</button><button id=prev>‹ prev</button>`+
     `<span class=pinfo>page <b>${PAGE+1}</b> / ${pages} · ${total} metrics</span>`+
-    `<button id=next>next ›</button><button id=last>last »</button>`;
+    `<button id=next>next ›</button><button id=last>last »</button>`+
+    `<span class=pinfo>go to <input id=goto type=number min=1 max=${pages} value=${PAGE+1} style="width:56px"> <button id=gobtn>go</button></span>`;
   $("#first").disabled=$("#prev").disabled=PAGE<=0;
   $("#next").disabled=$("#last").disabled=PAGE>=pages-1;
   $("#first").onclick=()=>go(0);$("#prev").onclick=()=>go(PAGE-1);
   $("#next").onclick=()=>go(PAGE+1);$("#last").onclick=()=>go(pages-1);
+  const jump=()=>{const v=parseInt($("#goto").value,10);if(v>=1&&v<=pages)go(v-1);};
+  $("#gobtn").onclick=jump;
+  $("#goto").onkeydown=e=>{if(e.key==="Enter")jump();};
 }
 boot();
 </script></body></html>
