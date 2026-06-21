@@ -1,0 +1,114 @@
+{
+ "4b310b24": {
+  "type": "designed",
+  "reason": "uses layout, color, and graphics"
+ },
+ "287485c1": {
+  "type": "designed",
+  "reason": "uses real layout, color, graphics/infographics"
+ },
+ "e3665a33": {
+  "type": "designed",
+  "reason": "uses professional layout, color, and graphics"
+ },
+ "128de607": {
+  "type": "designed",
+  "reason": "uses real layout, color, graphics/infographics, photos"
+ },
+ "e2416d20": {
+  "type": "designed",
+  "reason": "uses a photograph and large, stylized text"
+ },
+ "d2e6b6ff": {
+  "type": "designed",
+  "reason": "uses professional layout, color, and graphics"
+ },
+ "2995644a": {
+  "type": "designed",
+  "reason": "uses a large photograph with overlaid text and a professional layout"
+ },
+ "a1072081": {
+  "type": "designed",
+  "reason": "uses a professional layout with a logo and distinct text formatting"
+ },
+ "e136ede4": {
+  "type": "designed",
+  "reason": "uses a professional layout with a photograph and text"
+ },
+ "24e18655": {
+  "type": "designed",
+  "reason": "uses professional layout, color, and graphics"
+ },
+ "040633b7": {
+  "type": "designed",
+  "reason": "uses a professional layout with a logo, large text, and a photograph"
+ },
+ "2ea6005f": {
+  "type": "designed",
+  "reason": "uses a professional layout with graphics and a photograph"
+ },
+ "dca5a824": {
+  "type": "plain_text",
+  "reason": "the report uses simple headings and paragraphs of black text"
+ },
+ "8b5543a9": {
+  "type": "designed",
+  "reason": "uses professional layout, color, and graphics"
+ },
+ "95f2054c": {
+  "type": "designed",
+  "reason": "uses a grid layout with photos and stylized text"
+ },
+ "f1189246": {
+  "type": "designed",
+  "reason": "uses layout, color, graphics, and photos"
+ },
+ "88bfa5f4": {
+  "type": "designed",
+  "reason": "uses bold typography, a striking graphic element, and a highlighted title"
+ },
+ "d04d1475": {
+  "type": "designed",
+  "reason": "uses a photograph, distinct text blocks, and a logo"
+ },
+ "38c9a81d": {
+  "type": "designed",
+  "reason": "uses professional layout, color, and graphics"
+ },
+ "81480a77": {
+  "type": "designed",
+  "reason": "uses a photograph and graphic elements"
+ },
+ "18bb8c0f": {
+  "type": "designed",
+  "reason": "uses photos, graphics, and varied text layouts"
+ },
+ "e31d17df": {
+  "type": "designed",
+  "reason": "uses photos, large text, and a grid layout"
+ },
+ "029625c6": {
+  "type": "designed",
+  "reason": "uses color, graphics, and a photograph"
+ },
+ "ee3f949b": {
+  "type": "designed",
+  "reason": "uses a photograph and professional typography"
+ },
+ "9255ab7e": {
+  "type": "designed",
+  "reason": "uses a logo, distinct headings, and tables with clear formatting"
+ },
+ "c2addafd": {
+  "type": "designed",
+  "reason": "uses multiple photos and a distinct layout"
+ },
+ "48013188": {
+  "type": "designed",
+  "reason": "uses a stylized font and a clean layout"
+ },
+ "2f653aed": {
+  "type": "designed",
+  "reason": "uses professional layout and color"
+ }
+}

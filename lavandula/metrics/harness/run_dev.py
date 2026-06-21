@@ -87,6 +87,16 @@ def main():
         ms.sort(key=lambda x: x.idx)
         gate_all(ms)
 
+    # document filter: flag metrics from low-value (plain-typed) docs (dev = flag for audit;
+    # prod skips these docs before extraction). Verdicts frozen in frozen/doc_verdicts.json.
+    dv_path = os.path.join(os.path.dirname(FROZEN), "doc_verdicts.json")
+    if os.path.exists(dv_path):
+        dv = json.load(open(dv_path))
+        for m in metrics:
+            v = dv.get(m.sha8) or {}
+            if v.get("type") == "plain_text":
+                m.add_flag("doc_low_value", f"low-value typed report: {v.get('reason','')[:60]}")
+
     ver = str(int(os.path.getmtime(FROZEN))) if os.path.exists(FROZEN) else ""  # busts img cache only on re-freeze
     with eng.connect() as conn:
         dev_output.write_review(metrics, conn, args.out, ver=ver)
