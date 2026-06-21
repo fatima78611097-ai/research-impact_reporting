@@ -155,7 +155,9 @@ def build_render(
         return sanitize_bbox(raw, page_dims.get(page) if page is not None else None)
 
     # --- sections / text elements ---
-    for body, sl in sections:
+    for sec in sections:
+        body, sl = sec[0], sec[1]
+        heading = sec[2] if len(sec) > 2 else None    # optional 3rd element (back-compatible)
         if body:
             sectext_parts.append(body)
         if sl:
@@ -173,6 +175,7 @@ def build_render(
                     "kind": "text", "idx": int(tid[1:]), "text": txt,
                     "page": page, "bbox": _bbox_for(loc.get("bbox"), page),
                     "row": None, "col": None, "table": None, "row_text": None,
+                    "heading": heading,
                 })
                 items.append((1, page or 0, order, f"{txt} ⟨{tid}⟩", [tid]))
                 order += 1
@@ -186,6 +189,7 @@ def build_render(
                 "kind": "text", "idx": int(tid[1:]), "text": body.strip(),
                 "page": None, "bbox": None,
                 "row": None, "col": None, "table": None, "row_text": None,
+                "heading": heading,
             })
             items.append((1, 0, order, f"{body.strip()} ⟨{tid}⟩", [tid]))
             order += 1
@@ -282,7 +286,7 @@ def render_tagged(conn, sha: str, **kwargs) -> RenderResult:
     Raises ``SkipDocument`` on ``idmap_too_large`` / ``idmap_id_collision``.
     """
     secs = conn.execute(text(
-        "SELECT body_text, source_locations FROM lava_parse.sections "
+        "SELECT body_text, source_locations, heading FROM lava_parse.sections "
         "WHERE content_sha256=:s ORDER BY section_index"
     ), {"s": sha}).fetchall()
     tabs = conn.execute(text(
@@ -290,6 +294,6 @@ def render_tagged(conn, sha: str, **kwargs) -> RenderResult:
         "WHERE content_sha256=:s ORDER BY table_index"
     ), {"s": sha}).fetchall()
     page_dims = _fetch_page_dims(conn, sha)
-    sections = [(body, sl) for body, sl in secs]
+    sections = [(body, sl, heading) for body, sl, heading in secs]
     tables = [(page, cl) for page, cl in tabs]
     return build_render(sections, tables, page_dims, **kwargs)

@@ -69,6 +69,7 @@ FOR EACH METRIC, return:
 - "source_snippet": a VERBATIM, contiguous copy-paste from the source text containing this metric — character-for-character, including original punctuation, capitalization, and spacing. NEVER rephrase, reformat numbers (e.g. "$2.8M" when the source says "$2.8 million"), compose from separate parts of the document, or add words not in the source. If the metric is in a table, copy the relevant cell text.
 - "value_ref": the ⟨⟩ marker on the line or cell where this VALUE appears
 - "subject_ref": the ⟨⟩ marker where this metric's label/subject appears
+- "program": the named program, service, or initiative this metric belongs to, ONLY if the report explicitly attributes it — e.g. the metric sits under a program heading/section, or the surrounding text names the program ("our PAL program… 100% obtained vital documents" → "PAL"). Use the report's own program name. If the metric is organization-wide, a financial total, or the report does not clearly tie it to a specific program, set this to null. NEVER invent, guess, or infer a program that the report does not state. A section heading like "By the Numbers", "Our Impact", "Thank You", or "Board of Directors" is NOT a program — use null.
 
 GROUND OR DROP — never emit an ungrounded metric:
 - value_ref and subject_ref must be markers that actually appear in the text above; never invent or guess a marker.

@@ -34,6 +34,7 @@ class Provenance:
     subject_text: str | None = None       # resolved text at subject_ref
     source_snippet: str | None = None     # verbatim span the model cited
     same_marker: bool = False             # value & label share one marker (inline; no pairing risk)
+    section_heading: str | None = None    # heading of the section the metric sits in (grounds `program`)
 
     @property
     def page(self) -> int | None:
@@ -58,6 +59,7 @@ class Metric:
     unit: str | None = None
     tier: str | None = None               # one of TIERS
     subject: str | None = None            # the raw "what" (resolved label text)
+    program: str | None = None            # named program/service this metric belongs to (null if the report doesn't state one)
 
     # —— provenance ——
     prov: Provenance = field(default_factory=Provenance)

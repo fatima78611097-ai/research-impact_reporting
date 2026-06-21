@@ -40,6 +40,29 @@ def run() -> int:
                 print(f"  FAIL {name}: {c['statement'][:45]!r} expected {c['expect']} got {got}")
         print(f"{name}: {ok}/{len(cases)} pass")
 
+    # program_grounding needs a section_heading on provenance — test inline
+    from ..core.checks.program_grounding import program_grounding
+    from ..core.types import Provenance
+    # (program, statement, section_heading, expect) — program is grounded if named in local context
+    pg_cases = [
+        ("Camp Weaver", "1,763 children developed belonging at Camp Weaver", "FIND YOUR Y", "ok"),
+        ("PAL", "100% obtained vital documents", "PAL PROGRAM", "ok"),       # in heading
+        ("Annual Giving Campaign", "Our Annual Giving Campaign raised $657,713", "A LOOK BACK", "ok"),
+        ("Foster Care", "103 total clients served", "COUNSELING", "flag"),   # nowhere local
+        (None, "anything", "ANY", "ok"),
+    ]
+    okc = 0
+    for prog, stmt, heading, exp in pg_cases:
+        mm = Metric(content_sha256="t", idx=0, program=prog, statement=stmt)
+        mm.prov = Provenance(section_heading=heading)
+        got = program_grounding(mm).verdict
+        if got == exp:
+            okc += 1
+        else:
+            fails += 1
+            print(f"  FAIL program_grounding: {prog!r} / {stmt[:30]!r} expected {exp} got {got}")
+    print(f"program_grounding: {okc}/{len(pg_cases)} pass")
+
     dl = CASES.get("dedup", [])
     if dl:
         ms = [_mk(c, i) for i, c in enumerate(dl)]

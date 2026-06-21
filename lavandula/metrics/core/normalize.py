@@ -34,6 +34,7 @@ def normalize(raw_metrics: list[dict], idmap: dict, *, content_sha256: str,
             value_text=vc.get("text"), subject_text=sc.get("text"),
             source_snippet=m.get("source_snippet"),
             same_marker=(vr == sr),
+            section_heading=(sc.get("heading") or vc.get("heading")),
         )
         out.append(Metric(
             content_sha256=content_sha256, idx=idx, org=org, report_year=report_year, url=url,
@@ -42,6 +43,7 @@ def normalize(raw_metrics: list[dict], idmap: dict, *, content_sha256: str,
             value_text=(str(m.get("metric_value")) if m.get("metric_value") is not None else None),
             unit=m.get("unit"), tier=m.get("tier"),
             subject=sc.get("text") or "",
+            program=(m.get("program") or None),
             prov=prov,
         ))
     return out
