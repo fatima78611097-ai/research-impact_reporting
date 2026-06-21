@@ -39,8 +39,10 @@ def _draw(dr, bb, H, color, w):
     dr.rectangle([min(x0, x1) - 4, min(y0, y1) - 4, max(x0, x1) + 4, max(y0, y1) + 4], outline=color, width=w)
 
 
-def _record(m, img):
-    """One Metric -> the viewer's JSON record (every field straight off the metric)."""
+def _record(m, img, ver=""):
+    """One Metric -> the viewer's JSON record (every field straight off the metric).
+    `ver` cache-busts img/pdf URLs — changes only when the extraction is re-frozen, so
+    re-gates don't force image re-downloads but a reshuffle can't show a stale page."""
     rec = {
         "id": f"mt:{m.sha8}:{m.idx}", "set": "model-text", "sha8": m.sha8, "org": m.org,
         "statement": m.statement, "value": m.value, "unit": m.unit, "tier": m.tier,
@@ -52,6 +54,7 @@ def _record(m, img):
         "v_bbox": m.prov.value_bbox, "s_bbox": m.prov.subject_bbox, "page": m.prov.page,
         "gate_decision": m.decision, "gate_reason": m.reason,
         "flags": m.flags, "flag_detail": m.flag_detail,
+        "ver": ver,
         "img": img, "pdf": f"{IMGSUB}/{m.sha8}.pdf",
     }
     if "incomplete" in m.flags:                      # kept for the existing Complete filter
@@ -60,7 +63,7 @@ def _record(m, img):
     return rec
 
 
-def write_review(metrics, conn, outdir, data_name="metrics-review-data.json"):
+def write_review(metrics, conn, outdir, data_name="metrics-review-data.json", ver=""):
     """Render boxed images + write the review JSON for `metrics` into `outdir`."""
     imgdir = os.path.join(outdir, IMGSUB)
     os.makedirs(imgdir, exist_ok=True)
@@ -119,7 +122,7 @@ def write_review(metrics, conn, outdir, data_name="metrics-review-data.json"):
                 cv.thumbnail((1100, 99999))
                 cv.save(f"{imgdir}/{m.sha8}_m{m.idx}.png", optimize=True)
                 img = f"{IMGSUB}/{m.sha8}_m{m.idx}.png"
-        records.append(_record(m, img))
+        records.append(_record(m, img, ver))
 
     json.dump(records, open(os.path.join(outdir, data_name), "w"), default=str)
     # ship the reused viewer alongside the data so the run is self-contained

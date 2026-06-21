@@ -87,8 +87,9 @@ def main():
         ms.sort(key=lambda x: x.idx)
         gate_all(ms)
 
+    ver = str(int(os.path.getmtime(FROZEN))) if os.path.exists(FROZEN) else ""  # busts img cache only on re-freeze
     with eng.connect() as conn:
-        dev_output.write_review(metrics, conn, args.out)
+        dev_output.write_review(metrics, conn, args.out, ver=ver)
     pub = sum(1 for m in metrics if m.decision == "publish")
     print(f"DONE metrics={len(metrics)} ({pub} publish / {len(metrics)-pub} quarantine) -> {args.out}", flush=True)
     for sha8, err in errors:
