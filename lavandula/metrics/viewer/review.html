@@ -4,6 +4,7 @@
 body{background:#0e1116;color:#e6e6e6;font:14px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;margin:0}
 #bar{position:sticky;top:0;background:#141a22;border-bottom:1px solid #2a3340;padding:10px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;z-index:5}
 #bar b{color:#fff}
+#clearmarks{background:#3a2530;color:#e6a0a0;border:1px solid #6a3540;border-radius:6px;padding:4px 10px;cursor:pointer}
 select,input{background:#0e1116;color:#e6e6e6;border:1px solid #2a3340;border-radius:6px;padding:4px 6px}
 .wrap{max-width:1000px;margin:0 auto;padding:16px}
 .card{background:#141a22;border:1px solid #2a3340;border-radius:10px;padding:12px 14px;margin:10px 0}
@@ -37,6 +38,7 @@ details img{max-width:100%;border:1px solid #2a3340;border-radius:6px;margin-top
   <label>Flag <select id=finc><option value=all>all</option><option value=any>⚑ any flag</option><option value=gratitude_source>🙏 thank-you source</option><option value=program_ungrounded>⚠ program ungrounded</option><option value=mispair_suspect>↔ mispair suspect</option><option value=incomplete>⚠ incomplete</option><option value=none>no flags</option></select></label>
   <label>Mark <select id=fmark><option value=all>all</option><option value=none>unmarked</option><option value=keep>keep</option><option value=junk>junk</option><option value=unsure>unsure</option><option value=debate>debate</option></select></label>
   <input id=fsearch placeholder="text / org / sha8" size=18>
+  <button id=clearmarks title="erase all keep/junk/unsure/debate marks">⟲ clear marks</button>
 </div>
 <div class=wrap><div id=list></div><div id=pager></div></div>
 <script>
@@ -54,6 +56,13 @@ async function boot(){
   const reset=()=>{PAGE=0;render();};
   ["ftier","fgate","finc","fmark"].forEach(id=>$("#"+id).onchange=reset);
   $("#fsearch").oninput=reset;
+  $("#clearmarks").onclick=()=>{
+    const n=Object.keys(MARK).length;
+    if(!n){alert("No marks to clear.");return;}
+    if(confirm("Erase all "+n+" marks (keep/junk/unsure/debate)? This cannot be undone.")){
+      MARK={};saveMarks();PAGE=0;render();
+    }
+  };
   render();
 }
 function match(r){
