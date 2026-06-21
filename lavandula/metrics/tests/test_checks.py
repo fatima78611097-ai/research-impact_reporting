@@ -63,6 +63,27 @@ def run() -> int:
             print(f"  FAIL program_grounding: {prog!r} / {stmt[:30]!r} expected {exp} got {got}")
     print(f"program_grounding: {okc}/{len(pg_cases)} pass")
 
+    # gratitude_source — flags capacity-tier metrics whose verbatim source is a thank-you
+    from ..core.checks.gratitude_source import gratitude_source
+    gs_cases = [
+        # (statement, source_snippet, tier, expect)
+        ("450 members in our 18 conferences", "Thank you to the 450 members in our 18 conferences", "capacity_input", "flag"),
+        ("12,000 meals distributed", "Thank you to our volunteers who delivered 12,000 meals", "reach_output", "ok"),
+        ("685 families served", "We served 685 families this year", "reach_output", "ok"),
+        ("9 vans", "We grateful for the 9 vans donated", "capacity_input", "flag"),
+    ]
+    okc = 0
+    for stmt, snip, tier, exp in gs_cases:
+        mm = Metric(content_sha256="t", idx=0, statement=stmt, tier=tier)
+        mm.prov = Provenance(source_snippet=snip)
+        got = gratitude_source(mm).verdict
+        if got == exp:
+            okc += 1
+        else:
+            fails += 1
+            print(f"  FAIL gratitude_source: {snip[:32]!r} ({tier}) expected {exp} got {got}")
+    print(f"gratitude_source: {okc}/{len(gs_cases)} pass")
+
     dl = CASES.get("dedup", [])
     if dl:
         ms = [_mk(c, i) for i, c in enumerate(dl)]

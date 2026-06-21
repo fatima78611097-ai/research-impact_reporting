@@ -21,6 +21,7 @@ from .checks.is_a_metric import is_a_metric
 from .checks.incompleteness import incompleteness
 from .checks.mispairing import mispairing
 from .checks.program_grounding import program_grounding
+from .checks.gratitude_source import gratitude_source
 from .checks.dedup import duplicate_indices
 
 Check = Callable[[Metric], CheckResult]
@@ -35,6 +36,7 @@ REGISTRY: list[Check] = [
     incompleteness,      # bare generic people-count, no action        -> flag
     mispairing,          # value & label far apart on the page         -> flag
     program_grounding,   # program disagrees with the section heading  -> flag
+    gratitude_source,    # verbatim source is a thank-you, not a result-> flag (find -> model fix)
 ]
 
 
