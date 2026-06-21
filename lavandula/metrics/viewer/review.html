@@ -35,7 +35,7 @@ details img{max-width:100%;border:1px solid #2a3340;border-radius:6px;margin-top
   <span id=tally>loading…</span><span style="flex:1"></span>
   <label>Tier <select id=ftier><option value=all>all</option></select></label>
   <label>Gate <select id=fgate><option value=all>all</option><option value=publish>published</option><option value=quarantine>quarantined</option></select></label>
-  <label>Flag <select id=finc><option value=all>all</option><option value=any>⚑ any flag</option><option value=gratitude_source>🙏 thank-you source</option><option value=program_ungrounded>⚠ program ungrounded</option><option value=mispair_suspect>↔ mispair suspect</option><option value=incomplete>⚠ incomplete</option><option value=none>no flags</option></select></label>
+  <label>Flag <select id=finc><option value=all>all</option><option value=any>⚑ any flag</option><option value=doc_low_value>🗑 low-value doc</option><option value=gratitude_source>🙏 thank-you source</option><option value=program_ungrounded>⚠ program ungrounded</option><option value=mispair_suspect>↔ mispair suspect</option><option value=incomplete>⚠ incomplete</option><option value=none>no flags</option></select></label>
   <label>Mark <select id=fmark><option value=all>all</option><option value=none>unmarked</option><option value=keep>keep</option><option value=junk>junk</option><option value=unsure>unsure</option><option value=debate>debate</option></select></label>
   <input id=fsearch placeholder="text / org / sha8" size=18>
   <button id=clearmarks title="erase all keep/junk/unsure/debate marks">⟲ clear marks</button>
@@ -92,6 +92,7 @@ function card(r){
      ${r.incomplete?`<span class=badge style="background:#c2410c" title="${esc(r.incomplete_reason||'')}">⚠ incomplete</span>`:""}
      ${(r.flags||[]).includes("gratitude_source")?`<span class=badge style="background:#8a5cc0" title="${esc(r.flag_detail&&r.flag_detail.gratitude_source||'')}">🙏 thank-you source</span>`:""}
      ${(r.flags||[]).includes("mispair_suspect")?`<span class=badge style="background:#b06a1f" title="${esc(r.flag_detail&&r.flag_detail.mispair_suspect||'')}">↔ mispair suspect</span>`:""}
+     ${(r.flags||[]).includes("doc_low_value")?`<span class=badge style="background:#7a2020" title="${esc(r.flag_detail&&r.flag_detail.doc_low_value||'')}">🗑 low-value doc</span>`:""}
      <b>${esc(r.org)}</b> <span class=mid>${r.id}</span></div>
    <div class=stmt>"${esc(r.statement)}"</div>
    ${r.program?`<div class=prog>🎯 program: <b>${esc(r.program)}</b>${(r.flags||[]).includes("program_ungrounded")?`<span class=ungr title="${esc(r.flag_detail&&r.flag_detail.program_ungrounded||"")}"> ⚠ ungrounded (heading: ${esc(r.section_heading||"?")})</span>`:""}</div>`:""}
