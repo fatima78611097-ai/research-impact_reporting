@@ -91,6 +91,7 @@ function card(r){
      ${r.gate_decision?`<span class=badge style="background:${r.gate_decision==='publish'?'#0a8a0a':'#c0392b'}" title="${esc(r.gate_reason||'')}">${r.gate_decision==='publish'?'PUBLISH':'QUARANTINE'}${r.gate_reason?' · '+esc(r.gate_reason):''}</span>`:""}
      ${r.incomplete?`<span class=badge style="background:#c2410c" title="${esc(r.incomplete_reason||'')}">⚠ incomplete</span>`:""}
      ${(r.flags||[]).includes("gratitude_source")?`<span class=badge style="background:#8a5cc0" title="${esc(r.flag_detail&&r.flag_detail.gratitude_source||'')}">🙏 thank-you source</span>`:""}
+     ${(r.flags||[]).includes("mispair_suspect")?`<span class=badge style="background:#b06a1f" title="${esc(r.flag_detail&&r.flag_detail.mispair_suspect||'')}">↔ mispair suspect</span>`:""}
      <b>${esc(r.org)}</b> <span class=mid>${r.id}</span></div>
    <div class=stmt>"${esc(r.statement)}"</div>
    ${r.program?`<div class=prog>🎯 program: <b>${esc(r.program)}</b>${(r.flags||[]).includes("program_ungrounded")?`<span class=ungr title="${esc(r.flag_detail&&r.flag_detail.program_ungrounded||"")}"> ⚠ ungrounded (heading: ${esc(r.section_heading||"?")})</span>`:""}</div>`:""}
