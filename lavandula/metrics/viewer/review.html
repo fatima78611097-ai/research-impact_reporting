@@ -96,6 +96,7 @@ function card(r){
    <div class=stmt>"${esc(r.statement)}"</div>
    ${r.program?`<div class=prog>🎯 program: <b>${esc(r.program)}</b>${(r.flags||[]).includes("program_ungrounded")?`<span class=ungr title="${esc(r.flag_detail&&r.flag_detail.program_ungrounded||"")}"> ⚠ ungrounded (heading: ${esc(r.section_heading||"?")})</span>`:""}</div>`:""}
    <div class=kv>value=<b>${esc(r.value)}</b>${r.unit?" "+esc(r.unit):""}${r.subject?` · marker-subject: ${esc(r.subject)}`:""}</div>
+   <div class=kv>📍 value @ page <b>${r.v_page??"?"}</b>${r.s_page&&r.s_page!==r.v_page?` · label @ page <b>${r.s_page}</b>`:r.s_page?` · label @ page <b>${r.s_page}</b>`:""}</div>
    ${r.source_snippet?`<div class=snip>source: ${esc(r.source_snippet)}</div>`:""}
    <details><summary>source page ${r.page??"?"}</summary><img loading=lazy src="${r.img}"></details>
    ${r.pdf?`<div class=src><a href="${r.pdf}#page=${r.page||1}" target=_blank>📄 open full report${r.page?` → page ${r.page}`:""}</a></div>`:""}
